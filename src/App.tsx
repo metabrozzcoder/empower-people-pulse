@@ -8,6 +8,8 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
 import Index from "./pages/Index"
 import Employees from "./pages/Employees"
+import Profile from "./pages/Profile"
+import AccountSettings from "./pages/AccountSettings"
 import NotFound from "./pages/NotFound"
 
 const queryClient = new QueryClient()
@@ -32,12 +34,13 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/employees" element={<Employees />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/account-settings" element={<AccountSettings />} />
                   {/* Placeholder routes */}
                   <Route path="/attendance" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Attendance</h2><p className="text-muted-foreground">Coming soon...</p></div>} />
                   <Route path="/performance" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Performance</h2><p className="text-muted-foreground">Coming soon...</p></div>} />
                   <Route path="/calendar" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Calendar</h2><p className="text-muted-foreground">Coming soon...</p></div>} />
                   <Route path="/reports" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Reports</h2><p className="text-muted-foreground">Coming soon...</p></div>} />
-                  <Route path="/profile" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Profile</h2><p className="text-muted-foreground">Coming soon...</p></div>} />
                   <Route path="/settings" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Settings</h2><p className="text-muted-foreground">Coming soon...</p></div>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

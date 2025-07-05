@@ -20,6 +20,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar"
 
@@ -32,9 +33,9 @@ const navigationItems = [
   { title: "Reports", url: "/reports", icon: FileText },
 ]
 
-const settingsItems = [
+const accountItems = [
   { title: "Profile", url: "/profile", icon: User },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Account Settings", url: "/account-settings", icon: Settings },
 ]
 
 export function AppSidebar() {
@@ -47,37 +48,32 @@ export function AppSidebar() {
       : "hover:bg-accent hover:text-accent-foreground"
 
   return (
-    <Sidebar className={isCollapsed ? "w-14" : "w-64"} collapsible="icon">
-      <SidebarHeader className="p-6">
-        {!isCollapsed && (
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5 text-primary-foreground" />
-            </div>
+    <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
+      <SidebarHeader className="p-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <Users className="w-5 h-5 text-primary-foreground" />
+          </div>
+          {!isCollapsed && (
             <div>
               <h2 className="text-lg font-bold">HRM Pro</h2>
               <p className="text-xs text-muted-foreground">Human Resources</p>
             </div>
-          </div>
-        )}
-        {isCollapsed && (
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mx-auto">
-            <Users className="w-5 h-5 text-primary-foreground" />
-          </div>
-        )}
+          )}
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
+          {!isCollapsed && <SidebarGroupLabel>Main Menu</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild tooltip={isCollapsed ? item.title : undefined}>
                     <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="mr-3 h-4 w-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
+                      <item.icon className="h-4 w-4" />
+                      {!isCollapsed && <span className="ml-3">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -87,15 +83,15 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
+          {!isCollapsed && <SidebarGroupLabel>Account</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsItems.map((item) => (
+              {accountItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild tooltip={isCollapsed ? item.title : undefined}>
                     <NavLink to={item.url} className={getNavCls}>
-                      <item.icon className="mr-3 h-4 w-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
+                      <item.icon className="h-4 w-4" />
+                      {!isCollapsed && <span className="ml-3">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -104,6 +100,20 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="p-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+            <User className="w-4 h-4" />
+          </div>
+          {!isCollapsed && (
+            <div className="flex-1">
+              <p className="text-sm font-medium">John Doe</p>
+              <p className="text-xs text-muted-foreground">Admin</p>
+            </div>
+          )}
+        </div>
+      </SidebarFooter>
     </Sidebar>
   )
 }
