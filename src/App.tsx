@@ -12,6 +12,13 @@ import Profile from "./pages/Profile"
 import AccountSettings from "./pages/AccountSettings"
 import AIAssistantPage from "./pages/AIAssistant"
 import Projects from "./pages/Projects"
+import Recruitment from "./pages/Recruitment"
+import Tasks from "./pages/Tasks"
+import Scheduling from "./pages/Scheduling"
+import Attendance from "./pages/Attendance"
+import Performance from "./pages/Performance"
+import Analytics from "./pages/Analytics"
+import KpiDashboard from "./pages/KpiDashboard"
 import NotFound from "./pages/NotFound"
 
 const queryClient = new QueryClient()
@@ -41,14 +48,16 @@ const App = () => (
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/account-settings" element={<AccountSettings />} />
                   
+                  {/* Fully functional HR pages */}
+                  <Route path="/recruitment" element={<Recruitment />} />
+                  <Route path="/tasks" element={<Tasks />} />
+                  <Route path="/scheduling" element={<Scheduling />} />
+                  <Route path="/attendance" element={<Attendance />} />
+                  <Route path="/performance" element={<Performance />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/kpi-dashboard" element={<KpiDashboard />} />
+                  
                   {/* Placeholder routes for future implementation */}
-                  <Route path="/recruitment" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Recruitment</h2><p className="text-muted-foreground">AI-powered recruitment tools coming soon...</p></div>} />
-                  <Route path="/tasks" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Task Management</h2><p className="text-muted-foreground">Advanced task tracking coming soon...</p></div>} />
-                  <Route path="/scheduling" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Smart Scheduling</h2><p className="text-muted-foreground">AI-optimized scheduling coming soon...</p></div>} />
-                  <Route path="/attendance" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Attendance</h2><p className="text-muted-foreground">Real-time attendance tracking coming soon...</p></div>} />
-                  <Route path="/performance" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Performance</h2><p className="text-muted-foreground">Performance analytics coming soon...</p></div>} />
-                  <Route path="/analytics" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Analytics</h2><p className="text-muted-foreground">Advanced HR analytics coming soon...</p></div>} />
-                  <Route path="/kpi-dashboard" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">KPI Dashboard</h2><p className="text-muted-foreground">KPI tracking coming soon...</p></div>} />
                   <Route path="/payroll" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Payroll</h2><p className="text-muted-foreground">Payroll management coming soon...</p></div>} />
                   <Route path="/communications" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Communications</h2><p className="text-muted-foreground">Internal communications coming soon...</p></div>} />
                   <Route path="/reports" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Reports</h2><p className="text-muted-foreground">Advanced reporting coming soon...</p></div>} />
