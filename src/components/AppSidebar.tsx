@@ -48,24 +48,22 @@ export function AppSidebar() {
       : "hover:bg-accent hover:text-accent-foreground"
 
   return (
-    <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
+    <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <Users className="w-5 h-5 text-primary-foreground" />
           </div>
-          {!isCollapsed && (
-            <div>
-              <h2 className="text-lg font-bold">HRM Pro</h2>
-              <p className="text-xs text-muted-foreground">Human Resources</p>
-            </div>
-          )}
+          <div className="group-data-[collapsible=icon]:hidden">
+            <h2 className="text-lg font-bold">HRM Pro</h2>
+            <p className="text-xs text-muted-foreground">Human Resources</p>
+          </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          {!isCollapsed && <SidebarGroupLabel>Main Menu</SidebarGroupLabel>}
+          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => (
@@ -73,7 +71,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild tooltip={isCollapsed ? item.title : undefined}>
                     <NavLink to={item.url} end className={getNavCls}>
                       <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span className="ml-3">{item.title}</span>}
+                      <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -83,7 +81,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          {!isCollapsed && <SidebarGroupLabel>Account</SidebarGroupLabel>}
+          <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {accountItems.map((item) => (
@@ -91,7 +89,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild tooltip={isCollapsed ? item.title : undefined}>
                     <NavLink to={item.url} className={getNavCls}>
                       <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span className="ml-3">{item.title}</span>}
+                      <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -106,12 +104,10 @@ export function AppSidebar() {
           <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
             <User className="w-4 h-4" />
           </div>
-          {!isCollapsed && (
-            <div className="flex-1">
-              <p className="text-sm font-medium">John Doe</p>
-              <p className="text-xs text-muted-foreground">Admin</p>
-            </div>
-          )}
+          <div className="flex-1 group-data-[collapsible=icon]:hidden">
+            <p className="text-sm font-medium">John Doe</p>
+            <p className="text-xs text-muted-foreground">Admin</p>
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>
