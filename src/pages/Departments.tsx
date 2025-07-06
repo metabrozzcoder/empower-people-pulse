@@ -70,8 +70,8 @@ const mockDepartments: Department[] = [
     managerName: 'Emily Davis',
     memberCount: 12,
     members: [
-      { id: '4', name: 'Emily Davis', position: 'Design Manager' },
-      { id: '5', name: 'Alex Wilson', position: 'UX Designer' },
+      { id: '4', name: 'Emily Davis', position: 'Design Manager', email: 'emily@company.com', isManager: true },
+      { id: '5', name: 'Alex Wilson', position: 'UX Designer', email: 'alex.design@company.com', isManager: false },
     ],
     budget: 200000,
     status: 'Active',
@@ -87,8 +87,8 @@ const mockDepartments: Department[] = [
     managerName: 'David Brown',
     memberCount: 18,
     members: [
-      { id: '6', name: 'David Brown', position: 'Marketing Manager' },
-      { id: '7', name: 'Lisa Zhang', position: 'Content Strategist' },
+      { id: '6', name: 'David Brown', position: 'Marketing Manager', email: 'david@company.com', isManager: true },
+      { id: '7', name: 'Lisa Zhang', position: 'Content Strategist', email: 'lisa@company.com', isManager: false },
     ],
     budget: 300000,
     status: 'Active',
