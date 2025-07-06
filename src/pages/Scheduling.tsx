@@ -286,7 +286,7 @@ const Scheduling = () => {
                             <div className="font-medium">{new Date(shift.date).toLocaleDateString()}</div>
                             <div className="text-muted-foreground">{shift.startTime} - {shift.endTime}</div>
                           </div>
-                          <Badge className={getStatusColor(shift.status)} size="sm">
+                          <Badge className={getStatusColor(shift.status)}>
                             {shift.status}
                           </Badge>
                         </div>

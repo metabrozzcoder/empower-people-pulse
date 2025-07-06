@@ -38,7 +38,7 @@ export interface Task {
   projectId: string
   assignedTo: string
   status: 'Todo' | 'In Progress' | 'Review' | 'Done'
-  priority: 'Low' | 'Medium' | 'High'
+  priority: 'Low' | 'Medium' | 'High' | 'Critical'
   dueDate: string
   estimatedHours: number
   actualHours?: number
