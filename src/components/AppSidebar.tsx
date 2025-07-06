@@ -44,38 +44,29 @@ const mainNavigationItems = [
   { title: "AI Assistant", url: "/ai-assistant", icon: Brain },
 ]
 
-const hrManagementItems = [
+const hrAndProjectItems = [
   { title: "Employees", url: "/employees", icon: Users },
   { title: "Recruitment", url: "/recruitment", icon: UserPlus },
   { title: "Performance", url: "/performance", icon: TrendingUp },
   { title: "Attendance", url: "/attendance", icon: Clock },
   { title: "Scheduling", url: "/scheduling", icon: Calendar },
-]
-
-const projectItems = [
   { title: "Projects", url: "/projects", icon: Briefcase },
   { title: "Tasks", url: "/tasks", icon: ClipboardList },
 ]
 
-const organizationItems = [
+const organizationAndCommunicationItems = [
   { title: "Organizations", url: "/organizations", icon: Building2 },
   { title: "Departments", url: "/departments", icon: UsersIcon },
-]
-
-const chatItems = [
   { title: "Messages", url: "/chat", icon: MessageSquare },
   { title: "Voice Calls", url: "/voice-calls", icon: Phone },
   { title: "Video Calls", url: "/video-calls", icon: Video },
   { title: "File Sharing", url: "/file-sharing", icon: FileIcon },
 ]
 
-const userManagementItems = [
+const managementAndAnalyticsItems = [
   { title: "User Management", url: "/user-management", icon: UserCheck },
   { title: "Role Management", url: "/role-management", icon: Shield },
   { title: "Access Control", url: "/access-control", icon: Shield },
-]
-
-const analyticsItems = [
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "KPI Dashboard", url: "/kpi-dashboard", icon: Target },
   { title: "Reports", url: "/reports", icon: FileText },
@@ -144,12 +135,9 @@ export function AppSidebar() {
 
       <SidebarContent className="p-4 bg-white overflow-y-auto">
         <SidebarSection title="Main Menu" items={mainNavigationItems} />
-        <SidebarSection title="HR Management" items={hrManagementItems} />
-        <SidebarSection title="Projects & Tasks" items={projectItems} />
-        <SidebarSection title="Organization" items={organizationItems} />
-        <SidebarSection title="Chat" items={chatItems} />
-        <SidebarSection title="User Management" items={userManagementItems} />
-        <SidebarSection title="Analytics & Reports" items={analyticsItems} />
+        <SidebarSection title="HR & Projects" items={hrAndProjectItems} />
+        <SidebarSection title="Organization & Communication" items={organizationAndCommunicationItems} />
+        <SidebarSection title="Management & Analytics" items={managementAndAnalyticsItems} />
         <SidebarSection title="System" items={systemItems} />
       </SidebarContent>
 
