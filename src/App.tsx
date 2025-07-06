@@ -19,6 +19,10 @@ import Attendance from "./pages/Attendance"
 import Performance from "./pages/Performance"
 import Analytics from "./pages/Analytics"
 import KpiDashboard from "./pages/KpiDashboard"
+import Organizations from "./pages/Organizations"
+import Departments from "./pages/Departments"
+import Chat from "./pages/Chat"
+import UserManagement from "./pages/UserManagement"
 import NotFound from "./pages/NotFound"
 
 const queryClient = new QueryClient()
@@ -56,6 +60,20 @@ const App = () => (
                   <Route path="/performance" element={<Performance />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/kpi-dashboard" element={<KpiDashboard />} />
+                  
+                  {/* New Organization & Communication pages */}
+                  <Route path="/organizations" element={<Organizations />} />
+                  <Route path="/departments" element={<Departments />} />
+                  <Route path="/chat" element={<Chat />} />
+                  <Route path="/user-management" element={<UserManagement />} />
+                  
+                  {/* Communication features */}
+                  <Route path="/voice-calls" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Voice Calls</h2><p className="text-muted-foreground">Voice calling feature coming soon...</p></div>} />
+                  <Route path="/video-calls" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Video Calls</h2><p className="text-muted-foreground">Video calling feature coming soon...</p></div>} />
+                  <Route path="/file-sharing" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">File Sharing</h2><p className="text-muted-foreground">Advanced file sharing coming soon...</p></div>} />
+                  
+                  {/* Role management */}
+                  <Route path="/role-management" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Role Management</h2><p className="text-muted-foreground">Advanced role configuration coming soon...</p></div>} />
                   
                   {/* Placeholder routes for future implementation */}
                   <Route path="/payroll" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Payroll</h2><p className="text-muted-foreground">Payroll management coming soon...</p></div>} />
