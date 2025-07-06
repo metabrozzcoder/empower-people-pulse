@@ -36,7 +36,6 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -44,7 +43,6 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 const mainNavigationItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -70,7 +68,7 @@ const organizationItems = [
 ]
 
 const chatItems = [
-  { title: "Chat", url: "/chat", icon: MessageSquare },
+  { title: "Messages", url: "/chat", icon: MessageSquare },
   { title: "Voice Calls", url: "/voice-calls", icon: Phone },
   { title: "Video Calls", url: "/video-calls", icon: Video },
   { title: "File Sharing", url: "/file-sharing", icon: FileIcon },
@@ -101,13 +99,13 @@ export function AppSidebar() {
   
   const [openSections, setOpenSections] = useState({
     main: true,
-    hrManagement: false,
-    projects: false,
-    organization: false,
-    chat: false,
-    userManagement: false,
-    analytics: false,
-    system: false,
+    hrManagement: true,
+    projects: true,
+    organization: true,
+    chat: true,
+    userManagement: true,
+    analytics: true,
+    system: true,
   })
 
   const toggleSection = (section: keyof typeof openSections) => {
@@ -119,8 +117,8 @@ export function AppSidebar() {
 
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
-      ? "bg-primary text-primary-foreground font-medium shadow-sm" 
-      : "hover:bg-accent hover:text-accent-foreground transition-colors"
+      ? "bg-blue-100 text-blue-900 font-semibold border-r-4 border-blue-600 shadow-sm" 
+      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200"
 
   const SidebarSection = ({ 
     title, 
@@ -133,60 +131,60 @@ export function AppSidebar() {
     sectionKey: keyof typeof openSections
     icon: any
   }) => (
-    <Collapsible open={openSections[sectionKey]} onOpenChange={() => toggleSection(sectionKey)}>
-      <CollapsibleTrigger asChild>
-        <SidebarMenuButton 
-          className="w-full justify-between hover:bg-accent/50 data-[state=open]:bg-accent"
-          tooltip={isCollapsed ? title : undefined}
-        >
-          <div className="flex items-center space-x-2">
-            <SectionIcon className="h-4 w-4" />
-            <span>{title}</span>
-          </div>
-          {!isCollapsed && (
-            openSections[sectionKey] 
-              ? <ChevronDown className="h-4 w-4" />
-              : <ChevronRight className="h-4 w-4" />
-          )}
-        </SidebarMenuButton>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-1">
-        <SidebarMenu className="ml-4 border-l border-border/50">
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title} className="ml-2">
-              <SidebarMenuButton asChild tooltip={isCollapsed ? item.title : undefined}>
-                <NavLink to={item.url} end className={getNavCls}>
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </CollapsibleContent>
-    </Collapsible>
+    <div className="mb-4">
+      <button
+        onClick={() => toggleSection(sectionKey)}
+        className="w-full flex items-center justify-between p-3 text-left font-medium text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200 border border-gray-200"
+      >
+        <div className="flex items-center space-x-3">
+          <SectionIcon className="h-5 w-5 text-gray-600" />
+          <span className="text-sm font-semibold">{title}</span>
+        </div>
+        {openSections[sectionKey] 
+          ? <ChevronDown className="h-4 w-4 text-gray-500" />
+          : <ChevronRight className="h-4 w-4 text-gray-500" />
+        }
+      </button>
+      
+      {openSections[sectionKey] && (
+        <div className="mt-2 ml-4 space-y-1">
+          <SidebarMenu>
+            {items.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild>
+                  <NavLink to={item.url} end className={`${getNavCls} flex items-center px-4 py-2 rounded-md text-sm`}>
+                    <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                    <span className="font-medium">{item.title}</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </div>
+      )}
+    </div>
   )
 
   return (
-    <Sidebar collapsible="icon" className="border-r bg-gradient-to-b from-background to-accent/20">
-      <SidebarHeader className="p-4 border-b">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-sm">
-            <Users className="w-5 h-5 text-primary-foreground" />
+    <Sidebar className="border-r border-gray-200 bg-white shadow-lg" style={{ minWidth: '280px' }}>
+      <SidebarHeader className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md">
+            <Users className="w-6 h-6 text-blue-600" />
           </div>
-          <div className="group-data-[collapsible=icon]:hidden">
-            <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+          <div>
+            <h2 className="text-xl font-bold text-white">
               MediaHR Pro
             </h2>
-            <p className="text-xs text-muted-foreground">AI-Enhanced HRM</p>
+            <p className="text-blue-100 text-sm">AI-Enhanced HRM</p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-2">
+      <SidebarContent className="p-4 bg-white overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <div className="space-y-2">
               <SidebarSection 
                 title="Main Menu" 
                 items={mainNavigationItems} 
@@ -235,21 +233,21 @@ export function AppSidebar() {
                 sectionKey="system" 
                 icon={Settings}
               />
-            </SidebarMenu>
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t bg-accent/30">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center border">
-            <User className="w-4 h-4 text-primary" />
+      <SidebarFooter className="p-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+            <User className="w-5 h-5 text-white" />
           </div>
-          <div className="flex-1 group-data-[collapsible=icon]:hidden">
-            <p className="text-sm font-medium">Sarah Wilson</p>
-            <p className="text-xs text-muted-foreground flex items-center">
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-gray-900">Sarah Wilson</p>
+            <p className="text-xs text-gray-500 flex items-center">
               <Shield className="w-3 h-3 mr-1" />
-              Admin
+              Administrator
             </p>
           </div>
         </div>
