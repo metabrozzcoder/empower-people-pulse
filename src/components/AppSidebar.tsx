@@ -21,27 +21,22 @@ import {
   Building2,
   Phone,
   Video,
-  Mic,
-  Image,
   FileIcon,
-  ChevronDown,
-  ChevronRight,
   UserCheck,
   UsersIcon
 } from "lucide-react"
 import { NavLink } from "react-router-dom"
-import { useState } from "react"
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
-  useSidebar,
 } from "@/components/ui/sidebar"
 
 const mainNavigationItems = [
@@ -94,27 +89,6 @@ const systemItems = [
 ]
 
 export function AppSidebar() {
-  const { state } = useSidebar()
-  const isCollapsed = state === "collapsed"
-  
-  const [openSections, setOpenSections] = useState({
-    main: true,
-    hrManagement: true,
-    projects: true,
-    organization: true,
-    chat: true,
-    userManagement: true,
-    analytics: true,
-    system: true,
-  })
-
-  const toggleSection = (section: keyof typeof openSections) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }))
-  }
-
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
       ? "bg-blue-100 text-blue-900 font-semibold border-r-4 border-blue-600 shadow-sm" 
@@ -122,47 +96,34 @@ export function AppSidebar() {
 
   const SidebarSection = ({ 
     title, 
-    items, 
-    sectionKey, 
-    icon: SectionIcon 
+    items
   }: { 
     title: string
     items: any[]
-    sectionKey: keyof typeof openSections
-    icon: any
   }) => (
-    <div className="mb-4">
-      <button
-        onClick={() => toggleSection(sectionKey)}
-        className="w-full flex items-center justify-between p-3 text-left font-medium text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200 border border-gray-200"
-      >
-        <div className="flex items-center space-x-3">
-          <SectionIcon className="h-5 w-5 text-gray-600" />
-          <span className="text-sm font-semibold">{title}</span>
-        </div>
-        {openSections[sectionKey] 
-          ? <ChevronDown className="h-4 w-4 text-gray-500" />
-          : <ChevronRight className="h-4 w-4 text-gray-500" />
-        }
-      </button>
-      
-      {openSections[sectionKey] && (
-        <div className="mt-2 ml-4 space-y-1">
-          <SidebarMenu>
-            {items.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  <NavLink to={item.url} end className={`${getNavCls} flex items-center px-4 py-2 rounded-md text-sm`}>
-                    <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                    <span className="font-medium">{item.title}</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </div>
-      )}
-    </div>
+    <SidebarGroup className="mb-6">
+      <SidebarGroupLabel className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 px-3">
+        {title}
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu className="space-y-1">
+          {items.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild>
+                <NavLink 
+                  to={item.url} 
+                  end 
+                  className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
+                >
+                  <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                  <span>{item.title}</span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
   )
 
   return (
@@ -182,60 +143,14 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="p-4 bg-white overflow-y-auto">
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <div className="space-y-2">
-              <SidebarSection 
-                title="Main Menu" 
-                items={mainNavigationItems} 
-                sectionKey="main" 
-                icon={LayoutDashboard}
-              />
-              <SidebarSection 
-                title="HR Management" 
-                items={hrManagementItems} 
-                sectionKey="hrManagement" 
-                icon={Users}
-              />
-              <SidebarSection 
-                title="Projects & Tasks" 
-                items={projectItems} 
-                sectionKey="projects" 
-                icon={Briefcase}
-              />
-              <SidebarSection 
-                title="Organization" 
-                items={organizationItems} 
-                sectionKey="organization" 
-                icon={Building2}
-              />
-              <SidebarSection 
-                title="Chat" 
-                items={chatItems} 
-                sectionKey="chat" 
-                icon={MessageSquare}
-              />
-              <SidebarSection 
-                title="User Management" 
-                items={userManagementItems} 
-                sectionKey="userManagement" 
-                icon={UserCheck}
-              />
-              <SidebarSection 
-                title="Analytics & Reports" 
-                items={analyticsItems} 
-                sectionKey="analytics" 
-                icon={BarChart3}
-              />
-              <SidebarSection 
-                title="System" 
-                items={systemItems} 
-                sectionKey="system" 
-                icon={Settings}
-              />
-            </div>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <SidebarSection title="Main Menu" items={mainNavigationItems} />
+        <SidebarSection title="HR Management" items={hrManagementItems} />
+        <SidebarSection title="Projects & Tasks" items={projectItems} />
+        <SidebarSection title="Organization" items={organizationItems} />
+        <SidebarSection title="Chat" items={chatItems} />
+        <SidebarSection title="User Management" items={userManagementItems} />
+        <SidebarSection title="Analytics & Reports" items={analyticsItems} />
+        <SidebarSection title="System" items={systemItems} />
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-gray-200 bg-gray-50">
