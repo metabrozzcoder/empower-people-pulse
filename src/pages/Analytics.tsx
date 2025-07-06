@@ -50,7 +50,6 @@ const Analytics = () => {
         </p>
       </div>
 
-      {/* Key Metrics Overview */}
       <div className="grid gap-4 md:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -173,7 +172,7 @@ const Analytics = () => {
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Below Average (<70%)</span>
+                    <span className="text-sm">Below Average (&lt;70%)</span>
                     <div className="flex items-center space-x-2">
                       <Progress value={5} className="w-20 h-2" />
                       <span className="text-sm font-medium">5%</span>
