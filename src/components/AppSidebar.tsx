@@ -69,7 +69,7 @@ const organizationItems = [
   { title: "Departments", url: "/departments", icon: UsersIcon },
 ]
 
-const communicationItems = [
+const chatItems = [
   { title: "Chat", url: "/chat", icon: MessageSquare },
   { title: "Voice Calls", url: "/voice-calls", icon: Phone },
   { title: "Video Calls", url: "/video-calls", icon: Video },
@@ -104,7 +104,7 @@ export function AppSidebar() {
     hrManagement: false,
     projects: false,
     organization: false,
-    communication: false,
+    chat: false,
     userManagement: false,
     analytics: false,
     system: false,
@@ -141,7 +141,7 @@ export function AppSidebar() {
         >
           <div className="flex items-center space-x-2">
             <SectionIcon className="h-4 w-4" />
-            <span className="group-data-[collapsible=icon]:hidden">{title}</span>
+            <span>{title}</span>
           </div>
           {!isCollapsed && (
             openSections[sectionKey] 
@@ -157,7 +157,7 @@ export function AppSidebar() {
               <SidebarMenuButton asChild tooltip={isCollapsed ? item.title : undefined}>
                 <NavLink to={item.url} end className={getNavCls}>
                   <item.icon className="h-4 w-4" />
-                  <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                  <span>{item.title}</span>
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -212,9 +212,9 @@ export function AppSidebar() {
                 icon={Building2}
               />
               <SidebarSection 
-                title="Communication" 
-                items={communicationItems} 
-                sectionKey="communication" 
+                title="Chat" 
+                items={chatItems} 
+                sectionKey="chat" 
                 icon={MessageSquare}
               />
               <SidebarSection 

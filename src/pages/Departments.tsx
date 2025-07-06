@@ -4,12 +4,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { UsersIcon, Plus, Search, User, Edit, Trash2, Building2 } from 'lucide-react'
+import { UsersIcon, Plus, Search, User, Edit, Trash2, Building2, UserPlus } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Checkbox } from '@/components/ui/checkbox'
+
+interface DepartmentMember {
+  id: string
+  name: string
+  position: string
+  email: string
+  avatar?: string
+  isManager: boolean
+}
 
 interface Department {
   id: string
@@ -20,16 +31,19 @@ interface Department {
   managerId: string
   managerName: string
   memberCount: number
-  members: Array<{
-    id: string
-    name: string
-    position: string
-    avatar?: string
-  }>
+  members: DepartmentMember[]
   budget: number
   status: 'Active' | 'Inactive'
   createdDate: string
 }
+
+const mockMembers: DepartmentMember[] = [
+  { id: '1', name: 'John Smith', position: 'Engineering Manager', email: 'john@company.com', isManager: true },
+  { id: '2', name: 'Sarah Connor', position: 'Senior Developer', email: 'sarah@company.com', isManager: false },
+  { id: '3', name: 'Mike Johnson', position: 'Frontend Developer', email: 'mike@company.com', isManager: false },
+  { id: '4', name: 'Emily Davis', position: 'UX Designer', email: 'emily@company.com', isManager: false },
+  { id: '5', name: 'Alex Wilson', position: 'Backend Developer', email: 'alex@company.com', isManager: false },
+]
 
 const mockDepartments: Department[] = [
   {
@@ -40,12 +54,8 @@ const mockDepartments: Department[] = [
     organizationName: 'MediaTech Solutions',
     managerId: '1',
     managerName: 'John Smith',
-    memberCount: 45,
-    members: [
-      { id: '1', name: 'John Smith', position: 'Engineering Manager' },
-      { id: '2', name: 'Sarah Connor', position: 'Senior Developer' },
-      { id: '3', name: 'Mike Johnson', position: 'Frontend Developer' },
-    ],
+    memberCount: 5,
+    members: mockMembers,
     budget: 500000,
     status: 'Active',
     createdDate: '2023-01-15'
@@ -91,6 +101,8 @@ export default function Departments() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedDept, setSelectedDept] = useState<Department | null>(null)
+  const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false)
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
 
   const filteredDepartments = departments.filter(dept =>
     dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,6 +121,12 @@ export default function Departments() {
 
   const handleDeleteDepartment = (id: string) => {
     setDepartments(departments.filter(dept => dept.id !== id))
+  }
+
+  const handleManageMembers = (dept: Department) => {
+    setSelectedDept(dept)
+    setSelectedMembers(dept.members.map(m => m.id))
+    setIsMembersDialogOpen(true)
   }
 
   return (
@@ -156,6 +174,14 @@ export default function Departments() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => handleManageMembers(dept)}
+                    title="Manage Members"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleEditDepartment(dept)}
                   >
                     <Edit className="w-4 h-4" />
@@ -192,19 +218,19 @@ export default function Departments() {
               </div>
 
               <div>
-                <div className="text-sm font-medium mb-2">Team Members</div>
+                <div className="text-sm font-medium mb-2">Team Members ({dept.members.length})</div>
                 <div className="flex -space-x-2">
                   {dept.members.slice(0, 4).map((member) => (
-                    <Avatar key={member.id} className="w-8 h-8 border-2 border-background">
+                    <Avatar key={member.id} className="w-8 h-8 border-2 border-background" title={member.name}>
                       <AvatarImage src={member.avatar} />
                       <AvatarFallback className="text-xs">
                         {member.name.split(' ').map(n => n[0]).join('')}
                       </AvatarFallback>
                     </Avatar>
                   ))}
-                  {dept.memberCount > 4 && (
+                  {dept.members.length > 4 && (
                     <div className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium">
-                      +{dept.memberCount - 4}
+                      +{dept.members.length - 4}
                     </div>
                   )}
                 </div>
@@ -214,6 +240,7 @@ export default function Departments() {
         ))}
       </div>
 
+      {/* Department Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -278,6 +305,89 @@ export default function Departments() {
             </Button>
             <Button onClick={() => setIsDialogOpen(false)}>
               {selectedDept ? 'Update' : 'Create'} Department
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Members Management Dialog */}
+      <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>
+              Manage Members - {selectedDept?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <Tabs defaultValue="current" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="current">Current Members</TabsTrigger>
+              <TabsTrigger value="add">Add Members</TabsTrigger>
+            </TabsList>
+            <TabsContent value="current" className="space-y-4">
+              <div className="space-y-2">
+                {selectedDept?.members.map((member) => (
+                  <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={member.avatar} />
+                        <AvatarFallback>
+                          {member.name.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{member.name}</p>
+                        <p className="text-sm text-muted-foreground">{member.position}</p>
+                        <p className="text-xs text-muted-foreground">{member.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {member.isManager && (
+                        <Badge variant="secondary">Manager</Badge>
+                      )}
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="add" className="space-y-4">
+              <div className="space-y-2">
+                <Label>Available Employees</Label>
+                {mockMembers.map((member) => (
+                  <div key={member.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <Checkbox
+                      checked={selectedMembers.includes(member.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedMembers([...selectedMembers, member.id])
+                        } else {
+                          setSelectedMembers(selectedMembers.filter(id => id !== member.id))
+                        }
+                      }}
+                    />
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={member.avatar} />
+                      <AvatarFallback>
+                        {member.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{member.name}</p>
+                      <p className="text-sm text-muted-foreground">{member.position}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsMembersDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setIsMembersDialogOpen(false)}>
+              Save Changes
             </Button>
           </div>
         </DialogContent>
