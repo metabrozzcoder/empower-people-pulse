@@ -26,6 +26,7 @@ import SecuritySystem from "./pages/SecuritySystem"
 import Documentation from "./pages/Documentation"
 import Settings from "./pages/Settings"
 import NotFound from "./pages/NotFound"
+import Login from "./pages/Login"
 
 const queryClient = new QueryClient()
 
@@ -47,6 +48,7 @@ const App = () => (
               </header>
               <main className="flex-1 p-4 lg:p-6">
                 <Routes>
+                  <Route path="/login" element={<Login />} />
                   <Route path="/" element={<Index />} />
                   <Route path="/ai-assistant" element={<AIAssistantPage />} />
                   <Route path="/employees" element={<Employees />} />

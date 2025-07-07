@@ -37,6 +37,9 @@ interface User {
   lastLogin: string
   createdDate: string
   permissions: string[]
+  username?: string
+  password?: string
+  sectionAccess?: string[]
 }
 
 const mockUsers: User[] = [
@@ -123,6 +126,12 @@ export default function UserManagement() {
       case 'Pending': return 'bg-yellow-100 text-yellow-800'
       default: return 'bg-gray-100 text-gray-800'
     }
+  }
+
+  const generateCredentials = (name: string) => {
+    const username = name.toLowerCase().replace(/\s+/g, '.') + Math.floor(Math.random() * 1000)
+    const password = Math.random().toString(36).slice(-8)
+    return { username, password }
   }
 
   const handleAddUser = () => {
@@ -331,20 +340,38 @@ export default function UserManagement() {
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>
                   <Input id="phone" placeholder="Enter phone number" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="hr">HR</SelectItem>
+                    <SelectItem value="guest">Guest</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Auto-generated credentials display */}
+              <div className="col-span-2 p-4 bg-muted rounded-lg">
+                <h4 className="font-medium mb-2">Auto-generated Credentials</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <Label>Username</Label>
+                    <div className="font-mono bg-background p-2 rounded border">
+                      {selectedUser?.username || 'john.smith123'}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Password</Label>
+                    <div className="font-mono bg-background p-2 rounded border">
+                      {selectedUser?.password || 'abc123xyz'}
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="hr">HR</SelectItem>
-                      <SelectItem value="guest">Guest</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              </div>
                 <div className="space-y-2">
                   <Label htmlFor="organization">Organization</Label>
                   <Select>
@@ -410,18 +437,35 @@ export default function UserManagement() {
             </TabsContent>
             <TabsContent value="restrictions" className="space-y-4">
               <div className="space-y-4">
-                <h4 className="font-medium">Access Restrictions</h4>
-                <div className="space-y-2">
-                  <Label>Chat Access</Label>
+                <h4 className="font-medium">Section Access Control</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    'Dashboard', 'Employees', 'Projects', 'Recruitment', 'Tasks', 
+                    'Scheduling', 'Attendance', 'Analytics', 'Organizations', 
+                    'Chat', 'User Management', 'Access Control', 'Documentation'
+                  ].map((section) => (
+                    <div key={section} className="flex items-center space-x-2">
+                      <input 
+                        type="checkbox" 
+                        id={section} 
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor={section} className="text-sm">{section}</Label>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="space-y-2 mt-6">
+                  <Label>Linked Employee (Required for Guest role)</Label>
                   <Select>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select chat restrictions" />
+                      <SelectValue placeholder="Select linked employee" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Users</SelectItem>
-                      <SelectItem value="department">Department Only</SelectItem>
-                      <SelectItem value="linked">Linked Employee Only</SelectItem>
-                      <SelectItem value="none">No Chat Access</SelectItem>
+                      <SelectItem value="emp1">Sarah Wilson</SelectItem>
+                      <SelectItem value="emp2">John Smith</SelectItem>
+                      <SelectItem value="emp3">Emily Davis</SelectItem>
+                      <SelectItem value="emp4">Michael Johnson</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
