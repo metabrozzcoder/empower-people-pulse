@@ -11,7 +11,6 @@ import {
   Edit, 
   Trash2, 
   Eye, 
-  Scan,
   FileImage,
   File,
   FileType,
@@ -147,7 +146,7 @@ export default function Documentation() {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
   const [ocrProgress, setOcrProgress] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [uploadType, setUploadType] = useState<'sign' | 'ocr' | null>(null)
+  const [uploadType, setUploadType] = useState<'sign' | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [uploadFormData, setUploadFormData] = useState({
@@ -196,22 +195,6 @@ export default function Documentation() {
     }
   }
 
-  const simulateOCR = (fileName: string): Promise<string> => {
-    return new Promise((resolve) => {
-      const sampleTexts = {
-        'contract': 'Employment Contract\n\nThis agreement is entered into between [Company Name] and [Employee Name].\n\nTerms and Conditions:\n1. Position: [Job Title]\n2. Start Date: [Date]\n3. Salary: [Amount]\n4. Benefits: Health insurance, dental, vision\n5. Vacation: 15 days annually\n\nEmployee Responsibilities:\n- Perform duties as assigned\n- Maintain confidentiality\n- Follow company policies\n\nTermination clause included.',
-        'handbook': 'Employee Handbook 2024\n\nTable of Contents:\n1. Company Overview\n2. Employment Policies\n3. Benefits and Compensation\n4. Code of Conduct\n5. Safety Guidelines\n6. IT and Security Policies\n\nCompany Mission:\nTo provide excellent service while maintaining a positive work environment.\n\nCore Values:\n- Integrity\n- Teamwork\n- Innovation\n- Customer Focus',
-        'invoice': 'INVOICE #INV-2024-001\n\nBill To:\n[Client Name]\n[Address]\n\nServices Provided:\nConsulting Services - January 2024\nHours: 40\nRate: $100/hour\nTotal: $4,000.00\n\nPayment Terms: Net 30\nDue Date: February 15, 2024',
-        'default': `Document Content Extracted\n\nThis document contains important information that has been successfully extracted using OCR technology.\n\nKey sections identified:\n- Header information\n- Main content body\n- Footer details\n- Date: ${new Date().toLocaleDateString()}\n- Processing completed successfully`
-      }
-      
-      const textKey = fileName.toLowerCase().includes('contract') ? 'contract' :
-                     fileName.toLowerCase().includes('handbook') ? 'handbook' :
-                     fileName.toLowerCase().includes('invoice') ? 'invoice' : 'default'
-      
-      setTimeout(() => resolve(sampleTexts[textKey]), 2000)
-    })
-  }
 
   const handleFileProcessing = async () => {
     if (!selectedFile || !uploadType) return
@@ -231,10 +214,6 @@ export default function Documentation() {
     }, 300)
 
     try {
-      let extractedText = ''
-      if (uploadType === 'ocr') {
-        extractedText = await simulateOCR(selectedFile.name)
-      }
       setOcrProgress(100)
       
       // Create signers array from selected company members
@@ -261,7 +240,6 @@ export default function Documentation() {
         status: uploadType === 'sign' && docSigners.length > 0 ? 'pending_signature' : 'draft',
         tags: uploadFormData.tags ? uploadFormData.tags.split(',').map(t => t.trim()) : ['uploaded'],
         description: uploadFormData.description || 'Newly uploaded document',
-        extractedText: uploadType === 'ocr' ? extractedText : undefined,
         signers: uploadType === 'sign' ? docSigners : undefined,
         file: selectedFile,
         previewUrl: previewUrl || undefined
@@ -271,10 +249,8 @@ export default function Documentation() {
       setIsProcessing(false)
       
       toast({
-        title: uploadType === 'sign' ? "Document Sent for Signature" : "Document Processed",
-        description: uploadType === 'sign' 
-          ? `${selectedFile.name} has been sent to ${docSigners.length} signers.`
-          : `${selectedFile.name} has been processed and text extracted via OCR.`,
+        title: "Document Sent for Signature",
+        description: `${selectedFile.name} has been sent to ${docSigners.length} signers.`,
       })
       
       // Reset form and close dialog
@@ -294,42 +270,6 @@ export default function Documentation() {
     }
   }
 
-  const handleOCRScan = async (doc: Document) => {
-    setIsProcessing(true)
-    setOcrProgress(0)
-    
-    const progressInterval = setInterval(() => {
-      setOcrProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(progressInterval)
-          return 90
-        }
-        return prev + Math.random() * 20
-      })
-    }, 200)
-
-    try {
-      const extractedText = await simulateOCR(doc.name)
-      setOcrProgress(100)
-      
-      // Update document with extracted text
-      setDocuments(documents.map(d => 
-        d.id === doc.id ? { ...d, extractedText } : d
-      ))
-      
-      setIsProcessing(false)
-      toast({
-        title: "OCR Processing Complete",
-        description: `Text successfully extracted from ${doc.name}`,
-      })
-    } catch (error) {
-      setIsProcessing(false)
-      toast({
-        title: "OCR Failed",
-        description: "There was an error extracting text from the document.",
-      })
-    }
-  }
 
   const handleViewDocument = (doc: Document) => {
     setSelectedDocument(doc)
@@ -483,17 +423,17 @@ export default function Documentation() {
           <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
             <CardContent className="p-6">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Scan className="w-6 h-6 text-primary animate-pulse" />
-                    <span className="font-medium">Processing Document with OCR...</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <FileText className="w-6 h-6 text-primary animate-pulse" />
+                      <span className="font-medium">Processing Document...</span>
+                    </div>
+                    <span className="text-sm font-medium text-primary">{Math.round(ocrProgress)}%</span>
                   </div>
-                  <span className="text-sm font-medium text-primary">{Math.round(ocrProgress)}%</span>
-                </div>
-                <Progress value={ocrProgress} className="h-3" />
-                <p className="text-sm text-muted-foreground">
-                  Extracting text content and analyzing document structure...
-                </p>
+                  <Progress value={ocrProgress} className="h-3" />
+                  <p className="text-sm text-muted-foreground">
+                    Processing document for signatures...
+                  </p>
               </div>
             </CardContent>
           </Card>
@@ -720,7 +660,7 @@ export default function Documentation() {
               {!uploadType && (
                 <div className="space-y-4">
                   <Label className="text-lg font-semibold">Select Upload Type</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <Card 
                       className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary/30"
                       onClick={() => setUploadType('sign')}
@@ -735,49 +675,21 @@ export default function Documentation() {
                         </p>
                       </CardContent>
                     </Card>
-                    
-                    <Card 
-                      className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary/30"
-                      onClick={() => setUploadType('ocr')}
-                    >
-                      <CardContent className="p-6 text-center space-y-3">
-                        <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto">
-                          <Scan className="w-8 h-8 text-green-600 dark:text-green-400" />
-                        </div>
-                        <h3 className="text-xl font-semibold">OCR Processing</h3>
-                        <p className="text-muted-foreground">
-                          Extract text from images and scanned documents
-                        </p>
-                      </CardContent>
-                    </Card>
                   </div>
                 </div>
               )}
 
               {uploadType && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        uploadType === 'sign' 
-                          ? 'bg-blue-100 dark:bg-blue-900/20' 
-                          : 'bg-green-100 dark:bg-green-900/20'
-                      }`}>
-                        {uploadType === 'sign' ? (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
                           <PenTool className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                        ) : (
-                          <Scan className="w-5 h-5 text-green-600 dark:text-green-400" />
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">
-                          {uploadType === 'sign' ? 'Document to Sign' : 'OCR Processing'}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {uploadType === 'sign' 
-                            ? 'Upload and send for signatures' 
-                            : 'Extract text from document'
-                          }
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">Document to Sign</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Upload and send for signatures
                         </p>
                       </div>
                     </div>
