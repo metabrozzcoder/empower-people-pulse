@@ -50,6 +50,16 @@ interface Document {
   description?: string
   extractedText?: string
   recipients?: string[]
+  file?: File
+  previewUrl?: string
+}
+
+interface CompanyMember {
+  id: string
+  name: string
+  email: string
+  department: string
+  role: string
 }
 
 interface Signer {
@@ -112,6 +122,16 @@ const mockDocuments: Document[] = [
 
 const categories = ['All', 'HR Policies', 'Legal', 'Facilities', 'Training', 'Finance', 'Custom']
 
+const mockCompanyMembers: CompanyMember[] = [
+  { id: '1', name: 'John Smith', email: 'john@company.com', department: 'Engineering', role: 'Senior Developer' },
+  { id: '2', name: 'Emily Davis', email: 'emily@company.com', department: 'HR', role: 'HR Manager' },
+  { id: '3', name: 'Alex Brown', email: 'alex@company.com', department: 'Legal', role: 'Legal Counsel' },
+  { id: '4', name: 'Lisa Wang', email: 'lisa@company.com', department: 'Finance', role: 'CFO' },
+  { id: '5', name: 'Sarah Wilson', email: 'sarah@company.com', department: 'HR', role: 'HR Director' },
+  { id: '6', name: 'Mike Johnson', email: 'mike@company.com', department: 'Legal', role: 'Contracts Manager' },
+  { id: '7', name: 'David Chen', email: 'david@company.com', department: 'Operations', role: 'Operations Manager' }
+]
+
 export default function Documentation() {
   const { toast } = useToast()
   const [documents, setDocuments] = useState<Document[]>(mockDocuments)
@@ -125,12 +145,16 @@ export default function Documentation() {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
   const [ocrProgress, setOcrProgress] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [uploadType, setUploadType] = useState<'sign' | 'ocr' | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [uploadFormData, setUploadFormData] = useState({
     category: '',
     description: '',
     tags: '',
     recipients: ''
   })
+  const [selectedSigners, setSelectedSigners] = useState<string[]>([])
   const [newSigners, setNewSigners] = useState([{ name: '', email: '' }])
 
   const filteredDocuments = documents.filter(doc => {
@@ -187,62 +211,84 @@ export default function Documentation() {
     })
   }
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      setIsProcessing(true)
-      setOcrProgress(0)
-      
-      // Simulate OCR processing with real progress
-      const progressInterval = setInterval(() => {
-        setOcrProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval)
-            return 90
-          }
-          return prev + Math.random() * 15
-        })
-      }, 300)
-
-      try {
-        const extractedText = await simulateOCR(file.name)
-        setOcrProgress(100)
-        
-        const newDoc: Document = {
-          id: Date.now().toString(),
-          name: file.name,
-          type: file.type.includes('pdf') ? 'pdf' : 
-                file.type.includes('word') ? 'word' : 
-                file.type.includes('image') ? 'image' : 'text',
-          category: uploadFormData.category || 'Custom',
-          size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
-          uploadedBy: 'Current User',
-          uploadDate: new Date().toISOString().split('T')[0],
-          status: 'draft',
-          tags: uploadFormData.tags ? uploadFormData.tags.split(',').map(t => t.trim()) : ['uploaded'],
-          description: uploadFormData.description || 'Newly uploaded document',
-          extractedText,
-          recipients: uploadFormData.recipients ? uploadFormData.recipients.split(',').map(r => r.trim()) : []
+  const handleFileProcessing = async () => {
+    if (!selectedFile || !uploadType) return
+    
+    setIsProcessing(true)
+    setOcrProgress(0)
+    
+    // Simulate processing with real progress
+    const progressInterval = setInterval(() => {
+      setOcrProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval)
+          return 90
         }
-        
-        setDocuments([newDoc, ...documents])
-        setIsProcessing(false)
-        
-        toast({
-          title: "Document Uploaded Successfully",
-          description: `${file.name} has been processed and text extracted via OCR.`,
-        })
-        
-        // Reset form
-        setUploadFormData({ category: '', description: '', tags: '', recipients: '' })
-        
-      } catch (error) {
-        setIsProcessing(false)
-        toast({
-          title: "Upload Failed",
-          description: "There was an error processing the document.",
-        })
+        return prev + Math.random() * 15
+      })
+    }, 300)
+
+    try {
+      let extractedText = ''
+      if (uploadType === 'ocr') {
+        extractedText = await simulateOCR(selectedFile.name)
       }
+      setOcrProgress(100)
+      
+      // Create signers array from selected company members
+      const docSigners = selectedSigners.map(signerId => {
+        const member = mockCompanyMembers.find(m => m.id === signerId)
+        return member ? {
+          id: member.id,
+          name: member.name,
+          email: member.email,
+          status: 'pending' as const
+        } : null
+      }).filter(Boolean) as Signer[]
+      
+      const newDoc: Document = {
+        id: Date.now().toString(),
+        name: selectedFile.name,
+        type: selectedFile.type.includes('pdf') ? 'pdf' : 
+              selectedFile.type.includes('word') ? 'word' : 
+              selectedFile.type.includes('image') ? 'image' : 'text',
+        category: uploadFormData.category || 'Custom',
+        size: `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB`,
+        uploadedBy: 'Current User',
+        uploadDate: new Date().toISOString().split('T')[0],
+        status: uploadType === 'sign' && docSigners.length > 0 ? 'pending_signature' : 'draft',
+        tags: uploadFormData.tags ? uploadFormData.tags.split(',').map(t => t.trim()) : ['uploaded'],
+        description: uploadFormData.description || 'Newly uploaded document',
+        extractedText: uploadType === 'ocr' ? extractedText : undefined,
+        signers: uploadType === 'sign' ? docSigners : undefined,
+        file: selectedFile,
+        previewUrl: previewUrl || undefined
+      }
+      
+      setDocuments([newDoc, ...documents])
+      setIsProcessing(false)
+      
+      toast({
+        title: uploadType === 'sign' ? "Document Sent for Signature" : "Document Processed",
+        description: uploadType === 'sign' 
+          ? `${selectedFile.name} has been sent to ${docSigners.length} signers.`
+          : `${selectedFile.name} has been processed and text extracted via OCR.`,
+      })
+      
+      // Reset form and close dialog
+      setIsUploadDialogOpen(false)
+      setUploadType(null)
+      setSelectedFile(null)
+      setPreviewUrl(null)
+      setSelectedSigners([])
+      setUploadFormData({ category: '', description: '', tags: '', recipients: '' })
+      
+    } catch (error) {
+      setIsProcessing(false)
+      toast({
+        title: "Processing Failed",
+        description: "There was an error processing the document.",
+      })
     }
   }
 
@@ -361,27 +407,11 @@ export default function Documentation() {
           <div className="flex flex-wrap justify-center gap-3 mt-6">
             <Button 
               size="lg" 
-              onClick={() => document.getElementById('file-upload')?.click()}
+              onClick={() => setIsUploadDialogOpen(true)}
               className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
             >
               <Upload className="w-5 h-5 mr-2" />
-              Quick Upload
-            </Button>
-            <input
-              id="file-upload"
-              type="file"
-              className="hidden"
-              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt"
-              onChange={handleFileUpload}
-            />
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={() => setIsUploadDialogOpen(true)}
-              className="border-primary/20 hover:bg-primary/5"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              New Document
+              Upload Document
             </Button>
           </div>
         </div>
@@ -675,98 +705,265 @@ export default function Documentation() {
 
         {/* Upload Dialog */}
         <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-2xl">Upload New Document</DialogTitle>
+              <DialogTitle className="text-2xl">Upload Document</DialogTitle>
               <DialogDescription>
-                Upload and process documents with advanced OCR technology
+                Choose how you want to process your document
               </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="file" className="text-base font-medium">Select File</Label>
-                  <Input 
-                    type="file" 
-                    id="file" 
-                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt"
-                    onChange={handleFileUpload}
-                    className="h-12"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Supports PDF, Word documents, images (PNG, JPG), and text files
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="category" className="text-base font-medium">Category</Label>
-                    <Select value={uploadFormData.category} onValueChange={(value) => 
-                      setUploadFormData(prev => ({ ...prev, category: value }))
-                    }>
-                      <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.filter(c => c !== 'All').map(category => (
-                          <SelectItem key={category} value={category}>{category}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="recipients" className="text-base font-medium">Recipients (optional)</Label>
-                    <Input 
-                      id="recipients" 
-                      placeholder="email1@company.com, email2@company.com"
-                      value={uploadFormData.recipients}
-                      onChange={(e) => setUploadFormData(prev => ({ ...prev, recipients: e.target.value }))}
-                      className="h-12"
-                    />
+              {!uploadType && (
+                <div className="space-y-4">
+                  <Label className="text-lg font-semibold">Select Upload Type</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card 
+                      className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary/30"
+                      onClick={() => setUploadType('sign')}
+                    >
+                      <CardContent className="p-6 text-center space-y-3">
+                        <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto">
+                          <PenTool className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <h3 className="text-xl font-semibold">Document to Sign</h3>
+                        <p className="text-muted-foreground">
+                          Upload a document and send it for electronic signatures
+                        </p>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card 
+                      className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary/30"
+                      onClick={() => setUploadType('ocr')}
+                    >
+                      <CardContent className="p-6 text-center space-y-3">
+                        <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto">
+                          <Scan className="w-8 h-8 text-green-600 dark:text-green-400" />
+                        </div>
+                        <h3 className="text-xl font-semibold">OCR Processing</h3>
+                        <p className="text-muted-foreground">
+                          Extract text from images and scanned documents
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
+              )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="description" className="text-base font-medium">Description</Label>
-                  <Textarea 
-                    id="description" 
-                    placeholder="Enter document description..."
-                    value={uploadFormData.description}
-                    onChange={(e) => setUploadFormData(prev => ({ ...prev, description: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
+              {uploadType && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        uploadType === 'sign' 
+                          ? 'bg-blue-100 dark:bg-blue-900/20' 
+                          : 'bg-green-100 dark:bg-green-900/20'
+                      }`}>
+                        {uploadType === 'sign' ? (
+                          <PenTool className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        ) : (
+                          <Scan className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">
+                          {uploadType === 'sign' ? 'Document to Sign' : 'OCR Processing'}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {uploadType === 'sign' 
+                            ? 'Upload and send for signatures' 
+                            : 'Extract text from document'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setUploadType(null)
+                        setSelectedFile(null)
+                        setPreviewUrl(null)
+                      }}
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Change
+                    </Button>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tags" className="text-base font-medium">Tags</Label>
-                  <Input 
-                    id="tags" 
-                    placeholder="contract, legal, 2024, important"
-                    value={uploadFormData.tags}
-                    onChange={(e) => setUploadFormData(prev => ({ ...prev, tags: e.target.value }))}
-                    className="h-12"
-                  />
-                  <p className="text-sm text-muted-foreground">Separate tags with commas</p>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* File Upload Section */}
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="upload-file" className="text-base font-medium">Select File</Label>
+                        <Input 
+                          type="file" 
+                          id="upload-file" 
+                          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              setSelectedFile(file)
+                              // Create preview URL for images
+                              if (file.type.startsWith('image/')) {
+                                setPreviewUrl(URL.createObjectURL(file))
+                              } else {
+                                setPreviewUrl(null)
+                              }
+                            }
+                          }}
+                          className="h-12"
+                        />
+                        <p className="text-sm text-muted-foreground">
+                          Supports PDF, Word documents, images (PNG, JPG), and text files
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="upload-category" className="text-base font-medium">Category</Label>
+                        <Select value={uploadFormData.category} onValueChange={(value) => 
+                          setUploadFormData(prev => ({ ...prev, category: value }))
+                        }>
+                          <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.filter(c => c !== 'All').map(category => (
+                              <SelectItem key={category} value={category}>{category}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="upload-description" className="text-base font-medium">Description</Label>
+                        <Textarea 
+                          id="upload-description" 
+                          placeholder="Enter document description..."
+                          value={uploadFormData.description}
+                          onChange={(e) => setUploadFormData(prev => ({ ...prev, description: e.target.value }))}
+                          rows={3}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="upload-tags" className="text-base font-medium">Tags</Label>
+                        <Input 
+                          id="upload-tags" 
+                          placeholder="contract, legal, 2024, important"
+                          value={uploadFormData.tags}
+                          onChange={(e) => setUploadFormData(prev => ({ ...prev, tags: e.target.value }))}
+                          className="h-12"
+                        />
+                        <p className="text-sm text-muted-foreground">Separate tags with commas</p>
+                      </div>
+
+                      {uploadType === 'sign' && (
+                        <div className="space-y-2">
+                          <Label className="text-base font-medium">Select Signers</Label>
+                          <div className="space-y-2 max-h-32 overflow-y-auto border rounded-lg p-2">
+                            {mockCompanyMembers.map((member) => (
+                              <label key={member.id} className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedSigners.includes(member.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedSigners([...selectedSigners, member.id])
+                                    } else {
+                                      setSelectedSigners(selectedSigners.filter(id => id !== member.id))
+                                    }
+                                  }}
+                                  className="rounded"
+                                />
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium">{member.name}</p>
+                                  <p className="text-xs text-muted-foreground">{member.email} • {member.department}</p>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Preview Section */}
+                    <div className="space-y-4">
+                      <Label className="text-base font-medium">Document Preview</Label>
+                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 h-80 flex items-center justify-center bg-muted/10">
+                        {selectedFile ? (
+                          <div className="text-center space-y-3">
+                            {previewUrl ? (
+                              <img 
+                                src={previewUrl} 
+                                alt="Document preview" 
+                                className="max-w-full max-h-60 object-contain rounded-lg"
+                              />
+                            ) : (
+                              <>
+                                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                                  <FileText className="w-8 h-8 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="font-medium">{selectedFile.name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {(selectedFile.size / 1024 / 1024).toFixed(1)} MB
+                                  </p>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-center space-y-2">
+                            <Upload className="w-12 h-12 text-muted-foreground/50 mx-auto" />
+                            <p className="text-muted-foreground">Select a file to see preview</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {selectedFile && uploadType === 'sign' && selectedSigners.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Selected Signers ({selectedSigners.length})</Label>
+                          <div className="space-y-1 max-h-20 overflow-y-auto">
+                            {selectedSigners.map(signerId => {
+                              const member = mockCompanyMembers.find(m => m.id === signerId)
+                              return member ? (
+                                <div key={signerId} className="flex items-center space-x-2 text-xs">
+                                  <CheckCircle className="w-3 h-3 text-green-500" />
+                                  <span>{member.name}</span>
+                                </div>
+                              ) : null
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="flex justify-end space-x-3">
-              <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
+              <Button variant="outline" onClick={() => {
+                setIsUploadDialogOpen(false)
+                setUploadType(null)
+                setSelectedFile(null)
+                setPreviewUrl(null)
+                setSelectedSigners([])
+                setUploadFormData({ category: '', description: '', tags: '', recipients: '' })
+              }}>
                 Cancel
               </Button>
-              <Button 
-                onClick={() => {
-                  document.getElementById('file')?.click()
-                  setIsUploadDialogOpen(false)
-                }}
-                className="bg-gradient-to-r from-primary to-primary/80"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Upload & Process
-              </Button>
+              {uploadType && selectedFile && (
+                <Button 
+                  onClick={() => handleFileProcessing()}
+                  className="bg-gradient-to-r from-primary to-primary/80"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploadType === 'sign' ? 'Upload & Send for Signature' : 'Upload & Process OCR'}
+                </Button>
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -827,78 +1024,247 @@ export default function Documentation() {
 
         {/* Edit Document Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Document</DialogTitle>
+              <DialogDescription>
+                Modify document details and update signers
+              </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Document Name</Label>
-                <Input 
-                  id="edit-name" 
-                  value={selectedDocument?.name || ''}
-                  onChange={(e) => {
-                    if (selectedDocument) {
-                      setSelectedDocument({ ...selectedDocument, name: e.target.value })
-                    }
-                  }}
-                />
-              </div>
+            <Tabs defaultValue="details" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="details">Document Details</TabsTrigger>
+                <TabsTrigger value="signers">Signers</TabsTrigger>
+                <TabsTrigger value="file">Replace File</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="details" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Document Name</Label>
+                  <Input 
+                    id="edit-name" 
+                    value={selectedDocument?.name || ''}
+                    onChange={(e) => {
+                      if (selectedDocument) {
+                        setSelectedDocument({ ...selectedDocument, name: e.target.value })
+                      }
+                    }}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">Description</Label>
-                <Textarea 
-                  id="edit-description" 
-                  value={selectedDocument?.description || ''}
-                  onChange={(e) => {
-                    if (selectedDocument) {
-                      setSelectedDocument({ ...selectedDocument, description: e.target.value })
-                    }
-                  }}
-                  rows={3}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Textarea 
+                    id="edit-description" 
+                    value={selectedDocument?.description || ''}
+                    onChange={(e) => {
+                      if (selectedDocument) {
+                        setSelectedDocument({ ...selectedDocument, description: e.target.value })
+                      }
+                    }}
+                    rows={3}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-tags">Tags</Label>
-                <Input 
-                  id="edit-tags" 
-                  value={selectedDocument?.tags.join(', ') || ''}
-                  onChange={(e) => {
-                    if (selectedDocument) {
-                      setSelectedDocument({ 
-                        ...selectedDocument, 
-                        tags: e.target.value.split(',').map(t => t.trim()).filter(t => t)
-                      })
-                    }
-                  }}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-tags">Tags</Label>
+                  <Input 
+                    id="edit-tags" 
+                    value={selectedDocument?.tags.join(', ') || ''}
+                    onChange={(e) => {
+                      if (selectedDocument) {
+                        setSelectedDocument({ 
+                          ...selectedDocument, 
+                          tags: e.target.value.split(',').map(t => t.trim()).filter(t => t)
+                        })
+                      }
+                    }}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-category">Category</Label>
-                <Select 
-                  value={selectedDocument?.category || ''} 
-                  onValueChange={(value) => {
-                    if (selectedDocument) {
-                      setSelectedDocument({ ...selectedDocument, category: value })
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.filter(c => c !== 'All').map(category => (
-                      <SelectItem key={category} value={category}>{category}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-category">Category</Label>
+                  <Select 
+                    value={selectedDocument?.category || ''} 
+                    onValueChange={(value) => {
+                      if (selectedDocument) {
+                        setSelectedDocument({ ...selectedDocument, category: value })
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.filter(c => c !== 'All').map(category => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="flex justify-end space-x-3">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-status">Status</Label>
+                  <Select 
+                    value={selectedDocument?.status || ''} 
+                    onValueChange={(value) => {
+                      if (selectedDocument) {
+                        setSelectedDocument({ ...selectedDocument, status: value as Document['status'] })
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="pending_signature">Pending Signature</SelectItem>
+                      <SelectItem value="signed">Signed</SelectItem>
+                      <SelectItem value="declined">Declined</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="signers" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-medium">Current Signers</Label>
+                    <Badge variant="outline">
+                      {selectedDocument?.signers?.length || 0} signers
+                    </Badge>
+                  </div>
+                  
+                  {selectedDocument?.signers && selectedDocument.signers.length > 0 && (
+                    <div className="space-y-2 p-4 border rounded-lg">
+                      {selectedDocument.signers.map((signer, index) => {
+                        const StatusIcon = getSignerStatusIcon(signer.status)
+                        return (
+                          <div key={signer.id} className="flex items-center justify-between p-2 border rounded">
+                            <div className="flex items-center space-x-3">
+                              <StatusIcon className="w-5 h-5" />
+                              <div>
+                                <p className="font-medium">{signer.name}</p>
+                                <p className="text-sm text-muted-foreground">{signer.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge className={getStatusColor(signer.status as any)}>
+                                {signer.status}
+                              </Badge>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  if (selectedDocument) {
+                                    setSelectedDocument({
+                                      ...selectedDocument,
+                                      signers: selectedDocument.signers?.filter(s => s.id !== signer.id)
+                                    })
+                                  }
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium">Add New Signers</Label>
+                    <div className="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-3">
+                      {mockCompanyMembers.map((member) => {
+                        const isAlreadySigner = selectedDocument?.signers?.some(s => s.email === member.email)
+                        return (
+                          <label key={member.id} className={`flex items-center space-x-2 cursor-pointer p-2 rounded ${isAlreadySigner ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/50'}`}>
+                            <input
+                              type="checkbox"
+                              disabled={isAlreadySigner}
+                              onChange={(e) => {
+                                if (e.target.checked && selectedDocument && !isAlreadySigner) {
+                                  const newSigner: Signer = {
+                                    id: member.id,
+                                    name: member.name,
+                                    email: member.email,
+                                    status: 'pending'
+                                  }
+                                  setSelectedDocument({
+                                    ...selectedDocument,
+                                    signers: [...(selectedDocument.signers || []), newSigner]
+                                  })
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{member.name}</p>
+                              <p className="text-xs text-muted-foreground">{member.email} • {member.department}</p>
+                            </div>
+                            {isAlreadySigner && (
+                              <Badge variant="secondary" className="text-xs">Already added</Badge>
+                            )}
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="file" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="replace-file">Replace Document File</Label>
+                  <Input 
+                    type="file" 
+                    id="replace-file" 
+                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file && selectedDocument) {
+                        setSelectedDocument({
+                          ...selectedDocument,
+                          name: file.name,
+                          type: file.type.includes('pdf') ? 'pdf' : 
+                                file.type.includes('word') ? 'word' : 
+                                file.type.includes('image') ? 'image' : 'text',
+                          size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+                          file: file,
+                          previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
+                        })
+                        toast({
+                          title: "File Updated",
+                          description: `Document file has been replaced with ${file.name}`,
+                        })
+                      }
+                    }}
+                    className="h-12"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Upload a new file to replace the current document
+                  </p>
+                </div>
+                
+                {selectedDocument?.previewUrl && (
+                  <div className="space-y-2">
+                    <Label>Current File Preview</Label>
+                    <div className="border rounded-lg p-4">
+                      <img 
+                        src={selectedDocument.previewUrl} 
+                        alt="Document preview" 
+                        className="max-w-full max-h-40 object-contain rounded"
+                      />
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t">
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                 Cancel
               </Button>
