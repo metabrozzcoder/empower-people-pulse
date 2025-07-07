@@ -6,6 +6,10 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Clock, Users, Plus, MoreHorizontal, MapPin } from "lucide-react"
 import { Shift } from "@/types/hrms"
 import { useToast } from "@/hooks/use-toast"
@@ -13,6 +17,9 @@ import { useToast } from "@/hooks/use-toast"
 const Scheduling = () => {
   const { toast } = useToast()
   const [selectedWeek, setSelectedWeek] = useState("current")
+  const [isAddShiftDialogOpen, setIsAddShiftDialogOpen] = useState(false)
+  const [isViewScheduleDialogOpen, setIsViewScheduleDialogOpen] = useState(false)
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null)
 
   const [shifts, setShifts] = useState<Shift[]>([
     {
@@ -126,23 +133,7 @@ const Scheduling = () => {
                       <SelectItem value="prev">Last Week</SelectItem>
                     </SelectContent>
                   </Select>
-                   <Button onClick={() => {
-                     const newShift: Shift = {
-                       id: Date.now().toString(),
-                       employeeId: "new",
-                       date: new Date().toISOString().split('T')[0],
-                       startTime: "09:00",
-                       endTime: "17:00",
-                       role: "New Role",
-                       location: "Office",
-                       status: "Scheduled"
-                     }
-                     setShifts([...shifts, newShift])
-                     toast({
-                       title: "Shift Added",
-                       description: "New shift has been created successfully.",
-                     })
-                   }}>
+                   <Button onClick={() => setIsAddShiftDialogOpen(true)}>
                      <Plus className="h-4 w-4 mr-2" />
                      Add Shift
                    </Button>
@@ -313,10 +304,8 @@ const Scheduling = () => {
                         </div>
                       ))}
                        <Button className="w-full" variant="outline" size="sm" onClick={() => {
-                         toast({
-                           title: "Schedule Opened",
-                           description: `Viewing full schedule for ${employee.name}`,
-                         })
+                         setSelectedEmployee(employee)
+                         setIsViewScheduleDialogOpen(true)
                        }}>
                          View Full Schedule
                        </Button>
@@ -328,6 +317,157 @@ const Scheduling = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Add Shift Dialog */}
+      <Dialog open={isAddShiftDialogOpen} onOpenChange={setIsAddShiftDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Shift</DialogTitle>
+            <DialogDescription>
+              Create a new shift assignment with employee, schedule, and location details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="employee">Employee</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sarah">Sarah Chen</SelectItem>
+                  <SelectItem value="john">John Smith</SelectItem>
+                  <SelectItem value="lisa">Lisa Wang</SelectItem>
+                  <SelectItem value="mike">Mike Johnson</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="date">Date</Label>
+              <Input id="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="startTime">Start Time</Label>
+              <Input id="startTime" type="time" defaultValue="09:00" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="endTime">End Time</Label>
+              <Input id="endTime" type="time" defaultValue="17:00" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role/Position</Label>
+              <Input id="role" placeholder="Enter role or position" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="studio-a">Studio A</SelectItem>
+                  <SelectItem value="studio-b">Studio B</SelectItem>
+                  <SelectItem value="edit-suite-1">Edit Suite 1</SelectItem>
+                  <SelectItem value="edit-suite-2">Edit Suite 2</SelectItem>
+                  <SelectItem value="office">Office</SelectItem>
+                  <SelectItem value="remote">Remote</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea id="notes" placeholder="Additional notes about this shift" />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsAddShiftDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              const newShift: Shift = {
+                id: Date.now().toString(),
+                employeeId: "sarah",
+                date: new Date().toISOString().split('T')[0],
+                startTime: "09:00",
+                endTime: "17:00",
+                role: "New Assignment",
+                location: "Office",
+                status: "Scheduled"
+              }
+              setShifts([...shifts, newShift])
+              setIsAddShiftDialogOpen(false)
+              toast({
+                title: "Shift Created",
+                description: "New shift has been successfully created.",
+              })
+            }}>
+              Create Shift
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Employee Schedule Dialog */}
+      <Dialog open={isViewScheduleDialogOpen} onOpenChange={setIsViewScheduleDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Full Schedule - {selectedEmployee?.name}</DialogTitle>
+            <DialogDescription>
+              Complete schedule overview for {selectedEmployee?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-muted rounded-lg">
+                <div className="text-2xl font-bold">8</div>
+                <div className="text-sm text-muted-foreground">Total Shifts This Week</div>
+              </div>
+              <div className="text-center p-4 bg-muted rounded-lg">
+                <div className="text-2xl font-bold">40h</div>
+                <div className="text-sm text-muted-foreground">Total Hours</div>
+              </div>
+              <div className="text-center p-4 bg-muted rounded-lg">
+                <div className="text-2xl font-bold">3</div>
+                <div className="text-sm text-muted-foreground">Different Locations</div>
+              </div>
+            </div>
+            
+            <div className="border rounded-lg">
+              <div className="p-4 border-b">
+                <h3 className="font-semibold">Weekly Schedule</h3>
+              </div>
+              <div className="p-4 space-y-3">
+                {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((day, index) => (
+                  <div key={day} className="flex justify-between items-center p-3 border rounded">
+                    <div>
+                      <div className="font-medium">{day}</div>
+                      <div className="text-sm text-muted-foreground">Jan {15 + index}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm">9:00 AM - 5:00 PM</div>
+                      <div className="text-xs text-muted-foreground">Studio A</div>
+                    </div>
+                    <div>
+                      <Badge variant="outline">8 hours</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsViewScheduleDialogOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setIsViewScheduleDialogOpen(false)
+              setIsAddShiftDialogOpen(true)
+            }}>
+              Add New Shift
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

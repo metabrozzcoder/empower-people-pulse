@@ -34,9 +34,11 @@ interface ProjectGridProps {
   onProjectUpdate: (project: Project) => void
   onProjectDelete: (projectId: string) => void
   onProjectCreate: () => void
+  onProjectEdit?: (project: Project) => void
+  onProjectView?: (project: Project) => void
 }
 
-export function ProjectGrid({ projects, onProjectUpdate, onProjectDelete, onProjectCreate }: ProjectGridProps) {
+export function ProjectGrid({ projects, onProjectUpdate, onProjectDelete, onProjectCreate, onProjectEdit, onProjectView }: ProjectGridProps) {
   const { toast } = useToast()
 
   const getStatusColor = (status: Project['status']) => {
@@ -72,16 +74,24 @@ export function ProjectGrid({ projects, onProjectUpdate, onProjectDelete, onProj
   const handleProjectAction = (action: string, project: Project) => {
     switch (action) {
       case 'edit':
-        toast({
-          title: "Edit Project",
-          description: `Opening edit dialog for ${project.title}`,
-        })
+        if (onProjectEdit) {
+          onProjectEdit(project)
+        } else {
+          toast({
+            title: "Edit Project",
+            description: `Opening edit dialog for ${project.title}`,
+          })
+        }
         break
       case 'view':
-        toast({
-          title: "View Project",
-          description: `Opening detailed view for ${project.title}`,
-        })
+        if (onProjectView) {
+          onProjectView(project)
+        } else {
+          toast({
+            title: "View Project",
+            description: `Opening detailed view for ${project.title}`,
+          })
+        }
         break
       case 'settings':
         toast({
@@ -228,7 +238,13 @@ export function ProjectGrid({ projects, onProjectUpdate, onProjectDelete, onProj
               </div>
 
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => {
+                  if (project.status === 'In Progress') {
+                    handleStatusChange(project, 'On Hold')
+                  } else {
+                    handleStatusChange(project, 'In Progress')
+                  }
+                }}>
                   {project.status === 'In Progress' ? (
                     <>
                       <Pause className="w-4 h-4 mr-1" />
