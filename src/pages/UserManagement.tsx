@@ -102,6 +102,17 @@ export default function UserManagement() {
   const [selectedRole, setSelectedRole] = useState<string>('all')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [formData, setFormData] = useState({
+    name: '',
+    surname: '',
+    email: '',
+    phone: '',
+    role: '',
+    organization: '',
+    department: '',
+    linkedEmployee: ''
+  })
+  const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '' })
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,15 +139,40 @@ export default function UserManagement() {
     }
   }
 
-  const generateCredentials = (name: string) => {
-    const username = name.toLowerCase().replace(/\s+/g, '.') + Math.floor(Math.random() * 1000)
-    const password = Math.random().toString(36).slice(-8)
+  const generateCredentials = (name: string, surname: string) => {
+    if (!name || !surname) return { username: '', password: '' }
+    const username = `${name.toLowerCase()}.${surname.toLowerCase()}${Math.floor(Math.random() * 1000)}`
+    const password = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 100)
     return { username, password }
   }
 
   const handleAddUser = () => {
     setSelectedUser(null)
+    setFormData({
+      name: '',
+      surname: '',
+      email: '',
+      phone: '',
+      role: '',
+      organization: '',
+      department: '',
+      linkedEmployee: ''
+    })
+    setGeneratedCredentials({ username: '', password: '' })
     setIsDialogOpen(true)
+  }
+
+  const handleFormChange = (field: string, value: string) => {
+    const newFormData = { ...formData, [field]: value }
+    setFormData(newFormData)
+    
+    // Auto-generate credentials when name and surname are filled
+    if (field === 'name' || field === 'surname') {
+      if (newFormData.name && newFormData.surname) {
+        const credentials = generateCredentials(newFormData.name, newFormData.surname)
+        setGeneratedCredentials(credentials)
+      }
+    }
   }
 
   const handleEditUser = (user: User) => {
@@ -330,27 +366,55 @@ export default function UserManagement() {
             <TabsContent value="general" className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" placeholder="Enter full name" />
+                  <Label htmlFor="name">First Name</Label>
+                  <Input 
+                    id="name" 
+                    placeholder="Enter first name" 
+                    value={formData.name}
+                    onChange={(e) => handleFormChange('name', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="surname">Surname</Label>
+                  <Input 
+                    id="surname" 
+                    placeholder="Enter surname" 
+                    value={formData.surname}
+                    onChange={(e) => handleFormChange('surname', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="Enter email address" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="Enter email address" 
+                    value={formData.email}
+                    onChange={(e) => handleFormChange('email', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" placeholder="Enter phone number" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select>
+                  <Input 
+                    id="phone" 
+                    placeholder="Enter phone number" 
+                    value={formData.phone}
+                    onChange={(e) => handleFormChange('phone', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select 
+                    value={formData.role}
+                    onValueChange={(value) => handleFormChange('role', value)}
+                  >
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="hr">HR</SelectItem>
-                    <SelectItem value="guest">Guest</SelectItem>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                    <SelectItem value="HR">HR</SelectItem>
+                    <SelectItem value="Guest">Guest</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -361,40 +425,46 @@ export default function UserManagement() {
                   <div>
                     <Label>Username</Label>
                     <div className="font-mono bg-background p-2 rounded border">
-                      {selectedUser?.username || 'john.smith123'}
+                      {generatedCredentials.username || 'Enter name and surname to generate'}
                     </div>
                   </div>
                   <div>
                     <Label>Password</Label>
                     <div className="font-mono bg-background p-2 rounded border">
-                      {selectedUser?.password || 'abc123xyz'}
+                      {generatedCredentials.password || 'Enter name and surname to generate'}
                     </div>
                   </div>
                 </div>
               </div>
                 <div className="space-y-2">
                   <Label htmlFor="organization">Organization</Label>
-                  <Select>
+                  <Select
+                    value={formData.organization}
+                    onValueChange={(value) => handleFormChange('organization', value)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select organization" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">MediaTech Solutions</SelectItem>
-                      <SelectItem value="2">Creative Studios</SelectItem>
+                      <SelectItem value="MediaTech Solutions">MediaTech Solutions</SelectItem>
+                      <SelectItem value="Creative Studios">Creative Studios</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="department">Department</Label>
-                  <Select>
+                  <Select
+                    value={formData.department}
+                    onValueChange={(value) => handleFormChange('department', value)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="engineering">Engineering</SelectItem>
-                      <SelectItem value="design">Design</SelectItem>
-                      <SelectItem value="hr">HR</SelectItem>
-                      <SelectItem value="marketing">Marketing</SelectItem>
+                      <SelectItem value="Engineering">Engineering</SelectItem>
+                      <SelectItem value="Design">Design</SelectItem>
+                      <SelectItem value="HR">HR</SelectItem>
+                      <SelectItem value="Marketing">Marketing</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -455,20 +525,25 @@ export default function UserManagement() {
                   ))}
                 </div>
                 
-                <div className="space-y-2 mt-6">
-                  <Label>Linked Employee (Required for Guest role)</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select linked employee" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="emp1">Sarah Wilson</SelectItem>
-                      <SelectItem value="emp2">John Smith</SelectItem>
-                      <SelectItem value="emp3">Emily Davis</SelectItem>
-                      <SelectItem value="emp4">Michael Johnson</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {formData.role === 'Guest' && (
+                  <div className="space-y-2 mt-6">
+                    <Label>Linked Employee (Required for Guest role)</Label>
+                    <Select
+                      value={formData.linkedEmployee}
+                      onValueChange={(value) => handleFormChange('linkedEmployee', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select linked employee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
+                        <SelectItem value="John Smith">John Smith</SelectItem>
+                        <SelectItem value="Emily Davis">Emily Davis</SelectItem>
+                        <SelectItem value="Michael Johnson">Michael Johnson</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>

@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
 import { AppSidebar } from "@/components/AppSidebar"
 import Index from "./pages/Index"
 import Employees from "./pages/Employees"
@@ -44,6 +45,16 @@ const App = () => (
                 <div className="flex h-14 items-center px-4 lg:px-6">
                   <SidebarTrigger className="mr-2" />
                   <div className="flex-1" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      localStorage.removeItem('user')
+                      window.location.href = '/login'
+                    }}
+                  >
+                    Logout
+                  </Button>
                 </div>
               </header>
               <main className="flex-1 p-4 lg:p-6">
