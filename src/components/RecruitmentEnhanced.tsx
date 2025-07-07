@@ -141,6 +141,11 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
   const [filterStatus, setFilterStatus] = useState('all')
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
   const [isInterviewDialogOpen, setIsInterviewDialogOpen] = useState(false)
+  const [isAddCandidateDialogOpen, setIsAddCandidateDialogOpen] = useState(false)
+  const [isViewCandidateDialogOpen, setIsViewCandidateDialogOpen] = useState(false)
+  const [isEditCandidateDialogOpen, setIsEditCandidateDialogOpen] = useState(false)
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false)
+  const [isAddJobDialogOpen, setIsAddJobDialogOpen] = useState(false)
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-600'
@@ -258,7 +263,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                     <SelectItem value="Rejected">Rejected</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button>
+                <Button onClick={() => setIsAddCandidateDialogOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Candidate
                 </Button>
@@ -339,13 +344,34 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                             Shortlist
                           </Button>
                           <div className="flex gap-1">
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedCandidate(candidate)
+                                setIsViewCandidateDialogOpen(true)
+                              }}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedCandidate(candidate)
+                                setIsMessageDialogOpen(true)
+                              }}
+                            >
                               <MessageSquare className="w-4 h-4" />
                             </Button>
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedCandidate(candidate)
+                                setIsEditCandidateDialogOpen(true)
+                              }}
+                            >
                               <Edit className="w-4 h-4" />
                             </Button>
                           </div>
@@ -367,7 +393,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                   <CardTitle>Job Postings Management</CardTitle>
                   <CardDescription>Create and manage job openings</CardDescription>
                 </div>
-                <Button>
+                <Button onClick={() => setIsAddJobDialogOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Post New Job
                 </Button>
@@ -529,6 +555,279 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                 }
               }}>
                 Schedule Interview
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Candidate Dialog */}
+      <Dialog open={isAddCandidateDialogOpen} onOpenChange={setIsAddCandidateDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Candidate</DialogTitle>
+            <DialogDescription>Add a new candidate to the recruitment system</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="candidate-name">Full Name</Label>
+              <Input id="candidate-name" placeholder="Enter candidate name" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="candidate-email">Email</Label>
+              <Input id="candidate-email" type="email" placeholder="Enter email address" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="candidate-phone">Phone</Label>
+              <Input id="candidate-phone" placeholder="Enter phone number" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="candidate-position">Position</Label>
+              <Input id="candidate-position" placeholder="Enter position applied for" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="candidate-skills">Skills</Label>
+              <Input id="candidate-skills" placeholder="Enter skills (comma separated)" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="candidate-experience">Experience</Label>
+              <Input id="candidate-experience" placeholder="Enter years of experience" />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsAddCandidateDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => {
+                toast({
+                  title: "Candidate Added",
+                  description: "New candidate has been added successfully",
+                })
+                setIsAddCandidateDialogOpen(false)
+              }}>
+                Add Candidate
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Candidate Dialog */}
+      <Dialog open={isViewCandidateDialogOpen} onOpenChange={setIsViewCandidateDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Candidate Details</DialogTitle>
+            <DialogDescription>View complete candidate profile</DialogDescription>
+          </DialogHeader>
+          {selectedCandidate && (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <Avatar className="w-20 h-20">
+                  <AvatarImage src={selectedCandidate.avatar} />
+                  <AvatarFallback>{selectedCandidate.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-semibold text-lg">{selectedCandidate.name}</h3>
+                  <p className="text-muted-foreground">{selectedCandidate.position}</p>
+                  <Badge className={getStatusColor(selectedCandidate.status)}>{selectedCandidate.status}</Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="font-medium">Email</Label>
+                  <p>{selectedCandidate.email}</p>
+                </div>
+                <div>
+                  <Label className="font-medium">Phone</Label>
+                  <p>{selectedCandidate.phone}</p>
+                </div>
+                <div>
+                  <Label className="font-medium">Experience</Label>
+                  <p>{selectedCandidate.experience}</p>
+                </div>
+                <div>
+                  <Label className="font-medium">AI Score</Label>
+                  <p className={getScoreColor(selectedCandidate.aiScore)}>{selectedCandidate.aiScore}%</p>
+                </div>
+              </div>
+              <div>
+                <Label className="font-medium">Skills</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedCandidate.skills.map((skill, index) => (
+                    <Badge key={index} variant="secondary">{skill}</Badge>
+                  ))}
+                </div>
+              </div>
+              {selectedCandidate.notes && (
+                <div>
+                  <Label className="font-medium">Notes</Label>
+                  <p className="text-sm mt-1">{selectedCandidate.notes}</p>
+                </div>
+              )}
+              <div className="flex justify-end">
+                <Button onClick={() => setIsViewCandidateDialogOpen(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Candidate Dialog */}
+      <Dialog open={isEditCandidateDialogOpen} onOpenChange={setIsEditCandidateDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Candidate</DialogTitle>
+            <DialogDescription>Update candidate information</DialogDescription>
+          </DialogHeader>
+          {selectedCandidate && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Full Name</Label>
+                <Input id="edit-name" defaultValue={selectedCandidate.name} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input id="edit-email" type="email" defaultValue={selectedCandidate.email} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone</Label>
+                <Input id="edit-phone" defaultValue={selectedCandidate.phone} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-position">Position</Label>
+                <Input id="edit-position" defaultValue={selectedCandidate.position} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-status">Status</Label>
+                <Select defaultValue={selectedCandidate.status}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Applied">Applied</SelectItem>
+                    <SelectItem value="Shortlisted">Shortlisted</SelectItem>
+                    <SelectItem value="Interview Scheduled">Interview Scheduled</SelectItem>
+                    <SelectItem value="Interview Completed">Interview Completed</SelectItem>
+                    <SelectItem value="Offered">Offered</SelectItem>
+                    <SelectItem value="Hired">Hired</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-notes">Notes</Label>
+                <Textarea id="edit-notes" defaultValue={selectedCandidate.notes} />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsEditCandidateDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  toast({
+                    title: "Candidate Updated",
+                    description: `${selectedCandidate.name} has been updated successfully`,
+                  })
+                  setIsEditCandidateDialogOpen(false)
+                }}>
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Message Candidate Dialog */}
+      <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Message</DialogTitle>
+            <DialogDescription>Send a message to the candidate</DialogDescription>
+          </DialogHeader>
+          {selectedCandidate && (
+            <div className="space-y-4">
+              <div>
+                <Label>To</Label>
+                <p className="font-medium">{selectedCandidate.name} ({selectedCandidate.email})</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="message-subject">Subject</Label>
+                <Input id="message-subject" placeholder="Enter message subject" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="message-body">Message</Label>
+                <Textarea id="message-body" placeholder="Enter your message..." rows={5} />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsMessageDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => {
+                  toast({
+                    title: "Message Sent",
+                    description: `Message sent to ${selectedCandidate.name}`,
+                  })
+                  setIsMessageDialogOpen(false)
+                }}>
+                  Send Message
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Job Dialog */}
+      <Dialog open={isAddJobDialogOpen} onOpenChange={setIsAddJobDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Post New Job</DialogTitle>
+            <DialogDescription>Create a new job posting</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="job-title">Job Title</Label>
+              <Input id="job-title" placeholder="Enter job title" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="job-department">Department</Label>
+              <Input id="job-department" placeholder="Enter department" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="job-type">Job Type</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select job type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Full-time">Full-time</SelectItem>
+                  <SelectItem value="Part-time">Part-time</SelectItem>
+                  <SelectItem value="Contract">Contract</SelectItem>
+                  <SelectItem value="Internship">Internship</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="job-salary">Salary Range</Label>
+              <Input id="job-salary" placeholder="Enter salary range" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="job-requirements">Requirements</Label>
+              <Textarea id="job-requirements" placeholder="Enter job requirements..." />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsAddJobDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => {
+                toast({
+                  title: "Job Posted",
+                  description: "New job has been posted successfully",
+                })
+                setIsAddJobDialogOpen(false)
+              }}>
+                Post Job
               </Button>
             </div>
           </div>
