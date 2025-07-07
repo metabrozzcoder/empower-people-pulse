@@ -4,6 +4,9 @@ import { Search, Filter, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { EmployeeCard } from "@/components/EmployeeCard"
 import { mockEmployees } from "@/data/mockEmployees"
 import { useToast } from "@/hooks/use-toast"
@@ -13,6 +16,7 @@ export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 
   const departments = useMemo(() => {
     const depts = Array.from(new Set(mockEmployees.map(emp => emp.department)))
@@ -42,12 +46,7 @@ export default function Employees() {
             Manage your team of {mockEmployees.length} employees
           </p>
         </div>
-        <Button className="mt-4 sm:mt-0" onClick={() => {
-          toast({
-            title: "Employee Form",
-            description: "Add employee form would open here.",
-          })
-        }}>
+        <Button className="mt-4 sm:mt-0" onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Employee
         </Button>
@@ -112,6 +111,96 @@ export default function Employees() {
           <p className="text-muted-foreground">No employees found matching your criteria.</p>
         </div>
       )}
+
+      {/* Add Employee Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Employee</DialogTitle>
+            <DialogDescription>
+              Create a new employee profile with personal and professional details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input id="firstName" placeholder="Enter first name" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input id="lastName" placeholder="Enter last name" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" placeholder="Enter email address" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" placeholder="Enter phone number" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="position">Position</Label>
+              <Input id="position" placeholder="Enter job position" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map(dept => (
+                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="salary">Salary</Label>
+              <Input id="salary" type="number" placeholder="Enter salary" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Start Date</Label>
+              <Input id="startDate" type="date" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input id="location" placeholder="Enter work location" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="manager">Manager</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select manager" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="john-doe">John Doe</SelectItem>
+                  <SelectItem value="jane-smith">Jane Smith</SelectItem>
+                  <SelectItem value="mike-johnson">Mike Johnson</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea id="notes" placeholder="Additional notes about the employee" />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              setIsAddDialogOpen(false)
+              toast({
+                title: "Employee Added",
+                description: "New employee has been successfully created.",
+              })
+            }}>
+              Create Employee
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
