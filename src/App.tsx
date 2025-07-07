@@ -75,7 +75,7 @@ const App = () => (
                   {/* Placeholder routes for future implementation */}
                   <Route path="/payroll" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Payroll</h2><p className="text-muted-foreground">Payroll management coming soon...</p></div>} />
                   <Route path="/communications" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Communications</h2><p className="text-muted-foreground">Internal communications coming soon...</p></div>} />
-                  <Route path="/reports" element={<Analytics />} />
+                  
                   <Route path="/automation" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Automation</h2><p className="text-muted-foreground">Workflow automation coming soon...</p></div>} />
                   
                   <Route path="*" element={<NotFound />} />

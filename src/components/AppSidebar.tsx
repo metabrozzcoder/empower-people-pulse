@@ -97,7 +97,6 @@ const sidebarSections = [
       { title: "User Management", url: "/user-management", icon: UserCheck },
       { title: "Access Control", url: "/access-control", icon: Shield },
       { title: "Analytics", url: "/analytics", icon: BarChart3 },
-      { title: "Reports", url: "/reports", icon: FileText },
     ]
   },
   {
