@@ -22,6 +22,12 @@ import {
   Archive,
   Trash2
 } from 'lucide-react'
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { 
@@ -202,9 +208,61 @@ export default function Chat() {
   }
 
   const handleUserAction = (action: string) => {
+    switch (action) {
+      case 'User Info':
+        setIsUserInfoOpen(true)
+        break
+      case 'Add to Group':
+        setIsGroupDialogOpen(true)
+        break
+      case 'Chat Settings':
+        setIsChatSettingsOpen(true)
+        break
+      case 'Archive Chat':
+        handleArchiveChat()
+        break
+      case 'Delete Chat':
+        handleDeleteChat()
+        break
+      default:
+        toast({
+          title: action,
+          description: `${action} action performed for ${selectedUser?.name}.`,
+        })
+    }
+  }
+
+  const [isUserInfoOpen, setIsUserInfoOpen] = useState(false)
+  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false)
+  const [isChatSettingsOpen, setIsChatSettingsOpen] = useState(false)
+
+  const handleArchiveChat = () => {
     toast({
-      title: action,
-      description: `${action} action performed for ${selectedUser?.name}.`,
+      title: "Chat Archived",
+      description: `Chat with ${selectedUser?.name} has been archived.`,
+    })
+  }
+
+  const handleDeleteChat = () => {
+    toast({
+      title: "Chat Deleted", 
+      description: `Chat with ${selectedUser?.name} has been deleted.`,
+      variant: "destructive"
+    })
+  }
+
+  const handleEmojiSelect = () => {
+    setMessage(prev => prev + "😊")
+    toast({
+      title: "Emoji Added",
+      description: "Emoji has been added to your message.",
+    })
+  }
+
+  const handleVoiceRecord = () => {
+    toast({
+      title: "Voice Recording",
+      description: "Voice recording feature activated.",
     })
   }
 
@@ -401,10 +459,10 @@ export default function Chat() {
                     className="pr-20"
                   />
                   <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={handleEmojiSelect}>
                       <Smile className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={handleVoiceRecord}>
                       <Mic className="w-4 h-4" />
                     </Button>
                   </div>
@@ -427,6 +485,79 @@ export default function Chat() {
           </Card>
         )}
       </div>
+
+      {/* User Info Dialog */}
+      {selectedUser && (
+        <Dialog open={isUserInfoOpen} onOpenChange={setIsUserInfoOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>User Information</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <Avatar className="w-16 h-16">
+                  <AvatarImage src={selectedUser.avatar} />
+                  <AvatarFallback>
+                    {selectedUser.name.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-semibold text-lg">{selectedUser.name}</h3>
+                  <p className="text-muted-foreground">{selectedUser.status}</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p><strong>Status:</strong> {selectedUser.status}</p>
+                <p><strong>Last Seen:</strong> {selectedUser.lastSeen}</p>
+                <p><strong>Unread Messages:</strong> {selectedUser.unreadCount}</p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Group Dialog */}
+      <Dialog open={isGroupDialogOpen} onOpenChange={setIsGroupDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add to Group</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>Select a group to add {selectedUser?.name} to:</p>
+            <div className="space-y-2">
+              {['HR Team', 'Project Alpha', 'Management'].map((group) => (
+                <Button key={group} variant="outline" className="w-full justify-start">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  {group}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Chat Settings Dialog */}
+      <Dialog open={isChatSettingsOpen} onOpenChange={setIsChatSettingsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Chat Settings</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label>Notifications</label>
+              <input type="checkbox" defaultChecked />
+            </div>
+            <div className="flex items-center justify-between">
+              <label>Sound</label>
+              <input type="checkbox" defaultChecked />
+            </div>
+            <div className="flex items-center justify-between">
+              <label>Show Read Receipts</label>
+              <input type="checkbox" defaultChecked />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

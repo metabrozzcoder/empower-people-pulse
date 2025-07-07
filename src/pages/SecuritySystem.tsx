@@ -14,7 +14,8 @@ import {
   Clock,
   Users,
   Settings,
-  Activity
+  Activity,
+  UserPlus
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
@@ -414,17 +415,20 @@ export default function SecuritySystem() {
         <TabsContent value="biometric" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Biometric Access Control</CardTitle>
-              <CardDescription>Manage biometric authentication and enrollment</CardDescription>
+              <CardTitle>Biometric Access Control - Hikvision Integration</CardTitle>
+              <CardDescription>Manage biometric authentication and enrollment with Hikvision system</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                   <CardContent className="p-6 text-center">
                     <Fingerprint className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-                    <h3 className="font-medium mb-2">Fingerprint</h3>
+                    <h3 className="font-medium mb-2">Fingerprint Scanner</h3>
                     <p className="text-2xl font-bold">156</p>
                     <p className="text-sm text-muted-foreground">Enrolled Users</p>
+                    <Button className="mt-3" size="sm">
+                      Enroll New
+                    </Button>
                   </CardContent>
                 </Card>
                 <Card>
@@ -433,14 +437,73 @@ export default function SecuritySystem() {
                     <h3 className="font-medium mb-2">Facial Recognition</h3>
                     <p className="text-2xl font-bold">89</p>
                     <p className="text-sm text-muted-foreground">Enrolled Users</p>
+                    <Button className="mt-3" size="sm">
+                      Enroll New
+                    </Button>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-6 text-center">
                     <Shield className="w-12 h-12 text-purple-500 mx-auto mb-4" />
-                    <h3 className="font-medium mb-2">Multi-Factor</h3>
+                    <h3 className="font-medium mb-2">Card + Biometric</h3>
                     <p className="text-2xl font-bold">45</p>
-                    <p className="text-sm text-muted-foreground">Active Users</p>
+                    <p className="text-sm text-muted-foreground">Multi-Factor Users</p>
+                    <Button className="mt-3" size="sm">
+                      Configure
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Hikvision System Status</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span>Main Controller</span>
+                      <Badge className="bg-green-100 text-green-800">Online</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Entrance Scanner</span>
+                      <Badge className="bg-green-100 text-green-800">Active</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Exit Scanner</span>
+                      <Badge className="bg-green-100 text-green-800">Active</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>HR Department Scanner</span>
+                      <Badge className="bg-yellow-100 text-yellow-800">Maintenance</Badge>
+                    </div>
+                    <Button className="w-full mt-4">
+                      Sync with Hikvision System
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Quick Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button className="w-full" variant="outline">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Bulk User Enrollment
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      <Camera className="w-4 h-4 mr-2" />
+                      Test Face Recognition
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      <Fingerprint className="w-4 h-4 mr-2" />
+                      Test Fingerprint Scanner
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Configure Access Rules
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
@@ -457,15 +520,22 @@ export default function SecuritySystem() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">Facial Recognition Backup</p>
-                      <p className="text-sm text-muted-foreground">Use facial recognition when fingerprint fails</p>
+                      <p className="font-medium">Multi-Factor Authentication</p>
+                      <p className="text-sm text-muted-foreground">Card + Biometric for sensitive areas</p>
                     </div>
                     <Switch defaultChecked />
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">Anti-Spoofing Protection</p>
-                      <p className="text-sm text-muted-foreground">Advanced liveness detection</p>
+                      <p className="font-medium">Auto-Lock After Hours</p>
+                      <p className="text-sm text-muted-foreground">Automatically lock all doors after business hours</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Emergency Override</p>
+                      <p className="text-sm text-muted-foreground">Allow manual override in emergencies</p>
                     </div>
                     <Switch defaultChecked />
                   </div>
@@ -473,8 +543,6 @@ export default function SecuritySystem() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
         <TabsContent value="settings" className="space-y-6">
           <Card>
             <CardHeader>
@@ -496,40 +564,6 @@ export default function SecuritySystem() {
                     <div>
                       <p className="font-medium">Motion Detection</p>
                       <p className="text-sm text-muted-foreground">Enable motion detection on cameras</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Emergency Override</p>
-                      <p className="text-sm text-muted-foreground">Allow emergency access codes</p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-medium">Alert Settings</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Failed Access Alerts</p>
-                      <p className="text-sm text-muted-foreground">Notify on multiple failed attempts</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Device Offline Alerts</p>
-                      <p className="text-sm text-muted-foreground">Alert when devices go offline</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Unusual Activity Detection</p>
-                      <p className="text-sm text-muted-foreground">AI-powered anomaly detection</p>
                     </div>
                     <Switch defaultChecked />
                   </div>
