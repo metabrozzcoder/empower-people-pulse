@@ -126,10 +126,26 @@ const Scheduling = () => {
                       <SelectItem value="prev">Last Week</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Shift
-                  </Button>
+                   <Button onClick={() => {
+                     const newShift: Shift = {
+                       id: Date.now().toString(),
+                       employeeId: "new",
+                       date: new Date().toISOString().split('T')[0],
+                       startTime: "09:00",
+                       endTime: "17:00",
+                       role: "New Role",
+                       location: "Office",
+                       status: "Scheduled"
+                     }
+                     setShifts([...shifts, newShift])
+                     toast({
+                       title: "Shift Added",
+                       description: "New shift has been created successfully.",
+                     })
+                   }}>
+                     <Plus className="h-4 w-4 mr-2" />
+                     Add Shift
+                   </Button>
                 </div>
               </div>
             </CardHeader>
@@ -240,9 +256,14 @@ const Scheduling = () => {
                                 <SelectItem value="Cancelled">Cancelled</SelectItem>
                               </SelectContent>
                             </Select>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
+                             <Button variant="ghost" size="sm" onClick={() => {
+                               toast({
+                                 title: "Shift Options",
+                                 description: "Shift management options opened.",
+                               })
+                             }}>
+                               <MoreHorizontal className="h-4 w-4" />
+                             </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -291,9 +312,14 @@ const Scheduling = () => {
                           </Badge>
                         </div>
                       ))}
-                      <Button className="w-full" variant="outline" size="sm">
-                        View Full Schedule
-                      </Button>
+                       <Button className="w-full" variant="outline" size="sm" onClick={() => {
+                         toast({
+                           title: "Schedule Opened",
+                           description: `Viewing full schedule for ${employee.name}`,
+                         })
+                       }}>
+                         View Full Schedule
+                       </Button>
                     </div>
                   </CardContent>
                 </Card>

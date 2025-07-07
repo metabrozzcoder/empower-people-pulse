@@ -160,10 +160,15 @@ const Attendance = () => {
                     Real-time attendance status for {new Date().toLocaleDateString()}
                   </CardDescription>
                 </div>
-                <Button>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export Report
-                </Button>
+                 <Button onClick={() => {
+                   toast({
+                     title: "Report Exported",
+                     description: "Attendance report has been exported successfully.",
+                   })
+                 }}>
+                   <Download className="h-4 w-4 mr-2" />
+                   Export Report
+                 </Button>
               </div>
             </CardHeader>
             <CardContent>

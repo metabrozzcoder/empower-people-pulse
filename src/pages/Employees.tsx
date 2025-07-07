@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EmployeeCard } from "@/components/EmployeeCard"
 import { mockEmployees } from "@/data/mockEmployees"
+import { useToast } from "@/hooks/use-toast"
 
 export default function Employees() {
+  const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -40,7 +42,12 @@ export default function Employees() {
             Manage your team of {mockEmployees.length} employees
           </p>
         </div>
-        <Button className="mt-4 sm:mt-0">
+        <Button className="mt-4 sm:mt-0" onClick={() => {
+          toast({
+            title: "Employee Form",
+            description: "Add employee form would open here.",
+          })
+        }}>
           <Plus className="mr-2 h-4 w-4" />
           Add Employee
         </Button>
