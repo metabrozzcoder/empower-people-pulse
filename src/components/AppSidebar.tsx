@@ -1,4 +1,3 @@
-
 import { 
   Users, 
   LayoutDashboard, 
@@ -23,9 +22,14 @@ import {
   Video,
   FileIcon,
   UserCheck,
-  UsersIcon
+  UsersIcon,
+  ChevronDown,
+  LogOut,
+  FileSearch,
+  Scan
 } from "lucide-react"
-import { NavLink } from "react-router-dom"
+import { NavLink, useNavigate } from "react-router-dom"
+import { useState } from "react"
 import {
   Sidebar,
   SidebarContent,
@@ -38,6 +42,18 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 const mainNavigationItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -54,13 +70,12 @@ const hrAndProjectItems = [
   { title: "Tasks", url: "/tasks", icon: ClipboardList },
 ]
 
-const organizationAndCommunicationItems = [
+const organizationItems = [
   { title: "Organizations", url: "/organizations", icon: Building2 },
-  { title: "Departments", url: "/departments", icon: UsersIcon },
-  { title: "Messages", url: "/chat", icon: MessageSquare },
-  { title: "Voice Calls", url: "/voice-calls", icon: Phone },
-  { title: "Video Calls", url: "/video-calls", icon: Video },
-  { title: "File Sharing", url: "/file-sharing", icon: FileIcon },
+]
+
+const communicationItems = [
+  { title: "Chat", url: "/chat", icon: MessageSquare },
 ]
 
 const managementAndAnalyticsItems = [
@@ -72,48 +87,107 @@ const managementAndAnalyticsItems = [
   { title: "Reports", url: "/reports", icon: FileText },
 ]
 
+const documentationItems = [
+  { title: "Documentation", url: "/documentation", icon: FileSearch },
+]
+
 const systemItems = [
   { title: "Payroll", url: "/payroll", icon: DollarSign },
   { title: "Automation", url: "/automation", icon: Zap },
-  { title: "Profile", url: "/profile", icon: User },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Security System", url: "/security-system", icon: Shield },
 ]
 
 export function AppSidebar() {
+  const navigate = useNavigate()
+  const [openSections, setOpenSections] = useState<string[]>([])
+
+  const toggleSection = (section: string) => {
+    setOpenSections(prev => 
+      prev.includes(section) 
+        ? prev.filter(s => s !== section)
+        : [...prev, section]
+    )
+  }
+
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
       ? "bg-blue-100 text-blue-900 font-semibold border-r-4 border-blue-600 shadow-sm" 
       : "text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200"
 
+  const handleLogout = () => {
+    // Implement logout logic here
+    console.log("Logging out...")
+    navigate("/")
+  }
+
   const SidebarSection = ({ 
     title, 
-    items
+    items,
+    collapsible = false,
+    children
   }: { 
     title: string
-    items: any[]
+    items?: any[]
+    collapsible?: boolean
+    children?: React.ReactNode
   }) => (
     <SidebarGroup className="mb-6">
-      <SidebarGroupLabel className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 px-3">
-        {title}
-      </SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu className="space-y-1">
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <NavLink 
-                  to={item.url} 
-                  end 
-                  className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
-                >
-                  <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                  <span>{item.title}</span>
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
+      {collapsible ? (
+        <Collapsible open={openSections.includes(title)} onOpenChange={() => toggleSection(title)}>
+          <CollapsibleTrigger asChild>
+            <SidebarGroupLabel className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 px-3 cursor-pointer flex items-center justify-between hover:text-gray-800">
+              {title}
+              <ChevronDown className={`h-4 w-4 transition-transform ${openSections.includes(title) ? 'rotate-180' : ''}`} />
+            </SidebarGroupLabel>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <SidebarGroupContent>
+              {children || (
+                <SidebarMenu className="space-y-1">
+                  {items?.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <NavLink 
+                          to={item.url} 
+                          end 
+                          className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
+                        >
+                          <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                          <span>{item.title}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              )}
+            </SidebarGroupContent>
+          </CollapsibleContent>
+        </Collapsible>
+      ) : (
+        <>
+          <SidebarGroupLabel className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 px-3">
+            {title}
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
+              {items?.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={item.url} 
+                      end 
+                      className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
+                    >
+                      <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                      <span>{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </>
+      )}
     </SidebarGroup>
   )
 
@@ -136,24 +210,105 @@ export function AppSidebar() {
       <SidebarContent className="p-4 bg-white overflow-y-auto">
         <SidebarSection title="Main Menu" items={mainNavigationItems} />
         <SidebarSection title="HR & Projects" items={hrAndProjectItems} />
-        <SidebarSection title="Organization & Communication" items={organizationAndCommunicationItems} />
+        
+        <SidebarSection title="Organization" collapsible>
+          <SidebarMenu className="space-y-1">
+            {organizationItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild>
+                  <NavLink 
+                    to={item.url} 
+                    end 
+                    className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
+                  >
+                    <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                    <span>{item.title}</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <NavLink 
+                  to="/departments" 
+                  className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ml-4`}
+                >
+                  <UsersIcon className="h-4 w-4 mr-3 flex-shrink-0" />
+                  <span>Departments</span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarSection>
+
+        <SidebarSection title="Communication" items={communicationItems} />
         <SidebarSection title="Management & Analytics" items={managementAndAnalyticsItems} />
-        <SidebarSection title="System" items={systemItems} />
+        <SidebarSection title="Documentation" items={documentationItems} />
+        
+        <SidebarSection title="System" collapsible>
+          <SidebarMenu className="space-y-1">
+            {systemItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild>
+                  <NavLink 
+                    to={item.url} 
+                    end 
+                    className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
+                  >
+                    <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                    <span>{item.title}</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <NavLink 
+                  to="/settings" 
+                  className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
+                >
+                  <Settings className="h-4 w-4 mr-3 flex-shrink-0" />
+                  <span>Settings</span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarSection>
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-gray-200 bg-gray-50">
-        <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-            <User className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-900">Sarah Wilson</p>
-            <p className="text-xs text-gray-500 flex items-center">
-              <Shield className="w-3 h-3 mr-1" />
-              Administrator
-            </p>
-          </div>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900">Sarah Wilson</p>
+                <p className="text-xs text-gray-500 flex items-center">
+                  <Shield className="w-3 h-3 mr-1" />
+                  Administrator
+                </p>
+              </div>
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={() => navigate("/profile")}>
+              <User className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/settings")}>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
   )
