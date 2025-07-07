@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { TaskBoard } from "@/components/TaskBoard"
 
 const Tasks = () => {
   const { toast } = useToast()
@@ -288,103 +289,17 @@ const Tasks = () => {
             </Button>
           </div>
 
-          {/* Kanban Board */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {Object.entries(tasksByStatus).map(([status, statusTasks]) => (
-              <div key={status} className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                    {status}
-                  </h3>
-                  <Badge variant="secondary" className="text-xs">
-                    {statusTasks.length}
-                  </Badge>
-                </div>
-
-                <div className="space-y-3 min-h-[400px] p-2 bg-muted/20 rounded-lg">
-                  {statusTasks.map((task) => (
-                    <Card key={task.id} className="cursor-pointer hover:shadow-md transition-shadow bg-white">
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1 flex-1">
-                            <h4 className="font-medium text-sm">{task.title}</h4>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${getPriorityColor(task.priority)}`} />
-                              <Badge variant="outline" className="text-xs">
-                                {task.priority}
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="flex space-x-1">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditTask(task)}>
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDeleteTask(task.id)}>
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {task.description}
-                        </p>
-
-                        {task.estimatedHours && (
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-xs">
-                              <span>Progress</span>
-                              <span>{Math.round(((task.actualHours || 0) / task.estimatedHours) * 100)}%</span>
-                            </div>
-                            <Progress value={((task.actualHours || 0) / task.estimatedHours) * 100} className="h-1" />
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(task.dueDate).toLocaleDateString()}
-                          </div>
-                          <Avatar className="w-6 h-6">
-                            <AvatarFallback className="text-xs">
-                              {task.assignedTo.substring(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-
-                        <div className="flex flex-wrap gap-1">
-                          {task.tags.slice(0, 2).map((tag, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                          {task.tags.length > 2 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{task.tags.length - 2}
-                            </Badge>
-                          )}
-                        </div>
-
-                        <Select
-                          value={task.status}
-                          onValueChange={(value) => updateTaskStatus(task.id, value as Task['status'])}
-                        >
-                          <SelectTrigger className="w-full h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Todo">To Do</SelectItem>
-                            <SelectItem value="In Progress">In Progress</SelectItem>
-                            <SelectItem value="Review">Review</SelectItem>
-                            <SelectItem value="Done">Done</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Enhanced Kanban Board with Drag & Drop */}
+          <TaskBoard 
+            tasks={filteredTasks}
+            onTaskUpdate={(task) => {
+              setTasks(prevTasks => 
+                prevTasks.map(t => t.id === task.id ? task : t)
+              )
+            }}
+            onTaskDelete={handleDeleteTask}
+            onTaskCreate={handleCreateTask}
+          />
         </TabsContent>
 
         <TabsContent value="list" className="space-y-6">

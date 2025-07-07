@@ -30,6 +30,7 @@ import {
 } from "lucide-react"
 import { NavLink, useNavigate } from "react-router-dom"
 import { useState } from "react"
+import { useToast } from "@/hooks/use-toast"
 import {
   Sidebar,
   SidebarContent,
@@ -55,51 +56,80 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 
-const mainNavigationItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "AI Assistant", url: "/ai-assistant", icon: Brain },
-]
-
-const hrAndProjectItems = [
-  { title: "Employees", url: "/employees", icon: Users },
-  { title: "Recruitment", url: "/recruitment", icon: UserPlus },
-  { title: "Performance", url: "/performance", icon: TrendingUp },
-  { title: "Attendance", url: "/attendance", icon: Clock },
-  { title: "Scheduling", url: "/scheduling", icon: Calendar },
-  { title: "Projects", url: "/projects", icon: Briefcase },
-  { title: "Tasks", url: "/tasks", icon: ClipboardList },
-]
-
-const organizationItems = [
-  { title: "Organizations", url: "/organizations", icon: Building2 },
-]
-
-const communicationItems = [
-  { title: "Chat", url: "/chat", icon: MessageSquare },
-]
-
-const managementAndAnalyticsItems = [
-  { title: "User Management", url: "/user-management", icon: UserCheck },
-  { title: "Role Management", url: "/role-management", icon: Shield },
-  { title: "Access Control", url: "/access-control", icon: Shield },
-  { title: "Analytics", url: "/analytics", icon: BarChart3 },
-  { title: "KPI Dashboard", url: "/kpi-dashboard", icon: Target },
-  { title: "Reports", url: "/reports", icon: FileText },
-]
-
-const documentationItems = [
-  { title: "Documentation", url: "/documentation", icon: FileSearch },
-]
-
-const systemItems = [
-  { title: "Payroll", url: "/payroll", icon: DollarSign },
-  { title: "Automation", url: "/automation", icon: Zap },
-  { title: "Security System", url: "/security-system", icon: Shield },
+const sidebarSections = [
+  {
+    title: "Main Menu",
+    collapsible: false,
+    items: [
+      { title: "Dashboard", url: "/", icon: LayoutDashboard },
+      { title: "AI Assistant", url: "/ai-assistant", icon: Brain },
+    ]
+  },
+  {
+    title: "HR & Projects",
+    collapsible: true,
+    items: [
+      { title: "Employees", url: "/employees", icon: Users },
+      { title: "Recruitment", url: "/recruitment", icon: UserPlus },
+      { title: "Performance", url: "/performance", icon: TrendingUp },
+      { title: "Attendance", url: "/attendance", icon: Clock },
+      { title: "Scheduling", url: "/scheduling", icon: Calendar },
+      { title: "Projects", url: "/projects", icon: Briefcase },
+      { title: "Tasks", url: "/tasks", icon: ClipboardList },
+    ]
+  },
+  {
+    title: "Organization",
+    collapsible: true,
+    items: [
+      { title: "Organizations", url: "/organizations", icon: Building2 },
+      { title: "Departments", url: "/departments", icon: UsersIcon },
+    ]
+  },
+  {
+    title: "Communication",
+    collapsible: true,
+    items: [
+      { title: "Chat", url: "/chat", icon: MessageSquare },
+    ]
+  },
+  {
+    title: "Management & Analytics",
+    collapsible: true,
+    items: [
+      { title: "User Management", url: "/user-management", icon: UserCheck },
+      { title: "Role Management", url: "/role-management", icon: Shield },
+      { title: "Access Control", url: "/access-control", icon: Shield },
+      { title: "Analytics", url: "/analytics", icon: BarChart3 },
+      { title: "KPI Dashboard", url: "/kpi-dashboard", icon: Target },
+      { title: "Reports", url: "/reports", icon: FileText },
+    ]
+  },
+  {
+    title: "Documentation",
+    collapsible: true,
+    items: [
+      { title: "Documentation", url: "/documentation", icon: FileSearch },
+    ]
+  },
+  {
+    title: "System",
+    collapsible: true,
+    items: [
+      { title: "Payroll", url: "/payroll", icon: DollarSign },
+      { title: "Automation", url: "/automation", icon: Zap },
+      { title: "Security System", url: "/security-system", icon: Scan },
+      { title: "Settings", url: "/settings", icon: Settings },
+    ]
+  }
 ]
 
 export function AppSidebar() {
+  const { toast } = useToast()
   const navigate = useNavigate()
-  const [openSections, setOpenSections] = useState<string[]>([])
+  const [openSections, setOpenSections] = useState<string[]>([
+    "Main Menu", "HR & Projects", "Organization"
+  ])
 
   const toggleSection = (section: string) => {
     setOpenSections(prev => 
@@ -111,66 +141,66 @@ export function AppSidebar() {
 
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
-      ? "bg-blue-100 text-blue-900 font-semibold border-r-4 border-blue-600 shadow-sm" 
-      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200"
+      ? "bg-primary/10 text-primary font-semibold border-r-4 border-primary shadow-sm" 
+      : "text-foreground/70 hover:bg-accent hover:text-accent-foreground transition-all duration-200"
 
   const handleLogout = () => {
-    // Implement logout logic here
-    console.log("Logging out...")
+    toast({
+      title: "Logging out...",
+      description: "You have been successfully logged out.",
+    })
     navigate("/")
   }
 
-  const SidebarSection = ({ 
-    title, 
-    items,
-    collapsible = false,
-    children
-  }: { 
-    title: string
-    items?: any[]
-    collapsible?: boolean
-    children?: React.ReactNode
-  }) => (
-    <SidebarGroup className="mb-6">
-      {collapsible ? (
-        <Collapsible open={openSections.includes(title)} onOpenChange={() => toggleSection(title)}>
+  const handleProfileAction = (action: string) => {
+    if (action === 'logout') {
+      handleLogout()
+    } else if (action === 'settings') {
+      navigate("/settings")
+    } else if (action === 'profile') {
+      navigate("/profile")
+    }
+  }
+
+  const SidebarSection = ({ section }: { section: typeof sidebarSections[0] }) => (
+    <SidebarGroup className="mb-4">
+      {section.collapsible ? (
+        <Collapsible open={openSections.includes(section.title)} onOpenChange={() => toggleSection(section.title)}>
           <CollapsibleTrigger asChild>
-            <SidebarGroupLabel className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 px-3 cursor-pointer flex items-center justify-between hover:text-gray-800">
-              {title}
-              <ChevronDown className={`h-4 w-4 transition-transform ${openSections.includes(title) ? 'rotate-180' : ''}`} />
+            <SidebarGroupLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 px-3 cursor-pointer flex items-center justify-between hover:text-foreground transition-colors">
+              {section.title}
+              <ChevronDown className={`h-4 w-4 transition-transform ${openSections.includes(section.title) ? 'rotate-180' : ''}`} />
             </SidebarGroupLabel>
           </CollapsibleTrigger>
           <CollapsibleContent>
             <SidebarGroupContent>
-              {children || (
-                <SidebarMenu className="space-y-1">
-                  {items?.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <NavLink 
-                          to={item.url} 
-                          end 
-                          className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
-                        >
-                          <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                          <span>{item.title}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              )}
+              <SidebarMenu className="space-y-1">
+                {section.items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.url} 
+                        end 
+                        className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
+                      >
+                        <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
             </SidebarGroupContent>
           </CollapsibleContent>
         </Collapsible>
       ) : (
         <>
-          <SidebarGroupLabel className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3 px-3">
-            {title}
+          <SidebarGroupLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 px-3">
+            {section.title}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              {items?.map((item) => (
+              {section.items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink 
@@ -192,118 +222,55 @@ export function AppSidebar() {
   )
 
   return (
-    <Sidebar className="border-r border-gray-200 bg-white shadow-lg" style={{ minWidth: '280px' }}>
-      <SidebarHeader className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
+    <Sidebar className="border-r shadow-lg bg-background" style={{ minWidth: '280px' }}>
+      <SidebarHeader className="p-6 border-b bg-gradient-to-r from-primary to-primary/80">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md">
-            <Users className="w-6 h-6 text-blue-600" />
+          <div className="w-10 h-10 bg-background rounded-xl flex items-center justify-center shadow-md">
+            <Users className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-xl font-bold text-primary-foreground">
               MediaHR Pro
             </h2>
-            <p className="text-blue-100 text-sm">AI-Enhanced HRM</p>
+            <p className="text-primary-foreground/80 text-sm">AI-Enhanced HRM</p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-4 bg-white overflow-y-auto">
-        <SidebarSection title="Main Menu" items={mainNavigationItems} />
-        <SidebarSection title="HR & Projects" items={hrAndProjectItems} />
-        
-        <SidebarSection title="Organization" collapsible>
-          <SidebarMenu className="space-y-1">
-            {organizationItems.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  <NavLink 
-                    to={item.url} 
-                    end 
-                    className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
-                  >
-                    <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                    <span>{item.title}</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <NavLink 
-                  to="/departments" 
-                  className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ml-4`}
-                >
-                  <UsersIcon className="h-4 w-4 mr-3 flex-shrink-0" />
-                  <span>Departments</span>
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarSection>
-
-        <SidebarSection title="Communication" items={communicationItems} />
-        <SidebarSection title="Management & Analytics" items={managementAndAnalyticsItems} />
-        <SidebarSection title="Documentation" items={documentationItems} />
-        
-        <SidebarSection title="System" collapsible>
-          <SidebarMenu className="space-y-1">
-            {systemItems.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  <NavLink 
-                    to={item.url} 
-                    end 
-                    className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
-                  >
-                    <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                    <span>{item.title}</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <NavLink 
-                  to="/settings" 
-                  className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
-                >
-                  <Settings className="h-4 w-4 mr-3 flex-shrink-0" />
-                  <span>Settings</span>
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarSection>
+      <SidebarContent className="p-4 overflow-y-auto">
+        {sidebarSections.map((section) => (
+          <SidebarSection key={section.title} section={section} />
+        ))}
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-gray-200 bg-gray-50">
+      <SidebarFooter className="p-4 border-t bg-muted/30">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-white" />
+            <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border shadow-sm cursor-pointer hover:bg-accent transition-colors">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-primary-foreground" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-gray-900">Sarah Wilson</p>
-                <p className="text-xs text-gray-500 flex items-center">
+                <p className="text-sm font-semibold">Sarah Wilson</p>
+                <p className="text-xs text-muted-foreground flex items-center">
                   <Shield className="w-3 h-3 mr-1" />
                   Administrator
                 </p>
               </div>
-              <ChevronDown className="w-4 h-4 text-gray-400" />
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={() => navigate("/profile")}>
+            <DropdownMenuItem onClick={() => handleProfileAction('profile')}>
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/settings")}>
+            <DropdownMenuItem onClick={() => handleProfileAction('settings')}>
               <Settings className="mr-2 h-4 w-4" />
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
+            <DropdownMenuItem onClick={() => handleProfileAction('logout')}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>

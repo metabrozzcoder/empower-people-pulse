@@ -15,8 +15,8 @@ import {
   Share,
   Scan,
   FileImage,
-  FilePdf,
-  FileWord,
+  File,
+  FileType,
   PenTool,
   Clock,
   User,
@@ -127,8 +127,8 @@ export default function Documentation() {
 
   const getFileIcon = (type: Document['type']) => {
     switch (type) {
-      case 'pdf': return FilePdf
-      case 'word': return FileWord
+      case 'pdf': return File
+      case 'word': return FileType
       case 'image': return FileImage
       default: return FileText
     }
