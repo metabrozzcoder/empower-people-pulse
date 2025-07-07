@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { 
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -435,6 +436,9 @@ const Tasks = () => {
             <DialogTitle>
               {selectedTask ? 'Edit Task' : 'Create New Task'}
             </DialogTitle>
+            <DialogDescription>
+              {selectedTask ? 'Update task details and assignments' : 'Create a new task with details and assignments'}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="space-y-2">

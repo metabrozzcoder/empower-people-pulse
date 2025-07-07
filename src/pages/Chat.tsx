@@ -25,6 +25,7 @@ import {
 import { 
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -492,6 +493,7 @@ export default function Chat() {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>User Information</DialogTitle>
+              <DialogDescription>View detailed user information and status</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">

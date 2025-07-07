@@ -18,7 +18,7 @@ import {
   Calendar,
   Building2
 } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -308,6 +308,9 @@ export default function UserManagement() {
             <DialogTitle>
               {selectedUser ? 'Edit User' : 'Add New User'}
             </DialogTitle>
+            <DialogDescription>
+              {selectedUser ? 'Update user information and permissions' : 'Create a new user account with role and permissions'}
+            </DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="general" className="w-full">
             <TabsList className="grid w-full grid-cols-3">

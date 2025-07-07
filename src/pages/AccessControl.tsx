@@ -17,7 +17,7 @@ import {
   Wifi,
   Smartphone
 } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
@@ -297,6 +297,9 @@ export default function AccessControl() {
             <DialogTitle>
               {selectedRule ? 'Edit Access Rule' : 'Create New Access Rule'}
             </DialogTitle>
+            <DialogDescription>
+              {selectedRule ? 'Modify access control rule settings and restrictions' : 'Create a new access control rule with specific restrictions'}
+            </DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="general" className="w-full">
             <TabsList className="grid w-full grid-cols-3">

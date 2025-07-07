@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { UsersIcon, Plus, Search, User, Edit, Trash2, Building2, UserPlus } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -247,6 +247,9 @@ export default function Departments() {
             <DialogTitle>
               {selectedDept ? 'Edit Department' : 'Add New Department'}
             </DialogTitle>
+            <DialogDescription>
+              {selectedDept ? 'Update department information and settings' : 'Create a new department with details and assignments'}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
@@ -317,6 +320,9 @@ export default function Departments() {
             <DialogTitle>
               Manage Members - {selectedDept?.name}
             </DialogTitle>
+            <DialogDescription>
+              Add or remove members from this department
+            </DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="current" className="w-full">
             <TabsList className="grid w-full grid-cols-2">

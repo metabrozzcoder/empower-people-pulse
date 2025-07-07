@@ -15,7 +15,7 @@ import {
   Lock,
   Unlock
 } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
@@ -333,6 +333,9 @@ export default function RoleManagement() {
             <DialogTitle>
               {selectedRole ? 'Edit Role' : 'Create New Role'}
             </DialogTitle>
+            <DialogDescription>
+              {selectedRole ? 'Modify role permissions and settings' : 'Create a new role with specific permissions'}
+            </DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="general" className="w-full">
             <TabsList className="grid w-full grid-cols-2">

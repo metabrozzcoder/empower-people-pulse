@@ -26,7 +26,7 @@ import {
   UserCheck,
   MessageSquare
 } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
@@ -487,6 +487,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Schedule Interview</DialogTitle>
+            <DialogDescription>Schedule an interview with the selected candidate</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
