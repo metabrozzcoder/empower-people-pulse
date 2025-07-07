@@ -103,60 +103,7 @@ export default function Employees() {
       {/* Employee Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredEmployees.map(employee => (
-          <div key={employee.id} className="space-y-4">
-            <EmployeeCard employee={employee} />
-            
-            {/* Attendance Section */}
-            <Card className="border-t-4 border-t-blue-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center space-x-2">
-                  <Clock className="w-4 h-4" />
-                  <span>Attendance</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-center p-2 bg-green-50 rounded">
-                    <div className="font-bold text-green-600">95%</div>
-                    <div className="text-xs text-muted-foreground">Attendance Rate</div>
-                  </div>
-                  <div className="text-center p-2 bg-blue-50 rounded">
-                    <div className="font-bold text-blue-600">8:47 AM</div>
-                    <div className="text-xs text-muted-foreground">Avg Check-in</div>
-                  </div>
-                  <div className="text-center p-2 bg-orange-50 rounded">
-                    <div className="font-bold text-orange-600">2</div>
-                    <div className="text-xs text-muted-foreground">Late Days</div>
-                  </div>
-                  <div className="text-center p-2 bg-red-50 rounded">
-                    <div className="font-bold text-red-600">1</div>
-                    <div className="text-xs text-muted-foreground">Absent Days</div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground">This Week</span>
-                    <span className="font-medium">38.5 hours</span>
-                  </div>
-                  <div className="bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '96%' }}></div>
-                  </div>
-                </div>
-                
-                <div className="text-xs text-muted-foreground">
-                  <div className="flex justify-between">
-                    <span>Today:</span>
-                    <span className="text-green-600 font-medium">Present (8:30 AM)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Yesterday:</span>
-                    <span className="text-green-600 font-medium">Present (8:45 AM)</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <EmployeeCard key={employee.id} employee={employee} />
         ))}
       </div>
 
