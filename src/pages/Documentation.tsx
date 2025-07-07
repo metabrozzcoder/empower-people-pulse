@@ -122,6 +122,8 @@ const mockDocuments: Document[] = [
 
 const categories = ['All', 'HR Policies', 'Legal', 'Facilities', 'Training', 'Finance', 'Custom']
 
+const predefinedTags = ['vacation', 'report', 'request', 'contract', 'handbook', 'invoice', 'custom']
+
 const mockCompanyMembers: CompanyMember[] = [
   { id: '1', name: 'John Smith', email: 'john@company.com', department: 'Engineering', role: 'Senior Developer' },
   { id: '2', name: 'Emily Davis', email: 'emily@company.com', department: 'HR', role: 'HR Manager' },
@@ -348,6 +350,15 @@ export default function Documentation() {
   }
 
   const handleSendDocument = (doc: Document) => {
+    if (!doc.signers || doc.signers.length === 0) {
+      toast({
+        title: "No Signers Selected",
+        description: "Please select at least one signer before sending the document.",
+        variant: "destructive"
+      })
+      return
+    }
+    
     setDocuments(documents.map(d => 
       d.id === doc.id 
         ? { ...d, status: 'pending_signature' as Document['status'] }
@@ -356,7 +367,7 @@ export default function Documentation() {
     
     toast({
       title: "Document Sent",
-      description: `${doc.name} has been sent for signature.`,
+      description: `${doc.name} has been sent to ${doc.signers.length} signers.`,
     })
   }
 
@@ -641,14 +652,6 @@ export default function Documentation() {
                       </Button>
                     )}
                     
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleOCRScan(doc)}
-                      title="OCR Scan"
-                    >
-                      <Scan className="w-4 h-4" />
-                    </Button>
                     
                     <Button 
                       variant="outline" 
@@ -849,14 +852,34 @@ export default function Documentation() {
 
                       <div className="space-y-2">
                         <Label htmlFor="upload-tags" className="text-base font-medium">Tags</Label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {predefinedTags.map((tag) => (
+                            <Button
+                              key={tag}
+                              variant="outline"
+                              size="sm"
+                              type="button"
+                              onClick={() => {
+                                const currentTags = uploadFormData.tags ? uploadFormData.tags.split(',').map(t => t.trim()) : []
+                                if (!currentTags.includes(tag)) {
+                                  const newTags = [...currentTags, tag].join(', ')
+                                  setUploadFormData(prev => ({ ...prev, tags: newTags }))
+                                }
+                              }}
+                              className="text-xs"
+                            >
+                              {tag}
+                            </Button>
+                          ))}
+                        </div>
                         <Input 
                           id="upload-tags" 
-                          placeholder="contract, legal, 2024, important"
+                          placeholder="vacation, report, request, or custom tags"
                           value={uploadFormData.tags}
                           onChange={(e) => setUploadFormData(prev => ({ ...prev, tags: e.target.value }))}
                           className="h-12"
                         />
-                        <p className="text-sm text-muted-foreground">Separate tags with commas</p>
+                        <p className="text-sm text-muted-foreground">Click predefined tags or type custom ones (separate with commas)</p>
                       </div>
 
                       {uploadType === 'sign' && (
@@ -991,6 +1014,53 @@ export default function Documentation() {
                 </div>
               )}
 
+              {/* Document Preview Section */}
+              <div>
+                <Label className="text-base font-medium">Document Preview</Label>
+                <div className="mt-2 border rounded-lg p-4 bg-muted/30">
+                  {selectedDocument?.type === 'image' && selectedDocument?.previewUrl ? (
+                    <img 
+                      src={selectedDocument.previewUrl} 
+                      alt="Document preview" 
+                      className="max-w-full max-h-96 object-contain rounded"
+                    />
+                  ) : selectedDocument?.type === 'pdf' ? (
+                    <div className="flex items-center justify-center h-96 bg-red-50 dark:bg-red-950/20 rounded">
+                      <div className="text-center space-y-3">
+                        <File className="w-16 h-16 text-red-500 mx-auto" />
+                        <div>
+                          <p className="text-lg font-medium">PDF Document</p>
+                          <p className="text-sm text-muted-foreground">{selectedDocument.name}</p>
+                          <p className="text-sm text-muted-foreground">PDF preview not available - click download to view</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedDocument?.type === 'word' ? (
+                    <div className="flex items-center justify-center h-96 bg-blue-50 dark:bg-blue-950/20 rounded">
+                      <div className="text-center space-y-3">
+                        <FileType className="w-16 h-16 text-blue-500 mx-auto" />
+                        <div>
+                          <p className="text-lg font-medium">Word Document</p>
+                          <p className="text-sm text-muted-foreground">{selectedDocument.name}</p>
+                          <p className="text-sm text-muted-foreground">Word preview not available - click download to view</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedDocument?.extractedText ? (
+                    <div className="h-96 overflow-y-auto">
+                      <pre className="text-sm whitespace-pre-wrap">{selectedDocument.extractedText}</pre>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-96 bg-muted/50 rounded">
+                      <div className="text-center space-y-3">
+                        <FileText className="w-16 h-16 text-muted-foreground mx-auto" />
+                        <p className="text-muted-foreground">No preview available for this document type</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {selectedDocument?.extractedText && (
                 <div>
                   <Label className="text-base font-medium">Extracted Text (OCR)</Label>
@@ -1069,6 +1139,30 @@ export default function Documentation() {
 
                 <div className="space-y-2">
                   <Label htmlFor="edit-tags">Tags</Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {predefinedTags.map((tag) => (
+                      <Button
+                        key={tag}
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        onClick={() => {
+                          if (selectedDocument) {
+                            const currentTags = selectedDocument.tags || []
+                            if (!currentTags.includes(tag)) {
+                              setSelectedDocument({
+                                ...selectedDocument,
+                                tags: [...currentTags, tag]
+                              })
+                            }
+                          }
+                        }}
+                        className="text-xs"
+                      >
+                        {tag}
+                      </Button>
+                    ))}
+                  </div>
                   <Input 
                     id="edit-tags" 
                     value={selectedDocument?.tags.join(', ') || ''}
@@ -1081,6 +1175,7 @@ export default function Documentation() {
                       }
                     }}
                   />
+                  <p className="text-sm text-muted-foreground">Click predefined tags or type custom ones (separate with commas)</p>
                 </div>
 
                 <div className="space-y-2">
