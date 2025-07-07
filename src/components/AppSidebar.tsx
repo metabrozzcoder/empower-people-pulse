@@ -71,8 +71,6 @@ const sidebarSections = [
     items: [
       { title: "Employees", url: "/employees", icon: Users },
       { title: "Recruitment", url: "/recruitment", icon: UserPlus },
-      { title: "Performance", url: "/performance", icon: TrendingUp },
-      { title: "Attendance", url: "/attendance", icon: Clock },
       { title: "Scheduling", url: "/scheduling", icon: Calendar },
       { title: "Projects", url: "/projects", icon: Briefcase },
       { title: "Tasks", url: "/tasks", icon: ClipboardList },
@@ -83,7 +81,6 @@ const sidebarSections = [
     collapsible: true,
     items: [
       { title: "Organizations", url: "/organizations", icon: Building2 },
-      { title: "Departments", url: "/departments", icon: UsersIcon },
     ]
   },
   {
@@ -98,10 +95,8 @@ const sidebarSections = [
     collapsible: true,
     items: [
       { title: "User Management", url: "/user-management", icon: UserCheck },
-      { title: "Role Management", url: "/role-management", icon: Shield },
       { title: "Access Control", url: "/access-control", icon: Shield },
       { title: "Analytics", url: "/analytics", icon: BarChart3 },
-      { title: "KPI Dashboard", url: "/kpi-dashboard", icon: Target },
       { title: "Reports", url: "/reports", icon: FileText },
     ]
   },

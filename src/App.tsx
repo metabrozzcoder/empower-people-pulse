@@ -15,9 +15,7 @@ import Recruitment from "./pages/Recruitment"
 import Tasks from "./pages/Tasks"
 import Scheduling from "./pages/Scheduling"
 import Attendance from "./pages/Attendance"
-import Performance from "./pages/Performance"
 import Analytics from "./pages/Analytics"
-import KpiDashboard from "./pages/KpiDashboard"
 import Organizations from "./pages/Organizations"
 import Departments from "./pages/Departments"
 import Chat from "./pages/Chat"
@@ -61,16 +59,12 @@ const App = () => (
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/scheduling" element={<Scheduling />} />
                   <Route path="/attendance" element={<Attendance />} />
-                  <Route path="/performance" element={<Performance />} />
                   <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/kpi-dashboard" element={<KpiDashboard />} />
                   
                   {/* Organization & Communication pages */}
                   <Route path="/organizations" element={<Organizations />} />
-                  <Route path="/departments" element={<Departments />} />
                   <Route path="/chat" element={<Chat />} />
                   <Route path="/user-management" element={<UserManagement />} />
-                  <Route path="/role-management" element={<RoleManagement />} />
                   <Route path="/access-control" element={<AccessControl />} />
                   
                   {/* New pages */}
@@ -81,7 +75,7 @@ const App = () => (
                   {/* Placeholder routes for future implementation */}
                   <Route path="/payroll" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Payroll</h2><p className="text-muted-foreground">Payroll management coming soon...</p></div>} />
                   <Route path="/communications" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Communications</h2><p className="text-muted-foreground">Internal communications coming soon...</p></div>} />
-                  <Route path="/reports" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Reports</h2><p className="text-muted-foreground">Advanced reporting coming soon...</p></div>} />
+                  <Route path="/reports" element={<Analytics />} />
                   <Route path="/automation" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Automation</h2><p className="text-muted-foreground">Workflow automation coming soon...</p></div>} />
                   
                   <Route path="*" element={<NotFound />} />
