@@ -177,7 +177,8 @@ export default function UserManagement() {
         description: `User ${fullName} has been updated.`,
       })
     } else {
-      // Create new user
+      // Create new user with default permissions based on role
+      const defaultAllowedSections = formData.role === 'Guest' ? ['Chat'] : []
       const newUser = {
         name: fullName,
         email: formData.email,
@@ -191,7 +192,8 @@ export default function UserManagement() {
         username: generatedCredentials.username,
         password: generatedCredentials.password,
         guestId: generatedCredentials.guestId,
-        sectionAccess: []
+        sectionAccess: [],
+        allowedSections: defaultAllowedSections
       }
 
       addUser(newUser)
