@@ -62,59 +62,59 @@ const sidebarSections = [
     title: "Main Menu",
     collapsible: false,
     items: [
-      { title: "Dashboard", url: "/", icon: LayoutDashboard },
-      { title: "AI Assistant", url: "/ai-assistant", icon: Brain },
+      { title: "Dashboard", url: "/", icon: LayoutDashboard, sectionName: "Dashboard" },
+      { title: "AI Assistant", url: "/ai-assistant", icon: Brain, sectionName: "AI Assistant" },
     ]
   },
   {
     title: "HR & Projects",
     collapsible: true,
     items: [
-      { title: "Employees", url: "/employees", icon: Users },
-      { title: "Recruitment", url: "/recruitment", icon: UserPlus },
-      { title: "Scheduling", url: "/scheduling", icon: Calendar },
-      { title: "Projects", url: "/projects", icon: Briefcase },
-      { title: "Tasks", url: "/tasks", icon: ClipboardList },
+      { title: "Employees", url: "/employees", icon: Users, sectionName: "Employees" },
+      { title: "Recruitment", url: "/recruitment", icon: UserPlus, sectionName: "Recruitment" },
+      { title: "Scheduling", url: "/scheduling", icon: Calendar, sectionName: "Scheduling" },
+      { title: "Projects", url: "/projects", icon: Briefcase, sectionName: "Projects" },
+      { title: "Tasks", url: "/tasks", icon: ClipboardList, sectionName: "Tasks" },
     ]
   },
   {
     title: "Organization",
     collapsible: true,
     items: [
-      { title: "Organizations", url: "/organizations", icon: Building2 },
+      { title: "Organizations", url: "/organizations", icon: Building2, sectionName: "Organizations" },
     ]
   },
   {
     title: "Communication",
     collapsible: true,
     items: [
-      { title: "Chat", url: "/chat", icon: MessageSquare },
+      { title: "Chat", url: "/chat", icon: MessageSquare, sectionName: "Chat" },
     ]
   },
   {
     title: "Management & Analytics",
     collapsible: true,
     items: [
-      { title: "User Management", url: "/user-management", icon: UserCheck },
-      { title: "Access Control", url: "/access-control", icon: Shield },
-      { title: "Analytics", url: "/analytics", icon: BarChart3 },
+      { title: "User Management", url: "/user-management", icon: UserCheck, sectionName: "User Management", allowedRoles: ["Admin"] },
+      { title: "Access Control", url: "/access-control", icon: Shield, sectionName: "Access Control", allowedRoles: ["Admin"] },
+      { title: "Analytics", url: "/analytics", icon: BarChart3, sectionName: "Analytics" },
     ]
   },
   {
     title: "Documentation",
     collapsible: true,
     items: [
-      { title: "Documentation", url: "/documentation", icon: FileSearch },
+      { title: "Documentation", url: "/documentation", icon: FileSearch, sectionName: "Documentation" },
     ]
   },
   {
     title: "System",
     collapsible: true,
     items: [
-      { title: "Payroll", url: "/payroll", icon: DollarSign },
-      { title: "Automation", url: "/automation", icon: Zap },
-      { title: "Security System", url: "/security-system", icon: Scan },
-      { title: "Settings", url: "/settings", icon: Settings },
+      { title: "Payroll", url: "/payroll", icon: DollarSign, sectionName: "Payroll" },
+      { title: "Automation", url: "/automation", icon: Zap, sectionName: "Automation" },
+      { title: "Security System", url: "/security-system", icon: Scan, allowedRoles: ["Admin"] },
+      { title: "Settings", url: "/settings", icon: Settings, sectionName: "Settings" },
     ]
   }
 ]
@@ -158,6 +158,31 @@ export function AppSidebar() {
       navigate("/profile")
     }
   }
+
+  // Filter items based on user restrictions and role permissions
+  const isItemAccessible = (item: any) => {
+    // Check section restrictions
+    if (item.sectionName && currentUser?.sectionAccess?.includes(item.sectionName)) {
+      return false
+    }
+    
+    // Check role restrictions
+    if (item.allowedRoles && !item.allowedRoles.includes(currentUser?.role)) {
+      return false
+    }
+    
+    return true
+  }
+
+  const filterSectionItems = (section: any) => {
+    const filteredItems = section.items.filter(isItemAccessible)
+    return {
+      ...section,
+      items: filteredItems
+    }
+  }
+
+  const filteredSections = sidebarSections.map(filterSectionItems).filter(section => section.items.length > 0)
 
   const SidebarSection = ({ section }: { section: typeof sidebarSections[0] }) => (
     <SidebarGroup className="mb-4">
@@ -235,7 +260,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="p-4 overflow-y-auto">
-        {sidebarSections.map((section) => (
+        {filteredSections.map((section) => (
           <SidebarSection key={section.title} section={section} />
         ))}
       </SidebarContent>
