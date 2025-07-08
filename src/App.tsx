@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ThemeProvider } from "next-themes"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { HashRouter, Routes, Route } from "react-router-dom"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { AppSidebar } from "@/components/AppSidebar"
@@ -56,7 +56,7 @@ function AppContent() {
                 size="sm"
                 onClick={() => {
                   logout()
-                  window.location.href = '/login'
+                  window.location.href = '/#/'
                 }}
               >
                 Logout
@@ -115,9 +115,9 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter>
+            <HashRouter>
               <AppContent />
-            </BrowserRouter>
+            </HashRouter>
           </TooltipProvider>
         </ThemeProvider>
       </AuthProvider>
