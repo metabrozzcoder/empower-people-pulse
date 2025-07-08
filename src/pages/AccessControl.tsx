@@ -240,8 +240,12 @@ export default function AccessControl() {
       {/* Employee Permissions Section */}
       <Tabs defaultValue="restrictions" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="restrictions">Section Restrictions</TabsTrigger>
-          <TabsTrigger value="access">Section Access</TabsTrigger>
+          <TabsTrigger value="restrictions" className="data-[state=active]:bg-red-100 data-[state=active]:text-red-700 data-[state=active]:border-red-300">
+            Section Restrictions
+          </TabsTrigger>
+          <TabsTrigger value="access" className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700 data-[state=active]:border-green-300">
+            Section Access
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="restrictions">
