@@ -346,6 +346,36 @@ const DocumentMailbox = () => {
     }
   }
 
+  const sendDocumentForSignature = (docId: string) => {
+    const updatedDocuments = documents.map(doc => 
+      doc.id === docId ? { ...doc, status: 'pending' as const } : doc
+    )
+    setDocuments(updatedDocuments)
+    
+    if (selectedDocument?.id === docId) {
+      setSelectedDocument({ ...selectedDocument, status: 'pending' })
+    }
+    
+    toast({
+      title: "Document Sent",
+      description: "The document has been sent for signature.",
+    })
+  }
+
+  const deleteMailboxDocument = (docId: string) => {
+    const updatedDocuments = documents.filter(doc => doc.id !== docId)
+    setDocuments(updatedDocuments)
+    
+    if (selectedDocument?.id === docId) {
+      setSelectedDocument(updatedDocuments.length > 0 ? updatedDocuments[0] : null)
+    }
+    
+    toast({
+      title: "Document Deleted",
+      description: "The document has been successfully deleted.",
+    })
+  }
+
   return (
     <div className="flex h-[700px] bg-gradient-to-br from-background via-background to-muted/20 border border-border/50 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm">
       {/* Sidebar */}
