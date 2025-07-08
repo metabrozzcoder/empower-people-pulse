@@ -513,7 +513,7 @@ const DocumentMailbox = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 <Button variant="outline" size="sm" className="hover:bg-primary/5">
                   <Download className="w-4 h-4 mr-2" />
                   Download
@@ -524,6 +524,12 @@ const DocumentMailbox = () => {
                     Sign Document
                   </Button>
                 )}
+                {selectedDocument.status === 'draft' && (
+                  <Button size="sm" onClick={() => sendDocumentForSignature(selectedDocument.id)} className="bg-blue-600 hover:bg-blue-700">
+                    <Send className="w-4 h-4 mr-2" />
+                    Send for Signature
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" className="hover:bg-primary/5">
                   <Reply className="w-4 h-4 mr-2" />
                   Reply
@@ -531,6 +537,15 @@ const DocumentMailbox = () => {
                 <Button variant="outline" size="sm" className="hover:bg-primary/5">
                   <Forward className="w-4 h-4 mr-2" />
                   Forward
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="hover:bg-red-50 text-red-600 border-red-200 hover:border-red-300"
+                  onClick={() => deleteMailboxDocument(selectedDocument.id)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
                 </Button>
               </div>
             </div>
