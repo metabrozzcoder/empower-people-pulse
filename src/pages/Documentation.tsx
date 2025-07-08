@@ -644,6 +644,7 @@ export default function Documentation() {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
   const [ocrProgress, setOcrProgress] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -771,6 +772,28 @@ export default function Documentation() {
     }
   }
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+      
+      // Create preview URL for images
+      if (file.type.startsWith('image/')) {
+        const url = URL.createObjectURL(file)
+        setPreviewUrl(url)
+      }
+      
+      // Simulate OCR text extraction
+      if (file.type.includes('pdf') || file.type.includes('word')) {
+        // This would normally be done by OCR service
+        setUploadFormData(prev => ({
+          ...prev,
+          extractedText: `Extracted text from ${file.name}\n\nThis is simulated OCR text extraction...`
+        }))
+      }
+    }
+  }
+
   const handleViewDocument = (doc: Document) => {
     setSelectedDocument(doc)
     setIsViewDialogOpen(true)
@@ -778,7 +801,37 @@ export default function Documentation() {
 
   const handleEditDocument = (doc: Document) => {
     setSelectedDocument(doc)
+    setUploadFormData({
+      category: doc.category,
+      description: doc.description || '',
+      tags: doc.tags.join(', '),
+      recipients: doc.signers?.map(s => s.email).join(', ') || ''
+    })
     setIsEditDialogOpen(true)
+  }
+
+  const handleSaveEdit = () => {
+    if (!selectedDocument) return
+    
+    const updatedDoc = {
+      ...selectedDocument,
+      category: uploadFormData.category,
+      description: uploadFormData.description,
+      tags: uploadFormData.tags.split(',').map(t => t.trim()).filter(Boolean)
+    }
+    
+    setDocuments(documents.map(doc => 
+      doc.id === selectedDocument.id ? updatedDoc : doc
+    ))
+    
+    setIsEditDialogOpen(false)
+    setSelectedDocument(null)
+    setUploadFormData({ category: '', description: '', tags: '', recipients: '' })
+    
+    toast({
+      title: "Document Updated",
+      description: "Document has been successfully updated.",
+    })
   }
 
   const handleDownloadDocument = (doc: Document) => {
@@ -794,6 +847,55 @@ export default function Documentation() {
       title: "Document Deleted",
       description: "Document has been successfully deleted.",
     })
+  }
+
+  const handleSendForSignature = () => {
+    if (!selectedDocument) return
+    
+    const docSigners = selectedSigners.map(signerId => {
+      const member = mockCompanyMembers.find(m => m.id === signerId)
+      return member ? {
+        id: member.id,
+        name: member.name,
+        email: member.email,
+        status: 'pending' as const
+      } : null
+    }).filter(Boolean) as Signer[]
+    
+    const updatedDoc = {
+      ...selectedDocument,
+      status: 'pending_signature' as const,
+      signers: docSigners
+    }
+    
+    setDocuments(documents.map(doc => 
+      doc.id === selectedDocument.id ? updatedDoc : doc
+    ))
+    
+    setIsSignatureDialogOpen(false)
+    setSelectedDocument(null)
+    setSelectedSigners([])
+    
+    toast({
+      title: "Document Sent for Signature",
+      description: `${selectedDocument.name} has been sent to ${docSigners.length} signers.`,
+    })
+  }
+
+  const addNewSigner = () => {
+    setNewSigners([...newSigners, { name: '', email: '' }])
+  }
+
+  const removeSignerField = (index: number) => {
+    if (newSigners.length > 1) {
+      setNewSigners(newSigners.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateSignerField = (index: number, field: 'name' | 'email', value: string) => {
+    setNewSigners(newSigners.map((signer, i) => 
+      i === index ? { ...signer, [field]: value } : signer
+    ))
   }
 
   const totalDocuments = documents.length
@@ -1154,6 +1256,508 @@ export default function Documentation() {
           <DocumentMailbox />
         </div>
       </div>
+
+      {/* Upload Dialog */}
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Upload className="w-6 h-6 text-primary" />
+              </div>
+              Upload & Process Document
+            </DialogTitle>
+            <DialogDescription>
+              Upload documents for OCR processing, electronic signatures, or general storage
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* File Upload */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Select Document</Label>
+              <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
+                <input
+                  type="file"
+                  onChange={handleFileSelect}
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt"
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-lg font-medium mb-2">
+                    {selectedFile ? selectedFile.name : 'Click to upload or drag and drop'}
+                  </p>
+                  <p className="text-muted-foreground">
+                    PDF, Word, Images, or Text files (Max 10MB)
+                  </p>
+                </label>
+              </div>
+            </div>
+
+            {selectedFile && (
+              <>
+                {/* Document Info */}
+                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-xl">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">File Name</Label>
+                    <p className="font-medium">{selectedFile.name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">File Size</Label>
+                    <p className="font-medium">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
+                </div>
+
+                {/* Upload Options */}
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Upload Purpose</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card 
+                      className={cn(
+                        "cursor-pointer transition-all border-2 hover:shadow-md",
+                        uploadType === 'sign' ? "border-primary bg-primary/5" : "border-border"
+                      )}
+                      onClick={() => setUploadType('sign')}
+                    >
+                      <CardContent className="p-4 text-center">
+                        <PenTool className="w-8 h-8 mx-auto mb-3 text-primary" />
+                        <h3 className="font-semibold mb-2">For Signature</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Send for electronic signatures
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card 
+                      className={cn(
+                        "cursor-pointer transition-all border-2 hover:shadow-md",
+                        uploadType === null ? "border-primary bg-primary/5" : "border-border"
+                      )}
+                      onClick={() => setUploadType(null)}
+                    >
+                      <CardContent className="p-4 text-center">
+                        <FileText className="w-8 h-8 mx-auto mb-3 text-primary" />
+                        <h3 className="font-semibold mb-2">Document Storage</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Store and organize documents
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Document Details */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select value={uploadFormData.category} onValueChange={(value) => setUploadFormData({...uploadFormData, category: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.filter(c => c !== 'All').map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tags">Tags</Label>
+                    <Input
+                      id="tags"
+                      placeholder="Enter tags separated by commas"
+                      value={uploadFormData.tags}
+                      onChange={(e) => setUploadFormData({...uploadFormData, tags: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Enter document description"
+                    value={uploadFormData.description}
+                    onChange={(e) => setUploadFormData({...uploadFormData, description: e.target.value})}
+                  />
+                </div>
+
+                {/* Signers Selection for Signature Documents */}
+                {uploadType === 'sign' && (
+                  <div className="space-y-4">
+                    <Label className="text-base font-semibold">Select Signers</Label>
+                    <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-3 border rounded-lg">
+                      {mockCompanyMembers.map((member) => (
+                        <label key={member.id} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedSigners.includes(member.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSigners([...selectedSigners, member.id])
+                              } else {
+                                setSelectedSigners(selectedSigners.filter(id => id !== member.id))
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{member.name}</p>
+                            <p className="text-xs text-muted-foreground">{member.email}</p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                    {selectedSigners.length > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        {selectedSigners.length} signer(s) selected
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <Button 
+                    onClick={handleFileProcessing}
+                    disabled={isProcessing || !selectedFile}
+                    className="flex-1"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        {uploadType === 'sign' ? 'Process & Send for Signature' : 'Upload Document'}
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Document Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Eye className="w-5 h-5 text-primary" />
+              </div>
+              {selectedDocument?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Document details and content preview
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedDocument && (
+            <div className="space-y-6">
+              {/* Document Info */}
+              <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 rounded-xl">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+                  <p className="font-medium">{selectedDocument.category}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Size</Label>
+                  <p className="font-medium">{selectedDocument.size}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Uploaded By</Label>
+                  <p className="font-medium">{selectedDocument.uploadedBy}</p>
+                </div>
+              </div>
+
+              {/* Tags */}
+              {selectedDocument.tags && selectedDocument.tags.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground mb-2 block">Tags</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedDocument.tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              {selectedDocument.description && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground mb-2 block">Description</Label>
+                  <p className="text-sm">{selectedDocument.description}</p>
+                </div>
+              )}
+
+              {/* Signers */}
+              {selectedDocument.signers && selectedDocument.signers.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground mb-3 block">Signers</Label>
+                  <div className="space-y-2">
+                    {selectedDocument.signers.map((signer) => {
+                      const StatusIcon = getSignerStatusIcon(signer.status)
+                      return (
+                        <div key={signer.id} className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
+                          <StatusIcon className="w-5 h-5" />
+                          <div className="flex-1">
+                            <p className="font-medium">{signer.name}</p>
+                            <p className="text-sm text-muted-foreground">{signer.email}</p>
+                          </div>
+                          <Badge variant={signer.status === 'signed' ? 'default' : signer.status === 'declined' ? 'destructive' : 'secondary'}>
+                            {signer.status}
+                          </Badge>
+                          {signer.signedDate && (
+                            <p className="text-xs text-muted-foreground">
+                              Signed: {signer.signedDate}
+                            </p>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Document Content Preview */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-muted-foreground">Document Preview</Label>
+                <div className="p-6 bg-muted/20 rounded-xl border min-h-[200px]">
+                  {selectedDocument.extractedText ? (
+                    <pre className="text-sm whitespace-pre-wrap font-mono">
+                      {selectedDocument.extractedText}
+                    </pre>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      Document preview not available. Click download to view the full document.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Button onClick={() => handleDownloadDocument(selectedDocument)}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsViewDialogOpen(false)
+                    handleEditDocument(selectedDocument)
+                  }}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+                {selectedDocument.status === 'draft' && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setIsViewDialogOpen(false)
+                      setIsSignatureDialogOpen(true)
+                    }}
+                  >
+                    <PenTool className="w-4 h-4 mr-2" />
+                    Send for Signature
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Document Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Edit className="w-5 h-5 text-primary" />
+              </div>
+              Edit Document
+            </DialogTitle>
+            <DialogDescription>
+              Update document information and settings
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-category">Category</Label>
+                <Select value={uploadFormData.category} onValueChange={(value) => setUploadFormData({...uploadFormData, category: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.filter(c => c !== 'All').map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-tags">Tags</Label>
+                <Input
+                  id="edit-tags"
+                  placeholder="Enter tags separated by commas"
+                  value={uploadFormData.tags}
+                  onChange={(e) => setUploadFormData({...uploadFormData, tags: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                placeholder="Enter document description"
+                value={uploadFormData.description}
+                onChange={(e) => setUploadFormData({...uploadFormData, description: e.target.value})}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button onClick={handleSaveEdit}>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Save Changes
+              </Button>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send for Signature Dialog */}
+      <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <PenTool className="w-5 h-5 text-primary" />
+              </div>
+              Send for Electronic Signature
+            </DialogTitle>
+            <DialogDescription>
+              Select signers and send the document for electronic signatures
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Company Members */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Select Company Members</Label>
+              <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto p-3 border rounded-lg">
+                {mockCompanyMembers.map((member) => (
+                  <label key={member.id} className="flex items-center space-x-3 p-3 hover:bg-muted/50 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedSigners.includes(member.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedSigners([...selectedSigners, member.id])
+                        } else {
+                          setSelectedSigners(selectedSigners.filter(id => id !== member.id))
+                        }
+                      }}
+                      className="rounded"
+                    />
+                    <Avatar className="w-10 h-10">
+                      <AvatarFallback>
+                        {member.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="font-medium">{member.name}</p>
+                      <p className="text-sm text-muted-foreground">{member.email}</p>
+                      <p className="text-xs text-muted-foreground">{member.department} • {member.role}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              {selectedSigners.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {selectedSigners.length} signer(s) selected
+                </p>
+              )}
+            </div>
+
+            {/* Custom Signers */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Add External Signers</Label>
+              {newSigners.map((signer, index) => (
+                <div key={index} className="flex gap-3 items-end">
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor={`signer-name-${index}`}>Name</Label>
+                    <Input
+                      id={`signer-name-${index}`}
+                      placeholder="Enter signer name"
+                      value={signer.name}
+                      onChange={(e) => updateSignerField(index, 'name', e.target.value)}
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor={`signer-email-${index}`}>Email</Label>
+                    <Input
+                      id={`signer-email-${index}`}
+                      type="email"
+                      placeholder="Enter signer email"
+                      value={signer.email}
+                      onChange={(e) => updateSignerField(index, 'email', e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeSignerField(index)}
+                    disabled={newSigners.length === 1}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button variant="outline" onClick={addNewSigner}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Another Signer
+              </Button>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <Button 
+                onClick={handleSendForSignature}
+                disabled={selectedSigners.length === 0 && !newSigners.some(s => s.name && s.email)}
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Send for Signature
+              </Button>
+              <Button variant="outline" onClick={() => setIsSignatureDialogOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
