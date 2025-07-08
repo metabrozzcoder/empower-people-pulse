@@ -338,25 +338,25 @@ export default function AccessControl() {
                       }
                     }}
                     disabled={!selectedEmployee}
-                    className="w-full"
+                className="w-full bg-red-600 hover:bg-red-700 text-white"
                   >
                     Apply Restrictions
                   </Button>
                   
                   <Button 
-                    variant="outline"
-                    onClick={() => {
-                      if (selectedEmployee) {
-                        setRestrictedSections([])
-                        updateUser(selectedEmployee, { sectionAccess: [] })
-                        toast({
-                          title: "Restrictions Cleared",
-                          description: "All section restrictions have been removed for this employee.",
-                        })
-                      }
-                    }}
-                    disabled={!selectedEmployee || restrictedSections.length === 0}
-                    className="w-full"
+                variant="outline"
+                onClick={() => {
+                  if (selectedEmployee) {
+                    setRestrictedSections([])
+                    updateUser(selectedEmployee, { sectionAccess: [] })
+                    toast({
+                      title: "Restrictions Cleared",
+                      description: "All section restrictions have been removed for this employee.",
+                    })
+                  }
+                }}
+                disabled={!selectedEmployee || restrictedSections.length === 0}
+                className="w-full border-red-200 text-red-700 hover:bg-red-50"
                   >
                     Clear All Restrictions
                   </Button>
@@ -460,25 +460,25 @@ export default function AccessControl() {
                       }
                     }}
                     disabled={!selectedAccessEmployee}
-                    className="w-full"
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
                   >
                     Grant Access
                   </Button>
                   
                   <Button 
-                    variant="outline"
-                    onClick={() => {
-                      if (selectedAccessEmployee) {
-                        setAllowedSections([])
-                        updateUser(selectedAccessEmployee, { allowedSections: [] })
-                        toast({
-                          title: "Access Cleared",
-                          description: "All specific access grants have been removed for this employee.",
-                        })
-                      }
-                    }}
-                    disabled={!selectedAccessEmployee || allowedSections.length === 0}
-                    className="w-full"
+                variant="outline"
+                onClick={() => {
+                  if (selectedAccessEmployee) {
+                    setAllowedSections([])
+                    updateUser(selectedAccessEmployee, { allowedSections: [] })
+                    toast({
+                      title: "Access Cleared",
+                      description: "All specific access grants have been removed for this employee.",
+                    })
+                  }
+                }}
+                disabled={!selectedAccessEmployee || allowedSections.length === 0}
+                className="w-full border-green-200 text-green-700 hover:bg-green-50"
                   >
                     Clear Granted Access
                   </Button>
@@ -543,6 +543,7 @@ export default function AccessControl() {
                           setSelectedEmployee(user.id)
                           setRestrictedSections(user.sectionAccess || [])
                         }}
+                        className="bg-red-50 border-red-200 hover:bg-red-100 text-red-700"
                       >
                         <Edit className="w-4 h-4 mr-2" />
                         Edit Restrictions
@@ -554,6 +555,7 @@ export default function AccessControl() {
                           setSelectedAccessEmployee(user.id)
                           setAllowedSections(user.allowedSections || [])
                         }}
+                        className="bg-green-50 border-green-200 hover:bg-green-100 text-green-700"
                       >
                         <Unlock className="w-4 h-4 mr-2" />
                         Edit Access
