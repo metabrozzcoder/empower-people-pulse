@@ -543,7 +543,6 @@ export default function AccessControl() {
                           setSelectedEmployee(user.id)
                           setRestrictedSections(user.sectionAccess || [])
                         }}
-                        className="bg-red-50 border-red-200 hover:bg-red-100 text-red-700"
                       >
                         <Edit className="w-4 h-4 mr-2" />
                         Edit Restrictions
@@ -555,7 +554,6 @@ export default function AccessControl() {
                           setSelectedAccessEmployee(user.id)
                           setAllowedSections(user.allowedSections || [])
                         }}
-                        className="bg-green-50 border-green-200 hover:bg-green-100 text-green-700"
                       >
                         <Unlock className="w-4 h-4 mr-2" />
                         Edit Access
