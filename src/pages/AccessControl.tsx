@@ -251,8 +251,9 @@ export default function AccessControl() {
                   onValueChange={(value) => {
                     setSelectedEmployee(value)
                     const user = users.find(u => u.id === value)
-                    // Use allowedSections as the source of truth for permissions
-                    setAllowedSections(user?.allowedSections || [])
+                    // Load existing permissions for the selected user
+                    const userPermissions = user?.allowedSections || []
+                    setAllowedSections(userPermissions)
                   }}
                 >
                   <SelectTrigger>
