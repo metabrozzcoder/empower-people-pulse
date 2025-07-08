@@ -31,6 +31,7 @@ import {
 import { NavLink, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/context/AuthContext"
 import {
   Sidebar,
   SidebarContent,
@@ -121,6 +122,7 @@ const sidebarSections = [
 export function AppSidebar() {
   const { toast } = useToast()
   const navigate = useNavigate()
+  const { logout, currentUser } = useAuth()
   const [openSections, setOpenSections] = useState<string[]>([
     "Main Menu", "HR & Projects", "Organization"
   ])
@@ -143,7 +145,8 @@ export function AppSidebar() {
       title: "Logging out...",
       description: "You have been successfully logged out.",
     })
-    navigate("/")
+    logout()
+    navigate("/login")
   }
 
   const handleProfileAction = (action: string) => {
@@ -245,10 +248,10 @@ export function AppSidebar() {
                 <User className="w-5 h-5 text-primary-foreground" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-semibold">Sarah Wilson</p>
+                <p className="text-sm font-semibold">{currentUser?.name || 'User'}</p>
                 <p className="text-xs text-muted-foreground flex items-center">
                   <Shield className="w-3 h-3 mr-1" />
-                  Administrator
+                  {currentUser?.role || 'User'}
                 </p>
               </div>
               <ChevronDown className="w-4 h-4 text-muted-foreground" />

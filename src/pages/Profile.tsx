@@ -6,19 +6,22 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Calendar, Mail, Phone, MapPin, Building, User, Award, Clock, TrendingUp } from "lucide-react"
+import { useAuth } from "@/context/AuthContext"
 
 const Profile = () => {
+  const { currentUser } = useAuth()
+  
   const userProfile = {
-    name: "John Doe",
-    email: "john.doe@company.com",
-    phone: "+1 (555) 123-4567",
-    position: "HR Manager",
-    department: "Human Resources",
+    name: currentUser?.name || "John Doe",
+    email: currentUser?.email || "john.doe@company.com",
+    phone: currentUser?.phone || "+1 (555) 123-4567",
+    position: currentUser?.role === 'Admin' ? 'Administrator' : currentUser?.role === 'HR' ? 'HR Manager' : 'Employee',
+    department: currentUser?.department || "Human Resources",
     location: "New York, NY",
     hireDate: "January 15, 2020",
-    employeeId: "EMP-001",
+    employeeId: currentUser?.id || "EMP-001",
     manager: "Sarah Wilson",
-    status: "Active",
+    status: currentUser?.status || "Active",
     performanceScore: 92
   }
 

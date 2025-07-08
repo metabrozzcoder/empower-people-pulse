@@ -7,11 +7,13 @@ import { Lock, User, Eye, EyeOff } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useNavigate } from 'react-router-dom'
 import { useUsers } from '@/context/UserContext'
+import { useAuth } from '@/context/AuthContext'
 
 export default function Login() {
   const { toast } = useToast()
   const navigate = useNavigate()
   const { authenticateUser } = useUsers()
+  const { login } = useAuth()
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -28,14 +30,7 @@ export default function Login() {
       
       setTimeout(() => {
         if (user) {
-          localStorage.setItem('user', JSON.stringify({
-            id: user.id,
-            username: user.username,
-            name: user.name,
-            role: user.role,
-            permissions: user.permissions,
-            sectionAccess: user.sectionAccess
-          }))
+          login(user)
           
           toast({
             title: "Login Successful",
