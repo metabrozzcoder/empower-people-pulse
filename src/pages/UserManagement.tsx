@@ -107,6 +107,17 @@ export default function UserManagement() {
 
   const handleEditUser = (user: User) => {
     setSelectedUser(user)
+    setFormData({
+      name: user.name.split(' ')[0] || '',
+      surname: user.name.split(' ')[1] || '',
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      organization: user.organization || '',
+      department: user.department || '',
+      linkedEmployee: user.linkedEmployee || ''
+    })
+    setGeneratedCredentials({ username: user.username, password: user.password })
     setIsDialogOpen(true)
   }
 
@@ -144,27 +155,49 @@ export default function UserManagement() {
       ? ['employee_management', 'recruitment', 'performance_review'] 
       : ['chat_access']
 
-    const newUser = {
-      name: fullName,
-      email: formData.email,
-      phone: formData.phone || '',
-      role: formData.role as 'Admin' | 'HR' | 'Guest',
-      status: 'Active' as const,
-      department: formData.department,
-      organization: formData.organization,
-      linkedEmployee: formData.linkedEmployee,
-      permissions: userPermissions,
-      username: generatedCredentials.username,
-      password: generatedCredentials.password,
-      sectionAccess: []
-    }
+    if (selectedUser) {
+      // Update existing user
+      updateUser(selectedUser.id, {
+        name: fullName,
+        email: formData.email,
+        phone: formData.phone || '',
+        role: formData.role as 'Admin' | 'HR' | 'Guest',
+        department: formData.department,
+        organization: formData.organization,
+        linkedEmployee: formData.linkedEmployee,
+        permissions: userPermissions,
+        username: generatedCredentials.username,
+        password: generatedCredentials.password
+      })
+      
+      toast({
+        title: "User Updated Successfully",
+        description: `User ${fullName} has been updated.`,
+      })
+    } else {
+      // Create new user
+      const newUser = {
+        name: fullName,
+        email: formData.email,
+        phone: formData.phone || '',
+        role: formData.role as 'Admin' | 'HR' | 'Guest',
+        status: 'Active' as const,
+        department: formData.department,
+        organization: formData.organization,
+        linkedEmployee: formData.linkedEmployee,
+        permissions: userPermissions,
+        username: generatedCredentials.username,
+        password: generatedCredentials.password,
+        sectionAccess: []
+      }
 
-    addUser(newUser)
-    
-    toast({
-      title: "User Created Successfully",
-      description: `Username: ${generatedCredentials.username}, Password: ${generatedCredentials.password}`,
-    })
+      addUser(newUser)
+      
+      toast({
+        title: "User Created Successfully",
+        description: `Username: ${generatedCredentials.username}, Password: ${generatedCredentials.password}`,
+      })
+    }
 
     setIsDialogOpen(false)
     setFormData({
@@ -422,7 +455,24 @@ export default function UserManagement() {
                     <SelectItem value="Creative Studios">Creative Studios</SelectItem>
                   </SelectContent>
                 </Select>
+            
+            {/* Current User Restrictions Display */}
+            {selectedUser && selectedUser.sectionAccess && selectedUser.sectionAccess.length > 0 && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h4 className="font-medium text-red-800 mb-2">Current Restrictions</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedUser.sectionAccess.map((section) => (
+                    <Badge key={section} variant="destructive" className="text-xs">
+                      {section}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-xs text-red-600 mt-2">
+                  To modify restrictions, use the Access Control page.
+                </p>
               </div>
+            )}
+          </div>
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 <Select

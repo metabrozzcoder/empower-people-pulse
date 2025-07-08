@@ -356,6 +356,63 @@ export default function AccessControl() {
         </CardContent>
       </Card>
 
+      {/* Restricted Users List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Users with Section Restrictions</CardTitle>
+          <CardDescription>View and manage users who have restricted access to certain sections</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const restrictedUsers = users.filter(user => user.sectionAccess && user.sectionAccess.length > 0)
+            
+            if (restrictedUsers.length === 0) {
+              return (
+                <div className="text-center py-8 text-muted-foreground">
+                  No users have section restrictions applied.
+                </div>
+              )
+            }
+
+            return (
+              <div className="space-y-4">
+                {restrictedUsers.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Users className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{user.name}</h3>
+                        <p className="text-sm text-muted-foreground">{user.role} • {user.email}</p>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {user.sectionAccess?.map((section) => (
+                            <Badge key={section} variant="destructive" className="text-xs">
+                              {section}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedEmployee(user.id)
+                        setRestrictedSections(user.sectionAccess || [])
+                      }}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Restrictions
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+        </CardContent>
+      </Card>
+
       {/* Access Rules */}
       <Card>
         <CardHeader>
