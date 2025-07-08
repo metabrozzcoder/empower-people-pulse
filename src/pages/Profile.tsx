@@ -12,39 +12,32 @@ const Profile = () => {
   const { currentUser } = useAuth()
   
   const userProfile = {
-    name: currentUser?.name || "John Doe",
-    email: currentUser?.email || "john.doe@company.com",
-    phone: currentUser?.phone || "+1 (555) 123-4567",
-    position: currentUser?.role === 'Admin' ? 'Administrator' : currentUser?.role === 'HR' ? 'HR Manager' : 'Employee',
-    department: currentUser?.department || "Human Resources",
-    location: "New York, NY",
-    hireDate: "January 15, 2020",
-    employeeId: currentUser?.id || "EMP-001",
-    manager: "Sarah Wilson",
-    status: currentUser?.status || "Active",
-    performanceScore: 92
+    name: currentUser?.name || "Not provided",
+    email: currentUser?.email || "Not provided",
+    phone: currentUser?.phone || "Not provided",
+    position: currentUser?.role === 'Admin' ? 'Administrator' : currentUser?.role === 'HR' ? 'HR Manager' : currentUser?.role === 'Guest' ? 'Guest' : 'Not assigned',
+    department: currentUser?.department || "Not assigned",
+    location: "Not provided",
+    hireDate: currentUser?.createdDate || "Not provided",
+    employeeId: currentUser?.id ? `EMP-${currentUser.id}` : "Not assigned",
+    manager: "Not assigned",
+    status: currentUser?.status || "Unknown",
+    performanceScore: 0
   }
 
   const stats = [
-    { label: "Years of Service", value: "4.5", icon: Clock },
-    { label: "Performance Score", value: "92%", icon: TrendingUp },
-    { label: "Team Size", value: "12", icon: User },
-    { label: "Projects Completed", value: "45", icon: Award }
+    { label: "Years of Service", value: "Not calculated", icon: Clock },
+    { label: "Performance Score", value: userProfile.performanceScore > 0 ? `${userProfile.performanceScore}%` : "Not evaluated", icon: TrendingUp },
+    { label: "Team Size", value: "Not assigned", icon: User },
+    { label: "Projects Completed", value: "Not tracked", icon: Award }
   ]
 
   const recentAchievements = [
-    { title: "Employee of the Month", date: "March 2024", type: "award" },
-    { title: "Leadership Training Completion", date: "February 2024", type: "training" },
-    { title: "5 Years of Service", date: "January 2024", type: "milestone" },
-    { title: "Performance Excellence", date: "December 2023", type: "award" }
+    { title: "No achievements recorded", date: "N/A", type: "info" }
   ]
 
   const skills = [
-    { name: "Leadership", level: 90 },
-    { name: "Communication", level: 95 },
-    { name: "Project Management", level: 85 },
-    { name: "Team Building", level: 88 },
-    { name: "Strategic Planning", level: 82 }
+    { name: "No skills recorded", level: 0 }
   ]
 
   return (
@@ -62,8 +55,8 @@ const Profile = () => {
           <Card>
             <CardHeader className="text-center">
               <Avatar className="w-24 h-24 mx-auto">
-                <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=96&h=96&fit=crop&crop=face" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarImage src={currentUser?.avatar} />
+                <AvatarFallback>{currentUser?.name ? currentUser.name.split(' ').map(n => n[0]).join('') : 'U'}</AvatarFallback>
               </Avatar>
               <CardTitle>{userProfile.name}</CardTitle>
               <CardDescription>{userProfile.position}</CardDescription>

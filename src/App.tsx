@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { AppSidebar } from "@/components/AppSidebar"
 import { UserProvider } from "@/context/UserContext"
 import { AuthProvider, useAuth } from "@/context/AuthContext"
+import { ProtectedRoute } from "@/components/ProtectedRoute"
 import Index from "./pages/Index"
 import Employees from "./pages/Employees"
 import Profile from "./pages/Profile"
@@ -63,36 +64,36 @@ function AppContent() {
           </header>
           <main className="flex-1 p-4 lg:p-6">
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/ai-assistant" element={<AIAssistantPage />} />
-              <Route path="/employees" element={<Employees />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/account-settings" element={<AccountSettings />} />
+              <Route path="/" element={<ProtectedRoute sectionName="Dashboard"><Index /></ProtectedRoute>} />
+              <Route path="/ai-assistant" element={<ProtectedRoute sectionName="AI Assistant"><AIAssistantPage /></ProtectedRoute>} />
+              <Route path="/employees" element={<ProtectedRoute sectionName="Employees"><Employees /></ProtectedRoute>} />
+              <Route path="/projects" element={<ProtectedRoute sectionName="Projects"><Projects /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
               
               {/* Fully functional HR pages */}
-              <Route path="/recruitment" element={<Recruitment />} />
-              <Route path="/tasks" element={<Tasks />} />
-              <Route path="/scheduling" element={<Scheduling />} />
-              <Route path="/attendance" element={<Attendance />} />
-              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/recruitment" element={<ProtectedRoute sectionName="Recruitment"><Recruitment /></ProtectedRoute>} />
+              <Route path="/tasks" element={<ProtectedRoute sectionName="Tasks"><Tasks /></ProtectedRoute>} />
+              <Route path="/scheduling" element={<ProtectedRoute sectionName="Scheduling"><Scheduling /></ProtectedRoute>} />
+              <Route path="/attendance" element={<ProtectedRoute sectionName="Attendance"><Attendance /></ProtectedRoute>} />
+              <Route path="/analytics" element={<ProtectedRoute sectionName="Analytics"><Analytics /></ProtectedRoute>} />
               
               {/* Organization & Communication pages */}
-              <Route path="/organizations" element={<Organizations />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/user-management" element={<UserManagement />} />
-              <Route path="/access-control" element={<AccessControl />} />
+              <Route path="/organizations" element={<ProtectedRoute sectionName="Organizations"><Organizations /></ProtectedRoute>} />
+              <Route path="/chat" element={<ProtectedRoute sectionName="Chat"><Chat /></ProtectedRoute>} />
+              <Route path="/user-management" element={<ProtectedRoute sectionName="User Management" allowedRoles={['Admin']}><UserManagement /></ProtectedRoute>} />
+              <Route path="/access-control" element={<ProtectedRoute sectionName="Access Control" allowedRoles={['Admin']}><AccessControl /></ProtectedRoute>} />
               
               {/* New pages */}
-              <Route path="/security-system" element={<SecuritySystem />} />
-              <Route path="/documentation" element={<Documentation />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/security-system" element={<ProtectedRoute allowedRoles={['Admin']}><SecuritySystem /></ProtectedRoute>} />
+              <Route path="/documentation" element={<ProtectedRoute sectionName="Documentation"><Documentation /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               
               {/* Placeholder routes for future implementation */}
-              <Route path="/payroll" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Payroll</h2><p className="text-muted-foreground">Payroll management coming soon...</p></div>} />
-              <Route path="/communications" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Communications</h2><p className="text-muted-foreground">Internal communications coming soon...</p></div>} />
+              <Route path="/payroll" element={<ProtectedRoute><div className="text-center py-12"><h2 className="text-2xl font-bold">Payroll</h2><p className="text-muted-foreground">Payroll management coming soon...</p></div></ProtectedRoute>} />
+              <Route path="/communications" element={<ProtectedRoute><div className="text-center py-12"><h2 className="text-2xl font-bold">Communications</h2><p className="text-muted-foreground">Internal communications coming soon...</p></div></ProtectedRoute>} />
               
-              <Route path="/automation" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Automation</h2><p className="text-muted-foreground">Workflow automation coming soon...</p></div>} />
+              <Route path="/automation" element={<ProtectedRoute><div className="text-center py-12"><h2 className="text-2xl font-bold">Automation</h2><p className="text-muted-foreground">Workflow automation coming soon...</p></div></ProtectedRoute>} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
