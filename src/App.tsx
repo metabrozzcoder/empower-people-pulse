@@ -29,7 +29,6 @@ import RoleManagement from "./pages/RoleManagement"
 import AccessControl from "./pages/AccessControl"
 import SecuritySystem from "./pages/SecuritySystem"
 import Documentation from "./pages/Documentation"
-import DocumentMailbox from "./pages/DocumentMailbox"
 import Settings from "./pages/Settings"
 import NotFound from "./pages/NotFound"
 import Login from "./pages/Login"
@@ -89,7 +88,6 @@ function AppContent() {
               {/* New pages */}
               <Route path="/security-system" element={<ProtectedRoute allowedRoles={['Admin']}><SecuritySystem /></ProtectedRoute>} />
               <Route path="/documentation" element={<ProtectedRoute sectionName="Documentation"><Documentation /></ProtectedRoute>} />
-              <Route path="/document-mailbox" element={<ProtectedRoute sectionName="Documentation"><DocumentMailbox /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               
               {/* Placeholder routes for future implementation */}
