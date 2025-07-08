@@ -111,10 +111,7 @@ const sidebarSections = [
     title: "System",
     collapsible: true,
     items: [
-      { title: "Payroll", url: "/payroll", icon: DollarSign, sectionName: "Payroll" },
-      { title: "Automation", url: "/automation", icon: Zap, sectionName: "Automation" },
       { title: "Security System", url: "/security-system", icon: Scan, allowedRoles: ["Admin"] },
-      { title: "Settings", url: "/settings", icon: Settings, sectionName: "Settings" },
     ]
   }
 ]
@@ -153,7 +150,7 @@ export function AppSidebar() {
     if (action === 'logout') {
       handleLogout()
     } else if (action === 'settings') {
-      navigate("/settings")
+      navigate("/account-settings")
     } else if (action === 'profile') {
       navigate("/profile")
     }
@@ -298,7 +295,7 @@ export function AppSidebar() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleProfileAction('settings')}>
               <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
+              <span>Account Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleProfileAction('logout')}>

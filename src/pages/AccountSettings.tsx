@@ -1,5 +1,4 @@
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,17 +9,22 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { User, Bell, Shield, Palette, Globe, Key } from "lucide-react"
+import { User, Bell, Shield, Palette, Key } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useTheme } from "next-themes"
+import { useAuth } from "@/context/AuthContext"
 
 const AccountSettings = () => {
   const { toast } = useToast()
+  const { theme, setTheme } = useTheme()
+  const { currentUser } = useAuth()
+  
   const [profile, setProfile] = useState({
-    name: "John Doe",
-    email: "john.doe@company.com",
-    phone: "+1 (555) 123-4567",
-    department: "Human Resources",
-    role: "HR Manager",
+    name: currentUser?.name || "John Doe",
+    email: currentUser?.email || "john.doe@company.com",
+    phone: currentUser?.phone || "+1 (555) 123-4567",
+    department: currentUser?.department || "Human Resources",
+    role: currentUser?.role || "HR Manager",
     timezone: "UTC-8"
   })
 
@@ -36,7 +40,32 @@ const AccountSettings = () => {
     sessionTimeout: "30"
   })
 
+  const [preferences, setPreferences] = useState({
+    language: "en",
+    dateFormat: "mm/dd/yyyy",
+    timeFormat: "12"
+  })
+
+  // Load saved preferences from localStorage
+  useEffect(() => {
+    const savedNotifications = localStorage.getItem('notifications')
+    const savedPreferences = localStorage.getItem('preferences')
+    const savedSecurity = localStorage.getItem('security')
+    
+    if (savedNotifications) {
+      setNotifications(JSON.parse(savedNotifications))
+    }
+    if (savedPreferences) {
+      setPreferences(JSON.parse(savedPreferences))
+    }
+    if (savedSecurity) {
+      setSecurity(JSON.parse(savedSecurity))
+    }
+  }, [])
+
   const handleProfileSave = () => {
+    // Save profile data to localStorage
+    localStorage.setItem('userProfile', JSON.stringify(profile))
     toast({
       title: "Profile Updated",
       description: "Your profile has been successfully updated.",
@@ -44,6 +73,7 @@ const AccountSettings = () => {
   }
 
   const handleNotificationSave = () => {
+    localStorage.setItem('notifications', JSON.stringify(notifications))
     toast({
       title: "Notifications Updated",
       description: "Your notification preferences have been saved.",
@@ -51,9 +81,28 @@ const AccountSettings = () => {
   }
 
   const handleSecuritySave = () => {
+    localStorage.setItem('security', JSON.stringify(security))
     toast({
       title: "Security Settings Updated",
       description: "Your security settings have been updated.",
+    })
+  }
+
+  const handlePreferencesSave = () => {
+    localStorage.setItem('preferences', JSON.stringify(preferences))
+    // Apply language setting
+    document.documentElement.lang = preferences.language
+    toast({
+      title: "Preferences Updated",
+      description: "Your preferences have been saved and applied.",
+    })
+  }
+
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme)
+    toast({
+      title: "Theme Changed",
+      description: `Theme has been changed to ${newTheme === 'system' ? 'system preference' : newTheme}.`,
     })
   }
 
@@ -98,7 +147,7 @@ const AccountSettings = () => {
               <div className="flex items-center space-x-4">
                 <Avatar className="w-20 h-20">
                   <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarFallback>{profile.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                 </Avatar>
                 <div>
                   <Button variant="outline" size="sm">Change Photo</Button>
@@ -343,7 +392,7 @@ const AccountSettings = () => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Theme</Label>
-                  <Select defaultValue="system">
+                  <Select value={theme} onValueChange={handleThemeChange}>
                     <SelectTrigger className="w-[200px]">
                       <SelectValue />
                     </SelectTrigger>
@@ -353,21 +402,24 @@ const AccountSettings = () => {
                       <SelectItem value="system">System</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-sm text-muted-foreground">
+                    Choose your preferred theme or follow system settings
+                  </p>
                 </div>
                 
                 <Separator />
                 
                 <div className="space-y-2">
                   <Label>Language</Label>
-                  <Select defaultValue="en">
+                  <Select value={preferences.language} onValueChange={(value) => setPreferences({...preferences, language: value})}>
                     <SelectTrigger className="w-[200px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="es">Spanish</SelectItem>
-                      <SelectItem value="fr">French</SelectItem>
-                      <SelectItem value="de">German</SelectItem>
+                      <SelectItem value="es">Español</SelectItem>
+                      <SelectItem value="fr">Français</SelectItem>
+                      <SelectItem value="de">Deutsch</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -376,7 +428,7 @@ const AccountSettings = () => {
                 
                 <div className="space-y-2">
                   <Label>Date Format</Label>
-                  <Select defaultValue="mm/dd/yyyy">
+                  <Select value={preferences.dateFormat} onValueChange={(value) => setPreferences({...preferences, dateFormat: value})}>
                     <SelectTrigger className="w-[200px]">
                       <SelectValue />
                     </SelectTrigger>
@@ -387,9 +439,24 @@ const AccountSettings = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                <Separator />
+                
+                <div className="space-y-2">
+                  <Label>Time Format</Label>
+                  <Select value={preferences.timeFormat} onValueChange={(value) => setPreferences({...preferences, timeFormat: value})}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="12">12-hour</SelectItem>
+                      <SelectItem value="24">24-hour</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <Button>Save Preferences</Button>
+              <Button onClick={handlePreferencesSave}>Save Preferences</Button>
             </CardContent>
           </Card>
         </TabsContent>
