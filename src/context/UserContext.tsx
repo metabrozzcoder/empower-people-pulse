@@ -19,6 +19,7 @@ export interface User {
   password: string
   guestId?: string
   sectionAccess?: string[]
+  allowedSections?: string[]
 }
 
 interface UserContextType {

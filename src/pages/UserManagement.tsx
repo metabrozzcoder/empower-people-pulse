@@ -475,6 +475,23 @@ export default function UserManagement() {
                 </p>
               </div>
             )}
+            
+            {/* Current User Allowed Sections Display */}
+            {selectedUser && selectedUser.allowedSections && selectedUser.allowedSections.length > 0 && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="font-medium text-green-800 mb-2">Granted Access</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedUser.allowedSections.map((section) => (
+                    <Badge key={section} className="bg-green-100 text-green-800 hover:bg-green-200 text-xs">
+                      {section}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-xs text-green-600 mt-2">
+                  To modify granted access, use the Access Control page.
+                </p>
+              </div>
+            )}
           </div>
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>

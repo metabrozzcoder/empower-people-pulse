@@ -104,6 +104,8 @@ export default function AccessControl() {
   const [selectedRule, setSelectedRule] = useState<AccessRule | null>(null)
   const [selectedEmployee, setSelectedEmployee] = useState('')
   const [restrictedSections, setRestrictedSections] = useState<string[]>([])
+  const [selectedAccessEmployee, setSelectedAccessEmployee] = useState('')
+  const [allowedSections, setAllowedSections] = useState<string[]>([])
 
   const filteredRules = accessRules.filter(rule =>
     rule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -236,147 +238,281 @@ export default function AccessControl() {
       </div>
 
       {/* Employee Permissions Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Employee Section Permissions</CardTitle>
-          <CardDescription>Manually select employees and restrict specific sections</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Select Employee</Label>
-                <Select 
-                  value={selectedEmployee} 
-                  onValueChange={(value) => {
-                    setSelectedEmployee(value)
-                    const user = users.find(u => u.id === value)
-                    setRestrictedSections(user?.sectionAccess || [])
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose an employee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name} ({user.role})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {selectedEmployee && (
-                <div className="space-y-3">
-                  <Label>Restricted Sections</Label>
-                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-                    {[
-                      'Dashboard', 'Employees', 'Projects', 'Recruitment', 'Tasks', 
-                      'Scheduling', 'Attendance', 'Analytics', 'Organizations', 
-                      'Chat', 'User Management', 'Access Control', 'Documentation',
-                      'AI Assistant', 'Profile', 'Account Settings', 'Security System',
-                      'Settings', 'KPI Dashboard', 'Role Management', 'Performance'
-                    ].map((section) => (
-                      <div key={section} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={section}
-                          checked={restrictedSections.includes(section)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setRestrictedSections([...restrictedSections, section])
-                            } else {
-                              setRestrictedSections(restrictedSections.filter(s => s !== section))
-                            }
-                          }}
-                        />
-                        <Label htmlFor={section} className="text-sm font-normal">
-                          {section}
-                        </Label>
-                      </div>
-                    ))}
+      <Tabs defaultValue="restrictions" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="restrictions">Section Restrictions</TabsTrigger>
+          <TabsTrigger value="access">Section Access</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="restrictions">
+          <Card>
+            <CardHeader>
+              <CardTitle>Employee Section Restrictions</CardTitle>
+              <CardDescription>Manually select employees and restrict specific sections</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Select Employee</Label>
+                    <Select 
+                      value={selectedEmployee} 
+                      onValueChange={(value) => {
+                        setSelectedEmployee(value)
+                        const user = users.find(u => u.id === value)
+                        setRestrictedSections(user?.sectionAccess || [])
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose an employee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name} ({user.role})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="space-y-4">
-              {selectedEmployee && (
-                <div className="p-4 border rounded-lg bg-muted/50">
-                  <h4 className="font-medium mb-2">Current Restrictions</h4>
-                  {restrictedSections.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {restrictedSections.map((section) => (
-                        <Badge key={section} variant="destructive" className="text-xs">
-                          {section}
-                        </Badge>
-                      ))}
+                  
+                  {selectedEmployee && (
+                    <div className="space-y-3">
+                      <Label>Restricted Sections</Label>
+                      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                        {[
+                          'Dashboard', 'Employees', 'Projects', 'Recruitment', 'Tasks', 
+                          'Scheduling', 'Attendance', 'Analytics', 'Organizations', 
+                          'Chat', 'User Management', 'Access Control', 'Documentation',
+                          'AI Assistant', 'Profile', 'Account Settings', 'Security System',
+                          'Settings', 'KPI Dashboard', 'Role Management', 'Performance'
+                        ].map((section) => (
+                          <div key={section} className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={section}
+                              checked={restrictedSections.includes(section)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setRestrictedSections([...restrictedSections, section])
+                                } else {
+                                  setRestrictedSections(restrictedSections.filter(s => s !== section))
+                                }
+                              }}
+                            />
+                            <Label htmlFor={section} className="text-sm font-normal">
+                              {section}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No restrictions applied</p>
                   )}
                 </div>
-              )}
-              
-              <Button 
-                onClick={() => {
-                  if (selectedEmployee) {
-                    updateUser(selectedEmployee, { sectionAccess: restrictedSections })
-                    toast({
-                      title: "Permissions Updated",
-                      description: "Employee section permissions have been updated successfully.",
-                    })
-                  }
-                }}
-                disabled={!selectedEmployee}
-                className="w-full"
-              >
-                Apply Restrictions
-              </Button>
-              
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  if (selectedEmployee) {
-                    setRestrictedSections([])
-                    updateUser(selectedEmployee, { sectionAccess: [] })
-                    toast({
-                      title: "Restrictions Cleared",
-                      description: "All section restrictions have been removed for this employee.",
-                    })
-                  }
-                }}
-                disabled={!selectedEmployee || restrictedSections.length === 0}
-                className="w-full"
-              >
-                Clear All Restrictions
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                
+                <div className="space-y-4">
+                  {selectedEmployee && (
+                    <div className="p-4 border rounded-lg bg-muted/50">
+                      <h4 className="font-medium mb-2">Current Restrictions</h4>
+                      {restrictedSections.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {restrictedSections.map((section) => (
+                            <Badge key={section} variant="destructive" className="text-xs">
+                              {section}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No restrictions applied</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  <Button 
+                    onClick={() => {
+                      if (selectedEmployee) {
+                        updateUser(selectedEmployee, { sectionAccess: restrictedSections })
+                        toast({
+                          title: "Permissions Updated",
+                          description: "Employee section permissions have been updated successfully.",
+                        })
+                      }
+                    }}
+                    disabled={!selectedEmployee}
+                    className="w-full"
+                  >
+                    Apply Restrictions
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      if (selectedEmployee) {
+                        setRestrictedSections([])
+                        updateUser(selectedEmployee, { sectionAccess: [] })
+                        toast({
+                          title: "Restrictions Cleared",
+                          description: "All section restrictions have been removed for this employee.",
+                        })
+                      }
+                    }}
+                    disabled={!selectedEmployee || restrictedSections.length === 0}
+                    className="w-full"
+                  >
+                    Clear All Restrictions
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="access">
+          <Card>
+            <CardHeader>
+              <CardTitle>Grant Section Access</CardTitle>
+              <CardDescription>Give specific access to sections for guest users or restricted employees</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Select Employee</Label>
+                    <Select 
+                      value={selectedAccessEmployee} 
+                      onValueChange={(value) => {
+                        setSelectedAccessEmployee(value)
+                        const user = users.find(u => u.id === value)
+                        setAllowedSections(user?.allowedSections || [])
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose an employee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name} ({user.role})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {selectedAccessEmployee && (
+                    <div className="space-y-3">
+                      <Label>Allowed Sections</Label>
+                      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                        {[
+                          'Dashboard', 'Employees', 'Projects', 'Recruitment', 'Tasks', 
+                          'Scheduling', 'Attendance', 'Analytics', 'Organizations', 
+                          'Chat', 'User Management', 'Access Control', 'Documentation',
+                          'AI Assistant', 'Profile', 'Account Settings', 'Security System',
+                          'Settings', 'KPI Dashboard', 'Role Management', 'Performance'
+                        ].map((section) => (
+                          <div key={section} className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`access-${section}`}
+                              checked={allowedSections.includes(section)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setAllowedSections([...allowedSections, section])
+                                } else {
+                                  setAllowedSections(allowedSections.filter(s => s !== section))
+                                }
+                              }}
+                            />
+                            <Label htmlFor={`access-${section}`} className="text-sm font-normal">
+                              {section}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="space-y-4">
+                  {selectedAccessEmployee && (
+                    <div className="p-4 border rounded-lg bg-green-50 border-green-200">
+                      <h4 className="font-medium mb-2 text-green-800">Granted Access</h4>
+                      {allowedSections.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {allowedSections.map((section) => (
+                            <Badge key={section} className="bg-green-100 text-green-800 hover:bg-green-200 text-xs">
+                              {section}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-green-600">No specific access granted (using role defaults)</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  <Button 
+                    onClick={() => {
+                      if (selectedAccessEmployee) {
+                        updateUser(selectedAccessEmployee, { allowedSections: allowedSections })
+                        toast({
+                          title: "Access Granted",
+                          description: "Employee section access has been updated successfully.",
+                        })
+                      }
+                    }}
+                    disabled={!selectedAccessEmployee}
+                    className="w-full"
+                  >
+                    Grant Access
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      if (selectedAccessEmployee) {
+                        setAllowedSections([])
+                        updateUser(selectedAccessEmployee, { allowedSections: [] })
+                        toast({
+                          title: "Access Cleared",
+                          description: "All specific access grants have been removed for this employee.",
+                        })
+                      }
+                    }}
+                    disabled={!selectedAccessEmployee || allowedSections.length === 0}
+                    className="w-full"
+                  >
+                    Clear Granted Access
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Restricted Users List */}
       <Card>
         <CardHeader>
-          <CardTitle>Users with Section Restrictions</CardTitle>
-          <CardDescription>View and manage users who have restricted access to certain sections</CardDescription>
+          <CardTitle>Users with Custom Permissions</CardTitle>
+          <CardDescription>View and manage users who have custom section access or restrictions</CardDescription>
         </CardHeader>
         <CardContent>
           {(() => {
-            const restrictedUsers = users.filter(user => user.sectionAccess && user.sectionAccess.length > 0)
+            const customPermissionUsers = users.filter(user => 
+              (user.sectionAccess && user.sectionAccess.length > 0) || 
+              (user.allowedSections && user.allowedSections.length > 0)
+            )
             
-            if (restrictedUsers.length === 0) {
+            if (customPermissionUsers.length === 0) {
               return (
                 <div className="text-center py-8 text-muted-foreground">
-                  No users have section restrictions applied.
+                  No users have custom section permissions applied.
                 </div>
               )
             }
 
             return (
               <div className="space-y-4">
-                {restrictedUsers.map((user) => (
+                {customPermissionUsers.map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
                       <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -388,23 +524,41 @@ export default function AccessControl() {
                         <div className="flex flex-wrap gap-1 mt-2">
                           {user.sectionAccess?.map((section) => (
                             <Badge key={section} variant="destructive" className="text-xs">
-                              {section}
+                              Restricted: {section}
+                            </Badge>
+                          ))}
+                          {user.allowedSections?.map((section) => (
+                            <Badge key={section} className="bg-green-100 text-green-800 hover:bg-green-200 text-xs">
+                              Allowed: {section}
                             </Badge>
                           ))}
                         </div>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedEmployee(user.id)
-                        setRestrictedSections(user.sectionAccess || [])
-                      }}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Restrictions
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedEmployee(user.id)
+                          setRestrictedSections(user.sectionAccess || [])
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Restrictions
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedAccessEmployee(user.id)
+                          setAllowedSections(user.allowedSections || [])
+                        }}
+                      >
+                        <Unlock className="w-4 h-4 mr-2" />
+                        Edit Access
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
