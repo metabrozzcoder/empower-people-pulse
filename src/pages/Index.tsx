@@ -1,38 +1,33 @@
 
-import { DashboardStats } from "@/components/DashboardStats"
-import { DashboardCharts } from "@/components/DashboardCharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Calendar, Clock, Users, AlertCircle } from "lucide-react"
+import { Calendar, MessageCircle, CheckSquare, Gift } from "lucide-react"
+import { mockEmployees } from "@/data/mockEmployees"
+import { format, isToday, isTomorrow } from "date-fns"
 
-const recentActivities = [
+const quickActions = [
   {
-    id: 1,
-    type: "hire",
-    message: "Alice Johnson joined as Senior Software Engineer",
-    time: "2 hours ago",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face"
+    title: "Chat",
+    description: "Start a conversation",
+    icon: MessageCircle,
+    href: "/chat",
+    color: "bg-blue-50 text-blue-600 border-blue-200"
   },
   {
-    id: 2,
-    type: "leave",
-    message: "Robert Taylor requested vacation leave",
-    time: "4 hours ago",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face"
+    title: "Calendar",
+    description: "View schedule",
+    icon: Calendar,
+    href: "/scheduling",
+    color: "bg-green-50 text-green-600 border-green-200"
   },
   {
-    id: 3,
-    type: "performance",
-    message: "Q2 performance reviews completed",
-    time: "1 day ago"
-  },
-  {
-    id: 4,
-    type: "announcement",
-    message: "New company policy update published",
-    time: "2 days ago"
+    title: "Tasks",
+    description: "Manage tasks",
+    icon: CheckSquare,
+    href: "/tasks",
+    color: "bg-purple-50 text-purple-600 border-purple-200"
   }
 ]
 
@@ -57,7 +52,24 @@ const upcomingEvents = [
   }
 ]
 
+const getTodayAndTomorrowBirthdays = () => {
+  const today = new Date()
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  
+  return mockEmployees.filter(employee => {
+    const birthday = new Date(employee.birthday)
+    return isToday(birthday) || isTomorrow(birthday)
+  }).map(employee => ({
+    ...employee,
+    isToday: isToday(new Date(employee.birthday)),
+    formattedDate: format(new Date(employee.birthday), "MMM dd")
+  }))
+}
+
 const Index = () => {
+  const birthdayEmployees = getTodayAndTomorrowBirthdays()
+  
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -65,62 +77,30 @@ const Index = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back! Here's what's happening at your company today.
+            Welcome back! Here's your workspace overview.
           </p>
-        </div>
-        <div className="flex items-center space-x-2 mt-4 sm:mt-0">
-          <Button variant="outline" size="sm">
-            <Calendar className="mr-2 h-4 w-4" />
-            Schedule
-          </Button>
-          <Button size="sm">
-            <Users className="mr-2 h-4 w-4" />
-            Add Employee
-          </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <DashboardStats />
+      {/* Quick Actions */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {quickActions.map((action, index) => (
+          <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="flex items-center p-6">
+              <div className={`p-3 rounded-lg ${action.color} mr-4`}>
+                <action.icon className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold">{action.title}</h3>
+                <p className="text-sm text-muted-foreground">{action.description}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      {/* Charts */}
-      <DashboardCharts />
-
-      {/* Bottom Section */}
+      {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Clock className="mr-2 h-5 w-5" />
-              Recent Activity
-            </CardTitle>
-            <CardDescription>Latest updates from your organization</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-start space-x-3">
-                  {activity.avatar ? (
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={activity.avatar} />
-                      <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                      <AlertCircle className="w-4 h-4" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm">{activity.message}</p>
-                    <p className="text-xs text-muted-foreground">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Upcoming Events */}
         <Card>
           <CardHeader>
@@ -147,6 +127,46 @@ const Index = () => {
             <Button variant="outline" className="w-full mt-4">
               View All Events
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Employee Birthdays */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Gift className="mr-2 h-5 w-5" />
+              Employee Birthdays
+            </CardTitle>
+            <CardDescription>Today and tomorrow celebrations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {birthdayEmployees.length > 0 ? (
+              <div className="space-y-4">
+                {birthdayEmployees.map((employee) => (
+                  <div key={employee.id} className="flex items-center space-x-3 p-3 rounded-lg border">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={employee.avatar} />
+                      <AvatarFallback>{employee.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="font-medium">{employee.name}</p>
+                      <p className="text-sm text-muted-foreground">{employee.position}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{employee.formattedDate}</p>
+                      <Badge variant={employee.isToday ? "default" : "secondary"} className="text-xs">
+                        {employee.isToday ? "Today" : "Tomorrow"}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Gift className="mx-auto h-12 w-12 mb-4 opacity-30" />
+                <p>No birthdays today or tomorrow</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

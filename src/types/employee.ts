@@ -6,6 +6,7 @@ export interface Employee {
   position: string
   department: string
   hireDate: string
+  birthday: string
   salary: number
   status: 'Active' | 'Inactive' | 'On Leave'
   avatar?: string
