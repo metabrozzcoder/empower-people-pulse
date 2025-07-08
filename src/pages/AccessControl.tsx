@@ -291,7 +291,7 @@ export default function AccessControl() {
                           'AI Assistant', 'Profile', 'Account Settings', 'Security System',
                           'Settings', 'KPI Dashboard', 'Role Management', 'Performance'
                         ].map((section) => (
-                          <div key={section} className="flex items-center space-x-2 p-2 hover:bg-red-100 rounded">
+                          <div key={section} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded">
                             <Checkbox 
                               id={section}
                               checked={restrictedSections.includes(section)}
@@ -302,9 +302,8 @@ export default function AccessControl() {
                                   setRestrictedSections(restrictedSections.filter(s => s !== section))
                                 }
                               }}
-                              className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                             />
-                            <Label htmlFor={section} className="text-sm font-normal text-red-700">
+                            <Label htmlFor={section} className="text-sm font-normal">
                               {section}
                             </Label>
                           </div>
@@ -406,7 +405,7 @@ export default function AccessControl() {
                   {selectedAccessEmployee && (
                     <div className="space-y-3">
                       <Label>Allowed Sections</Label>
-                      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto p-3 bg-muted/50 border rounded-lg">
                         {[
                           'Dashboard', 'Employees', 'Projects', 'Recruitment', 'Tasks', 
                           'Scheduling', 'Attendance', 'Analytics', 'Organizations', 
@@ -414,7 +413,7 @@ export default function AccessControl() {
                           'AI Assistant', 'Profile', 'Account Settings', 'Security System',
                           'Settings', 'KPI Dashboard', 'Role Management', 'Performance'
                         ].map((section) => (
-                          <div key={section} className="flex items-center space-x-2 p-2 hover:bg-green-100 rounded">
+                          <div key={section} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded">
                             <Checkbox 
                               id={`access-${section}`}
                               checked={allowedSections.includes(section)}
@@ -425,9 +424,8 @@ export default function AccessControl() {
                                   setAllowedSections(allowedSections.filter(s => s !== section))
                                 }
                               }}
-                              className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                             />
-                            <Label htmlFor={`access-${section}`} className="text-sm font-normal text-green-700">
+                            <Label htmlFor={`access-${section}`} className="text-sm font-normal">
                               {section}
                             </Label>
                           </div>
@@ -439,8 +437,8 @@ export default function AccessControl() {
                 
                 <div className="space-y-4">
                   {selectedAccessEmployee && (
-                    <div className="p-4 border rounded-lg bg-green-50 border-green-200">
-                      <h4 className="font-medium mb-2 text-green-800">Granted Access</h4>
+                    <div className="p-4 border rounded-lg bg-muted/50">
+                      <h4 className="font-medium mb-2">Granted Access</h4>
                       {allowedSections.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                           {allowedSections.map((section) => (
@@ -450,7 +448,7 @@ export default function AccessControl() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-green-600">No specific access granted (using role defaults)</p>
+                        <p className="text-sm text-muted-foreground">No specific access granted (using role defaults)</p>
                       )}
                     </div>
                   )}
