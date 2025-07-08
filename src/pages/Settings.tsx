@@ -25,9 +25,11 @@ import {
   Clock
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/context/AuthContext'
 
 export default function Settings() {
   const { toast } = useToast()
+  const { currentUser } = useAuth()
 
   const handleSave = (section: string) => {
     toast({
@@ -80,8 +82,8 @@ export default function Settings() {
             <CardContent className="space-y-6">
               <div className="flex items-center space-x-4">
                 <Avatar className="w-20 h-20">
-                  <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" />
-                  <AvatarFallback>SW</AvatarFallback>
+                  <AvatarImage src={currentUser?.avatar} />
+                  <AvatarFallback>{currentUser?.name ? currentUser.name.split(' ').map(n => n[0]).join('') : 'U'}</AvatarFallback>
                 </Avatar>
                 <div>
                   <Button variant="outline" size="sm">Change Photo</Button>
@@ -94,23 +96,23 @@ export default function Settings() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" defaultValue="Sarah" />
+                  <Input id="firstName" defaultValue={currentUser?.name ? currentUser.name.split(' ')[0] : ''} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" defaultValue="Wilson" />
+                  <Input id="lastName" defaultValue={currentUser?.name ? currentUser.name.split(' ').slice(1).join(' ') : ''} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" defaultValue="sarah.wilson@company.com" />
+                  <Input id="email" type="email" defaultValue={currentUser?.email || ''} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" defaultValue="+1 (555) 123-4567" />
+                  <Input id="phone" defaultValue={currentUser?.phone || ''} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="department">Department</Label>
-                  <Select defaultValue="hr">
+                  <Select defaultValue={currentUser?.department?.toLowerCase() || 'hr'}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -124,7 +126,7 @@ export default function Settings() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="position">Position</Label>
-                  <Input id="position" defaultValue="HR Manager" />
+                  <Input id="position" defaultValue={currentUser?.role || ''} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">Location</Label>

@@ -64,6 +64,22 @@ const initialUsers: User[] = [
     username: 'john.smith',
     password: 'hr123',
     sectionAccess: []
+  },
+  {
+    id: '0003',
+    name: 'Abd Rahman',
+    email: 'abd@company.com',
+    phone: '+1 (555) 345-6789',
+    role: 'Guest',
+    status: 'Active',
+    department: 'Guest',
+    organization: 'MediaTech Solutions',
+    lastLogin: '3 hours ago',
+    createdDate: '2023-03-01',
+    permissions: ['limited_access'],
+    username: 'abd',
+    password: 'guest123',
+    sectionAccess: []
   }
 ]
 
