@@ -283,7 +283,7 @@ export default function AccessControl() {
                   {selectedEmployee && (
                     <div className="space-y-3">
                       <Label>Restricted Sections</Label>
-                      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto p-3 bg-muted/50 border rounded-lg">
                         {[
                           'Dashboard', 'Employees', 'Projects', 'Recruitment', 'Tasks', 
                           'Scheduling', 'Attendance', 'Analytics', 'Organizations', 
