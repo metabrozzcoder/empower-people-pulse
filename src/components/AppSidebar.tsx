@@ -105,6 +105,7 @@ const sidebarSections = [
     collapsible: true,
     items: [
       { title: "Documentation", url: "/documentation", icon: FileSearch, sectionName: "Documentation" },
+      { title: "Document Mailbox", url: "/document-mailbox", icon: FileText, sectionName: "Documentation" },
     ]
   },
   {

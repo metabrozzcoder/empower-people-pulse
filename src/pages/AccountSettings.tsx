@@ -25,7 +25,8 @@ const AccountSettings = () => {
     phone: currentUser?.phone || "+1 (555) 123-4567",
     department: currentUser?.department || "Human Resources",
     role: currentUser?.role || "HR Manager",
-    timezone: "UTC-8"
+    timezone: "UTC-8",
+    avatar: currentUser?.avatar || ""
   })
 
   const [notifications, setNotifications] = useState({
@@ -98,6 +99,32 @@ const AccountSettings = () => {
     })
   }
 
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 2MB.",
+          variant: "destructive"
+        })
+        return
+      }
+      
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const newAvatar = e.target?.result as string
+        setProfile({...profile, avatar: newAvatar})
+        localStorage.setItem('userProfile', JSON.stringify({...profile, avatar: newAvatar}))
+        toast({
+          title: "Photo Updated",
+          description: "Your profile photo has been updated successfully.",
+        })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleThemeChange = (newTheme: string) => {
     setTheme(newTheme)
     toast({
@@ -144,18 +171,29 @@ const AccountSettings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center space-x-4">
-                <Avatar className="w-20 h-20">
-                  <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" />
-                  <AvatarFallback>{profile.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <Button variant="outline" size="sm">Change Photo</Button>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    JPG, PNG or GIF. Max size 2MB.
-                  </p>
+                <div className="flex items-center space-x-4">
+                  <Avatar className="w-20 h-20">
+                    <AvatarImage src={profile.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face"} />
+                    <AvatarFallback>{profile.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      id="photo-upload"
+                    />
+                    <label htmlFor="photo-upload">
+                      <Button variant="outline" size="sm" asChild>
+                        <span className="cursor-pointer">Change Photo</span>
+                      </Button>
+                    </label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      JPG, PNG or GIF. Max size 2MB.
+                    </p>
+                  </div>
                 </div>
-              </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
