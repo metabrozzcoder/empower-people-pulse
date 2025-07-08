@@ -29,21 +29,9 @@ export function ProtectedRoute({
     )
   }
 
-  // Check section access restrictions
-  if (sectionName && currentUser.sectionAccess && currentUser.sectionAccess.includes(sectionName)) {
-    return (
-      <Alert variant="destructive">
-        <Shield className="h-4 w-4" />
-        <AlertDescription>
-          Access denied. You don't have permission to access the {sectionName} section.
-        </AlertDescription>
-      </Alert>
-    )
-  }
-
-  // For Guest users: check if they have specific allowed sections
-  if (currentUser.role === 'Guest' && sectionName) {
-    // If guest has allowedSections defined, check if this section is allowed
+  // Check section access using unified permissions logic
+  if (sectionName) {
+    // For users with specific allowed sections defined, only allow those sections
     if (currentUser.allowedSections && currentUser.allowedSections.length > 0) {
       if (!currentUser.allowedSections.includes(sectionName)) {
         return (
@@ -55,19 +43,18 @@ export function ProtectedRoute({
           </Alert>
         )
       }
-    } else {
-      // Default guest behavior: only Chat allowed
-      if (sectionName !== 'Chat') {
-        return (
-          <Alert variant="destructive">
-            <Shield className="h-4 w-4" />
-            <AlertDescription>
-              Access denied. Guest users can only access the Chat section unless granted specific permissions.
-            </AlertDescription>
-          </Alert>
-        )
-      }
+    } else if (currentUser.role === 'Guest') {
+      // Default guest behavior: no access unless specifically granted
+      return (
+        <Alert variant="destructive">
+          <Shield className="h-4 w-4" />
+          <AlertDescription>
+            Access denied. Guest users need specific permissions to access sections.
+          </AlertDescription>
+        </Alert>
+      )
     }
+    // Admin and HR users have access to all sections by default (unless restricted)
   }
 
   // Check role-based access

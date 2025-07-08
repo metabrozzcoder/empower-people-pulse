@@ -461,22 +461,6 @@ export default function UserManagement() {
                   </SelectContent>
                 </Select>
             
-            {/* Current User Restrictions Display */}
-            {selectedUser && selectedUser.sectionAccess && selectedUser.sectionAccess.length > 0 && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <h4 className="font-medium text-red-800 mb-2">Current Restrictions</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedUser.sectionAccess.map((section) => (
-                    <Badge key={section} variant="destructive" className="text-xs">
-                      {section}
-                    </Badge>
-                  ))}
-                </div>
-                <p className="text-xs text-red-600 mt-2">
-                  To modify restrictions, use the Access Control page.
-                </p>
-              </div>
-            )}
             
             {/* Current User Allowed Sections Display */}
             {selectedUser && selectedUser.allowedSections && selectedUser.allowedSections.length > 0 && (
