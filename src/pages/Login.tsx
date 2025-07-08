@@ -37,7 +37,12 @@ export default function Login() {
             description: `Welcome back, ${user.name}!`,
           })
           
-          navigate('/')
+          // Redirect guest users to chat page, others to dashboard
+          if (user.role === 'Guest') {
+            navigate('/chat')
+          } else {
+            navigate('/')
+          }
         } else {
           toast({
             title: "Login Failed",
