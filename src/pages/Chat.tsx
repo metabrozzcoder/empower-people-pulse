@@ -39,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/context/AuthContext'
 
 interface ChatUser {
   id: string
@@ -134,14 +135,35 @@ const mockMessages: Message[] = [
 
 export default function Chat() {
   const { toast } = useToast()
-  const [selectedUser, setSelectedUser] = useState<ChatUser | null>(mockUsers[0])
+  const { currentUser } = useAuth()
+  const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null)
   const [message, setMessage] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [messages, setMessages] = useState<Message[]>(mockMessages)
 
-  const filteredUsers = mockUsers.filter(user =>
+  // Filter users based on current user's role and linked employee
+  const getAvailableUsers = () => {
+    if (currentUser?.role === 'Guest' && currentUser.linkedEmployee) {
+      // Guest users can only chat with their linked employee
+      return mockUsers.filter(user => user.name === currentUser.linkedEmployee)
+    }
+    // Admin and HR can chat with everyone
+    return mockUsers
+  }
+
+  const availableUsers = getAvailableUsers()
+  const filteredUsers = availableUsers.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Auto-select the first available user for guests
+  React.useEffect(() => {
+    if (currentUser?.role === 'Guest' && availableUsers.length > 0 && !selectedUser) {
+      setSelectedUser(availableUsers[0])
+    } else if (currentUser?.role !== 'Guest' && !selectedUser && availableUsers.length > 0) {
+      setSelectedUser(availableUsers[0])
+    }
+  }, [currentUser, availableUsers, selectedUser])
 
   const getStatusColor = (status: string) => {
     switch (status) {

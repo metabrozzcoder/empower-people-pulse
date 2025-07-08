@@ -17,6 +17,7 @@ export interface User {
   permissions: string[]
   username: string
   password: string
+  guestId?: string
   sectionAccess?: string[]
 }
 

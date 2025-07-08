@@ -42,7 +42,7 @@ export default function UserManagement() {
     department: '',
     linkedEmployee: ''
   })
-  const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '' })
+  const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -69,11 +69,12 @@ export default function UserManagement() {
     }
   }
 
-  const generateCredentials = (name: string, surname: string) => {
-    if (!name || !surname) return { username: '', password: '' }
+  const generateCredentials = (name: string, surname: string, role: string) => {
+    if (!name || !surname) return { username: '', password: '', guestId: '' }
     const username = `${name.toLowerCase()}.${surname.toLowerCase()}${Math.floor(Math.random() * 1000)}`
     const password = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 100)
-    return { username, password }
+    const guestId = role === 'Guest' ? `GUEST${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}` : ''
+    return { username, password, guestId }
   }
 
   const handleAddUser = () => {
@@ -88,7 +89,7 @@ export default function UserManagement() {
       department: '',
       linkedEmployee: ''
     })
-    setGeneratedCredentials({ username: '', password: '' })
+    setGeneratedCredentials({ username: '', password: '', guestId: '' })
     setIsDialogOpen(true)
   }
 
@@ -96,10 +97,10 @@ export default function UserManagement() {
     const newFormData = { ...formData, [field]: value }
     setFormData(newFormData)
     
-    // Auto-generate credentials when name and surname are filled
-    if (field === 'name' || field === 'surname') {
+    // Auto-generate credentials when name, surname, or role are filled
+    if (field === 'name' || field === 'surname' || field === 'role') {
       if (newFormData.name && newFormData.surname) {
-        const credentials = generateCredentials(newFormData.name, newFormData.surname)
+        const credentials = generateCredentials(newFormData.name, newFormData.surname, newFormData.role || formData.role)
         setGeneratedCredentials(credentials)
       }
     }
@@ -117,7 +118,7 @@ export default function UserManagement() {
       department: user.department || '',
       linkedEmployee: user.linkedEmployee || ''
     })
-    setGeneratedCredentials({ username: user.username, password: user.password })
+    setGeneratedCredentials({ username: user.username, password: user.password, guestId: user.guestId || '' })
     setIsDialogOpen(true)
   }
 
@@ -167,7 +168,8 @@ export default function UserManagement() {
         linkedEmployee: formData.linkedEmployee,
         permissions: userPermissions,
         username: generatedCredentials.username,
-        password: generatedCredentials.password
+        password: generatedCredentials.password,
+        guestId: generatedCredentials.guestId
       })
       
       toast({
@@ -188,6 +190,7 @@ export default function UserManagement() {
         permissions: userPermissions,
         username: generatedCredentials.username,
         password: generatedCredentials.password,
+        guestId: generatedCredentials.guestId,
         sectionAccess: []
       }
 
@@ -195,7 +198,7 @@ export default function UserManagement() {
       
       toast({
         title: "User Created Successfully",
-        description: `Username: ${generatedCredentials.username}, Password: ${generatedCredentials.password}`,
+        description: `Username: ${generatedCredentials.username}, Password: ${generatedCredentials.password}${generatedCredentials.guestId ? `, Guest ID: ${generatedCredentials.guestId}` : ''}`,
       })
     }
 
@@ -210,7 +213,7 @@ export default function UserManagement() {
       department: '',
       linkedEmployee: ''
     })
-    setGeneratedCredentials({ username: '', password: '' })
+    setGeneratedCredentials({ username: '', password: '', guestId: '' })
   }
 
   const roleStats = {
@@ -528,6 +531,14 @@ export default function UserManagement() {
                     {generatedCredentials.password || 'Enter name and surname to generate'}
                   </div>
                 </div>
+                {formData.role === 'Guest' && (
+                  <div className="col-span-2">
+                    <Label>Guest ID</Label>
+                    <div className="font-mono bg-background p-2 rounded border">
+                      {generatedCredentials.guestId || 'Enter name, surname and select Guest role to generate'}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

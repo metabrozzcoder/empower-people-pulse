@@ -161,6 +161,11 @@ export function AppSidebar() {
 
   // Filter items based on user restrictions and role permissions
   const isItemAccessible = (item: any) => {
+    // Guest users can only see Chat
+    if (currentUser?.role === 'Guest' && item.sectionName !== 'Chat') {
+      return false
+    }
+    
     // Check section restrictions
     if (item.sectionName && currentUser?.sectionAccess?.includes(item.sectionName)) {
       return false
