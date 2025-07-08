@@ -279,7 +279,7 @@ export default function AccessControl() {
                   {selectedEmployee && (
                     <div className="space-y-3">
                       <Label>Restricted Sections</Label>
-                      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto p-3 bg-red-50 border border-red-200 rounded-lg">
                         {[
                           'Dashboard', 'Employees', 'Projects', 'Recruitment', 'Tasks', 
                           'Scheduling', 'Attendance', 'Analytics', 'Organizations', 
@@ -287,7 +287,7 @@ export default function AccessControl() {
                           'AI Assistant', 'Profile', 'Account Settings', 'Security System',
                           'Settings', 'KPI Dashboard', 'Role Management', 'Performance'
                         ].map((section) => (
-                          <div key={section} className="flex items-center space-x-2">
+                          <div key={section} className="flex items-center space-x-2 p-2 hover:bg-red-100 rounded">
                             <Checkbox 
                               id={section}
                               checked={restrictedSections.includes(section)}
@@ -298,8 +298,9 @@ export default function AccessControl() {
                                   setRestrictedSections(restrictedSections.filter(s => s !== section))
                                 }
                               }}
+                              className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                             />
-                            <Label htmlFor={section} className="text-sm font-normal">
+                            <Label htmlFor={section} className="text-sm font-normal text-red-700">
                               {section}
                             </Label>
                           </div>
@@ -338,7 +339,7 @@ export default function AccessControl() {
                       }
                     }}
                     disabled={!selectedEmployee}
-                className="w-full bg-red-600 hover:bg-red-700 text-white"
+                className="w-full"
                   >
                     Apply Restrictions
                   </Button>
@@ -356,7 +357,7 @@ export default function AccessControl() {
                   }
                 }}
                 disabled={!selectedEmployee || restrictedSections.length === 0}
-                className="w-full border-red-200 text-red-700 hover:bg-red-50"
+                className="w-full"
                   >
                     Clear All Restrictions
                   </Button>
@@ -401,7 +402,7 @@ export default function AccessControl() {
                   {selectedAccessEmployee && (
                     <div className="space-y-3">
                       <Label>Allowed Sections</Label>
-                      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto p-3 bg-green-50 border border-green-200 rounded-lg">
                         {[
                           'Dashboard', 'Employees', 'Projects', 'Recruitment', 'Tasks', 
                           'Scheduling', 'Attendance', 'Analytics', 'Organizations', 
@@ -409,7 +410,7 @@ export default function AccessControl() {
                           'AI Assistant', 'Profile', 'Account Settings', 'Security System',
                           'Settings', 'KPI Dashboard', 'Role Management', 'Performance'
                         ].map((section) => (
-                          <div key={section} className="flex items-center space-x-2">
+                          <div key={section} className="flex items-center space-x-2 p-2 hover:bg-green-100 rounded">
                             <Checkbox 
                               id={`access-${section}`}
                               checked={allowedSections.includes(section)}
@@ -420,8 +421,9 @@ export default function AccessControl() {
                                   setAllowedSections(allowedSections.filter(s => s !== section))
                                 }
                               }}
+                              className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                             />
-                            <Label htmlFor={`access-${section}`} className="text-sm font-normal">
+                            <Label htmlFor={`access-${section}`} className="text-sm font-normal text-green-700">
                               {section}
                             </Label>
                           </div>
@@ -460,7 +462,7 @@ export default function AccessControl() {
                       }
                     }}
                     disabled={!selectedAccessEmployee}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                className="w-full"
                   >
                     Grant Access
                   </Button>
@@ -478,7 +480,7 @@ export default function AccessControl() {
                   }
                 }}
                 disabled={!selectedAccessEmployee || allowedSections.length === 0}
-                className="w-full border-green-200 text-green-700 hover:bg-green-50"
+                className="w-full"
                   >
                     Clear Granted Access
                   </Button>
