@@ -22,82 +22,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-
-interface User {
-  id: string
-  name: string
-  email: string
-  phone: string
-  avatar?: string
-  role: 'Admin' | 'HR' | 'Guest'
-  status: 'Active' | 'Inactive' | 'Pending'
-  department?: string
-  organization?: string
-  linkedEmployee?: string
-  lastLogin: string
-  createdDate: string
-  permissions: string[]
-  username?: string
-  password?: string
-  sectionAccess?: string[]
-}
-
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'Sarah Wilson',
-    email: 'sarah.wilson@company.com',
-    phone: '+1 (555) 123-4567',
-    role: 'Admin',
-    status: 'Active',
-    department: 'HR',
-    organization: 'MediaTech Solutions',
-    lastLogin: '2 hours ago',
-    createdDate: '2023-01-15',
-    permissions: ['full_access', 'user_management', 'system_settings']
-  },
-  {
-    id: '2',
-    name: 'John Smith',
-    email: 'john.smith@company.com',
-    phone: '+1 (555) 234-5678',
-    role: 'HR',
-    status: 'Active',
-    department: 'HR',
-    organization: 'MediaTech Solutions',
-    lastLogin: '1 day ago',
-    createdDate: '2023-02-01',
-    permissions: ['employee_management', 'recruitment', 'performance_review']
-  },
-  {
-    id: '3',
-    name: 'Mike Johnson',
-    email: 'mike.johnson@guest.com',
-    phone: '+1 (555) 345-6789',
-    role: 'Guest',
-    status: 'Active',
-    linkedEmployee: 'Emily Davis',
-    lastLogin: '3 hours ago',
-    createdDate: '2023-03-15',
-    permissions: ['chat_access']
-  },
-  {
-    id: '4',
-    name: 'Alex Brown',
-    email: 'alex.brown@company.com',
-    phone: '+1 (555) 456-7890',
-    role: 'HR',
-    status: 'Pending',
-    department: 'HR',
-    organization: 'Creative Studios',
-    lastLogin: 'Never',
-    createdDate: '2023-04-01',
-    permissions: ['employee_management']
-  }
-]
+import { useUsers, User } from '@/context/UserContext'
+import { useToast } from '@/hooks/use-toast'
 
 export default function UserManagement() {
-  const [users, setUsers] = useState<User[]>(mockUsers)
+  const { users, addUser, updateUser, deleteUser } = useUsers()
+  const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('all')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -181,7 +111,73 @@ export default function UserManagement() {
   }
 
   const handleDeleteUser = (id: string) => {
-    setUsers(users.filter(user => user.id !== id))
+    deleteUser(id)
+    toast({
+      title: "User Deleted",
+      description: "User has been successfully deleted.",
+    })
+  }
+
+  const handleSaveUser = () => {
+    if (!formData.name || !formData.surname || !formData.email || !formData.role) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (formData.role === 'Guest' && !formData.linkedEmployee) {
+      toast({
+        title: "Validation Error",
+        description: "Guest role requires a linked employee.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    const fullName = `${formData.name} ${formData.surname}`
+    const userPermissions = formData.role === 'Admin' 
+      ? ['full_access', 'user_management', 'system_settings']
+      : formData.role === 'HR' 
+      ? ['employee_management', 'recruitment', 'performance_review'] 
+      : ['chat_access']
+
+    const newUser = {
+      name: fullName,
+      email: formData.email,
+      phone: formData.phone || '',
+      role: formData.role as 'Admin' | 'HR' | 'Guest',
+      status: 'Active' as const,
+      department: formData.department,
+      organization: formData.organization,
+      linkedEmployee: formData.linkedEmployee,
+      permissions: userPermissions,
+      username: generatedCredentials.username,
+      password: generatedCredentials.password,
+      sectionAccess: []
+    }
+
+    addUser(newUser)
+    
+    toast({
+      title: "User Created Successfully",
+      description: `Username: ${generatedCredentials.username}, Password: ${generatedCredentials.password}`,
+    })
+
+    setIsDialogOpen(false)
+    setFormData({
+      name: '',
+      surname: '',
+      email: '',
+      phone: '',
+      role: '',
+      organization: '',
+      department: '',
+      linkedEmployee: ''
+    })
+    setGeneratedCredentials({ username: '', password: '' })
   }
 
   const roleStats = {
@@ -551,7 +547,7 @@ export default function UserManagement() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setIsDialogOpen(false)}>
+            <Button onClick={handleSaveUser}>
               {selectedUser ? 'Update' : 'Create'} User
             </Button>
           </div>

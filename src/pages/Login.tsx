@@ -6,10 +6,12 @@ import { Label } from '@/components/ui/label'
 import { Lock, User, Eye, EyeOff } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useNavigate } from 'react-router-dom'
+import { useUsers } from '@/context/UserContext'
 
 export default function Login() {
   const { toast } = useToast()
   const navigate = useNavigate()
+  const { authenticateUser } = useUsers()
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -21,22 +23,33 @@ export default function Login() {
     e.preventDefault()
     setIsLoading(true)
 
-    // Mock authentication - replace with real authentication
     if (formData.username && formData.password) {
-      // Simulate API call
+      const user = authenticateUser(formData.username, formData.password)
+      
       setTimeout(() => {
-        localStorage.setItem('user', JSON.stringify({
-          username: formData.username,
-          role: 'Admin', // This would come from API
-          permissions: ['full_access']
-        }))
-        
-        toast({
-          title: "Login Successful",
-          description: "Welcome back!",
-        })
-        
-        navigate('/')
+        if (user) {
+          localStorage.setItem('user', JSON.stringify({
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            role: user.role,
+            permissions: user.permissions,
+            sectionAccess: user.sectionAccess
+          }))
+          
+          toast({
+            title: "Login Successful",
+            description: `Welcome back, ${user.name}!`,
+          })
+          
+          navigate('/')
+        } else {
+          toast({
+            title: "Login Failed",
+            description: "Invalid username or password",
+            variant: "destructive"
+          })
+        }
         setIsLoading(false)
       }, 1000)
     } else {

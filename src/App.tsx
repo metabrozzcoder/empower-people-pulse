@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { AppSidebar } from "@/components/AppSidebar"
+import { UserProvider } from "@/context/UserContext"
 import Index from "./pages/Index"
 import Employees from "./pages/Employees"
 import Profile from "./pages/Profile"
@@ -33,10 +34,11 @@ const queryClient = new QueryClient()
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+    <UserProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
         <SidebarProvider>
           <div className="min-h-screen flex w-full bg-background">
             <AppSidebar />
@@ -99,6 +101,7 @@ const App = () => (
         </SidebarProvider>
       </BrowserRouter>
     </TooltipProvider>
+    </UserProvider>
   </QueryClientProvider>
 )
 

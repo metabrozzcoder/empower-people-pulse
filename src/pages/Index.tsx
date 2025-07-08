@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Calendar, MessageCircle, CheckSquare, Gift } from "lucide-react"
 import { mockEmployees } from "@/data/mockEmployees"
 import { format, isToday, isTomorrow } from "date-fns"
+import { useNavigate } from "react-router-dom"
 
 const quickActions = [
   {
@@ -68,6 +69,7 @@ const getTodayAndTomorrowBirthdays = () => {
 }
 
 const Index = () => {
+  const navigate = useNavigate()
   const birthdayEmployees = getTodayAndTomorrowBirthdays()
   
   return (
@@ -85,7 +87,11 @@ const Index = () => {
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-3">
         {quickActions.map((action, index) => (
-          <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            key={index} 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => navigate(action.href)}
+          >
             <CardContent className="flex items-center p-6">
               <div className={`p-3 rounded-lg ${action.color} mr-4`}>
                 <action.icon className="h-6 w-6" />
@@ -124,7 +130,11 @@ const Index = () => {
                 </div>
               ))}
             </div>
-            <Button variant="outline" className="w-full mt-4">
+            <Button 
+              variant="outline" 
+              className="w-full mt-4"
+              onClick={() => navigate('/scheduling')}
+            >
               View All Events
             </Button>
           </CardContent>
