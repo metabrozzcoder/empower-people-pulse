@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -22,8 +21,50 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useUsers, User } from '@/context/UserContext'
 import { useToast } from '@/hooks/use-toast'
+
+// Define all available sections
+const ALL_SECTIONS = [
+  'Dashboard',
+  'AI Assistant', 
+  'Employees',
+  'Projects',
+  'Recruitment',
+  'Tasks',
+  'Scheduling',
+  'Attendance',
+  'Analytics',
+  'Organizations',
+  'Chat',
+  'User Management',
+  'Access Control',
+  'Documentation',
+  'Security System',
+  'Settings'
+]
+
+// Role-based default sections
+const ROLE_DEFAULT_SECTIONS = {
+  Admin: ALL_SECTIONS,
+  HR: [
+    'Dashboard',
+    'AI Assistant',
+    'Employees', 
+    'Projects',
+    'Recruitment',
+    'Tasks',
+    'Scheduling',
+    'Attendance',
+    'Analytics',
+    'Organizations',
+    'Chat',
+    'Documentation',
+    'Settings'
+  ],
+  Guest: ['Chat'] // Only chat by default, can be expanded
+}
 
 export default function UserManagement() {
   const { users, addUser, updateUser, deleteUser } = useUsers()
@@ -42,6 +83,7 @@ export default function UserManagement() {
     department: '',
     linkedEmployee: ''
   })
+  const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
 
   const filteredUsers = users.filter(user => {
@@ -71,8 +113,8 @@ export default function UserManagement() {
 
   const generateCredentials = (name: string, surname: string, role: string) => {
     if (!name || !surname) return { username: '', password: '', guestId: '' }
-    const username = `${name.toLowerCase()}.${surname.toLowerCase()}${Math.floor(Math.random() * 1000)}`
-    const password = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 100)
+    const username = `${name.toLowerCase()}.${surname.toLowerCase()}`
+    const password = `${name.toLowerCase()}123`
     const guestId = role === 'Guest' ? `GUEST${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}` : ''
     return { username, password, guestId }
   }
@@ -89,6 +131,7 @@ export default function UserManagement() {
       department: '',
       linkedEmployee: ''
     })
+    setSelectedSections([])
     setGeneratedCredentials({ username: '', password: '', guestId: '' })
     setIsDialogOpen(true)
   }
@@ -104,6 +147,12 @@ export default function UserManagement() {
         setGeneratedCredentials(credentials)
       }
     }
+
+    // Auto-select sections based on role
+    if (field === 'role' && value) {
+      const defaultSections = ROLE_DEFAULT_SECTIONS[value as keyof typeof ROLE_DEFAULT_SECTIONS] || []
+      setSelectedSections(defaultSections)
+    }
   }
 
   const handleEditUser = (user: User) => {
@@ -118,6 +167,7 @@ export default function UserManagement() {
       department: user.department || '',
       linkedEmployee: user.linkedEmployee || ''
     })
+    setSelectedSections(user.allowedSections || [])
     setGeneratedCredentials({ username: user.username, password: user.password, guestId: user.guestId || '' })
     setIsDialogOpen(true)
   }
@@ -128,6 +178,14 @@ export default function UserManagement() {
       title: "User Deleted",
       description: "User has been successfully deleted.",
     })
+  }
+
+  const toggleSection = (section: string) => {
+    setSelectedSections(prev => 
+      prev.includes(section) 
+        ? prev.filter(s => s !== section)
+        : [...prev, section]
+    )
   }
 
   const handleSaveUser = () => {
@@ -169,16 +227,17 @@ export default function UserManagement() {
         permissions: userPermissions,
         username: generatedCredentials.username,
         password: generatedCredentials.password,
-        guestId: generatedCredentials.guestId
+        guestId: generatedCredentials.guestId,
+        allowedSections: selectedSections,
+        sectionAccess: [] // Clear any restrictions when updating allowed sections
       })
       
       toast({
         title: "User Updated Successfully",
-        description: `User ${fullName} has been updated.`,
+        description: `User ${fullName} has been updated with section access.`,
       })
     } else {
-      // Create new user with default permissions based on role
-      const defaultAllowedSections = formData.role === 'Guest' ? ['Chat'] : []
+      // Create new user
       const newUser = {
         name: fullName,
         email: formData.email,
@@ -192,8 +251,8 @@ export default function UserManagement() {
         username: generatedCredentials.username,
         password: generatedCredentials.password,
         guestId: generatedCredentials.guestId,
-        sectionAccess: [],
-        allowedSections: defaultAllowedSections
+        sectionAccess: [], // No restrictions by default
+        allowedSections: selectedSections // Granted sections
       }
 
       addUser(newUser)
@@ -215,6 +274,7 @@ export default function UserManagement() {
       department: '',
       linkedEmployee: ''
     })
+    setSelectedSections([])
     setGeneratedCredentials({ username: '', password: '', guestId: '' })
   }
 
@@ -230,7 +290,7 @@ export default function UserManagement() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">User Management</h1>
-          <p className="text-muted-foreground">Manage users, roles, and permissions</p>
+          <p className="text-muted-foreground">Manage users, roles, and section permissions</p>
         </div>
         <Button onClick={handleAddUser} className="flex items-center space-x-2">
           <Plus className="w-4 h-4" />
@@ -353,8 +413,23 @@ export default function UserManagement() {
                         </div>
                       )}
                     </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-muted-foreground">Access:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {(user.allowedSections || []).slice(0, 3).map((section) => (
+                          <Badge key={section} variant="outline" className="text-xs">
+                            {section}
+                          </Badge>
+                        ))}
+                        {(user.allowedSections || []).length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{(user.allowedSections || []).length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Last login: {user.lastLogin}
+                      Last login: {user.lastLogin} | Username: {user.username}
                     </p>
                   </div>
                 </div>
@@ -382,170 +457,211 @@ export default function UserManagement() {
 
       {/* User Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedUser ? 'Edit User' : 'Add New User'}
             </DialogTitle>
             <DialogDescription>
-              {selectedUser ? 'Update user information and permissions' : 'Create a new user account with role and permissions'}
+              {selectedUser ? 'Update user information and section permissions' : 'Create a new user account with role and section permissions'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">First Name</Label>
-                <Input 
-                  id="name" 
-                  placeholder="Enter first name" 
-                  value={formData.name}
-                  onChange={(e) => handleFormChange('name', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="surname">Surname</Label>
-                <Input 
-                  id="surname" 
-                  placeholder="Enter surname" 
-                  value={formData.surname}
-                  onChange={(e) => handleFormChange('surname', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="Enter email address" 
-                  value={formData.email}
-                  onChange={(e) => handleFormChange('email', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input 
-                  id="phone" 
-                  placeholder="Enter phone number" 
-                  value={formData.phone}
-                  onChange={(e) => handleFormChange('phone', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select 
-                  value={formData.role}
-                  onValueChange={(value) => handleFormChange('role', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="HR">HR</SelectItem>
-                    <SelectItem value="Guest">Guest</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="organization">Organization</Label>
-                <Select
-                  value={formData.organization}
-                  onValueChange={(value) => handleFormChange('organization', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select organization" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MediaTech Solutions">MediaTech Solutions</SelectItem>
-                    <SelectItem value="Creative Studios">Creative Studios</SelectItem>
-                  </SelectContent>
-                </Select>
+          
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic">Basic Information</TabsTrigger>
+              <TabsTrigger value="permissions">Section Permissions</TabsTrigger>
+            </TabsList>
             
-            
-            {/* Current User Allowed Sections Display */}
-            {selectedUser && selectedUser.allowedSections && selectedUser.allowedSections.length > 0 && (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h4 className="font-medium text-green-800 mb-2">Granted Access</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedUser.allowedSections.map((section) => (
-                    <Badge key={section} className="bg-green-100 text-green-800 hover:bg-green-200 text-xs">
-                      {section}
-                    </Badge>
-                  ))}
-                </div>
-                <p className="text-xs text-green-600 mt-2">
-                  To modify granted access, use the Access Control page.
-                </p>
-              </div>
-            )}
-          </div>
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Select
-                  value={formData.department}
-                  onValueChange={(value) => handleFormChange('department', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Engineering">Engineering</SelectItem>
-                    <SelectItem value="Design">Design</SelectItem>
-                    <SelectItem value="HR">HR</SelectItem>
-                    <SelectItem value="Marketing">Marketing</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {formData.role === 'Guest' && (
+            <TabsContent value="basic" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Linked Employee (Required for Guest role)</Label>
-                  <Select
-                    value={formData.linkedEmployee}
-                    onValueChange={(value) => handleFormChange('linkedEmployee', value)}
+                  <Label htmlFor="name">First Name *</Label>
+                  <Input 
+                    id="name" 
+                    placeholder="Enter first name" 
+                    value={formData.name}
+                    onChange={(e) => handleFormChange('name', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="surname">Surname *</Label>
+                  <Input 
+                    id="surname" 
+                    placeholder="Enter surname" 
+                    value={formData.surname}
+                    onChange={(e) => handleFormChange('surname', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="Enter email address" 
+                    value={formData.email}
+                    onChange={(e) => handleFormChange('email', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input 
+                    id="phone" 
+                    placeholder="Enter phone number" 
+                    value={formData.phone}
+                    onChange={(e) => handleFormChange('phone', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role *</Label>
+                  <Select 
+                    value={formData.role}
+                    onValueChange={(value) => handleFormChange('role', value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select linked employee" />
+                      <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
-                      <SelectItem value="John Smith">John Smith</SelectItem>
-                      <SelectItem value="Emily Davis">Emily Davis</SelectItem>
-                      <SelectItem value="Michael Johnson">Michael Johnson</SelectItem>
+                      <SelectItem value="Admin">Admin</SelectItem>
+                      <SelectItem value="HR">HR</SelectItem>
+                      <SelectItem value="Guest">Guest</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-            </div>
-            
-            {/* Auto-generated credentials display */}
-            <div className="p-4 bg-muted rounded-lg">
-              <h4 className="font-medium mb-2">Auto-generated Credentials</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <Label>Username</Label>
-                  <div className="font-mono bg-background p-2 rounded border">
-                    {generatedCredentials.username || 'Enter name and surname to generate'}
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="organization">Organization</Label>
+                  <Select
+                    value={formData.organization}
+                    onValueChange={(value) => handleFormChange('organization', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select organization" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MediaTech Solutions">MediaTech Solutions</SelectItem>
+                      <SelectItem value="Creative Studios">Creative Studios</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div>
-                  <Label>Password</Label>
-                  <div className="font-mono bg-background p-2 rounded border">
-                    {generatedCredentials.password || 'Enter name and surname to generate'}
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department</Label>
+                  <Select
+                    value={formData.department}
+                    onValueChange={(value) => handleFormChange('department', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Engineering">Engineering</SelectItem>
+                      <SelectItem value="Design">Design</SelectItem>
+                      <SelectItem value="HR">HR</SelectItem>
+                      <SelectItem value="Marketing">Marketing</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+                
                 {formData.role === 'Guest' && (
-                  <div className="col-span-2">
-                    <Label>Guest ID</Label>
-                    <div className="font-mono bg-background p-2 rounded border">
-                      {generatedCredentials.guestId || 'Enter name, surname and select Guest role to generate'}
-                    </div>
+                  <div className="space-y-2">
+                    <Label>Linked Employee (Required for Guest role)</Label>
+                    <Select
+                      value={formData.linkedEmployee}
+                      onValueChange={(value) => handleFormChange('linkedEmployee', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select linked employee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
+                        <SelectItem value="John Smith">John Smith</SelectItem>
+                        <SelectItem value="Emily Davis">Emily Davis</SelectItem>
+                        <SelectItem value="Michael Johnson">Michael Johnson</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-          <div className="flex justify-end space-x-2">
+              
+              {/* Auto-generated credentials display */}
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-medium mb-2">Auto-generated Credentials</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <Label>Username</Label>
+                    <div className="font-mono bg-background p-2 rounded border">
+                      {generatedCredentials.username || 'Enter name and surname to generate'}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Password</Label>
+                    <div className="font-mono bg-background p-2 rounded border">
+                      {generatedCredentials.password || 'Enter name and surname to generate'}
+                    </div>
+                  </div>
+                  {formData.role === 'Guest' && (
+                    <div className="col-span-2">
+                      <Label>Guest ID</Label>
+                      <div className="font-mono bg-background p-2 rounded border">
+                        {generatedCredentials.guestId || 'Enter name, surname and select Guest role to generate'}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="permissions" className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Section Access Permissions</h4>
+                  <div className="text-sm text-muted-foreground">
+                    {selectedSections.length} of {ALL_SECTIONS.length} sections selected
+                  </div>
+                </div>
+                
+                {formData.role && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>{formData.role} Role:</strong> Default sections have been automatically selected. 
+                      You can manually adjust permissions by checking/unchecking sections below.
+                    </p>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-3 border rounded-lg">
+                  {ALL_SECTIONS.map((section) => (
+                    <div key={section} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded">
+                      <Checkbox 
+                        id={section}
+                        checked={selectedSections.includes(section)}
+                        onCheckedChange={() => toggleSection(section)}
+                      />
+                      <Label htmlFor={section} className="text-sm font-normal cursor-pointer">
+                        {section}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 border rounded-lg bg-muted/50">
+                  <h4 className="font-medium mb-2">Selected Permissions Preview</h4>
+                  {selectedSections.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedSections.map((section) => (
+                        <Badge key={section} className="text-xs">
+                          {section}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No sections selected - user will have no access</p>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <div className="flex justify-end space-x-2 pt-4 border-t">
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>

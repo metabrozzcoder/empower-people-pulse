@@ -46,7 +46,7 @@ const initialUsers: User[] = [
     createdDate: '2023-01-15',
     permissions: ['full_access', 'user_management', 'system_settings'],
     username: 'admin',
-    password: 'admin123',
+    password: 'admin',
     sectionAccess: []
   },
   {
@@ -62,7 +62,7 @@ const initialUsers: User[] = [
     createdDate: '2023-02-01',
     permissions: ['employee_management', 'recruitment', 'performance_review'],
     username: 'john.smith',
-    password: 'hr123',
+    password: 'john123',
     sectionAccess: []
   },
   {
@@ -78,7 +78,7 @@ const initialUsers: User[] = [
     createdDate: '2023-03-01',
     permissions: ['limited_access'],
     username: 'abd',
-    password: 'guest123',
+    password: 'abd123',
     sectionAccess: []
   },
   {
@@ -94,7 +94,7 @@ const initialUsers: User[] = [
     createdDate: '2023-04-10',
     permissions: ['employee_management', 'scheduling', 'attendance'],
     username: 'emma.parttime',
-    password: 'part123',
+    password: 'emma123',
     sectionAccess: [],
     allowedSections: ['Scheduling', 'Attendance', 'Chat']
   },
@@ -111,7 +111,7 @@ const initialUsers: User[] = [
     createdDate: '2023-05-20',
     permissions: ['chat_access', 'documentation_access'],
     username: 'michael.support',
-    password: 'support123',
+    password: 'michael123',
     sectionAccess: [],
     allowedSections: ['Chat', 'Documentation']
   },
@@ -128,7 +128,7 @@ const initialUsers: User[] = [
     createdDate: '2023-06-15',
     permissions: ['tasks_access', 'projects_access'],
     username: 'lisa.ops',
-    password: 'ops123',
+    password: 'lisa123',
     sectionAccess: [],
     allowedSections: ['Tasks', 'Projects', 'Chat']
   },
@@ -145,7 +145,7 @@ const initialUsers: User[] = [
     createdDate: '2023-07-01',
     permissions: ['recruitment', 'analytics', 'employee_management'],
     username: 'robert.hr',
-    password: 'recruit123',
+    password: 'robert123',
     sectionAccess: [],
     allowedSections: ['Recruitment', 'Analytics', 'Employees', 'Chat']
   }

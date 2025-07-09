@@ -239,9 +239,19 @@ export default function AccessControl() {
       <Card>
         <CardHeader>
           <CardTitle>Employee Permissions</CardTitle>
-          <CardDescription>Select employees and manage their section access permissions</CardDescription>
+          <CardDescription>
+            Select employees and manage their section access permissions. 
+            Note: Users created through User Management will have their permissions managed there.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="font-medium text-blue-800 mb-2">Permission Management</h4>
+            <p className="text-sm text-blue-700">
+              For new users, use the <strong>User Management</strong> page to set section permissions during user creation. 
+              This section is for managing existing user permissions and restrictions.
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="space-y-2">
