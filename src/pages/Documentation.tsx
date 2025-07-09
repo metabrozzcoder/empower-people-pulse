@@ -836,13 +836,14 @@ export default function Documentation() {
                 <div className="space-y-2">
                   <Label htmlFor="assignedTo">Assign To</Label>
                   <Select 
-                    value={newDocument.assignedTo} 
+                    value={newDocument.assignedTo || ""} 
                     onValueChange={(value) => setNewDocument({...newDocument, assignedTo: value})}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select user to assign" />
+                      <SelectValue placeholder="Select user to assign (optional)" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="">None (Save as Draft)</SelectItem>
                       {users.map(user => (
                         <SelectItem key={user.id} value={user.name}>
                           {user.name} ({user.role})
@@ -871,7 +872,7 @@ export default function Documentation() {
                   <div className="flex flex-wrap gap-2 mt-2">
                     {newDocument.tags?.map((tag, index) => (
                       <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                        {tag}
+                        <span>{tag}</span>
                         <button 
                           onClick={() => handleRemoveTag(tag)}
                           className="ml-1 h-4 w-4 rounded-full bg-muted-foreground/20 inline-flex items-center justify-center hover:bg-muted-foreground/30"
@@ -998,6 +999,7 @@ export default function Documentation() {
           <div className="flex justify-end space-x-2 mt-4 pt-4 border-t">
             <Button 
               variant="outline" 
+              type="button"
               onClick={() => {
                 setIsAddDocumentOpen(false)
                 setIsEditDocumentOpen(false)
@@ -1009,7 +1011,7 @@ export default function Documentation() {
             >
               Cancel
             </Button>
-            <Button onClick={handleSaveDocument}>
+            <Button type="button" onClick={handleSaveDocument}>
               {isEditDocumentOpen ? 'Update' : (newDocument.assignedTo ? 'Send' : 'Save as Draft')}
             </Button>
           </div>
