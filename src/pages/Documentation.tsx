@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/badge' 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   FileText, 
@@ -18,13 +18,28 @@ import {
   Star,
   Eye,
   Clock,
-  User
+  User,
+  Inbox,
+  Send,
+  File,
+  FileIcon,
+  FilePenLine,
+  Folder,
+  FolderOpen,
+  MoreHorizontal
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface Document {
   id: string
@@ -38,6 +53,7 @@ interface Document {
   views: number
   rating: number
   tags: string[]
+  folder?: 'inbox' | 'sent' | 'drafts' | 'all'
   status: 'draft' | 'published' | 'archived'
 }
 
@@ -54,7 +70,8 @@ const mockDocuments: Document[] = [
     views: 245,
     rating: 4.8,
     tags: ['onboarding', 'new-hire', 'orientation'],
-    status: 'published'
+    status: 'published',
+    folder: 'inbox'
   },
   {
     id: '2',
@@ -68,7 +85,8 @@ const mockDocuments: Document[] = [
     views: 189,
     rating: 4.5,
     tags: ['remote-work', 'policy', 'guidelines'],
-    status: 'published'
+    status: 'published',
+    folder: 'sent'
   },
   {
     id: '3',
@@ -82,7 +100,8 @@ const mockDocuments: Document[] = [
     views: 156,
     rating: 4.6,
     tags: ['performance', 'review', 'evaluation'],
-    status: 'published'
+    status: 'published',
+    folder: 'drafts'
   },
   {
     id: '4',
@@ -96,7 +115,8 @@ const mockDocuments: Document[] = [
     views: 312,
     rating: 4.9,
     tags: ['training', 'system', 'tutorial'],
-    status: 'published'
+    status: 'published',
+    folder: 'inbox'
   },
   {
     id: '5',
@@ -110,7 +130,8 @@ const mockDocuments: Document[] = [
     views: 423,
     rating: 4.7,
     tags: ['faq', 'support', 'help'],
-    status: 'published'
+    status: 'published',
+    folder: 'all'
   }
 ]
 
@@ -120,6 +141,9 @@ export default function Documentation() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [selectedType, setSelectedType] = useState('all')
+  const [selectedFolder, setSelectedFolder] = useState<'inbox' | 'sent' | 'drafts' | 'all'>('all')
+  const [isFileUploadDialogOpen, setIsFileUploadDialogOpen] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
@@ -133,7 +157,8 @@ export default function Documentation() {
                          doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
     const matchesCategory = selectedCategory === 'all' || doc.category === selectedCategory
     const matchesType = selectedType === 'all' || doc.type === selectedType
-    return matchesSearch && matchesCategory && matchesType && doc.status === 'published'
+    const matchesFolder = selectedFolder === 'all' || doc.folder === selectedFolder || doc.folder === 'all'
+    return matchesSearch && matchesCategory && matchesType && matchesFolder && doc.status === 'published'
   })
 
   const getTypeIcon = (type: Document['type']) => {
@@ -155,6 +180,16 @@ export default function Documentation() {
       case 'faq': return 'bg-yellow-100 text-yellow-800'
       case 'video': return 'bg-purple-100 text-purple-800'
       default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getFolderIcon = (folder: string) => {
+    switch (folder) {
+      case 'inbox': return Inbox
+      case 'sent': return Send
+      case 'drafts': return FilePenLine
+      case 'all': return Folder
+      default: return Folder
     }
   }
 
@@ -204,6 +239,7 @@ export default function Documentation() {
         category: "General",
         type: 'guide',
         author: "Current User",
+        folder: 'inbox',
         createdDate: new Date().toISOString().split('T')[0],
         updatedDate: new Date().toISOString().split('T')[0],
         views: 0,
@@ -285,6 +321,78 @@ export default function Documentation() {
     })
   }
 
+  const handleFileUpload = () => {
+    setIsFileUploadDialogOpen(true)
+  }
+
+  const processFileUpload = (file: File) => {
+    // Check file type
+    const fileType = file.name.split('.').pop()?.toLowerCase()
+    if (!fileType || !['pdf', 'doc', 'docx'].includes(fileType)) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload a PDF or Word document.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Maximum file size is 10MB.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Create a preview URL for the file
+    const url = URL.createObjectURL(file)
+    setPreviewUrl(url)
+
+    // Create a new document entry
+    const newDoc: Document = {
+      id: Date.now().toString(),
+      title: file.name.replace(/\.[^/.]+$/, ""),
+      content: `This is a ${fileType.toUpperCase()} document. ${fileType === 'pdf' ? 'PDF preview is available.' : 'Word document preview is available.'}`,
+      category: "Uploaded Documents",
+      type: 'guide',
+      author: "Current User",
+      folder: 'inbox',
+      createdDate: new Date().toISOString().split('T')[0],
+      updatedDate: new Date().toISOString().split('T')[0],
+      views: 0,
+      rating: 0,
+      tags: [fileType, 'uploaded'],
+      status: 'published'
+    }
+
+    setDocuments(prev => [...prev, newDoc])
+    
+    toast({
+      title: "File Uploaded Successfully",
+      description: `${file.name} has been uploaded and added to your documents.`,
+    })
+
+    // Close the dialog after a short delay to allow the user to see the preview
+    setTimeout(() => {
+      setIsFileUploadDialogOpen(false)
+      setPreviewUrl(null)
+    }, 3000)
+  }
+
+  const handleMoveToFolder = (docId: string, folder: 'inbox' | 'sent' | 'drafts' | 'all') => {
+    setDocuments(prev => prev.map(doc => 
+      doc.id === docId ? { ...doc, folder } : doc
+    ))
+    
+    toast({
+      title: "Document Moved",
+      description: `Document has been moved to ${folder}.`,
+    })
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -293,7 +401,7 @@ export default function Documentation() {
           <p className="text-muted-foreground">Access guides, policies, and training materials</p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" onClick={handleUpload}>
+          <Button variant="outline" onClick={handleFileUpload}>
             <Upload className="w-4 h-4 mr-2" />
             Upload
           </Button>
@@ -355,7 +463,8 @@ export default function Documentation() {
       <Tabs defaultValue="browse" className="space-y-6">
         <TabsList>
           <TabsTrigger value="browse">Browse Documents</TabsTrigger>
-          <TabsTrigger value="categories">By Category</TabsTrigger>
+          <TabsTrigger value="mailbox">Document Mailbox</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="recent">Recently Added</TabsTrigger>
           <TabsTrigger value="popular">Most Popular</TabsTrigger>
         </TabsList>
@@ -496,6 +605,124 @@ export default function Documentation() {
                 </Card>
               )
             })}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="mailbox" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Folders Sidebar */}
+            <Card className="md:col-span-1">
+              <CardHeader>
+                <CardTitle>Folders</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 p-2">
+                {[
+                  { id: 'inbox', name: 'Inbox', icon: Inbox, count: documents.filter(d => d.folder === 'inbox').length },
+                  { id: 'sent', name: 'Sent', icon: Send, count: documents.filter(d => d.folder === 'sent').length },
+                  { id: 'drafts', name: 'Drafts', icon: FilePenLine, count: documents.filter(d => d.folder === 'drafts').length },
+                  { id: 'all', name: 'All Documents', icon: Folder, count: documents.length }
+                ].map((folder) => (
+                  <Button
+                    key={folder.id}
+                    variant={selectedFolder === folder.id ? "secondary" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => setSelectedFolder(folder.id as any)}
+                  >
+                    <folder.icon className="w-4 h-4 mr-2" />
+                    <span>{folder.name}</span>
+                    <Badge variant="outline" className="ml-auto">
+                      {folder.count}
+                    </Badge>
+                  </Button>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Document List */}
+            <Card className="md:col-span-3">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>
+                    {selectedFolder.charAt(0).toUpperCase() + selectedFolder.slice(1)}
+                  </CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      placeholder="Search documents..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-60"
+                    />
+                    <Button variant="outline" onClick={handleUpload}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {filteredDocuments.map((doc) => {
+                    const TypeIcon = getTypeIcon(doc.type)
+                    return (
+                      <div 
+                        key={doc.id} 
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer"
+                        onClick={() => handleViewDocument(doc)}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <TypeIcon className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{doc.title}</h4>
+                            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                              <span>{doc.author}</span>
+                              <span>•</span>
+                              <span>{doc.updatedDate}</span>
+                              <span>•</span>
+                              <Badge className={getTypeColor(doc.type)} variant="outline">
+                                {doc.type}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDownload(doc)
+                            }}
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMoveToFolder(doc.id, 'inbox'); }}>Move to Inbox</DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMoveToFolder(doc.id, 'sent'); }}>Move to Sent</DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMoveToFolder(doc.id, 'drafts'); }}>Move to Drafts</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditDocument(doc); }}>Edit</DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc.id); }} className="text-red-600">Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
@@ -648,6 +875,72 @@ export default function Documentation() {
             <Button onClick={handleSaveDocument}>
               {selectedDoc ? 'Update' : 'Create'} Document
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* File Upload Dialog */}
+      <Dialog open={isFileUploadDialogOpen} onOpenChange={setIsFileUploadDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>
+              Upload PDF or Word documents to your document library
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {/* File Drop Zone */}
+            <div 
+              className="border-2 border-dashed rounded-lg p-8 text-center hover:bg-accent/50 transition-colors cursor-pointer"
+              onClick={() => {
+                const input = document.createElement('input')
+                input.type = 'file'
+                input.accept = '.pdf,.doc,.docx'
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0]
+                  if (file) {
+                    processFileUpload(file)
+                  }
+                }
+                input.click()
+              }}
+            >
+              <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-medium mb-2">Drop your file here or click to browse</h3>
+              <p className="text-sm text-muted-foreground">
+                Supports PDF, DOC, and DOCX files up to 10MB
+              </p>
+            </div>
+
+            {/* File Preview */}
+            {previewUrl && (
+              <div className="space-y-4">
+                <h3 className="font-medium">File Preview</h3>
+                <div className="border rounded-lg p-4 bg-muted/50">
+                  {previewUrl.includes('.pdf') ? (
+                    <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
+                      <iframe 
+                        src={previewUrl} 
+                        className="w-full h-full rounded-lg"
+                        title="PDF Preview"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-muted rounded-lg flex flex-col items-center justify-center p-8">
+                      <FileIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                      <p className="text-center text-muted-foreground">
+                        Preview not available for Word documents.
+                        <br />
+                        The document will be available after upload.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setIsFileUploadDialogOpen(false)}>Cancel</Button>
           </div>
         </DialogContent>
       </Dialog>
