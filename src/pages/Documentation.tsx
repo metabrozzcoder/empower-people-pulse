@@ -8,28 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { 
-  FileText, 
-  Search, 
-  Plus, 
-  Inbox, 
-  Send, 
-  File, 
-  Folder, 
-  Clock, 
-  Tag, 
-  MoreHorizontal, 
-  Download, 
-  Trash2, 
-  Edit, 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  Upload, 
-  FileIcon,
-  FilePdf,
-  FileText as FileTextIcon
-} from 'lucide-react'
+import { FileText, Search, Plus, Inbox, Send, File, Folder, Clock, Tag, MoreHorizontal, Download, Trash2, Edit, Eye, CheckCircle, XCircle, Upload, FileIcon, File as FilePdf, FileText as FileTextIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { 
   DropdownMenu,
