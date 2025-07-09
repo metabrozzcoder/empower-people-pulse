@@ -351,6 +351,11 @@ export default function Documentation() {
       return
     }
 
+    // If no assignee is selected, set status to Draft
+    if (!newDocument.assignedTo) {
+      newDocument.status = 'Draft';
+    }
+
     const fileExtension = selectedFile 
       ? selectedFile.name.split('.').pop()?.toLowerCase() as Document['fileType']
       : selectedDocument?.fileType || 'pdf'
@@ -806,22 +811,26 @@ export default function Documentation() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select 
-                    value={newDocument.status} 
-                    onValueChange={(value) => setNewDocument({...newDocument, status: value as Document['status']})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Draft">Draft</SelectItem>
-                      <SelectItem value="Sent">Sent</SelectItem>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Approved">Approved</SelectItem>
-                      <SelectItem value="Declined">Declined</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {isEditDocumentOpen && (
+                    <>
+                      <Label htmlFor="status">Status</Label>
+                      <Select 
+                        value={newDocument.status} 
+                        onValueChange={(value) => setNewDocument({...newDocument, status: value as Document['status']})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Draft">Draft</SelectItem>
+                          <SelectItem value="Sent">Sent</SelectItem>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Approved">Approved</SelectItem>
+                          <SelectItem value="Declined">Declined</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -1001,7 +1010,7 @@ export default function Documentation() {
               Cancel
             </Button>
             <Button onClick={handleSaveDocument}>
-              {isEditDocumentOpen ? 'Update' : 'Create'} Document
+              {isEditDocumentOpen ? 'Update' : (newDocument.assignedTo ? 'Send' : 'Save as Draft')}
             </Button>
           </div>
         </DialogContent>
