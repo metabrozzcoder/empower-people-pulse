@@ -6,11 +6,13 @@ import { Label } from '@/components/ui/label'
 import { Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useNavigate } from 'react-router-dom'
+import { useUsers } from '@/context/UserContext'
 import { useAuth } from '@/context/AuthContext'
 
 export default function Login() {
   const { toast } = useToast()
   const navigate = useNavigate()
+  const { authenticateUser } = useUsers()
   const { login } = useAuth()
   const [formData, setFormData] = useState({
     username: '',
@@ -23,22 +25,39 @@ export default function Login() {
     e.preventDefault()
     setIsLoading(true)
 
-    try {
-      await login(formData)
+    if (formData.username && formData.password) {
+      const user = authenticateUser(formData.username, formData.password)
       
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      })
-      
-      navigate('/')
-    } catch (error: any) {
+      setTimeout(() => {
+        if (user) {
+          login(user)
+          
+          toast({
+            title: "Login Successful",
+            description: `Welcome back, ${user.name}!`,
+          })
+          
+          // Redirect guest users to chat page, others to dashboard
+          if (user.role === 'Guest') {
+            navigate('/chat')
+          } else {
+            navigate('/')
+          }
+        } else {
+          toast({
+            title: "Login Failed",
+            description: "Invalid username or password",
+            variant: "destructive"
+          })
+        }
+        setIsLoading(false)
+      }, 1000)
+    } else {
       toast({
         title: "Login Failed",
-        description: error.message || "Invalid username or password",
+        description: "Please enter both username and password",
         variant: "destructive"
       })
-    } finally {
       setIsLoading(false)
     }
   }
@@ -123,11 +142,11 @@ export default function Login() {
 
           {/* Development info */}
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h4 className="font-medium text-blue-800 mb-2">Development Login</h4>
+            <h4 className="font-medium text-blue-800 mb-2">Demo Login Credentials</h4>
             <div className="text-sm text-blue-700 space-y-1">
-              <p><strong>Username:</strong> admin</p>
-              <p><strong>Password:</strong> admin</p>
-              <p className="text-xs mt-2">This is connected to a PostgreSQL backend server.</p>
+              <p><strong>Admin:</strong> username: admin, password: admin</p>
+              <p><strong>HR:</strong> username: john.smith, password: hr123</p>
+              <p><strong>Guest:</strong> username: abd, password: guest123</p>
             </div>
           </div>
         </CardContent>
