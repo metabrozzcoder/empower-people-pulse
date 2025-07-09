@@ -352,7 +352,7 @@ export default function Documentation() {
     }
 
     // If no assignee is selected, set status to Draft
-    if (!newDocument.assignedTo) {
+    if (!newDocument.assignedTo || newDocument.assignedTo === "none") {
       newDocument.status = 'Draft';
     }
 
@@ -836,14 +836,14 @@ export default function Documentation() {
                 <div className="space-y-2">
                   <Label htmlFor="assignedTo">Assign To</Label>
                   <Select 
-                    value={newDocument.assignedTo || ""} 
-                    onValueChange={(value) => setNewDocument({...newDocument, assignedTo: value})}
+                    value={newDocument.assignedTo || "none"} 
+                    onValueChange={(value) => setNewDocument({...newDocument, assignedTo: value === "none" ? "" : value})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select user to assign (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None (Save as Draft)</SelectItem>
+                      <SelectItem value="none">None (Save as Draft)</SelectItem>
                       {users.map(user => (
                         <SelectItem key={user.id} value={user.name}>
                           {user.name} ({user.role})
