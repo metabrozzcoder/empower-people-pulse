@@ -77,7 +77,7 @@ const initialUsers: User[] = [
     lastLogin: '3 hours ago',
     createdDate: '2023-03-01',
     permissions: ['limited_access'],
-    username: 'abd',
+    username: 'abd.rahman',
     password: 'abd123',
     sectionAccess: []
   },

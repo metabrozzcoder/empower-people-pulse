@@ -22,9 +22,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
-import { useUsers } from '@/context/UserContext'
 
 interface AccessRule {
   id: string
@@ -97,13 +95,10 @@ const mockAccessRules: AccessRule[] = [
 
 export default function AccessControl() {
   const { toast } = useToast()
-  const { users, updateUser } = useUsers()
   const [accessRules, setAccessRules] = useState<AccessRule[]>(mockAccessRules)
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedRule, setSelectedRule] = useState<AccessRule | null>(null)
-  const [selectedEmployee, setSelectedEmployee] = useState('')
-  const [allowedSections, setAllowedSections] = useState<string[]>([])
 
   const filteredRules = accessRules.filter(rule =>
     rule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -174,6 +169,15 @@ export default function AccessControl() {
         </Button>
       </div>
 
+      {/* Info Notice */}
+      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <h4 className="font-medium text-blue-800 mb-2">Access Control Information</h4>
+        <p className="text-sm text-blue-700">
+          This section is for managing system-wide access restrictions like IP filtering, time-based access, and device restrictions. 
+          For user section permissions, please use the <strong>User Management</strong> page where you can grant or modify section access during user creation or editing.
+        </p>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -235,220 +239,11 @@ export default function AccessControl() {
         </div>
       </div>
 
-      {/* Employee Permissions Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Employee Permissions</CardTitle>
-          <CardDescription>
-            Select employees and manage their section access permissions. 
-            Note: Users created through User Management will have their permissions managed there.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h4 className="font-medium text-blue-800 mb-2">Permission Management</h4>
-            <p className="text-sm text-blue-700">
-              For new users, use the <strong>User Management</strong> page to set section permissions during user creation. 
-              This section is for managing existing user permissions and restrictions.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Select Employee</Label>
-                <Select 
-                  value={selectedEmployee} 
-                  onValueChange={(value) => {
-                    setSelectedEmployee(value)
-                    const user = users.find(u => u.id === value)
-                    // Load existing permissions for the selected user
-                    const userPermissions = user?.allowedSections || []
-                    setAllowedSections(userPermissions)
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose an employee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name} ({user.role})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {selectedEmployee && (
-                <div className="space-y-3">
-                  <Label>Section Permissions</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Tick sections to grant access, untick to deny access
-                  </p>
-                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto p-3 bg-muted/50 border rounded-lg">
-                    {[
-                      'Dashboard', 'Employees', 'Projects', 'Recruitment', 'Tasks', 
-                      'Scheduling', 'Attendance', 'Analytics', 'Organizations', 
-                      'Chat', 'User Management', 'Access Control', 'Documentation',
-                      'AI Assistant', 'Profile', 'Account Settings', 'Security System',
-                      'Settings', 'KPI Dashboard', 'Role Management', 'Performance'
-                    ].map((section) => (
-                      <div key={section} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded">
-                        <Checkbox 
-                          id={section}
-                          checked={allowedSections.includes(section)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setAllowedSections([...allowedSections, section])
-                            } else {
-                              setAllowedSections(allowedSections.filter(s => s !== section))
-                            }
-                          }}
-                        />
-                        <Label htmlFor={section} className="text-sm font-normal">
-                          {section}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="space-y-4">
-              {selectedEmployee && (
-                <div className="p-4 border rounded-lg bg-muted/50">
-                  <h4 className="font-medium mb-2">Current Permissions</h4>
-                  {allowedSections.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {allowedSections.map((section) => (
-                        <Badge key={section} className="text-xs">
-                          {section}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No access permissions granted</p>
-                  )}
-                </div>
-              )}
-              
-              <Button 
-                onClick={() => {
-                  if (selectedEmployee) {
-                    updateUser(selectedEmployee, { 
-                      allowedSections,
-                      sectionAccess: [] // Clear old restrictions
-                    })
-                    toast({
-                      title: "Permissions Updated",
-                      description: "Employee section permissions have been updated successfully.",
-                    })
-                  }
-                }}
-                disabled={!selectedEmployee}
-                className="w-full"
-              >
-                Apply Permissions
-              </Button>
-              
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  if (selectedEmployee) {
-                    setAllowedSections([])
-                    updateUser(selectedEmployee, { 
-                      allowedSections: [],
-                      sectionAccess: []
-                    })
-                    toast({
-                      title: "Permissions Cleared",
-                      description: "All section permissions have been cleared for this employee.",
-                    })
-                  }
-                }}
-                disabled={!selectedEmployee}
-                className="w-full"
-              >
-                Clear All Permissions
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Restricted Users List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Users with Custom Permissions</CardTitle>
-          <CardDescription>View and manage users who have custom section access or restrictions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {(() => {
-            const customPermissionUsers = users.filter(user => 
-              (user.sectionAccess && user.sectionAccess.length > 0) || 
-              (user.allowedSections && user.allowedSections.length > 0)
-            )
-            
-            if (customPermissionUsers.length === 0) {
-              return (
-                <div className="text-center py-8 text-muted-foreground">
-                  No users have custom section permissions applied.
-                </div>
-              )
-            }
-
-            return (
-              <div className="space-y-4">
-                {customPermissionUsers.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Users className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{user.name}</h3>
-                        <p className="text-sm text-muted-foreground">{user.role} • {user.email}</p>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {user.sectionAccess?.map((section) => (
-                            <Badge key={section} variant="destructive" className="text-xs">
-                              Restricted: {section}
-                            </Badge>
-                          ))}
-                          {user.allowedSections?.map((section) => (
-                            <Badge key={section} className="bg-green-100 text-green-800 hover:bg-green-200 text-xs">
-                              Allowed: {section}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedEmployee(user.id)
-                          setAllowedSections(user.allowedSections || [])
-                        }}
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit Permissions
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )
-          })()}
-        </CardContent>
-      </Card>
-
       {/* Access Rules */}
       <Card>
         <CardHeader>
           <CardTitle>Access Control Rules</CardTitle>
-          <CardDescription>Configure and manage access restrictions</CardDescription>
+          <CardDescription>Configure and manage system-wide access restrictions</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -565,7 +360,6 @@ export default function AccessControl() {
                 <p className="text-sm text-muted-foreground">
                   Configure the specific restrictions for this access control rule.
                 </p>
-                {/* Rule-specific configuration would go here based on type */}
                 <div className="p-4 border rounded-lg bg-muted/50">
                   <p className="text-sm text-muted-foreground">
                     Rule configuration options will be displayed here based on the selected rule type.

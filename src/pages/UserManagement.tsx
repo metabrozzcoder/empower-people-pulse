@@ -20,8 +20,8 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Separator } from '@/components/ui/separator'
 import { useUsers, User } from '@/context/UserContext'
 import { useToast } from '@/hooks/use-toast'
 
@@ -92,6 +92,12 @@ export default function UserManagement() {
     const matchesRole = selectedRole === 'all' || user.role === selectedRole
     return matchesSearch && matchesRole
   })
+
+  // Get users with custom permissions (those with allowedSections or sectionAccess)
+  const usersWithCustomPermissions = users.filter(user => 
+    (user.sectionAccess && user.sectionAccess.length > 0) || 
+    (user.allowedSections && user.allowedSections.length > 0)
+  )
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -370,10 +376,62 @@ export default function UserManagement() {
         </Select>
       </div>
 
+      {/* Users with Custom Permissions */}
+      {usersWithCustomPermissions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Users with Custom Permissions</CardTitle>
+            <CardDescription>Users who have custom section access or restrictions applied</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {usersWithCustomPermissions.map((user) => (
+                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback>
+                        {user.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-medium">{user.name}</h3>
+                      <p className="text-sm text-muted-foreground">{user.role} • {user.email}</p>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {user.sectionAccess?.map((section) => (
+                          <Badge key={section} variant="destructive" className="text-xs">
+                            Restricted: {section}
+                          </Badge>
+                        ))}
+                        {user.allowedSections?.map((section) => (
+                          <Badge key={section} className="bg-green-100 text-green-800 hover:bg-green-200 text-xs">
+                            Allowed: {section}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditUser(user)}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Permissions
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Users</CardTitle>
+          <CardTitle>All Users</CardTitle>
           <CardDescription>Manage all system users and their access levels</CardDescription>
         </CardHeader>
         <CardContent>
@@ -455,7 +513,7 @@ export default function UserManagement() {
         </CardContent>
       </Card>
 
-      {/* User Dialog */}
+      {/* User Dialog - Combined Basic Info and Permissions */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -467,13 +525,10 @@ export default function UserManagement() {
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="basic">Basic Information</TabsTrigger>
-              <TabsTrigger value="permissions">Section Permissions</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="basic" className="space-y-4">
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Basic Information</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">First Name *</Label>
@@ -608,58 +663,59 @@ export default function UserManagement() {
                   )}
                 </div>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="permissions" className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Section Access Permissions</h4>
-                  <div className="text-sm text-muted-foreground">
-                    {selectedSections.length} of {ALL_SECTIONS.length} sections selected
-                  </div>
-                </div>
-                
-                {formData.role && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <strong>{formData.role} Role:</strong> Default sections have been automatically selected. 
-                      You can manually adjust permissions by checking/unchecking sections below.
-                    </p>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-3 border rounded-lg">
-                  {ALL_SECTIONS.map((section) => (
-                    <div key={section} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded">
-                      <Checkbox 
-                        id={section}
-                        checked={selectedSections.includes(section)}
-                        onCheckedChange={() => toggleSection(section)}
-                      />
-                      <Label htmlFor={section} className="text-sm font-normal cursor-pointer">
-                        {section}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="p-4 border rounded-lg bg-muted/50">
-                  <h4 className="font-medium mb-2">Selected Permissions Preview</h4>
-                  {selectedSections.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedSections.map((section) => (
-                        <Badge key={section} className="text-xs">
-                          {section}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No sections selected - user will have no access</p>
-                  )}
+            </div>
+
+            <Separator />
+
+            {/* Section Permissions */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Section Access Permissions</h3>
+                <div className="text-sm text-muted-foreground">
+                  {selectedSections.length} of {ALL_SECTIONS.length} sections selected
                 </div>
               </div>
-            </TabsContent>
-          </Tabs>
+              
+              {formData.role && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>{formData.role} Role:</strong> Default sections have been automatically selected. 
+                    You can manually adjust permissions by checking/unchecking sections below.
+                  </p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-3 border rounded-lg">
+                {ALL_SECTIONS.map((section) => (
+                  <div key={section} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded">
+                    <Checkbox 
+                      id={section}
+                      checked={selectedSections.includes(section)}
+                      onCheckedChange={() => toggleSection(section)}
+                    />
+                    <Label htmlFor={section} className="text-sm font-normal cursor-pointer">
+                      {section}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="p-4 border rounded-lg bg-muted/50">
+                <h4 className="font-medium mb-2">Selected Permissions Preview</h4>
+                {selectedSections.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedSections.map((section) => (
+                      <Badge key={section} className="text-xs">
+                        {section}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No sections selected - user will have no access</p>
+                )}
+              </div>
+            </div>
+          </div>
           
           <div className="flex justify-end space-x-2 pt-4 border-t">
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
