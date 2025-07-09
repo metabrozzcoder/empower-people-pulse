@@ -22,7 +22,8 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
-import { useUsers, User } from '@/context/UserContext'
+import { useUsers } from '@/context/UserContext'
+import { User, CreateUserRequest } from '@/services/api'
 import { useToast } from '@/hooks/use-toast'
 
 // Define all available sections

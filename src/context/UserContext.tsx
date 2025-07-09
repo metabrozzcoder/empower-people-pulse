@@ -1,141 +1,89 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { useLocalStorage } from '@/hooks/useLocalStorage'
+import { usersAPI, User as ApiUser, CreateUserRequest } from '@/services/api'
+import { useAuth } from './AuthContext'
 
-export interface User {
-  id: string
-  name: string
-  email: string
-  phone: string
-  avatar?: string
-  role: 'Admin' | 'HR' | 'Guest'
-  status: 'Active' | 'Inactive' | 'Pending'
-  department?: string
-  organization?: string
-  linkedEmployee?: string
-  lastLogin: string
-  createdDate: string
-  permissions: string[]
-  username: string
-  password: string
-  guestId?: string
-  sectionAccess?: string[]
-  allowedSections?: string[]
-}
+export interface User extends ApiUser {}
 
 interface UserContextType {
   users: User[]
-  addUser: (user: Omit<User, 'id' | 'createdDate' | 'lastLogin'>) => void
-  updateUser: (id: string, updates: Partial<User>) => void
-  deleteUser: (id: string) => void
-  authenticateUser: (username: string, password: string) => User | null
+  addUser: (user: CreateUserRequest) => Promise<void>
+  updateUser: (id: string, updates: Partial<CreateUserRequest>) => Promise<void>
+  deleteUser: (id: string) => Promise<void>
+  refreshUsers: () => Promise<void>
+  isLoading: boolean
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
-// Only admin user as initial user
-const initialUsers: User[] = [
-  {
-    id: '0001',
-    name: 'Admin User',
-    email: 'admin@company.com',
-    phone: '+1 (555) 123-4567',
-    role: 'Admin',
-    status: 'Active',
-    department: 'Administration',
-    organization: 'MediaTech Solutions',
-    lastLogin: 'Just now',
-    createdDate: '2023-01-01',
-    permissions: ['full_access', 'user_management', 'system_settings'],
-    username: 'admin',
-    password: 'admin',
-    sectionAccess: [],
-    allowedSections: [
-      'Dashboard',
-      'AI Assistant', 
-      'Employees',
-      'Projects',
-      'Recruitment',
-      'Tasks',
-      'Scheduling',
-      'Attendance',
-      'Analytics',
-      'Organizations',
-      'Chat',
-      'User Management',
-      'Access Control',
-      'Documentation',
-      'Security System',
-      'Settings'
-    ]
-  }
-]
-
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [users, setUsers] = useLocalStorage<User[]>('system_users', initialUsers)
+  const [users, setUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const { isAuthenticated, currentUser } = useAuth()
 
-  // Reset to only admin user on component mount (this ensures clean state)
+  const refreshUsers = async () => {
+    if (!isAuthenticated || !currentUser) return
+    
+    // Only Admin and HR can fetch all users
+    if (!['Admin', 'HR'].includes(currentUser.role)) return
+
+    setIsLoading(true)
+    try {
+      const fetchedUsers = await usersAPI.getAll()
+      setUsers(fetchedUsers)
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
-    setUsers(initialUsers)
-  }, [])
-
-  const addUser = (userData: Omit<User, 'id' | 'createdDate' | 'lastLogin'>) => {
-    const nextId = String(users.length + 1).padStart(4, '0')
-    const newUser: User = {
-      ...userData,
-      id: nextId,
-      createdDate: new Date().toISOString().split('T')[0],
-      lastLogin: 'Never',
-      status: 'Active'
+    if (isAuthenticated) {
+      refreshUsers()
+    } else {
+      setUsers([])
     }
-    
-    // Add to current users
-    const updatedUsers = [...users, newUser]
-    setUsers(updatedUsers)
-    
-    // Also update the initial users array in the code (this is what gets stored)
-    console.log('New user created and stored:', newUser)
+  }, [isAuthenticated, currentUser])
+
+  const addUser = async (userData: CreateUserRequest) => {
+    try {
+      const newUser = await usersAPI.create(userData)
+      setUsers(prev => [...prev, newUser])
+    } catch (error: any) {
+      console.error('Error creating user:', error)
+      throw new Error(error.response?.data?.error || 'Failed to create user')
+    }
   }
 
-  const updateUser = (id: string, updates: Partial<User>) => {
-    setUsers(prevUsers =>
-      prevUsers.map(user =>
-        user.id === id ? { ...user, ...updates } : user
-      )
-    )
+  const updateUser = async (id: string, updates: Partial<CreateUserRequest>) => {
+    try {
+      const updatedUser = await usersAPI.update(id, updates)
+      setUsers(prev => prev.map(user => user.id === id ? updatedUser : user))
+    } catch (error: any) {
+      console.error('Error updating user:', error)
+      throw new Error(error.response?.data?.error || 'Failed to update user')
+    }
   }
 
-  const deleteUser = (id: string) => {
-    // Prevent deleting admin user
-    if (id === '0001') {
-      console.warn('Cannot delete admin user')
-      return
+  const deleteUser = async (id: string) => {
+    try {
+      await usersAPI.delete(id)
+      setUsers(prev => prev.filter(user => user.id !== id))
+    } catch (error: any) {
+      console.error('Error deleting user:', error)
+      throw new Error(error.response?.data?.error || 'Failed to delete user')
     }
-    setUsers(prevUsers => prevUsers.filter(user => user.id !== id))
-  }
-
-  const authenticateUser = (username: string, password: string): User | null => {
-    console.log('Authentication attempt:', { username, password })
-    console.log('Available users:', users.map(u => ({ username: u.username, password: u.password, name: u.name })))
-    
-    const user = users.find(u => {
-      const usernameMatch = u.username.toLowerCase() === username.toLowerCase()
-      const passwordMatch = u.password === password
-      console.log(`Checking user ${u.username}: username match=${usernameMatch}, password match=${passwordMatch}`)
-      return usernameMatch && passwordMatch
-    })
-    
-    if (user) {
-      console.log('Authentication successful for:', user.name)
-      updateUser(user.id, { lastLogin: new Date().toLocaleString() })
-      return user
-    }
-    
-    console.log('Authentication failed')
-    return null
   }
 
   return (
-    <UserContext.Provider value={{ users, addUser, updateUser, deleteUser, authenticateUser }}>
+    <UserContext.Provider value={{ 
+      users, 
+      addUser, 
+      updateUser, 
+      deleteUser, 
+      refreshUsers,
+      isLoading 
+    }}>
       {children}
     </UserContext.Provider>
   )

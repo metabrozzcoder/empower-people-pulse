@@ -3,16 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Lock, User, Eye, EyeOff } from 'lucide-react'
+import { Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useNavigate } from 'react-router-dom'
-import { useUsers } from '@/context/UserContext'
 import { useAuth } from '@/context/AuthContext'
 
 export default function Login() {
   const { toast } = useToast()
   const navigate = useNavigate()
-  const { authenticateUser } = useUsers()
   const { login } = useAuth()
   const [formData, setFormData] = useState({
     username: '',
@@ -24,40 +22,23 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    
-    console.log('Login attempt with:', formData)
 
-    if (formData.username && formData.password) {
-      const user = authenticateUser(formData.username, formData.password)
+    try {
+      await login(formData)
       
-      if (user) {
-        login(user)
-        
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${user.name}!`,
-        })
-        
-        // Redirect guest users to chat page, others to dashboard
-        if (user.role === 'Guest') {
-          navigate('/chat')
-        } else {
-          navigate('/')
-        }
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Invalid username or password. Please check your credentials.",
-          variant: "destructive"
-        })
-      }
-      setIsLoading(false)
-    } else {
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+      })
+      
+      navigate('/')
+    } catch (error: any) {
       toast({
         title: "Login Failed",
-        description: "Please enter both username and password",
+        description: error.message || "Invalid username or password",
         variant: "destructive"
       })
+    } finally {
       setIsLoading(false)
     }
   }
@@ -88,6 +69,7 @@ export default function Login() {
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   className="pl-10"
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -104,6 +86,7 @@ export default function Login() {
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="pl-10 pr-10"
                   required
+                  disabled={isLoading}
                 />
                 <Button
                   type="button"
@@ -111,6 +94,7 @@ export default function Login() {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4 text-muted-foreground" />
@@ -126,16 +110,26 @@ export default function Login() {
               className="w-full" 
               disabled={isLoading}
             >
-              {isLoading ? "Signing In..." : "Sign In"}
-              
-              {/* Debug info for development */}
-              <div className="mt-4 p-3 bg-gray-50 rounded text-xs">
-                <p><strong>Available Login:</strong></p>
-                <p>Username: admin</p>
-                <p>Password: admin</p>
-              </div>
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Signing In...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </Button>
           </form>
+
+          {/* Development info */}
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="font-medium text-blue-800 mb-2">Development Login</h4>
+            <div className="text-sm text-blue-700 space-y-1">
+              <p><strong>Username:</strong> admin</p>
+              <p><strong>Password:</strong> admin</p>
+              <p className="text-xs mt-2">This is connected to a PostgreSQL backend server.</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
