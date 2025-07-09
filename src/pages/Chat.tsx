@@ -186,7 +186,36 @@ export default function Chat() {
       }
       setMessages([...messages, newMessage])
       setMessage('')
+      
+      // Simulate response after a short delay
+      setTimeout(() => {
+        const responseMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          senderId: selectedUser.id,
+          senderName: selectedUser.name,
+          content: getRandomResponse(),
+          type: 'text',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+        setMessages(prev => [...prev, responseMessage])
+      }, 1500)
     }
+  }
+
+  const getRandomResponse = () => {
+    const responses = [
+      "I'll look into that right away.",
+      "Thanks for the update. Let me know if you need anything else.",
+      "That sounds good. When do you need this by?",
+      "I've just sent you the files you requested.",
+      "Can we schedule a meeting to discuss this further?",
+      "I'll have that ready for you by tomorrow.",
+      "Great work on the project so far!",
+      "Let me check with the team and get back to you.",
+      "Do you have any specific requirements for this task?",
+      "I'm available for a call if you want to discuss this in detail."
+    ]
+    return responses[Math.floor(Math.random() * responses.length)]
   }
 
   const handleFileUpload = (type: 'image' | 'file') => {
@@ -287,6 +316,26 @@ export default function Chat() {
       title: "Voice Recording",
       description: "Voice recording feature activated.",
     })
+    
+    // Simulate voice recording and sending
+    setTimeout(() => {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        senderId: 'me',
+        senderName: 'You',
+        content: "voice-message.mp3",
+        type: 'voice',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        fileName: "voice-message.mp3",
+        fileSize: "1.2 MB"
+      }
+      setMessages([...messages, newMessage])
+      
+      toast({
+        title: "Voice Message Sent",
+        description: "Your voice message has been sent successfully.",
+      })
+    }, 3000)
   }
 
   return (
@@ -454,6 +503,18 @@ export default function Chat() {
                               <p className="text-sm">{msg.fileName}</p>
                               <p className="text-xs opacity-70">{msg.fileSize}</p>
                             </div>
+                          </div>
+                        )}
+                        {msg.type === 'voice' && (
+                          <div className="flex items-center space-x-2">
+                            <Mic className="w-4 h-4" />
+                            <div>
+                              <p className="text-sm">Voice Message</p>
+                              <p className="text-xs opacity-70">{msg.fileSize}</p>
+                            </div>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
+                              <Play className="h-3 w-3" />
+                            </Button>
                           </div>
                         )}
                         <p className="text-xs opacity-70 mt-1">{msg.timestamp}</p>

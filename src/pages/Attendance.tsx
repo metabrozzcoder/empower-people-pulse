@@ -87,12 +87,52 @@ const Attendance = () => {
   const attendanceRate = Math.round((presentToday / totalEmployees) * 100)
 
   const markAttendance = (employeeId: string, status: string) => {
+    // Update the attendance data
+    setAttendanceData(prev => prev.map(emp => 
+      emp.employeeId === employeeId 
+        ? { ...emp, todayStatus: status as any, checkInTime: status === 'Present' ? new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-' }
+        : emp
+    ))
+    
     toast({
       title: "Attendance Updated",
       description: `Employee status marked as ${status}`,
     })
   }
 
+  const exportAttendanceReport = () => {
+    const reportData = attendanceData.map(emp => ({
+      Name: emp.name,
+      Department: emp.department,
+      Status: emp.todayStatus,
+      CheckIn: emp.checkInTime,
+      CheckOut: emp.checkOutTime,
+      WeeklyHours: emp.weeklyHours,
+      AttendanceRate: `${emp.attendanceRate}%`,
+      LateCount: emp.lateCount,
+      AbsenceCount: emp.absenceCount
+    }))
+    
+    const csvContent = [
+      Object.keys(reportData[0]).join(','),
+      ...reportData.map(row => Object.values(row).join(','))
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `attendance_report_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    toast({
+      title: "Report Exported",
+      description: "Attendance report has been exported successfully.",
+    })
+  }
   return (
     <div className="space-y-6">
       <div>
@@ -161,10 +201,7 @@ const Attendance = () => {
                   </CardDescription>
                 </div>
                  <Button onClick={() => {
-                   toast({
-                     title: "Report Exported",
-                     description: "Attendance report has been exported successfully.",
-                   })
+                   exportAttendanceReport()
                  }}>
                    <Download className="h-4 w-4 mr-2" />
                    Export Report
@@ -208,6 +245,7 @@ const Attendance = () => {
                             </div>
                             <Select
                               onValueChange={(value) => markAttendance(employee.employeeId, value)}
+                              value={employee.todayStatus}
                             >
                               <SelectTrigger className="w-[120px]">
                                 <SelectValue placeholder="Update" />
@@ -250,6 +288,12 @@ const Attendance = () => {
               </div>
             </CardHeader>
             <CardContent>
+              <div className="mb-6 flex justify-end">
+                <Button onClick={exportAttendanceReport} variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Weekly Report
+                </Button>
+              </div>
               <div className="space-y-6">
                 {attendanceData.map((employee) => (
                   <Card key={employee.id}>
@@ -279,6 +323,12 @@ const Attendance = () => {
                           <div>
                             <p className="text-sm text-muted-foreground">Attendance Rate</p>
                             <p className="font-semibold">{employee.attendanceRate}%</p>
+                            <div className="mt-1">
+                              <div className={`inline-block w-2 h-2 rounded-full ${
+                                employee.attendanceRate >= 95 ? 'bg-green-500' : 
+                                employee.attendanceRate >= 85 ? 'bg-yellow-500' : 'bg-red-500'
+                              }`}></div>
+                            </div>
                           </div>
                           <div>
                             <p className="text-sm text-muted-foreground">Late Count</p>
@@ -353,10 +403,45 @@ const Attendance = () => {
                     <span className="text-muted-foreground">Peak Hours</span>
                     <span className="font-medium">10 AM - 2 PM</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Remote Work Rate</span>
+                    <span className="font-medium">23%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Overtime Hours</span>
+                    <span className="font-medium">127h this week</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+          
+          {/* Additional Analytics */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Attendance Patterns</CardTitle>
+              <CardDescription>Weekly attendance breakdown by day</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-7 gap-4">
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
+                  const rates = [95, 97, 94, 89, 85, 78, 82]
+                  return (
+                    <div key={day} className="text-center">
+                      <div className="text-sm font-medium mb-2">{day}</div>
+                      <div className="text-2xl font-bold mb-1">{rates[index]}%</div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{ width: `${rates[index]}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

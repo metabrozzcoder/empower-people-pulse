@@ -285,6 +285,40 @@ export default function UserManagement() {
     setGeneratedCredentials({ username: '', password: '', guestId: '' })
   }
 
+  const exportUserList = () => {
+    const userData = users.map(user => ({
+      Name: user.name,
+      Email: user.email,
+      Phone: user.phone,
+      Role: user.role,
+      Status: user.status,
+      Department: user.department || 'N/A',
+      Organization: user.organization || 'N/A',
+      Username: user.username,
+      LastLogin: user.lastLogin,
+      CreatedDate: user.createdDate
+    }))
+    
+    const csvContent = [
+      Object.keys(userData[0]).join(','),
+      ...userData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `user_list_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    toast({
+      title: "User List Exported",
+      description: "User list has been exported successfully.",
+    })
+  }
   const roleStats = {
     admin: users.filter(u => u.role === 'Admin').length,
     hr: users.filter(u => u.role === 'HR').length,
@@ -299,10 +333,16 @@ export default function UserManagement() {
           <h1 className="text-3xl font-bold">User Management</h1>
           <p className="text-muted-foreground">Manage users, roles, and section permissions</p>
         </div>
-        <Button onClick={handleAddUser} className="flex items-center space-x-2">
-          <Plus className="w-4 h-4" />
-          <span>Add User</span>
-        </Button>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={exportUserList}>
+            <Download className="w-4 h-4 mr-2" />
+            Export Users
+          </Button>
+          <Button onClick={handleAddUser} className="flex items-center space-x-2">
+            <Plus className="w-4 h-4" />
+            <span>Add User</span>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -432,8 +472,30 @@ export default function UserManagement() {
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Users</CardTitle>
-          <CardDescription>Manage all system users and their access levels</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>All Users</CardTitle>
+              <CardDescription>Manage all system users and their access levels</CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" onClick={() => {
+                toast({
+                  title: "Bulk Actions",
+                  description: "Bulk user management options opened.",
+                })
+              }}>
+                Bulk Actions
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                toast({
+                  title: "Import Users",
+                  description: "User import functionality opened.",
+                })
+              }}>
+                Import
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -494,6 +556,46 @@ export default function UserManagement() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const userData = {
+                        Name: user.name,
+                        Email: user.email,
+                        Phone: user.phone,
+                        Role: user.role,
+                        Status: user.status,
+                        Department: user.department || 'N/A',
+                        Username: user.username,
+                        LastLogin: user.lastLogin,
+                        CreatedDate: user.createdDate,
+                        Permissions: (user.permissions || []).join(', '),
+                        AllowedSections: (user.allowedSections || []).join(', ')
+                      }
+                      
+                      const content = Object.entries(userData)
+                        .map(([key, value]) => `${key}: ${value}`)
+                        .join('\n')
+                      
+                      const blob = new Blob([content], { type: 'text/plain' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `${user.name.replace(/\s+/g, '_')}_profile.txt`
+                      document.body.appendChild(a)
+                      a.click()
+                      document.body.removeChild(a)
+                      URL.revokeObjectURL(url)
+                      
+                      toast({
+                        title: "User Profile Exported",
+                        description: `${user.name}'s profile has been exported.`,
+                      })
+                    }}
+                  >
+                    <Download className="w-4 h-4" />
+                  </Button>
+                  <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleEditUser(user)}
@@ -510,7 +612,27 @@ export default function UserManagement() {
                 </div>
               </div>
             ))}
+            
+            {filteredUsers.length === 0 && (
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No users found matching your criteria</p>
+              </div>
+            )}
           </div>
+          
+          {/* Pagination */}
+          {filteredUsers.length > 0 && (
+            <div className="flex items-center justify-between mt-6">
+              <div className="text-sm text-muted-foreground">
+                Showing {filteredUsers.length} of {users.length} users
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" disabled>Previous</Button>
+                <Button variant="outline" size="sm" disabled>Next</Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

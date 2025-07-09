@@ -174,6 +174,10 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
         break
       case 'shortlist':
         updateCandidateStatus(candidate.id, 'Shortlisted')
+        toast({
+          title: 'Candidate Shortlisted',
+          description: `${candidate.name} has been shortlisted for ${candidate.position}`,
+        })
         break
       case 'hire':
         updateCandidateStatus(candidate.id, 'Hired')
@@ -188,6 +192,29 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
           title: 'Candidate Rejected',
           description: `${candidate.name} has been rejected`,
           variant: 'destructive'
+        })
+        break
+      case 'send_email':
+        toast({
+          title: 'Email Sent',
+          description: `Email sent to ${candidate.name} successfully`,
+        })
+        break
+      case 'download_resume':
+        // Simulate resume download
+        const resumeContent = `Resume for ${candidate.name}\n\nPosition: ${candidate.position}\nExperience: ${candidate.experience}\nSkills: ${candidate.skills.join(', ')}\nEmail: ${candidate.email}\nPhone: ${candidate.phone}`
+        const blob = new Blob([resumeContent], { type: 'text/plain' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${candidate.name.replace(/\s+/g, '_')}_Resume.txt`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        toast({
+          title: 'Resume Downloaded',
+          description: `${candidate.name}'s resume has been downloaded`,
         })
         break
       default:
@@ -339,9 +366,10 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                             size="sm" 
                             variant="outline"
                             onClick={() => handleCandidateAction('shortlist', candidate)}
+                            disabled={candidate.status === 'Shortlisted' || candidate.status === 'Hired'}
                           >
                             <UserCheck className="w-4 h-4 mr-1" />
-                            Shortlist
+                            {candidate.status === 'Shortlisted' ? 'Shortlisted' : 'Shortlist'}
                           </Button>
                           <div className="flex gap-1">
                             <Button 
@@ -373,6 +401,22 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                               }}
                             >
                               <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleCandidateAction('download_resume', candidate)}
+                              title="Download Resume"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleCandidateAction('send_email', candidate)}
+                              title="Send Email"
+                            >
+                              <Mail className="w-4 h-4" />
                             </Button>
                           </div>
                         </div>
@@ -433,11 +477,39 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                           <div className="text-2xl font-bold text-primary">{job.applicants}</div>
                           <p className="text-sm text-muted-foreground">Applicants</p>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" onClick={() => {
+                              toast({
+                                title: "Job Details",
+                                description: `Viewing details for ${job.title}`,
+                              })
+                            }}>
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" onClick={() => {
+                              toast({
+                                title: "Edit Job",
+                                description: `Editing ${job.title}`,
+                              })
+                            }}>
                               <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => {
+                              const jobData = `Job Title: ${job.title}\nDepartment: ${job.department}\nType: ${job.type}\nSalary: ${job.salary}\nRequirements: ${job.requirements.join(', ')}\nApplicants: ${job.applicants}`
+                              const blob = new Blob([jobData], { type: 'text/plain' })
+                              const url = URL.createObjectURL(blob)
+                              const a = document.createElement('a')
+                              a.href = url
+                              a.download = `${job.title.replace(/\s+/g, '_')}_Job_Posting.txt`
+                              document.body.appendChild(a)
+                              a.click()
+                              document.body.removeChild(a)
+                              URL.revokeObjectURL(url)
+                              toast({
+                                title: "Job Posting Downloaded",
+                                description: `${job.title} job posting has been downloaded`,
+                              })
+                            }}>
+                              <Download className="w-4 h-4" />
                             </Button>
                           </div>
                         </div>
@@ -484,6 +556,15 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
               <CardContent>
                 <div className="text-2xl font-bold">127</div>
                 <p className="text-xs text-muted-foreground">+12% from last month</p>
+                <div className="mt-2">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>This Month</span>
+                    <span>127</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             <Card>
@@ -493,6 +574,15 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
               <CardContent>
                 <div className="text-2xl font-bold">23%</div>
                 <p className="text-xs text-muted-foreground">+5% from last month</p>
+                <div className="mt-2">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>Target: 25%</span>
+                    <span>23%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '92%' }}></div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             <Card>
@@ -502,6 +592,76 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
               <CardContent>
                 <div className="text-2xl font-bold">18%</div>
                 <p className="text-xs text-muted-foreground">+2% from last month</p>
+                <div className="mt-2">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>Target: 20%</span>
+                    <span>18%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-orange-600 h-2 rounded-full" style={{ width: '90%' }}></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Additional Analytics */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Source Effectiveness</CardTitle>
+                <CardDescription>Where our best candidates come from</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[
+                    { source: 'LinkedIn', percentage: 45, candidates: 57 },
+                    { source: 'Company Website', percentage: 28, candidates: 36 },
+                    { source: 'Referrals', percentage: 15, candidates: 19 },
+                    { source: 'Job Boards', percentage: 12, candidates: 15 }
+                  ].map((item) => (
+                    <div key={item.source} className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{item.source}</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-20 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full" 
+                            style={{ width: `${item.percentage}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-muted-foreground w-12">{item.candidates}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Time to Hire</CardTitle>
+                <CardDescription>Average days from application to hire</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[
+                    { position: 'Software Engineer', days: 18, trend: 'down' },
+                    { position: 'Product Manager', days: 25, trend: 'up' },
+                    { position: 'Designer', days: 22, trend: 'stable' },
+                    { position: 'Sales Rep', days: 15, trend: 'down' }
+                  ].map((item) => (
+                    <div key={item.position} className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{item.position}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm">{item.days} days</span>
+                        <div className={`w-2 h-2 rounded-full ${
+                          item.trend === 'down' ? 'bg-green-500' : 
+                          item.trend === 'up' ? 'bg-red-500' : 'bg-yellow-500'
+                        }`}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </div>

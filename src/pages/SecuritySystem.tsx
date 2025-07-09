@@ -153,6 +153,34 @@ export default function SecuritySystem() {
     })
   }
 
+  const handleDeviceAction = (deviceId: string, action: string) => {
+    if (action === 'view') {
+      toast({
+        title: "Device View",
+        description: "Opening device monitoring interface...",
+      })
+    } else if (action === 'config') {
+      toast({
+        title: "Device Configuration",
+        description: "Opening device configuration panel...",
+      })
+    }
+  }
+
+  const handleBiometricAction = (action: string) => {
+    toast({
+      title: action,
+      description: `Initiating ${action.toLowerCase()} process...`,
+    })
+    
+    setTimeout(() => {
+      toast({
+        title: `${action} Complete`,
+        description: `${action} has been completed successfully.`,
+      })
+    }, 2000)
+  }
+
   const onlineDevices = devices.filter(d => d.status === 'online').length
   const offlineDevices = devices.filter(d => d.status === 'offline').length
   const maintenanceDevices = devices.filter(d => d.status === 'maintenance').length
@@ -356,11 +384,11 @@ export default function SecuritySystem() {
                         <div className="flex space-x-2 mt-4">
                           <Button variant="outline" size="sm" className="flex-1">
                             <Eye className="w-4 h-4 mr-1" />
-                            View
+                            <span onClick={() => handleDeviceAction(device.id, 'view')}>View</span>
                           </Button>
                           <Button variant="outline" size="sm" className="flex-1">
                             <Settings className="w-4 h-4 mr-1" />
-                            Config
+                            <span onClick={() => handleDeviceAction(device.id, 'config')}>Config</span>
                           </Button>
                         </div>
                       </CardContent>
@@ -375,8 +403,44 @@ export default function SecuritySystem() {
         <TabsContent value="access-logs" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Access Logs</CardTitle>
-              <CardDescription>View all access attempts and security events</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Access Logs</CardTitle>
+                  <CardDescription>View all access attempts and security events</CardDescription>
+                </div>
+                <Button variant="outline" onClick={() => {
+                  const logData = accessLogs.map(log => ({
+                    User: log.userName,
+                    Action: log.action,
+                    Method: log.method,
+                    Location: log.location,
+                    Success: log.success ? 'Yes' : 'No',
+                    Timestamp: new Date(log.timestamp).toLocaleString()
+                  }))
+                  
+                  const csvContent = [
+                    Object.keys(logData[0]).join(','),
+                    ...logData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+                  ].join('\n')
+                  
+                  const blob = new Blob([csvContent], { type: 'text/csv' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `access_logs_${new Date().toISOString().split('T')[0]}.csv`
+                  document.body.appendChild(a)
+                  a.click()
+                  document.body.removeChild(a)
+                  URL.revokeObjectURL(url)
+                  
+                  toast({
+                    title: "Access Logs Exported",
+                    description: "Access logs have been exported successfully.",
+                  })
+                }}>
+                  Export Logs
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -404,9 +468,33 @@ export default function SecuritySystem() {
                       ) : (
                         <AlertTriangle className="w-5 h-5 text-red-500" />
                       )}
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        toast({
+                          title: "Log Details",
+                          description: `Viewing details for access attempt by ${log.userName}`,
+                        })
+                      }}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}
+                
+                {/* Add pagination controls */}
+                <div className="flex items-center justify-between pt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Showing 3 of 156 logs
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="sm" disabled>Previous</Button>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      toast({
+                        title: "Next Page",
+                        description: "Loading more access logs...",
+                      })
+                    }}>Next</Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -426,7 +514,7 @@ export default function SecuritySystem() {
                     <h3 className="font-medium mb-2">Fingerprint Scanner</h3>
                     <p className="text-2xl font-bold">156</p>
                     <p className="text-sm text-muted-foreground">Enrolled Users</p>
-                    <Button className="mt-3" size="sm">
+                    <Button className="mt-3" size="sm" onClick={() => handleBiometricAction('Enroll Fingerprint')}>
                       Enroll New
                     </Button>
                   </CardContent>
@@ -437,7 +525,7 @@ export default function SecuritySystem() {
                     <h3 className="font-medium mb-2">Facial Recognition</h3>
                     <p className="text-2xl font-bold">89</p>
                     <p className="text-sm text-muted-foreground">Enrolled Users</p>
-                    <Button className="mt-3" size="sm">
+                    <Button className="mt-3" size="sm" onClick={() => handleBiometricAction('Enroll Facial Recognition')}>
                       Enroll New
                     </Button>
                   </CardContent>
@@ -448,7 +536,7 @@ export default function SecuritySystem() {
                     <h3 className="font-medium mb-2">Card + Biometric</h3>
                     <p className="text-2xl font-bold">45</p>
                     <p className="text-sm text-muted-foreground">Multi-Factor Users</p>
-                    <Button className="mt-3" size="sm">
+                    <Button className="mt-3" size="sm" onClick={() => handleBiometricAction('Configure Multi-Factor')}>
                       Configure
                     </Button>
                   </CardContent>
@@ -477,7 +565,19 @@ export default function SecuritySystem() {
                       <span>HR Department Scanner</span>
                       <Badge className="bg-yellow-100 text-yellow-800">Maintenance</Badge>
                     </div>
-                    <Button className="w-full mt-4">
+                    <Button className="w-full mt-4" onClick={() => {
+                      toast({
+                        title: "Syncing with Hikvision",
+                        description: "Connecting to Hikvision system and syncing data...",
+                      })
+                      
+                      setTimeout(() => {
+                        toast({
+                          title: "Sync Complete",
+                          description: "Successfully synchronized with Hikvision system.",
+                        })
+                      }, 3000)
+                    }}>
                       Sync with Hikvision System
                     </Button>
                   </CardContent>
@@ -488,19 +588,19 @@ export default function SecuritySystem() {
                     <CardTitle>Quick Actions</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Button className="w-full" variant="outline">
+                    <Button className="w-full" variant="outline" onClick={() => handleBiometricAction('Bulk User Enrollment')}>
                       <UserPlus className="w-4 h-4 mr-2" />
                       Bulk User Enrollment
                     </Button>
-                    <Button className="w-full" variant="outline">
+                    <Button className="w-full" variant="outline" onClick={() => handleBiometricAction('Test Face Recognition')}>
                       <Camera className="w-4 h-4 mr-2" />
                       Test Face Recognition
                     </Button>
-                    <Button className="w-full" variant="outline">
+                    <Button className="w-full" variant="outline" onClick={() => handleBiometricAction('Test Fingerprint Scanner')}>
                       <Fingerprint className="w-4 h-4 mr-2" />
                       Test Fingerprint Scanner
                     </Button>
-                    <Button className="w-full" variant="outline">
+                    <Button className="w-full" variant="outline" onClick={() => handleBiometricAction('Configure Access Rules')}>
                       <Settings className="w-4 h-4 mr-2" />
                       Configure Access Rules
                     </Button>

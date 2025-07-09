@@ -6,8 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, Users, Target, Clock, DollarSign, Award } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 const Analytics = () => {
+  const { toast } = useToast()
+  
   const performanceData = [
     { month: 'Jan', performance: 85, satisfaction: 78, productivity: 82 },
     { month: 'Feb', performance: 88, satisfaction: 82, productivity: 85 },
@@ -41,6 +44,51 @@ const Analytics = () => {
     { day: 'Fri', present: 85, late: 8, absent: 7 }
   ]
 
+  const exportReport = (reportType: string) => {
+    let data: any[] = []
+    let filename = ''
+    
+    switch (reportType) {
+      case 'performance':
+        data = performanceData
+        filename = 'performance_report'
+        break
+      case 'departments':
+        data = departmentData
+        filename = 'department_report'
+        break
+      case 'recruitment':
+        data = recruitmentFunnelData
+        filename = 'recruitment_report'
+        break
+      case 'attendance':
+        data = attendanceData
+        filename = 'attendance_report'
+        break
+      default:
+        return
+    }
+    
+    const csvContent = [
+      Object.keys(data[0]).join(','),
+      ...data.map(row => Object.values(row).join(','))
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    toast({
+      title: "Report Exported",
+      description: `${reportType} report has been exported successfully.`,
+    })
+  }
   return (
     <div className="space-y-6">
       <div>
@@ -125,8 +173,15 @@ const Analytics = () => {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Performance Trends</CardTitle>
-                <CardDescription>Monthly performance, satisfaction, and productivity metrics</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Performance Trends</CardTitle>
+                    <CardDescription>Monthly performance, satisfaction, and productivity metrics</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => exportReport('performance')}>
+                    Export
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -179,6 +234,18 @@ const Analytics = () => {
                     </div>
                   </div>
                 </div>
+                <div className="mt-4 pt-4 border-t">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Top Performer:</span>
+                      <p className="font-medium">Sarah Chen (96%)</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Avg Score:</span>
+                      <p className="font-medium">84.2%</p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -187,8 +254,15 @@ const Analytics = () => {
         <TabsContent value="departments" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Department Comparison</CardTitle>
-              <CardDescription>Performance and budget analysis by department</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Department Comparison</CardTitle>
+                  <CardDescription>Performance and budget analysis by department</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => exportReport('departments')}>
+                  Export
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
@@ -220,6 +294,16 @@ const Analytics = () => {
                     </div>
                   ))}
                 </div>
+                <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
+                  <div className="flex justify-between">
+                    <span>Total Employees:</span>
+                    <span className="font-medium">142</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Largest Department:</span>
+                    <span className="font-medium">Production (45)</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -241,6 +325,16 @@ const Analytics = () => {
                     </div>
                   ))}
                 </div>
+                <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
+                  <div className="flex justify-between">
+                    <span>Total Budget:</span>
+                    <span className="font-medium">$960K</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Utilization:</span>
+                    <span className="font-medium">82%</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -250,8 +344,15 @@ const Analytics = () => {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Recruitment Funnel</CardTitle>
-                <CardDescription>Candidate flow through recruitment stages</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Recruitment Funnel</CardTitle>
+                    <CardDescription>Candidate flow through recruitment stages</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => exportReport('recruitment')}>
+                    Export
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -301,6 +402,10 @@ const Analytics = () => {
                     <span className="text-muted-foreground">Source Effectiveness</span>
                     <span className="font-medium">LinkedIn 45%</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Quality of Hire</span>
+                    <span className="font-medium">4.2/5</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -325,6 +430,23 @@ const Analytics = () => {
                   <p className="text-sm text-muted-foreground">Urgent Positions</p>
                 </div>
               </div>
+              <div className="mt-4 space-y-2">
+                <h4 className="font-medium">Recent Hires</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Sarah Chen - Video Editor</span>
+                    <span className="text-muted-foreground">2 days ago</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Mike Johnson - Camera Operator</span>
+                    <span className="text-muted-foreground">1 week ago</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Lisa Wang - Content Producer</span>
+                    <span className="text-muted-foreground">2 weeks ago</span>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -332,8 +454,15 @@ const Analytics = () => {
         <TabsContent value="attendance" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Weekly Attendance Pattern</CardTitle>
-              <CardDescription>Attendance trends throughout the week</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Weekly Attendance Pattern</CardTitle>
+                  <CardDescription>Attendance trends throughout the week</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => exportReport('attendance')}>
+                  Export
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -385,6 +514,59 @@ const Analytics = () => {
               <CardContent>
                 <div className="text-2xl font-bold">89</div>
                 <p className="text-xs text-muted-foreground">Employees this month</p>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Additional Attendance Insights */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Attendance Trends</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">This Month vs Last Month</span>
+                    <span className="text-sm font-medium text-green-600">+2.3%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Remote Work Adoption</span>
+                    <span className="text-sm font-medium">23%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Sick Leave Usage</span>
+                    <span className="text-sm font-medium">4.2 days avg</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Vacation Days Taken</span>
+                    <span className="text-sm font-medium">12.8 days avg</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Department Attendance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { dept: 'Production', rate: 96 },
+                    { dept: 'Technical', rate: 94 },
+                    { dept: 'Creative', rate: 91 },
+                    { dept: 'Admin', rate: 98 }
+                  ].map((item) => (
+                    <div key={item.dept} className="flex justify-between items-center">
+                      <span className="text-sm">{item.dept}</span>
+                      <div className="flex items-center space-x-2">
+                        <Progress value={item.rate} className="w-16 h-2" />
+                        <span className="text-sm font-medium w-8">{item.rate}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </div>

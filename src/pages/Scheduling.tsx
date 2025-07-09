@@ -84,6 +84,56 @@ const Scheduling = () => {
     })
   }
 
+  const exportSchedule = () => {
+    const scheduleData = shifts.map(shift => {
+      const employee = getEmployeeInfo(shift.employeeId)
+      return {
+        Employee: employee.name,
+        Date: shift.date,
+        StartTime: shift.startTime,
+        EndTime: shift.endTime,
+        Role: shift.role,
+        Location: shift.location,
+        Status: shift.status,
+        Notes: shift.notes || ''
+      }
+    })
+    
+    const csvContent = [
+      Object.keys(scheduleData[0]).join(','),
+      ...scheduleData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `schedule_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    toast({
+      title: "Schedule Exported",
+      description: "Schedule has been exported successfully.",
+    })
+  }
+
+  const generateOptimizedSchedule = () => {
+    toast({
+      title: "AI Schedule Optimization",
+      description: "Analyzing employee preferences and workload to create optimized schedule...",
+    })
+    
+    // Simulate AI processing
+    setTimeout(() => {
+      toast({
+        title: "Optimized Schedule Ready",
+        description: "AI has generated an optimized schedule that could improve efficiency by 15%.",
+      })
+    }, 3000)
+  }
   const getEmployeeInfo = (employeeId: string) => {
     return employees.find(emp => emp.id === employeeId) || { name: employeeId, role: "Unknown", avatar: "" }
   }
@@ -133,6 +183,12 @@ const Scheduling = () => {
                       <SelectItem value="prev">Last Week</SelectItem>
                     </SelectContent>
                   </Select>
+                   <Button variant="outline" onClick={generateOptimizedSchedule}>
+                     AI Optimize
+                   </Button>
+                   <Button variant="outline" onClick={exportSchedule}>
+                     Export
+                   </Button>
                    <Button onClick={() => setIsAddShiftDialogOpen(true)}>
                      <Plus className="h-4 w-4 mr-2" />
                      Add Shift
@@ -176,9 +232,36 @@ const Scheduling = () => {
                           </Card>
                         )
                       })}
+                      {day.shifts.length === 0 && (
+                        <div className="text-center text-muted-foreground text-xs py-4">
+                          No shifts scheduled
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
+              </div>
+              
+              {/* Schedule Summary */}
+              <div className="mt-6 pt-4 border-t">
+                <div className="grid grid-cols-4 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold">{shifts.length}</div>
+                    <div className="text-sm text-muted-foreground">Total Shifts</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">{shifts.filter(s => s.status === 'Scheduled').length}</div>
+                    <div className="text-sm text-muted-foreground">Scheduled</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">{shifts.filter(s => s.status === 'In Progress').length}</div>
+                    <div className="text-sm text-muted-foreground">In Progress</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">{shifts.filter(s => s.status === 'Completed').length}</div>
+                    <div className="text-sm text-muted-foreground">Completed</div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -187,8 +270,15 @@ const Scheduling = () => {
         <TabsContent value="shifts" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>All Shifts</CardTitle>
-              <CardDescription>Manage all scheduled shifts</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>All Shifts</CardTitle>
+                  <CardDescription>Manage all scheduled shifts</CardDescription>
+                </div>
+                <Button variant="outline" onClick={exportSchedule}>
+                  Export Shifts
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -270,6 +360,13 @@ const Scheduling = () => {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {employees.map((employee) => {
               const employeeShifts = shifts.filter(shift => shift.employeeId === employee.id)
+              const totalHours = employeeShifts.reduce((total, shift) => {
+                const start = new Date(`2000-01-01 ${shift.startTime}`)
+                const end = new Date(`2000-01-01 ${shift.endTime}`)
+                const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+                return total + hours
+              }, 0)
+              
               return (
                 <Card key={employee.id}>
                   <CardHeader>
@@ -291,6 +388,10 @@ const Scheduling = () => {
                       <div className="flex justify-between text-sm">
                         <span>This Week</span>
                         <span className="font-medium">{employeeShifts.length} shifts</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Total Hours</span>
+                        <span className="font-medium">{totalHours.toFixed(1)}h</span>
                       </div>
                       {employeeShifts.map((shift) => (
                         <div key={shift.id} className="flex justify-between items-center text-sm">
@@ -452,6 +553,16 @@ const Scheduling = () => {
                     </div>
                   </div>
                 ))}
+                <div className="p-4 border-t">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Total Weekly Hours:</span>
+                    <span className="font-medium">40 hours</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Overtime:</span>
+                    <span className="font-medium">0 hours</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -459,7 +570,12 @@ const Scheduling = () => {
             <Button variant="outline" onClick={() => setIsViewScheduleDialogOpen(false)}>
               Close
             </Button>
-            <Button onClick={() => {
+            <Button variant="outline" onClick={() => {
+              exportSchedule()
+            }}>
+              Export Schedule
+            </Button>
+            <Button variant="default" onClick={() => {
               setIsViewScheduleDialogOpen(false)
               setIsAddShiftDialogOpen(true)
             }}>

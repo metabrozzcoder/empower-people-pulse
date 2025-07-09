@@ -3,1492 +3,651 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { 
+  FileText, 
+  Search, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Download,
+  Upload,
+  BookOpen,
+  Video,
+  HelpCircle,
+  Star,
+  Eye,
+  Clock,
+  User
+} from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { 
-  FileText, 
-  Upload, 
-  Search, 
-  Download, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  FileImage,
-  File,
-  FileType,
-  PenTool,
-  Clock,
-  User,
-  Tag,
-  Plus,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Send,
-  X,
-  Users,
-  FileSearch,
-  MessageSquare,
-  Filter,
-  Inbox,
-  Archive,
-  Reply,
-  Forward,
-  Sparkles,
-  Zap,
-  Shield,
-  TrendingUp
-} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
 
 interface Document {
   id: string
-  name: string
-  type: 'pdf' | 'word' | 'image' | 'text'
-  category: string
-  size: string
-  uploadedBy: string
-  uploadDate: string
-  status: 'draft' | 'pending_signature' | 'signed' | 'declined' | 'archived'
-  signers?: Signer[]
-  tags: string[]
-  description?: string
-  extractedText?: string
-  recipients?: string[]
-  file?: File
-  previewUrl?: string
-}
-
-interface CompanyMember {
-  id: string
-  name: string
-  email: string
-  department: string
-  role: string
-}
-
-interface Signer {
-  id: string
-  name: string
-  email: string
-  status: 'pending' | 'signed' | 'declined'
-  signedDate?: string
-}
-
-interface DocumentComment {
-  id: string
-  author: string
-  message: string
-  timestamp: string
-  avatar?: string
-}
-
-interface MailboxDocument {
-  id: string
   title: string
-  type: 'contract' | 'agreement' | 'policy' | 'other'
-  status: 'signed' | 'pending' | 'not_signed' | 'draft'
-  sender: string
-  recipient: string
-  sentDate: string
-  dueDate?: string
-  description: string
-  comments: DocumentComment[]
-  fileUrl?: string
-  priority?: 'high' | 'medium' | 'low'
-  read?: boolean
+  content: string
+  category: string
+  type: 'guide' | 'policy' | 'procedure' | 'faq' | 'video'
+  author: string
+  createdDate: string
+  updatedDate: string
+  views: number
+  rating: number
+  tags: string[]
+  status: 'draft' | 'published' | 'archived'
 }
 
 const mockDocuments: Document[] = [
   {
     id: '1',
-    name: 'Employee Handbook 2024.pdf',
-    type: 'pdf',
-    category: 'HR Policies',
-    size: '2.4 MB',
-    uploadedBy: 'Sarah Wilson',
-    uploadDate: '2024-01-15',
-    status: 'signed',
-    tags: ['handbook', 'policies', '2024'],
-    description: 'Updated employee handbook for 2024',
-    extractedText: 'Employee Handbook 2024\n\nSection 1: Introduction\nWelcome to our company...',
-    signers: [
-      { id: '1', name: 'John Smith', email: 'john@company.com', status: 'signed', signedDate: '2024-01-16' },
-      { id: '2', name: 'Emily Davis', email: 'emily@company.com', status: 'signed', signedDate: '2024-01-17' }
-    ]
+    title: 'Employee Onboarding Guide',
+    content: 'Complete guide for new employee onboarding process including paperwork, orientation, and first-week activities.',
+    category: 'HR Procedures',
+    type: 'guide',
+    author: 'Sarah Wilson',
+    createdDate: '2024-01-15',
+    updatedDate: '2024-01-20',
+    views: 245,
+    rating: 4.8,
+    tags: ['onboarding', 'new-hire', 'orientation'],
+    status: 'published'
   },
   {
     id: '2',
-    name: 'Contract Template.docx',
-    type: 'word',
-    category: 'Legal',
-    size: '156 KB',
-    uploadedBy: 'Mike Johnson',
-    uploadDate: '2024-01-14',
-    status: 'pending_signature',
-    tags: ['contract', 'template', 'legal'],
-    description: 'Standard employment contract template',
-    extractedText: 'Employment Contract\n\nThis agreement is between...',
-    signers: [
-      { id: '3', name: 'Alex Brown', email: 'alex@company.com', status: 'pending' },
-      { id: '4', name: 'Lisa Wang', email: 'lisa@company.com', status: 'signed', signedDate: '2024-01-15' }
-    ]
-  },
-  {
-    id: '3',
-    name: 'Office Layout.png',
-    type: 'image',
-    category: 'Facilities',
-    size: '890 KB',
-    uploadedBy: 'David Chen',
-    uploadDate: '2024-01-13',
-    status: 'draft',
-    tags: ['office', 'layout', 'facilities'],
-    description: 'New office layout design',
-    extractedText: 'Floor Plan\nEntrance\nReception Area\nOffice Spaces 1-20\nMeeting Rooms A-D\nKitchen\nBreak Room'
-  }
-]
-
-const mockMailboxDocuments: MailboxDocument[] = [
-  {
-    id: '1',
-    title: 'Employment Contract - John Doe',
-    type: 'contract',
-    status: 'pending',
-    sender: 'HR Department',
-    recipient: 'John Doe',
-    sentDate: '2024-01-15',
-    dueDate: '2024-01-22',
-    description: 'Standard employment contract for new hire requiring immediate signature.',
-    priority: 'high',
-    read: false,
-    comments: [
-      {
-        id: '1',
-        author: 'HR Manager',
-        message: 'Please review section 3 regarding benefits',
-        timestamp: '2024-01-16 10:30'
-      }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Non-Disclosure Agreement',
-    type: 'agreement',
-    status: 'signed',
-    sender: 'Legal Department',
-    recipient: 'Sarah Wilson',
-    sentDate: '2024-01-10',
-    description: 'Standard NDA for all employees - completed and filed.',
-    priority: 'medium',
-    read: true,
-    comments: []
-  },
-  {
-    id: '3',
-    title: 'Remote Work Policy Update',
+    title: 'Remote Work Policy',
+    content: 'Guidelines and policies for remote work arrangements, including equipment, communication protocols, and performance expectations.',
+    category: 'Company Policies',
     type: 'policy',
-    status: 'draft',
-    sender: 'You',
-    recipient: 'All Employees',
-    sentDate: '',
-    description: 'Updated remote work guidelines pending final review.',
-    priority: 'low',
-    read: true,
-    comments: []
+    author: 'John Smith',
+    createdDate: '2024-01-10',
+    updatedDate: '2024-01-18',
+    views: 189,
+    rating: 4.5,
+    tags: ['remote-work', 'policy', 'guidelines'],
+    status: 'published'
+  },
+  {
+    id: '3',
+    title: 'Performance Review Process',
+    content: 'Step-by-step procedure for conducting annual and quarterly performance reviews.',
+    category: 'HR Procedures',
+    type: 'procedure',
+    author: 'Emily Davis',
+    createdDate: '2024-01-05',
+    updatedDate: '2024-01-12',
+    views: 156,
+    rating: 4.6,
+    tags: ['performance', 'review', 'evaluation'],
+    status: 'published'
+  },
+  {
+    id: '4',
+    title: 'How to Use the HRM System',
+    content: 'Video tutorial showing how to navigate and use the HRM system effectively.',
+    category: 'Training',
+    type: 'video',
+    author: 'Mike Johnson',
+    createdDate: '2024-01-08',
+    updatedDate: '2024-01-15',
+    views: 312,
+    rating: 4.9,
+    tags: ['training', 'system', 'tutorial'],
+    status: 'published'
+  },
+  {
+    id: '5',
+    title: 'Frequently Asked Questions',
+    content: 'Common questions and answers about HR policies, benefits, and procedures.',
+    category: 'Support',
+    type: 'faq',
+    author: 'Lisa Thompson',
+    createdDate: '2024-01-12',
+    updatedDate: '2024-01-22',
+    views: 423,
+    rating: 4.7,
+    tags: ['faq', 'support', 'help'],
+    status: 'published'
   }
 ]
-
-const categories = ['All', 'HR Policies', 'Legal', 'Facilities', 'Training', 'Finance', 'Custom']
-const predefinedTags = ['vacation', 'report', 'request', 'contract', 'handbook', 'invoice', 'custom']
-
-const mockCompanyMembers: CompanyMember[] = [
-  { id: '1', name: 'John Smith', email: 'john@company.com', department: 'Engineering', role: 'Senior Developer' },
-  { id: '2', name: 'Emily Davis', email: 'emily@company.com', department: 'HR', role: 'HR Manager' },
-  { id: '3', name: 'Alex Brown', email: 'alex@company.com', department: 'Legal', role: 'Legal Counsel' },
-  { id: '4', name: 'Lisa Wang', email: 'lisa@company.com', department: 'Finance', role: 'CFO' },
-  { id: '5', name: 'Sarah Wilson', email: 'sarah@company.com', department: 'HR', role: 'HR Director' },
-  { id: '6', name: 'Mike Johnson', email: 'mike@company.com', department: 'Legal', role: 'Contracts Manager' },
-  { id: '7', name: 'David Chen', email: 'david@company.com', department: 'Operations', role: 'Operations Manager' }
-]
-
-const DocumentMailbox = () => {
-  const { toast } = useToast()
-  const [documents, setDocuments] = useState<MailboxDocument[]>(mockMailboxDocuments)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [activeTab, setActiveTab] = useState<string>("all")
-  const [selectedDocument, setSelectedDocument] = useState<MailboxDocument | null>(documents[0])
-  const [newComment, setNewComment] = useState("")
-
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || doc.status === statusFilter
-    
-    // Apply tab filtering
-    if (activeTab === "sent") {
-      return matchesSearch && matchesStatus && (doc.sender === 'You' || doc.sender.includes('Department'))
-    } else if (activeTab === "received") {
-      return matchesSearch && matchesStatus && doc.recipient === 'You'
-    } else if (activeTab === "drafts") {
-      return matchesSearch && matchesStatus && doc.status === 'draft'
-    }
-    
-    return matchesSearch && matchesStatus
-  })
-
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      signed: "default",
-      pending: "secondary",
-      not_signed: "destructive",
-      draft: "outline"
-    } as const
-    
-    const labels = {
-      signed: "Signed",
-      pending: "Pending",
-      not_signed: "Not Signed",
-      draft: "Draft"
-    }
-    
-    return (
-      <Badge variant={variants[status as keyof typeof variants]} className="text-xs font-medium">
-        {labels[status as keyof typeof labels]}
-      </Badge>
-    )
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'signed': return <CheckCircle className="w-4 h-4 text-emerald-500" />
-      case 'pending': return <Clock className="w-4 h-4 text-amber-500" />
-      case 'not_signed': return <XCircle className="w-4 h-4 text-red-500" />
-      case 'draft': return <Edit className="w-4 h-4 text-gray-500" />
-      default: return null
-    }
-  }
-
-  const getPriorityColor = (priority?: string) => {
-    switch (priority) {
-      case 'high': return 'border-l-red-500 bg-red-50/50 dark:bg-red-950/20'
-      case 'medium': return 'border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20'
-      case 'low': return 'border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20'
-      default: return 'border-l-gray-300'
-    }
-  }
-
-  const addComment = () => {
-    if (!selectedDocument || !newComment.trim()) return
-
-    const comment: DocumentComment = {
-      id: Date.now().toString(),
-      author: 'You',
-      message: newComment,
-      timestamp: new Date().toLocaleString()
-    }
-
-    const updatedDocuments = documents.map(doc => 
-      doc.id === selectedDocument.id 
-        ? { ...doc, comments: [...doc.comments, comment] }
-        : doc
-    )
-
-    setDocuments(updatedDocuments)
-    setSelectedDocument({
-      ...selectedDocument,
-      comments: [...selectedDocument.comments, comment]
-    })
-    setNewComment("")
-    
-    toast({
-      title: "Comment Added",
-      description: "Your comment has been added to the document.",
-    })
-  }
-
-  const signDocument = (docId: string) => {
-    const updatedDocuments = documents.map(doc => 
-      doc.id === docId ? { ...doc, status: 'signed' as const } : doc
-    )
-    setDocuments(updatedDocuments)
-    
-    if (selectedDocument?.id === docId) {
-      setSelectedDocument({ ...selectedDocument, status: 'signed' })
-    }
-    
-    toast({
-      title: "Document Signed",
-      description: "The document has been successfully signed.",
-    })
-  }
-
-  const markAsRead = (docId: string) => {
-    const updatedDocuments = documents.map(doc => 
-      doc.id === docId ? { ...doc, read: true } : doc
-    )
-    setDocuments(updatedDocuments)
-  }
-
-  const selectDocument = (document: MailboxDocument) => {
-    setSelectedDocument(document)
-    if (!document.read) {
-      markAsRead(document.id)
-    }
-  }
-
-  const sendDocumentForSignature = (docId: string) => {
-    const updatedDocuments = documents.map(doc => 
-      doc.id === docId ? { ...doc, status: 'pending' as const } : doc
-    )
-    setDocuments(updatedDocuments)
-    
-    if (selectedDocument?.id === docId) {
-      setSelectedDocument({ ...selectedDocument, status: 'pending' })
-    }
-    
-    toast({
-      title: "Document Sent",
-      description: "The document has been sent for signature.",
-    })
-  }
-
-  const deleteMailboxDocument = (docId: string) => {
-    const updatedDocuments = documents.filter(doc => doc.id !== docId)
-    setDocuments(updatedDocuments)
-    
-    if (selectedDocument?.id === docId) {
-      setSelectedDocument(updatedDocuments.length > 0 ? updatedDocuments[0] : null)
-    }
-    
-    toast({
-      title: "Document Deleted",
-      description: "The document has been successfully deleted.",
-    })
-  }
-
-  return (
-    <div className="flex h-[700px] bg-gradient-to-br from-background via-background to-muted/20 border border-border/50 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm">
-      {/* Sidebar */}
-      <div className="w-80 border-r border-border/50 bg-muted/30 backdrop-blur-sm">
-        {/* Header */}
-        <div className="p-6 border-b border-border/50 bg-gradient-to-r from-primary/5 to-primary/10">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-primary/10 rounded-xl">
-              <MessageSquare className="w-5 h-5 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold">Document Mailbox</h3>
-          </div>
-          
-          {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Search documents..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-background/80 border-border/50"
-            />
-          </div>
-
-          {/* Filters */}
-          <div className="flex gap-2 mb-4">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="flex-1 bg-background/80 border-border/50">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="signed">Signed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="not_signed">Not Signed</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button size="sm" className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20">
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex gap-1 bg-muted/50 rounded-xl p-1">
-            {[
-              { id: 'all', label: 'All', icon: Inbox },
-              { id: 'sent', label: 'Sent', icon: Send },
-              { id: 'received', label: 'Inbox', icon: Archive },
-              { id: 'drafts', label: 'Drafts', icon: Edit }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs rounded-lg transition-all font-medium",
-                  activeTab === tab.id 
-                    ? "bg-background text-foreground shadow-md" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                )}
-              >
-                <tab.icon className="w-3 h-3" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Document List */}
-        <ScrollArea className="h-[calc(100%-14rem)]">
-          <div className="p-3">
-            {filteredDocuments.map((document) => (
-              <div
-                key={document.id}
-                onClick={() => selectDocument(document)}
-                className={cn(
-                  "p-4 mb-2 rounded-xl cursor-pointer transition-all border-l-4 hover:shadow-md",
-                  selectedDocument?.id === document.id 
-                    ? "bg-primary/5 border-l-primary shadow-md" 
-                    : getPriorityColor(document.priority),
-                  !document.read && "bg-accent/30 shadow-sm"
-                )}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(document.status)}
-                    <h4 className={cn(
-                      "font-medium text-sm truncate max-w-[200px]",
-                      !document.read && "font-semibold"
-                    )}>
-                      {document.title}
-                    </h4>
-                  </div>
-                  {!document.read && (
-                    <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-                  )}
-                </div>
-                
-                <p className="text-xs text-muted-foreground truncate mb-3">
-                  {document.description}
-                </p>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground font-medium">
-                    {document.sender}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {document.comments.length > 0 && (
-                      <div className="flex items-center gap-1">
-                        <MessageSquare className="w-3 h-3" />
-                        <span className="text-xs">{document.comments.length}</span>
-                      </div>
-                    )}
-                    {getStatusBadge(document.status)}
-                  </div>
-                </div>
-                
-                {document.sentDate && (
-                  <div className="text-xs text-muted-foreground mt-2 font-mono">
-                    {document.sentDate}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col bg-gradient-to-br from-background to-muted/5">
-        {selectedDocument ? (
-          <>
-            {/* Document Header */}
-            <div className="p-6 border-b border-border/50 bg-gradient-to-r from-background to-muted/5">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    {getStatusIcon(selectedDocument.status)}
-                    <h2 className="text-2xl font-bold">{selectedDocument.title}</h2>
-                    {getStatusBadge(selectedDocument.status)}
-                  </div>
-                  <p className="text-muted-foreground">{selectedDocument.description}</p>
-                </div>
-              </div>
-
-              {/* Document Meta */}
-              <div className="grid grid-cols-4 gap-4 p-4 bg-muted/30 rounded-xl mb-6">
-                <div>
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">From</Label>
-                  <p className="font-semibold text-sm mt-1">{selectedDocument.sender}</p>
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">To</Label>
-                  <p className="font-semibold text-sm mt-1">{selectedDocument.recipient}</p>
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sent</Label>
-                  <p className="font-semibold text-sm mt-1 font-mono">{selectedDocument.sentDate || 'Draft'}</p>
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Due</Label>
-                  <p className="font-semibold text-sm mt-1 font-mono">{selectedDocument.dueDate || 'No due date'}</p>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 flex-wrap">
-                <Button variant="outline" size="sm" className="hover:bg-primary/5">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-                {selectedDocument.status === 'pending' && (
-                  <Button size="sm" onClick={() => signDocument(selectedDocument.id)} className="bg-emerald-600 hover:bg-emerald-700">
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Sign Document
-                  </Button>
-                )}
-                {selectedDocument.status === 'draft' && (
-                  <Button size="sm" onClick={() => sendDocumentForSignature(selectedDocument.id)} className="bg-blue-600 hover:bg-blue-700">
-                    <Send className="w-4 h-4 mr-2" />
-                    Send for Signature
-                  </Button>
-                )}
-                <Button variant="outline" size="sm" className="hover:bg-primary/5">
-                  <Reply className="w-4 h-4 mr-2" />
-                  Reply
-                </Button>
-                <Button variant="outline" size="sm" className="hover:bg-primary/5">
-                  <Forward className="w-4 h-4 mr-2" />
-                  Forward
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="hover:bg-red-50 text-red-600 border-red-200 hover:border-red-300"
-                  onClick={() => deleteMailboxDocument(selectedDocument.id)}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </Button>
-              </div>
-            </div>
-
-            {/* Document Content & Comments */}
-            <ScrollArea className="flex-1 p-6">
-              <div className="space-y-8">
-                {/* Document Preview */}
-                <div className="p-6 border border-border/50 rounded-xl bg-gradient-to-br from-muted/20 to-muted/5">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <FileText className="w-5 h-5 text-primary" />
-                    </div>
-                    <span className="font-semibold text-lg">Document Content</span>
-                  </div>
-                  <div className="bg-background p-6 rounded-xl border border-border/50 min-h-[200px]">
-                    <p className="text-muted-foreground">
-                      Document content preview would be displayed here. This could include PDF preview, 
-                      formatted text, or other document formats with syntax highlighting and interactive elements.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Comments Thread */}
-                <div className="space-y-6">
-                  <h4 className="text-xl font-bold flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <MessageSquare className="w-5 h-5 text-primary" />
-                    </div>
-                    Comments & Discussion ({selectedDocument.comments.length})
-                  </h4>
-                  
-                  {selectedDocument.comments.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <div className="p-4 bg-muted/20 rounded-full w-fit mx-auto mb-4">
-                        <MessageSquare className="w-12 h-12 opacity-50" />
-                      </div>
-                      <p className="text-lg font-medium mb-2">No comments yet</p>
-                      <p>Start the conversation by adding the first comment.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {selectedDocument.comments.map((comment) => (
-                        <div key={comment.id} className="flex gap-4 p-4 bg-muted/20 rounded-xl border border-border/50">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={comment.avatar} />
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                              {comment.author.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="font-semibold">{comment.author}</span>
-                              <span className="text-sm text-muted-foreground font-mono">{comment.timestamp}</span>
-                            </div>
-                            <p className="text-sm leading-relaxed">{comment.message}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Add Comment */}
-                  <div className="border-t border-border/50 pt-6">
-                    <div className="flex gap-4">
-                      <Avatar className="w-10 h-10 flex-shrink-0">
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">You</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <Textarea
-                          placeholder="Write your comment..."
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          className="min-h-[100px] bg-background border-border/50"
-                        />
-                        <div className="mt-3 flex justify-end">
-                          <Button onClick={addComment} disabled={!newComment.trim()} className="bg-primary/90 hover:bg-primary">
-                            <Send className="w-4 h-4 mr-2" />
-                            Send Comment
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            <div className="text-center">
-              <div className="p-6 bg-muted/20 rounded-full w-fit mx-auto mb-6">
-                <FileText className="w-16 h-16 opacity-50" />
-              </div>
-              <h4 className="text-xl font-semibold mb-3">No document selected</h4>
-              <p>Choose a document from the sidebar to view its details and manage signatures</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
 
 export default function Documentation() {
   const { toast } = useToast()
   const [documents, setDocuments] = useState<Document[]>(mockDocuments)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('All')
-  const [selectedStatus, setSelectedStatus] = useState('all')
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [selectedType, setSelectedType] = useState('all')
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
-  const [ocrProgress, setOcrProgress] = useState(0)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [uploadType, setUploadType] = useState<'sign' | null>(null)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [uploadFormData, setUploadFormData] = useState({
-    category: '',
-    description: '',
-    tags: '',
-    recipients: ''
-  })
-  const [selectedSigners, setSelectedSigners] = useState<string[]>([])
-  const [newSigners, setNewSigners] = useState([{ name: '', email: '' }])
+
+  const categories = Array.from(new Set(documents.map(doc => doc.category)))
+  const types = Array.from(new Set(documents.map(doc => doc.type)))
 
   const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (doc.extractedText && doc.extractedText.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesCategory = selectedCategory === 'All' || doc.category === selectedCategory
-    const matchesStatus = selectedStatus === 'all' || doc.status === selectedStatus
-    return matchesSearch && matchesCategory && matchesStatus
+    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesCategory = selectedCategory === 'all' || doc.category === selectedCategory
+    const matchesType = selectedType === 'all' || doc.type === selectedType
+    return matchesSearch && matchesCategory && matchesType && doc.status === 'published'
   })
 
-  const getFileIcon = (type: Document['type']) => {
+  const getTypeIcon = (type: Document['type']) => {
     switch (type) {
-      case 'pdf': return File
-      case 'word': return FileType
-      case 'image': return FileImage
+      case 'guide': return BookOpen
+      case 'policy': return FileText
+      case 'procedure': return FileText
+      case 'faq': return HelpCircle
+      case 'video': return Video
       default: return FileText
     }
   }
 
-  const getStatusColor = (status: Document['status']) => {
-    switch (status) {
-      case 'draft': return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-800'
-      case 'pending_signature': return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800'
-      case 'signed': return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800'
-      case 'declined': return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800'
-      case 'archived': return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950/20 dark:text-gray-400 dark:border-gray-800'
-      default: return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950/20 dark:text-gray-400 dark:border-gray-800'
+  const getTypeColor = (type: Document['type']) => {
+    switch (type) {
+      case 'guide': return 'bg-blue-100 text-blue-800'
+      case 'policy': return 'bg-red-100 text-red-800'
+      case 'procedure': return 'bg-green-100 text-green-800'
+      case 'faq': return 'bg-yellow-100 text-yellow-800'
+      case 'video': return 'bg-purple-100 text-purple-800'
+      default: return 'bg-gray-100 text-gray-800'
     }
   }
 
-  const getSignerStatusIcon = (status: Signer['status']) => {
-    switch (status) {
-      case 'signed': return CheckCircle
-      case 'declined': return XCircle
-      default: return AlertCircle
-    }
-  }
-
-  const handleFileProcessing = async () => {
-    if (!selectedFile || !uploadType) return
-    
-    setIsProcessing(true)
-    setOcrProgress(0)
-    
-    // Simulate processing with real progress
-    const progressInterval = setInterval(() => {
-      setOcrProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(progressInterval)
-          return 90
-        }
-        return prev + Math.random() * 15
-      })
-    }, 300)
-
-    try {
-      setOcrProgress(100)
-      
-      // Create signers array from selected company members
-      const docSigners = selectedSigners.map(signerId => {
-        const member = mockCompanyMembers.find(m => m.id === signerId)
-        return member ? {
-          id: member.id,
-          name: member.name,
-          email: member.email,
-          status: 'pending' as const
-        } : null
-      }).filter(Boolean) as Signer[]
-      
-      const newDoc: Document = {
-        id: Date.now().toString(),
-        name: selectedFile.name,
-        type: selectedFile.type.includes('pdf') ? 'pdf' : 
-              selectedFile.type.includes('word') ? 'word' : 
-              selectedFile.type.includes('image') ? 'image' : 'text',
-        category: uploadFormData.category || 'Custom',
-        size: `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB`,
-        uploadedBy: 'Current User',
-        uploadDate: new Date().toISOString().split('T')[0],
-        status: uploadType === 'sign' && docSigners.length > 0 ? 'pending_signature' : 'draft',
-        tags: uploadFormData.tags ? uploadFormData.tags.split(',').map(t => t.trim()) : ['uploaded'],
-        description: uploadFormData.description || 'Newly uploaded document',
-        signers: uploadType === 'sign' ? docSigners : undefined,
-        file: selectedFile,
-        previewUrl: previewUrl || undefined
-      }
-      
-      setDocuments([newDoc, ...documents])
-      setIsProcessing(false)
-      
-      toast({
-        title: "Document Processed Successfully",
-        description: `${selectedFile.name} has been uploaded and is ready for signatures.`,
-      })
-      
-      // Reset form and close dialog
-      setIsUploadDialogOpen(false)
-      setUploadType(null)
-      setSelectedFile(null)
-      setPreviewUrl(null)
-      setSelectedSigners([])
-      setUploadFormData({ category: '', description: '', tags: '', recipients: '' })
-      
-    } catch (error) {
-      setIsProcessing(false)
-      toast({
-        title: "Processing Failed",
-        description: "There was an error processing the document.",
-        variant: "destructive"
-      })
-    }
-  }
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      setSelectedFile(file)
-      
-      // Create preview URL for images
-      if (file.type.startsWith('image/')) {
-        const url = URL.createObjectURL(file)
-        setPreviewUrl(url)
-      }
-      
-      // Simulate OCR text extraction
-      if (file.type.includes('pdf') || file.type.includes('word')) {
-        // This would normally be done by OCR service
-        setUploadFormData(prev => ({
-          ...prev,
-          extractedText: `Extracted text from ${file.name}\n\nThis is simulated OCR text extraction...`
-        }))
-      }
-    }
-  }
-
-  const handleViewDocument = (doc: Document) => {
-    setSelectedDocument(doc)
-    setIsViewDialogOpen(true)
+  const handleAddDocument = () => {
+    setSelectedDoc(null)
+    setIsDialogOpen(true)
   }
 
   const handleEditDocument = (doc: Document) => {
-    setSelectedDocument(doc)
-    setUploadFormData({
-      category: doc.category,
-      description: doc.description || '',
-      tags: doc.tags.join(', '),
-      recipients: doc.signers?.map(s => s.email).join(', ') || ''
-    })
-    setIsEditDialogOpen(true)
+    setSelectedDoc(doc)
+    setIsDialogOpen(true)
   }
 
-  const handleSaveEdit = () => {
-    if (!selectedDocument) return
-    
-    const updatedDoc = {
-      ...selectedDocument,
-      category: uploadFormData.category,
-      description: uploadFormData.description,
-      tags: uploadFormData.tags.split(',').map(t => t.trim()).filter(Boolean)
-    }
-    
-    setDocuments(documents.map(doc => 
-      doc.id === selectedDocument.id ? updatedDoc : doc
+  const handleViewDocument = (doc: Document) => {
+    // Increment view count
+    setDocuments(prev => prev.map(d => 
+      d.id === doc.id ? { ...d, views: d.views + 1 } : d
     ))
-    
-    setIsEditDialogOpen(false)
-    setSelectedDocument(null)
-    setUploadFormData({ category: '', description: '', tags: '', recipients: '' })
-    
-    toast({
-      title: "Document Updated",
-      description: "Document has been successfully updated.",
-    })
-  }
-
-  const handleDownloadDocument = (doc: Document) => {
-    toast({
-      title: "Download Started",
-      description: `Downloading ${doc.name}...`,
-    })
+    setSelectedDoc(doc)
+    setIsViewDialogOpen(true)
   }
 
   const handleDeleteDocument = (id: string) => {
-    setDocuments(documents.filter(doc => doc.id !== id))
+    setDocuments(prev => prev.filter(doc => doc.id !== id))
     toast({
       title: "Document Deleted",
       description: "Document has been successfully deleted.",
     })
   }
 
-  const handleSendForSignature = () => {
-    if (!selectedDocument) return
-    
-    const docSigners = selectedSigners.map(signerId => {
-      const member = mockCompanyMembers.find(m => m.id === signerId)
-      return member ? {
-        id: member.id,
-        name: member.name,
-        email: member.email,
-        status: 'pending' as const
-      } : null
-    }).filter(Boolean) as Signer[]
-    
-    const updatedDoc = {
-      ...selectedDocument,
-      status: 'pending_signature' as const,
-      signers: docSigners
+  const handleSaveDocument = () => {
+    if (selectedDoc && selectedDoc.id && selectedDoc.id !== 'new') {
+      // Update existing document
+      setDocuments(prev => prev.map(doc => 
+        doc.id === selectedDoc.id ? { ...selectedDoc, updatedDate: new Date().toISOString().split('T')[0] } : doc
+      ))
+      toast({
+        title: "Document Updated",
+        description: "Document has been successfully updated.",
+      })
+    } else {
+      // Create new document
+      const newDoc: Document = {
+        id: Date.now().toString(),
+        title: "New Document",
+        content: "Document content goes here...",
+        category: "General",
+        type: 'guide',
+        author: "Current User",
+        createdDate: new Date().toISOString().split('T')[0],
+        updatedDate: new Date().toISOString().split('T')[0],
+        views: 0,
+        rating: 0,
+        tags: ['new'],
+        status: 'published'
+      }
+      setDocuments(prev => [...prev, newDoc])
+      toast({
+        title: "Document Created",
+        description: "New document has been successfully created.",
+      })
     }
-    
-    setDocuments(documents.map(doc => 
-      doc.id === selectedDocument.id ? updatedDoc : doc
-    ))
-    
-    setIsSignatureDialogOpen(false)
-    setSelectedDocument(null)
-    setSelectedSigners([])
+    setIsDialogOpen(false)
+  }
+
+  const handleDownload = (doc: Document) => {
+    // Create a blob with the document content
+    const content = `${doc.title}\n\n${doc.content}\n\nAuthor: ${doc.author}\nCreated: ${doc.createdDate}\nTags: ${doc.tags.join(', ')}`
+    const blob = new Blob([content], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${doc.title.replace(/\s+/g, '_')}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
     
     toast({
-      title: "Document Sent for Signature",
-      description: `${selectedDocument.name} has been sent to ${docSigners.length} signers.`,
+      title: "Document Downloaded",
+      description: `${doc.title} has been downloaded.`,
     })
   }
 
-  const addNewSigner = () => {
-    setNewSigners([...newSigners, { name: '', email: '' }])
-  }
-
-  const removeSignerField = (index: number) => {
-    if (newSigners.length > 1) {
-      setNewSigners(newSigners.filter((_, i) => i !== index))
+  const handleUpload = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.txt,.md,.pdf'
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (file) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const content = e.target?.result as string
+          const newDoc: Document = {
+            id: Date.now().toString(),
+            title: file.name.replace(/\.[^/.]+$/, ""),
+            content: content,
+            category: "Uploaded",
+            type: 'guide',
+            author: "Current User",
+            createdDate: new Date().toISOString().split('T')[0],
+            updatedDate: new Date().toISOString().split('T')[0],
+            views: 0,
+            rating: 0,
+            tags: ['uploaded'],
+            status: 'published'
+          }
+          setDocuments(prev => [...prev, newDoc])
+          toast({
+            title: "Document Uploaded",
+            description: `${file.name} has been uploaded successfully.`,
+          })
+        }
+        reader.readAsText(file)
+      }
     }
+    input.click()
   }
 
-  const updateSignerField = (index: number, field: 'name' | 'email', value: string) => {
-    setNewSigners(newSigners.map((signer, i) => 
-      i === index ? { ...signer, [field]: value } : signer
+  const handleRating = (docId: string, rating: number) => {
+    setDocuments(prev => prev.map(doc => 
+      doc.id === docId ? { ...doc, rating } : doc
     ))
+    toast({
+      title: "Rating Submitted",
+      description: "Thank you for your feedback!",
+    })
   }
-
-  const totalDocuments = documents.length
-  const pendingSignatures = documents.filter(doc => doc.status === 'pending_signature').length
-  const signedDocuments = documents.filter(doc => doc.status === 'signed').length
-  const draftDocuments = documents.filter(doc => doc.status === 'draft').length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/10 relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none" />
-      
-      <div className="relative container mx-auto px-6 py-12 space-y-12">
-        {/* Hero Section */}
-        <div className="text-center space-y-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-3xl mb-6 relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-3xl animate-pulse" />
-            <FileSearch className="w-10 h-10 text-primary relative z-10" />
-            <Sparkles className="w-4 h-4 text-primary/60 absolute -top-1 -right-1" />
-          </div>
-          <div className="space-y-4">
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent leading-tight">
-              Intelligent Document Hub
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Advanced document management with AI-powered OCR technology, secure electronic signatures, 
-              and intelligent workflow automation for the modern workplace
-            </p>
-          </div>
-          
-          <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <Button 
-              size="lg" 
-              onClick={() => setIsUploadDialogOpen(true)}
-              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 text-base font-semibold"
-            >
-              <Upload className="w-5 h-5 mr-3" />
-              Upload & Process Document
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="border-primary/20 hover:bg-primary/5 px-8 py-3 text-base font-semibold"
-            >
-              <Zap className="w-5 h-5 mr-3" />
-              AI Quick Scan
-            </Button>
-          </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Documentation</h1>
+          <p className="text-muted-foreground">Access guides, policies, and training materials</p>
         </div>
-
-        {/* Enhanced Stats Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="relative bg-gradient-to-br from-blue-50 via-blue-50/80 to-blue-100/50 dark:from-blue-950/30 dark:via-blue-950/20 dark:to-blue-900/10 border-blue-200/50 dark:border-blue-800/30 overflow-hidden group hover:shadow-xl transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
-            <CardContent className="p-6 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-3xl font-bold text-blue-700 dark:text-blue-400 mb-1">{totalDocuments}</p>
-                  <p className="text-sm font-semibold text-blue-600 dark:text-blue-300">Total Documents</p>
-                  <p className="text-xs text-blue-500/70 mt-1">+12% this month</p>
-                </div>
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-                  <FileText className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="relative bg-gradient-to-br from-amber-50 via-amber-50/80 to-amber-100/50 dark:from-amber-950/30 dark:via-amber-950/20 dark:to-amber-900/10 border-amber-200/50 dark:border-amber-800/30 overflow-hidden group hover:shadow-xl transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
-            <CardContent className="p-6 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-3xl font-bold text-amber-700 dark:text-amber-400 mb-1">{draftDocuments}</p>
-                  <p className="text-sm font-semibold text-amber-600 dark:text-amber-300">Draft Documents</p>
-                  <p className="text-xs text-amber-500/70 mt-1">Ready for review</p>
-                </div>
-                <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-                  <Edit className="w-8 h-8 text-amber-600 dark:text-amber-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="relative bg-gradient-to-br from-emerald-50 via-emerald-50/80 to-emerald-100/50 dark:from-emerald-950/30 dark:via-emerald-950/20 dark:to-emerald-900/10 border-emerald-200/50 dark:border-emerald-800/30 overflow-hidden group hover:shadow-xl transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
-            <CardContent className="p-6 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-400 mb-1">{signedDocuments}</p>
-                  <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-300">Signed Documents</p>
-                  <p className="text-xs text-emerald-500/70 mt-1">98% completion rate</p>
-                </div>
-                <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-                  <CheckCircle className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="relative bg-gradient-to-br from-purple-50 via-purple-50/80 to-purple-100/50 dark:from-purple-950/30 dark:via-purple-950/20 dark:to-purple-900/10 border-purple-200/50 dark:border-purple-800/30 overflow-hidden group hover:shadow-xl transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent" />
-            <CardContent className="p-6 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-1">{pendingSignatures}</p>
-                  <p className="text-sm font-semibold text-purple-600 dark:text-purple-300">Pending Signatures</p>
-                  <p className="text-xs text-purple-500/70 mt-1">Avg. 2.3 days</p>
-                </div>
-                <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-                  <PenTool className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={handleUpload}>
+            <Upload className="w-4 h-4 mr-2" />
+            Upload
+          </Button>
+          <Button onClick={handleAddDocument}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Document
+          </Button>
         </div>
+      </div>
 
-        {/* Processing Progress */}
-        {isProcessing && (
-          <Card className="relative bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-primary/20 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-pulse" />
-            <CardContent className="p-8 relative">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-primary/10 rounded-2xl animate-pulse">
-                      <FileText className="w-8 h-8 text-primary" />
-                    </div>
-                    <div>
-                      <span className="text-xl font-semibold">Processing Document with AI</span>
-                      <p className="text-muted-foreground">Extracting text, analyzing content, and preparing for signatures...</p>
-                    </div>
-                  </div>
-                  <span className="text-2xl font-bold text-primary">{Math.round(ocrProgress)}%</span>
-                </div>
-                <Progress value={ocrProgress} className="h-4 bg-primary/10" />
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Enhanced Search and Filters */}
-        <Card className="relative bg-gradient-to-r from-background via-background to-muted/5 border-border/50 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/2 to-transparent" />
-          <CardContent className="p-8 relative">
-            <div className="flex flex-col lg:flex-row gap-6 items-center">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                <Input
-                  placeholder="Search documents by name, content, tags, or use AI semantic search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 h-14 text-base bg-background/80 border-border/50 focus:border-primary/50"
-                />
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
-                    <Zap className="w-3 h-3 mr-1" />
-                    AI
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-56 h-14 bg-background/80 border-border/50">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-56 h-14 bg-background/80 border-border/50">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="pending_signature">Pending Signature</SelectItem>
-                    <SelectItem value="signed">Signed</SelectItem>
-                    <SelectItem value="declined">Declined</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
-                  </SelectContent>
-                </Select>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <FileText className="w-8 h-8 text-blue-500" />
+              <div>
+                <p className="text-2xl font-bold">{documents.length}</p>
+                <p className="text-sm text-muted-foreground">Total Documents</p>
               </div>
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Eye className="w-8 h-8 text-green-500" />
+              <div>
+                <p className="text-2xl font-bold">{documents.reduce((sum, doc) => sum + doc.views, 0)}</p>
+                <p className="text-sm text-muted-foreground">Total Views</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Star className="w-8 h-8 text-yellow-500" />
+              <div>
+                <p className="text-2xl font-bold">{(documents.reduce((sum, doc) => sum + doc.rating, 0) / documents.length).toFixed(1)}</p>
+                <p className="text-sm text-muted-foreground">Avg Rating</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <BookOpen className="w-8 h-8 text-purple-500" />
+              <div>
+                <p className="text-2xl font-bold">{categories.length}</p>
+                <p className="text-sm text-muted-foreground">Categories</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Enhanced Documents Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {filteredDocuments.map((doc) => {
-            const FileIcon = getFileIcon(doc.type)
-            return (
-              <Card key={doc.id} className="group hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 bg-gradient-to-br from-background via-background to-muted/5 border-border/50 overflow-hidden relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/2 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <CardHeader className="pb-4 relative">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-                        <FileIcon className="w-8 h-8 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg line-clamp-2 font-semibold group-hover:text-primary transition-colors duration-300">{doc.name}</CardTitle>
-                        <div className="flex items-center gap-3 mt-2">
-                          <Badge variant="secondary" className="text-xs font-medium">
-                            {doc.category}
-                          </Badge>
-                          <Badge className={cn("text-xs font-medium border", getStatusColor(doc.status))}>
-                            {doc.status.replace('_', ' ').toUpperCase()}
+      <Tabs defaultValue="browse" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="browse">Browse Documents</TabsTrigger>
+          <TabsTrigger value="categories">By Category</TabsTrigger>
+          <TabsTrigger value="recent">Recently Added</TabsTrigger>
+          <TabsTrigger value="popular">Most Popular</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="browse" className="space-y-6">
+          {/* Filters */}
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Search documents..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedType} onValueChange={setSelectedType}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {types.map(type => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Documents Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredDocuments.map((doc) => {
+              const TypeIcon = getTypeIcon(doc.type)
+              return (
+                <Card key={doc.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewDocument(doc)}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <TypeIcon className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <CardTitle className="text-base line-clamp-2">{doc.title}</CardTitle>
+                          <Badge className={getTypeColor(doc.type)} variant="outline">
+                            {doc.type}
                           </Badge>
                         </div>
                       </div>
+                      <div className="flex space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDownload(doc)
+                          }}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleEditDocument(doc)
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteDocument(doc.id)
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6 relative">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span className="font-medium">Size: {doc.size}</span>
-                      <span className="font-medium">By: {doc.uploadedBy}</span>
-                    </div>
-                    <div className="text-sm text-muted-foreground font-mono">
-                      Uploaded: {doc.uploadDate}
-                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground line-clamp-3">{doc.content}</p>
                     
-                    {doc.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                        {doc.description}
-                      </p>
-                    )}
-                    
-                    {doc.tags && doc.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {doc.tags.slice(0, 3).map((tag, index) => (
-                          <Badge key={index} variant="outline" className="text-xs font-medium bg-muted/50">
-                            <Tag className="w-3 h-3 mr-1" />
-                            {tag}
-                          </Badge>
-                        ))}
-                        {doc.tags.length > 3 && (
-                          <Badge variant="outline" className="text-xs font-medium bg-muted/50">
-                            +{doc.tags.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {doc.signers && doc.signers.length > 0 && (
-                    <div className="space-y-3 p-4 bg-muted/30 rounded-xl">
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-semibold">Signers ({doc.signers.length})</span>
-                      </div>
-                      <div className="space-y-2">
-                        {doc.signers.slice(0, 2).map((signer) => {
-                          const StatusIcon = getSignerStatusIcon(signer.status)
-                          return (
-                            <div key={signer.id} className="flex items-center gap-3">
-                              <StatusIcon className="w-4 h-4" />
-                              <span className="text-sm font-medium">{signer.name}</span>
-                              <Badge variant="outline" className="text-xs">
-                                {signer.status}
-                              </Badge>
-                            </div>
-                          )
-                        })}
-                        {doc.signers.length > 2 && (
-                          <div className="text-sm text-muted-foreground font-medium">
-                            +{doc.signers.length - 2} more signers
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2 pt-4">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleViewDocument(doc)}
-                      className="flex-1 hover:bg-primary/5 hover:border-primary/20"
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      View
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleDownloadDocument(doc)}
-                      className="hover:bg-primary/5 hover:border-primary/20"
-                    >
-                      <Download className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleEditDocument(doc)}
-                      className="hover:bg-primary/5 hover:border-primary/20"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleDeleteDocument(doc.id)}
-                      className="text-destructive hover:text-destructive hover:bg-destructive/5 hover:border-destructive/20"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-
-        {/* Empty State */}
-        {filteredDocuments.length === 0 && (
-          <Card className="py-20 text-center bg-gradient-to-br from-background to-muted/5 border-border/50">
-            <CardContent>
-              <div className="p-6 bg-muted/20 rounded-full w-fit mx-auto mb-6">
-                <FileText className="w-20 h-20 text-muted-foreground opacity-50" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4">No documents found</h3>
-              <p className="text-muted-foreground mb-8 text-lg max-w-md mx-auto">
-                {searchTerm ? 'Try adjusting your search criteria or filters' : 'Start by uploading your first document to get started'}
-              </p>
-              <Button onClick={() => setIsUploadDialogOpen(true)} size="lg" className="px-8 py-3">
-                <Upload className="w-5 h-5 mr-3" />
-                Upload Your First Document
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Enhanced Document Mailbox Section */}
-        <div className="space-y-8">
-          <Separator className="my-16" />
-          <div className="text-center space-y-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl mb-4">
-              <MessageSquare className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent mb-4">
-                Document Mailbox
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                Centralized communication hub for document signatures, approvals, and collaborative workflows. 
-                Track progress, manage conversations, and streamline your document processes.
-              </p>
-            </div>
-          </div>
-          <DocumentMailbox />
-        </div>
-      </div>
-
-      {/* Upload Dialog */}
-      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 text-2xl">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Upload className="w-6 h-6 text-primary" />
-              </div>
-              Upload & Process Document
-            </DialogTitle>
-            <DialogDescription>
-              Upload documents for OCR processing, electronic signatures, or general storage
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {/* File Upload */}
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Select Document</Label>
-              <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
-                <input
-                  type="file"
-                  onChange={handleFileSelect}
-                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt"
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-lg font-medium mb-2">
-                    {selectedFile ? selectedFile.name : 'Click to upload or drag and drop'}
-                  </p>
-                  <p className="text-muted-foreground">
-                    PDF, Word, Images, or Text files (Max 10MB)
-                  </p>
-                </label>
-              </div>
-            </div>
-
-            {selectedFile && (
-              <>
-                {/* Document Info */}
-                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-xl">
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">File Name</Label>
-                    <p className="font-medium">{selectedFile.name}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">File Size</Label>
-                    <p className="font-medium">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                  </div>
-                </div>
-
-                {/* Upload Options */}
-                <div className="space-y-4">
-                  <Label className="text-base font-semibold">Upload Purpose</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Card 
-                      className={cn(
-                        "cursor-pointer transition-all border-2 hover:shadow-md",
-                        uploadType === 'sign' ? "border-primary bg-primary/5" : "border-border"
-                      )}
-                      onClick={() => setUploadType('sign')}
-                    >
-                      <CardContent className="p-4 text-center">
-                        <PenTool className="w-8 h-8 mx-auto mb-3 text-primary" />
-                        <h3 className="font-semibold mb-2">For Signature</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Send for electronic signatures
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card 
-                      className={cn(
-                        "cursor-pointer transition-all border-2 hover:shadow-md",
-                        uploadType === null ? "border-primary bg-primary/5" : "border-border"
-                      )}
-                      onClick={() => setUploadType(null)}
-                    >
-                      <CardContent className="p-4 text-center">
-                        <FileText className="w-8 h-8 mx-auto mb-3 text-primary" />
-                        <h3 className="font-semibold mb-2">Document Storage</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Store and organize documents
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-
-                {/* Document Details */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select value={uploadFormData.category} onValueChange={(value) => setUploadFormData({...uploadFormData, category: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.filter(c => c !== 'All').map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="tags">Tags</Label>
-                    <Input
-                      id="tags"
-                      placeholder="Enter tags separated by commas"
-                      value={uploadFormData.tags}
-                      onChange={(e) => setUploadFormData({...uploadFormData, tags: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Enter document description"
-                    value={uploadFormData.description}
-                    onChange={(e) => setUploadFormData({...uploadFormData, description: e.target.value})}
-                  />
-                </div>
-
-                {/* Signers Selection for Signature Documents */}
-                {uploadType === 'sign' && (
-                  <div className="space-y-4">
-                    <Label className="text-base font-semibold">Select Signers</Label>
-                    <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-3 border rounded-lg">
-                      {mockCompanyMembers.map((member) => (
-                        <label key={member.id} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedSigners.includes(member.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedSigners([...selectedSigners, member.id])
-                              } else {
-                                setSelectedSigners(selectedSigners.filter(id => id !== member.id))
-                              }
-                            }}
-                            className="rounded"
-                          />
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{member.name}</p>
-                            <p className="text-xs text-muted-foreground">{member.email}</p>
-                          </div>
-                        </label>
+                    <div className="flex flex-wrap gap-1">
+                      {doc.tags.map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
                       ))}
                     </div>
-                    {selectedSigners.length > 0 && (
-                      <p className="text-sm text-muted-foreground">
-                        {selectedSigners.length} signer(s) selected
-                      </p>
-                    )}
-                  </div>
-                )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <Button 
-                    onClick={handleFileProcessing}
-                    disabled={isProcessing || !selectedFile}
-                    className="flex-1"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Clock className="w-4 h-4 mr-2 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4 mr-2" />
-                        {uploadType === 'sign' ? 'Process & Send for Signature' : 'Upload Document'}
-                      </>
-                    )}
-                  </Button>
-                  <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </>
-            )}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="flex items-center space-x-2">
+                        <User className="w-3 h-3" />
+                        <span>{doc.author}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Eye className="w-3 h-3" />
+                        <span>{doc.views} views</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 cursor-pointer ${
+                              star <= doc.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRating(doc.id, star)
+                            }}
+                          />
+                        ))}
+                        <span className="text-sm text-muted-foreground ml-1">({doc.rating})</span>
+                      </div>
+                      <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        <span>{doc.updatedDate}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="categories" className="space-y-6">
+          <div className="grid gap-6">
+            {categories.map((category) => {
+              const categoryDocs = documents.filter(doc => doc.category === category && doc.status === 'published')
+              return (
+                <Card key={category}>
+                  <CardHeader>
+                    <CardTitle>{category}</CardTitle>
+                    <CardDescription>{categoryDocs.length} documents</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {categoryDocs.slice(0, 4).map((doc) => {
+                        const TypeIcon = getTypeIcon(doc.type)
+                        return (
+                          <div key={doc.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer" onClick={() => handleViewDocument(doc)}>
+                            <TypeIcon className="w-5 h-5 text-primary" />
+                            <div className="flex-1">
+                              <h4 className="font-medium">{doc.title}</h4>
+                              <p className="text-sm text-muted-foreground">{doc.views} views • {doc.rating} rating</p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="recent" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {documents
+              .sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime())
+              .slice(0, 9)
+              .map((doc) => {
+                const TypeIcon = getTypeIcon(doc.type)
+                return (
+                  <Card key={doc.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewDocument(doc)}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <TypeIcon className="w-8 h-8 text-primary" />
+                        <div className="flex-1">
+                          <h3 className="font-medium line-clamp-2">{doc.title}</h3>
+                          <p className="text-sm text-muted-foreground">Added {doc.createdDate}</p>
+                          <Badge className={getTypeColor(doc.type)} variant="outline" size="sm">
+                            {doc.type}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="popular" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {documents
+              .sort((a, b) => b.views - a.views)
+              .slice(0, 9)
+              .map((doc) => {
+                const TypeIcon = getTypeIcon(doc.type)
+                return (
+                  <Card key={doc.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewDocument(doc)}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <TypeIcon className="w-8 h-8 text-primary" />
+                        <div className="flex-1">
+                          <h3 className="font-medium line-clamp-2">{doc.title}</h3>
+                          <p className="text-sm text-muted-foreground">{doc.views} views • {doc.rating} rating</p>
+                          <Badge className={getTypeColor(doc.type)} variant="outline" size="sm">
+                            {doc.type}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Add/Edit Document Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDoc ? 'Edit Document' : 'Add New Document'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedDoc ? 'Update document information' : 'Create a new document'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input id="title" placeholder="Enter document title" defaultValue={selectedDoc?.title} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select defaultValue={selectedDoc?.category}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="HR Procedures">HR Procedures</SelectItem>
+                  <SelectItem value="Company Policies">Company Policies</SelectItem>
+                  <SelectItem value="Training">Training</SelectItem>
+                  <SelectItem value="Support">Support</SelectItem>
+                  <SelectItem value="General">General</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="type">Type</Label>
+              <Select defaultValue={selectedDoc?.type}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="guide">Guide</SelectItem>
+                  <SelectItem value="policy">Policy</SelectItem>
+                  <SelectItem value="procedure">Procedure</SelectItem>
+                  <SelectItem value="faq">FAQ</SelectItem>
+                  <SelectItem value="video">Video</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tags">Tags (comma separated)</Label>
+              <Input id="tags" placeholder="tag1, tag2, tag3" defaultValue={selectedDoc?.tags.join(', ')} />
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label htmlFor="content">Content</Label>
+              <Textarea id="content" placeholder="Enter document content" rows={8} defaultValue={selectedDoc?.content} />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveDocument}>
+              {selectedDoc ? 'Update' : 'Create'} Document
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1497,310 +656,77 @@ export default function Documentation() {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Eye className="w-5 h-5 text-primary" />
-              </div>
-              {selectedDocument?.name}
+            <DialogTitle className="flex items-center space-x-2">
+              {selectedDoc && (
+                <>
+                  {React.createElement(getTypeIcon(selectedDoc.type), { className: "w-5 h-5" })}
+                  <span>{selectedDoc.title}</span>
+                  <Badge className={getTypeColor(selectedDoc.type)} variant="outline">
+                    {selectedDoc.type}
+                  </Badge>
+                </>
+              )}
             </DialogTitle>
             <DialogDescription>
-              Document details and content preview
+              {selectedDoc && (
+                <div className="flex items-center space-x-4 text-sm">
+                  <span>By {selectedDoc.author}</span>
+                  <span>•</span>
+                  <span>{selectedDoc.views} views</span>
+                  <span>•</span>
+                  <span>Updated {selectedDoc.updatedDate}</span>
+                  <span>•</span>
+                  <div className="flex items-center space-x-1">
+                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                    <span>{selectedDoc.rating}</span>
+                  </div>
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
-
-          {selectedDocument && (
-            <div className="space-y-6">
-              {/* Document Info */}
-              <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 rounded-xl">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Category</Label>
-                  <p className="font-medium">{selectedDocument.category}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Size</Label>
-                  <p className="font-medium">{selectedDocument.size}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Uploaded By</Label>
-                  <p className="font-medium">{selectedDocument.uploadedBy}</p>
+          {selectedDoc && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {selectedDoc.tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+              <div className="prose max-w-none">
+                <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {selectedDoc.content}
                 </div>
               </div>
-
-              {/* Tags */}
-              {selectedDocument.tags && selectedDocument.tags.length > 0 && (
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground mb-2 block">Tags</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedDocument.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
+              <div className="flex items-center justify-between pt-4 border-t">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">Rate this document:</span>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-5 h-5 cursor-pointer ${
+                        star <= selectedDoc.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                      }`}
+                      onClick={() => handleRating(selectedDoc.id, star)}
+                    />
+                  ))}
                 </div>
-              )}
-
-              {/* Description */}
-              {selectedDocument.description && (
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground mb-2 block">Description</Label>
-                  <p className="text-sm">{selectedDocument.description}</p>
-                </div>
-              )}
-
-              {/* Signers */}
-              {selectedDocument.signers && selectedDocument.signers.length > 0 && (
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground mb-3 block">Signers</Label>
-                  <div className="space-y-2">
-                    {selectedDocument.signers.map((signer) => {
-                      const StatusIcon = getSignerStatusIcon(signer.status)
-                      return (
-                        <div key={signer.id} className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
-                          <StatusIcon className="w-5 h-5" />
-                          <div className="flex-1">
-                            <p className="font-medium">{signer.name}</p>
-                            <p className="text-sm text-muted-foreground">{signer.email}</p>
-                          </div>
-                          <Badge variant={signer.status === 'signed' ? 'default' : signer.status === 'declined' ? 'destructive' : 'secondary'}>
-                            {signer.status}
-                          </Badge>
-                          {signer.signedDate && (
-                            <p className="text-xs text-muted-foreground">
-                              Signed: {signer.signedDate}
-                            </p>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Document Content Preview */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium text-muted-foreground">Document Preview</Label>
-                <div className="p-6 bg-muted/20 rounded-xl border min-h-[200px]">
-                  {selectedDocument.extractedText ? (
-                    <pre className="text-sm whitespace-pre-wrap font-mono">
-                      {selectedDocument.extractedText}
-                    </pre>
-                  ) : (
-                    <p className="text-muted-foreground">
-                      Document preview not available. Click download to view the full document.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <Button onClick={() => handleDownloadDocument(selectedDocument)}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsViewDialogOpen(false)
-                    handleEditDocument(selectedDocument)
-                  }}
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-                {selectedDocument.status === 'draft' && (
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      setIsViewDialogOpen(false)
-                      setIsSignatureDialogOpen(true)
-                    }}
-                  >
-                    <PenTool className="w-4 h-4 mr-2" />
-                    Send for Signature
+                <div className="flex space-x-2">
+                  <Button variant="outline" onClick={() => handleDownload(selectedDoc)}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Download
                   </Button>
-                )}
+                  <Button variant="outline" onClick={() => {
+                    setIsViewDialogOpen(false)
+                    handleEditDocument(selectedDoc)
+                  }}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                </div>
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Document Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Edit className="w-5 h-5 text-primary" />
-              </div>
-              Edit Document
-            </DialogTitle>
-            <DialogDescription>
-              Update document information and settings
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-category">Category</Label>
-                <Select value={uploadFormData.category} onValueChange={(value) => setUploadFormData({...uploadFormData, category: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.filter(c => c !== 'All').map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-tags">Tags</Label>
-                <Input
-                  id="edit-tags"
-                  placeholder="Enter tags separated by commas"
-                  value={uploadFormData.tags}
-                  onChange={(e) => setUploadFormData({...uploadFormData, tags: e.target.value})}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Description</Label>
-              <Textarea
-                id="edit-description"
-                placeholder="Enter document description"
-                value={uploadFormData.description}
-                onChange={(e) => setUploadFormData({...uploadFormData, description: e.target.value})}
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button onClick={handleSaveEdit}>
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Save Changes
-              </Button>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Send for Signature Dialog */}
-      <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <PenTool className="w-5 h-5 text-primary" />
-              </div>
-              Send for Electronic Signature
-            </DialogTitle>
-            <DialogDescription>
-              Select signers and send the document for electronic signatures
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {/* Company Members */}
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Select Company Members</Label>
-              <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto p-3 border rounded-lg">
-                {mockCompanyMembers.map((member) => (
-                  <label key={member.id} className="flex items-center space-x-3 p-3 hover:bg-muted/50 rounded cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedSigners.includes(member.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedSigners([...selectedSigners, member.id])
-                        } else {
-                          setSelectedSigners(selectedSigners.filter(id => id !== member.id))
-                        }
-                      }}
-                      className="rounded"
-                    />
-                    <Avatar className="w-10 h-10">
-                      <AvatarFallback>
-                        {member.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="font-medium">{member.name}</p>
-                      <p className="text-sm text-muted-foreground">{member.email}</p>
-                      <p className="text-xs text-muted-foreground">{member.department} • {member.role}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-              {selectedSigners.length > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {selectedSigners.length} signer(s) selected
-                </p>
-              )}
-            </div>
-
-            {/* Custom Signers */}
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Add External Signers</Label>
-              {newSigners.map((signer, index) => (
-                <div key={index} className="flex gap-3 items-end">
-                  <div className="flex-1 space-y-2">
-                    <Label htmlFor={`signer-name-${index}`}>Name</Label>
-                    <Input
-                      id={`signer-name-${index}`}
-                      placeholder="Enter signer name"
-                      value={signer.name}
-                      onChange={(e) => updateSignerField(index, 'name', e.target.value)}
-                    />
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <Label htmlFor={`signer-email-${index}`}>Email</Label>
-                    <Input
-                      id={`signer-email-${index}`}
-                      type="email"
-                      placeholder="Enter signer email"
-                      value={signer.email}
-                      onChange={(e) => updateSignerField(index, 'email', e.target.value)}
-                    />
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeSignerField(index)}
-                    disabled={newSigners.length === 1}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-              <Button variant="outline" onClick={addNewSigner}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Another Signer
-              </Button>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3">
-              <Button 
-                onClick={handleSendForSignature}
-                disabled={selectedSigners.length === 0 && !newSigners.some(s => s.name && s.email)}
-              >
-                <Send className="w-4 h-4 mr-2" />
-                Send for Signature
-              </Button>
-              <Button variant="outline" onClick={() => setIsSignatureDialogOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>
