@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { FileText, Search, Plus, Inbox, Send, File, Folder, Clock, Tag, MoreHorizontal, Download, Trash2, Edit, Eye, CheckCircle, XCircle, Upload, FileIcon, File as FilePdf, FileText as FileTextIcon } from 'lucide-react'
+import { FileText, Search, Plus, Inbox, Send, File, Folder, Clock, Tag, MoreHorizontal, Download, Trash2, Edit, Eye, CheckCircle, XCircle, Upload, FileIcon, File as FilePdf, FileText as FileTextIcon, UserPlus, User } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { 
   DropdownMenu,
@@ -30,7 +30,8 @@ interface Document {
   fileType: 'pdf' | 'doc' | 'docx' | 'txt'
   fileSize: string
   fileUrl?: string
-  author: string
+  author: string,
+  assignedTo?: string
 }
 
 const mockDocuments: Document[] = [
@@ -46,7 +47,8 @@ const mockDocuments: Document[] = [
     fileType: 'pdf',
     fileSize: '2.4 MB',
     fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    author: 'Sarah Wilson'
+    author: 'Sarah Wilson',
+    assignedTo: 'John Smith'
   },
   {
     id: '2',
@@ -59,7 +61,8 @@ const mockDocuments: Document[] = [
     tags: ['equipment', 'guidelines', 'technical'],
     fileType: 'docx',
     fileSize: '1.8 MB',
-    author: 'John Smith'
+    author: 'John Smith',
+    assignedTo: 'Sarah Wilson'
   },
   {
     id: '3',
@@ -72,7 +75,8 @@ const mockDocuments: Document[] = [
     tags: ['content', 'standards', 'guidelines'],
     fileType: 'doc',
     fileSize: '1.2 MB',
-    author: 'Emily Davis'
+    author: 'Emily Davis',
+    assignedTo: 'Mike Johnson'
   },
   {
     id: '4',
@@ -86,7 +90,8 @@ const mockDocuments: Document[] = [
     fileType: 'pdf',
     fileSize: '3.5 MB',
     fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    author: 'Michael Johnson'
+    author: 'Michael Johnson',
+    assignedTo: 'Lisa Wang'
   },
   {
     id: '5',
@@ -99,7 +104,8 @@ const mockDocuments: Document[] = [
     tags: ['marketing', 'proposal', 'campaign'],
     fileType: 'docx',
     fileSize: '2.1 MB',
-    author: 'Lisa Wang'
+    author: 'Lisa Wang',
+    assignedTo: 'Emily Davis'
   }
 ]
 
@@ -111,6 +117,14 @@ const categories = [
   'Marketing',
   'Legal',
   'Operations'
+]
+
+const users = [
+  { id: '1', name: 'Sarah Wilson', role: 'Admin' },
+  { id: '2', name: 'John Smith', role: 'HR Manager' },
+  { id: '3', name: 'Emily Davis', role: 'Content Manager' },
+  { id: '4', name: 'Mike Johnson', role: 'Technical Lead' },
+  { id: '5', name: 'Lisa Wang', role: 'Marketing Director' }
 ]
 
 export default function Documentation() {
@@ -129,7 +143,8 @@ export default function Documentation() {
     description: '',
     category: '',
     tags: [],
-    status: 'Draft'
+    status: 'Draft',
+    assignedTo: ''
   })
   const [tagInput, setTagInput] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -208,8 +223,9 @@ export default function Documentation() {
       title: doc.title,
       description: doc.description,
       category: doc.category,
-      tags: [...doc.tags],
-      status: doc.status
+      tags: doc.tags ? [...doc.tags] : [],
+      status: doc.status,
+      assignedTo: doc.assignedTo || ''
     })
     setTagInput('')
     setIsEditDocumentOpen(true)
@@ -306,6 +322,16 @@ export default function Documentation() {
     }
   }
 
+  const handleFileDelete = () => {
+    setSelectedFile(null)
+    setPreviewUrl(null)
+    
+    toast({
+      title: "File Removed",
+      description: "The uploaded file has been removed.",
+    })
+  }
+
   const handleSaveDocument = () => {
     if (!newDocument.title || !newDocument.category) {
       toast({
@@ -337,6 +363,7 @@ export default function Documentation() {
         description: newDocument.description || selectedDocument.description,
         category: newDocument.category || selectedDocument.category,
         tags: newDocument.tags || selectedDocument.tags,
+        assignedTo: newDocument.assignedTo || selectedDocument.assignedTo,
         status: newDocument.status || selectedDocument.status,
         updatedAt: new Date().toISOString(),
         fileType: fileExtension,
@@ -364,6 +391,7 @@ export default function Documentation() {
         description: newDocument.description || '',
         category: newDocument.category || '',
         status: newDocument.status as Document['status'] || 'Draft',
+        assignedTo: newDocument.assignedTo || '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         tags: newDocument.tags || [],
@@ -602,7 +630,13 @@ export default function Documentation() {
                                   <div className="flex items-center">
                                     <Tag className="mr-1 h-3 w-3" />
                                     <span>{doc.category}</span>
+                                </div>
+                                {doc.assignedTo && (
+                                  <div className="flex items-center">
+                                    <User className="mr-1 h-3 w-3" />
+                                    <span>Assigned to: {doc.assignedTo}</span>
                                   </div>
+                                )}
                                 </div>
                                 <div className="flex flex-wrap gap-1 mt-2">
                                   <Badge className={getStatusColor(doc.status)}>
@@ -791,6 +825,25 @@ export default function Documentation() {
                 </div>
                 
                 <div className="space-y-2">
+                  <Label htmlFor="assignedTo">Assign To</Label>
+                  <Select 
+                    value={newDocument.assignedTo} 
+                    onValueChange={(value) => setNewDocument({...newDocument, assignedTo: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select user to assign" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map(user => (
+                        <SelectItem key={user.id} value={user.name}>
+                          {user.name} ({user.role})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
                   <Label>Tags</Label>
                   <div className="flex space-x-2">
                     <Input 
@@ -835,6 +888,7 @@ export default function Documentation() {
                 onDrop={handleDrop}
               >
                 <input
+                  key={selectedFile ? 'file-selected' : 'no-file'}
                   ref={fileInputRef}
                   type="file"
                   className="hidden"
@@ -844,7 +898,11 @@ export default function Documentation() {
                 
                 <div className="space-y-4">
                   <div className="flex justify-center">
-                    <Upload className="h-10 w-10 text-muted-foreground" />
+                    {selectedFile ? (
+                      <CheckCircle className="h-10 w-10 text-green-500" />
+                    ) : (
+                      <Upload className="h-10 w-10 text-muted-foreground" />
+                    )}
                   </div>
                   <div>
                     <h3 className="text-lg font-medium">
@@ -856,18 +914,31 @@ export default function Documentation() {
                         : 'Drag and drop your file here or click to browse'}
                     </p>
                   </div>
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Select File
-                  </Button>
+                  <div className="flex justify-center space-x-2">
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {selectedFile ? 'Change File' : 'Select File'}
+                    </Button>
+                    
+                    {selectedFile && (
+                      <Button 
+                        type="button" 
+                        variant="destructive"
+                        onClick={handleFileDelete}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remove File
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
               
               {/* File Preview */}
-              {(previewUrl || selectedDocument?.fileUrl) && (
+              {(previewUrl || (selectedDocument?.fileUrl && isEditDocumentOpen)) && (
                 <div className="mt-4 border rounded-lg p-4">
                   <h3 className="text-lg font-medium mb-2">Document Preview</h3>
                   
@@ -1037,6 +1108,12 @@ export default function Documentation() {
                         <h4 className="text-sm font-medium text-muted-foreground">Author</h4>
                         <p>{selectedDocument.author}</p>
                       </div>
+                      {selectedDocument.assignedTo && (
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground">Assigned To</h4>
+                          <p>{selectedDocument.assignedTo}</p>
+                        </div>
+                      )}
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Tags</h4>
                         <div className="flex flex-wrap gap-1 mt-1">
