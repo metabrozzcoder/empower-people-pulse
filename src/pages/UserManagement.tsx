@@ -15,7 +15,8 @@ import {
   Mail, 
   Phone,
   Calendar,
-  Building2
+  Building2,
+  Download
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
