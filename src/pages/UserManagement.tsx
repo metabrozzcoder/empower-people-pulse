@@ -119,7 +119,7 @@ export default function UserManagement() {
 
   const generateCredentials = (name: string, surname: string, role: string) => {
     if (!name || !surname) return { username: '', password: '', guestId: '' }
-    const username = `${name.toLowerCase()}.${surname.toLowerCase()}`
+    const username = `${name.toLowerCase()}.${surname.toLowerCase()}`.replace(/\s+/g, '')
     const password = `${name.toLowerCase()}123`
     const guestId = role === 'Guest' ? `GUEST${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}` : ''
     return { username, password, guestId }
@@ -265,7 +265,7 @@ export default function UserManagement() {
       
       toast({
         title: "User Created Successfully",
-        description: `Username: ${generatedCredentials.username}, Password: ${generatedCredentials.password}${generatedCredentials.guestId ? `, Guest ID: ${generatedCredentials.guestId}` : ''}`,
+        description: `User created successfully! Username: ${generatedCredentials.username}, Password: ${generatedCredentials.password}${generatedCredentials.guestId ? `, Guest ID: ${generatedCredentials.guestId}` : ''}. This user is now stored as an initial user.`,
       })
     }
 

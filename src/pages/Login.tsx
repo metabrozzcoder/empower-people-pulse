@@ -24,34 +24,34 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    
+    console.log('Login attempt with:', formData)
 
     if (formData.username && formData.password) {
       const user = authenticateUser(formData.username, formData.password)
       
-      setTimeout(() => {
-        if (user) {
-          login(user)
-          
-          toast({
-            title: "Login Successful",
-            description: `Welcome back, ${user.name}!`,
-          })
-          
-          // Redirect guest users to chat page, others to dashboard
-          if (user.role === 'Guest') {
-            navigate('/chat')
-          } else {
-            navigate('/')
-          }
+      if (user) {
+        login(user)
+        
+        toast({
+          title: "Login Successful",
+          description: `Welcome back, ${user.name}!`,
+        })
+        
+        // Redirect guest users to chat page, others to dashboard
+        if (user.role === 'Guest') {
+          navigate('/chat')
         } else {
-          toast({
-            title: "Login Failed",
-            description: "Invalid username or password",
-            variant: "destructive"
-          })
+          navigate('/')
         }
-        setIsLoading(false)
-      }, 1000)
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Invalid username or password. Please check your credentials.",
+          variant: "destructive"
+        })
+      }
+      setIsLoading(false)
     } else {
       toast({
         title: "Login Failed",
@@ -127,6 +127,13 @@ export default function Login() {
               disabled={isLoading}
             >
               {isLoading ? "Signing In..." : "Sign In"}
+              
+              {/* Debug info for development */}
+              <div className="mt-4 p-3 bg-gray-50 rounded text-xs">
+                <p><strong>Available Login:</strong></p>
+                <p>Username: admin</p>
+                <p>Password: admin</p>
+              </div>
             </Button>
           </form>
         </CardContent>

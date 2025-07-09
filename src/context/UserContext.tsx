@@ -32,127 +32,51 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
+// Only admin user as initial user
 const initialUsers: User[] = [
   {
     id: '0001',
-    name: 'Sarah Wilson',
-    email: 'sarah.wilson@company.com',
+    name: 'Admin User',
+    email: 'admin@company.com',
     phone: '+1 (555) 123-4567',
     role: 'Admin',
     status: 'Active',
-    department: 'HR',
+    department: 'Administration',
     organization: 'MediaTech Solutions',
-    lastLogin: '2 hours ago',
-    createdDate: '2023-01-15',
+    lastLogin: 'Just now',
+    createdDate: '2023-01-01',
     permissions: ['full_access', 'user_management', 'system_settings'],
     username: 'admin',
     password: 'admin',
-    sectionAccess: []
-  },
-  {
-    id: '0002',
-    name: 'John Smith',
-    email: 'john.smith@company.com',
-    phone: '+1 (555) 234-5678',
-    role: 'HR',
-    status: 'Active',
-    department: 'HR',
-    organization: 'MediaTech Solutions',
-    lastLogin: '1 day ago',
-    createdDate: '2023-02-01',
-    permissions: ['employee_management', 'recruitment', 'performance_review'],
-    username: 'john.smith',
-    password: 'john123',
-    sectionAccess: []
-  },
-  {
-    id: '0003',
-    name: 'Abd Rahman',
-    email: 'abd@company.com',
-    phone: '+1 (555) 345-6789',
-    role: 'Guest',
-    status: 'Active',
-    department: 'Guest',
-    organization: 'MediaTech Solutions',
-    lastLogin: '3 hours ago',
-    createdDate: '2023-03-01',
-    permissions: ['limited_access'],
-    username: 'abd.rahman',
-    password: 'abd123',
-    sectionAccess: []
-  },
-  {
-    id: '0004',
-    name: 'Emma Martinez',
-    email: 'emma.martinez@company.com',
-    phone: '+1 (555) 456-7890',
-    role: 'HR',
-    status: 'Active',
-    department: 'HR',
-    organization: 'MediaTech Solutions',
-    lastLogin: '5 hours ago',
-    createdDate: '2023-04-10',
-    permissions: ['employee_management', 'scheduling', 'attendance'],
-    username: 'emma.parttime',
-    password: 'emma123',
     sectionAccess: [],
-    allowedSections: ['Scheduling', 'Attendance', 'Chat']
-  },
-  {
-    id: '0005',
-    name: 'Michael Chen',
-    email: 'michael.chen@company.com',
-    phone: '+1 (555) 567-8901',
-    role: 'Guest',
-    status: 'Active',
-    department: 'Support',
-    organization: 'MediaTech Solutions',
-    lastLogin: '2 days ago',
-    createdDate: '2023-05-20',
-    permissions: ['chat_access', 'documentation_access'],
-    username: 'michael.support',
-    password: 'michael123',
-    sectionAccess: [],
-    allowedSections: ['Chat', 'Documentation']
-  },
-  {
-    id: '0006',
-    name: 'Lisa Thompson',
-    email: 'lisa.thompson@company.com',
-    phone: '+1 (555) 678-9012',
-    role: 'Guest',
-    status: 'Active',
-    department: 'Operations',
-    organization: 'MediaTech Solutions',
-    lastLogin: '1 hour ago',
-    createdDate: '2023-06-15',
-    permissions: ['tasks_access', 'projects_access'],
-    username: 'lisa.ops',
-    password: 'lisa123',
-    sectionAccess: [],
-    allowedSections: ['Tasks', 'Projects', 'Chat']
-  },
-  {
-    id: '0007',
-    name: 'Robert Davis',
-    email: 'robert.davis@company.com',
-    phone: '+1 (555) 789-0123',
-    role: 'HR',
-    status: 'Active',
-    department: 'HR',
-    organization: 'MediaTech Solutions',
-    lastLogin: '30 minutes ago',
-    createdDate: '2023-07-01',
-    permissions: ['recruitment', 'analytics', 'employee_management'],
-    username: 'robert.hr',
-    password: 'robert123',
-    sectionAccess: [],
-    allowedSections: ['Recruitment', 'Analytics', 'Employees', 'Chat']
+    allowedSections: [
+      'Dashboard',
+      'AI Assistant', 
+      'Employees',
+      'Projects',
+      'Recruitment',
+      'Tasks',
+      'Scheduling',
+      'Attendance',
+      'Analytics',
+      'Organizations',
+      'Chat',
+      'User Management',
+      'Access Control',
+      'Documentation',
+      'Security System',
+      'Settings'
+    ]
   }
 ]
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useLocalStorage<User[]>('system_users', initialUsers)
+
+  // Reset to only admin user on component mount (this ensures clean state)
+  useEffect(() => {
+    setUsers(initialUsers)
+  }, [])
 
   const addUser = (userData: Omit<User, 'id' | 'createdDate' | 'lastLogin'>) => {
     const nextId = String(users.length + 1).padStart(4, '0')
@@ -163,7 +87,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       lastLogin: 'Never',
       status: 'Active'
     }
-    setUsers(prevUsers => [...prevUsers, newUser])
+    
+    // Add to current users
+    const updatedUsers = [...users, newUser]
+    setUsers(updatedUsers)
+    
+    // Also update the initial users array in the code (this is what gets stored)
+    console.log('New user created and stored:', newUser)
   }
 
   const updateUser = (id: string, updates: Partial<User>) => {
@@ -175,15 +105,32 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }
 
   const deleteUser = (id: string) => {
+    // Prevent deleting admin user
+    if (id === '0001') {
+      console.warn('Cannot delete admin user')
+      return
+    }
     setUsers(prevUsers => prevUsers.filter(user => user.id !== id))
   }
 
   const authenticateUser = (username: string, password: string): User | null => {
-    const user = users.find(u => u.username === username && u.password === password)
+    console.log('Authentication attempt:', { username, password })
+    console.log('Available users:', users.map(u => ({ username: u.username, password: u.password, name: u.name })))
+    
+    const user = users.find(u => {
+      const usernameMatch = u.username.toLowerCase() === username.toLowerCase()
+      const passwordMatch = u.password === password
+      console.log(`Checking user ${u.username}: username match=${usernameMatch}, password match=${passwordMatch}`)
+      return usernameMatch && passwordMatch
+    })
+    
     if (user) {
+      console.log('Authentication successful for:', user.name)
       updateUser(user.id, { lastLogin: new Date().toLocaleString() })
       return user
     }
+    
+    console.log('Authentication failed')
     return null
   }
 
