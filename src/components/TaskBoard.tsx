@@ -11,11 +11,12 @@ import { useToast } from "@/hooks/use-toast"
 interface TaskBoardProps {
   tasks: Task[]
   onTaskUpdate: (task: Task) => void
+  onTasksReorder: (tasks: Task[]) => void
   onTaskDelete: (taskId: string) => void
   onTaskCreate: () => void
 }
 
-export function TaskBoard({ tasks, onTaskUpdate, onTaskDelete, onTaskCreate }: TaskBoardProps) {
+export function TaskBoard({ tasks, onTaskUpdate, onTasksReorder, onTaskDelete, onTaskCreate }: TaskBoardProps) {
   const { toast } = useToast()
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
@@ -69,15 +70,18 @@ export function TaskBoard({ tasks, onTaskUpdate, onTaskDelete, onTaskCreate }: T
       const newIndex = dropIndex
       
       if (currentIndex !== newIndex) {
-        // Create new array with reordered tasks
-        const reorderedTasks = [...sourceTasks]
-        reorderedTasks.splice(currentIndex, 1)
-        reorderedTasks.splice(newIndex, 0, draggedTask)
+        // Create new array with reordered tasks for this column
+        const reorderedColumnTasks = [...sourceTasks]
+        reorderedColumnTasks.splice(currentIndex, 1)
+        reorderedColumnTasks.splice(newIndex, 0, draggedTask)
         
-        // Update all tasks in this column with new positions
-        reorderedTasks.forEach((task, index) => {
-          onTaskUpdate({ ...task, position: index })
+        // Create the full updated tasks array
+        const allTasksMap = new Map(tasks.map(task => [task.id, task]))
+        reorderedColumnTasks.forEach((task, index) => {
+          allTasksMap.set(task.id, { ...task, position: index })
         })
+        
+        onTasksReorder(Array.from(allTasksMap.values()))
         
         toast({
           title: "Task Reordered",

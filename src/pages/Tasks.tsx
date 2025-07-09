@@ -298,6 +298,9 @@ const Tasks = () => {
                 prevTasks.map(t => t.id === task.id ? task : t)
               )
             }}
+            onTasksReorder={(reorderedTasks) => {
+              setTasks(reorderedTasks)
+            }}
             onTaskDelete={handleDeleteTask}
             onTaskCreate={handleCreateTask}
           />
