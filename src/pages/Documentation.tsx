@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,322 +8,298 @@ import {
   FileText, 
   Search, 
   Plus, 
-  Edit, 
+  Folder, 
+  File, 
+  MoreHorizontal, 
+  Download, 
   Trash2, 
-  Download,
-  Upload,
-  BookOpen,
-  Video,
-  HelpCircle,
-  Star,
-  Eye,
+  Edit,
   Clock,
+  Tag,
   User,
-  Inbox,
-  Send,
-  File,
   FileIcon,
-  FilePenLine,
-  Folder,
-  FolderOpen,
-  MoreHorizontal
+  FilePdf,
+  FileText as FileTextIcon,
+  Send,
+  Archive,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Inbox,
+  PenTool
 } from 'lucide-react'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useToast } from '@/hooks/use-toast'
-import {
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from '@/components/ui/dropdown-menu'
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useToast } from '@/hooks/use-toast'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 
-interface FileDocument {
-  id: string
-  title: string
-  fileType: 'pdf' | 'doc' | 'docx'
-  fileSize: string
-  fileUrl: string
-  uploadDate: string
-  author: string
-  folder: 'inbox' | 'sent' | 'drafts' | 'all'
-  tags: string[]
-}
-
+// Document types
 interface Document {
   id: string
   title: string
-  content: string
+  description: string
   category: string
-  type: 'guide' | 'policy' | 'procedure' | 'faq' | 'video'
-  author: string
-  createdDate: string
-  updatedDate: string
-  views: number
-  rating: number
   tags: string[]
-  folder?: 'inbox' | 'sent' | 'drafts' | 'all'
-  status: 'draft' | 'published' | 'archived'
+  createdBy: string
+  createdAt: string
+  updatedAt: string
+  status: 'draft' | 'sent' | 'pending' | 'approved' | 'declined'
+  folder: 'inbox' | 'sent' | 'drafts' | 'all'
 }
 
-const mockFileDocuments: FileDocument[] = [
-  {
-    id: 'file-1',
-    title: 'Employee Handbook 2024',
-    fileType: 'pdf',
-    fileSize: '2.4 MB',
-    fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    uploadDate: '2024-01-10',
-    author: 'HR Department',
-    folder: 'inbox',
-    tags: ['handbook', 'policy', 'guidelines']
-  },
-  {
-    id: 'file-2',
-    title: 'Performance Review Template',
-    fileType: 'docx',
-    fileSize: '1.2 MB',
-    fileUrl: '#',
-    uploadDate: '2024-01-15',
-    author: 'Sarah Wilson',
-    folder: 'sent',
-    tags: ['template', 'review', 'performance']
-  },
-  {
-    id: 'file-3',
-    title: 'Onboarding Checklist',
-    fileType: 'pdf',
-    fileSize: '0.8 MB',
-    fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    uploadDate: '2024-01-20',
-    author: 'John Smith',
-    folder: 'drafts',
-    tags: ['onboarding', 'checklist', 'new-hire']
-  },
-  {
-    id: 'file-4',
-    title: 'Benefits Overview 2024',
-    fileType: 'pdf',
-    fileSize: '3.1 MB',
-    fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    uploadDate: '2024-01-25',
-    author: 'HR Department',
-    folder: 'inbox',
-    tags: ['benefits', 'insurance', 'compensation']
-  },
-  {
-    id: 'file-5',
-    title: 'Project Management Guidelines',
-    fileType: 'docx',
-    fileSize: '1.5 MB',
-    fileUrl: '#',
-    uploadDate: '2024-01-30',
-    author: 'Project Management Office',
-    folder: 'sent',
-    tags: ['project', 'management', 'guidelines']
-  }
-]
+interface FileDocument extends Document {
+  type: 'pdf' | 'word' | 'text'
+  fileSize: string
+  fileUrl?: string
+  previewUrl?: string
+}
 
+// Mock data
 const mockDocuments: Document[] = [
   {
     id: '1',
-    title: 'Employee Onboarding Guide',
-    content: 'Complete guide for new employee onboarding process including paperwork, orientation, and first-week activities.',
-    category: 'HR Procedures',
-    type: 'guide',
-    author: 'Sarah Wilson',
-    createdDate: '2024-01-15',
-    updatedDate: '2024-01-20',
-    views: 245,
-    rating: 4.8,
-    tags: ['onboarding', 'new-hire', 'orientation'],
-    status: 'published',
-    folder: 'inbox'
+    title: 'Employee Handbook 2024',
+    description: 'Official company handbook with policies and procedures',
+    category: 'Policy',
+    tags: ['handbook', 'policy', 'official'],
+    createdBy: 'Sarah Wilson',
+    createdAt: '2024-01-10T09:30:00Z',
+    updatedAt: '2024-01-15T14:20:00Z',
+    status: 'approved',
+    folder: 'all'
   },
   {
     id: '2',
-    title: 'Remote Work Policy',
-    content: 'Guidelines and policies for remote work arrangements, including equipment, communication protocols, and performance expectations.',
-    category: 'Company Policies',
-    type: 'policy',
-    author: 'John Smith',
-    createdDate: '2024-01-10',
-    updatedDate: '2024-01-18',
-    views: 189,
-    rating: 4.5,
-    tags: ['remote-work', 'policy', 'guidelines'],
-    status: 'published',
-    folder: 'sent'
+    title: 'Onboarding Checklist',
+    description: 'Checklist for new employee onboarding process',
+    category: 'Process',
+    tags: ['onboarding', 'checklist', 'new-hire'],
+    createdBy: 'John Smith',
+    createdAt: '2024-01-05T11:45:00Z',
+    updatedAt: '2024-01-05T11:45:00Z',
+    status: 'approved',
+    folder: 'all'
   },
   {
     id: '3',
-    title: 'Performance Review Process',
-    content: 'Step-by-step procedure for conducting annual and quarterly performance reviews.',
-    category: 'HR Procedures',
-    type: 'procedure',
-    author: 'Emily Davis',
-    createdDate: '2024-01-05',
-    updatedDate: '2024-01-12',
-    views: 156,
-    rating: 4.6,
-    tags: ['performance', 'review', 'evaluation'],
-    status: 'published',
-    folder: 'drafts'
-  },
-  {
-    id: '4',
-    title: 'How to Use the HRM System',
-    content: 'Video tutorial showing how to navigate and use the HRM system effectively.',
-    category: 'Training',
-    type: 'video',
-    author: 'Mike Johnson',
-    createdDate: '2024-01-08',
-    updatedDate: '2024-01-15',
-    views: 312,
-    rating: 4.9,
-    tags: ['training', 'system', 'tutorial'],
-    status: 'published',
+    title: 'Performance Review Template',
+    description: 'Standard template for quarterly performance reviews',
+    category: 'Template',
+    tags: ['performance', 'review', 'template'],
+    createdBy: 'Emily Davis',
+    createdAt: '2024-01-12T15:20:00Z',
+    updatedAt: '2024-01-12T15:20:00Z',
+    status: 'pending',
     folder: 'inbox'
   },
   {
+    id: '4',
+    title: 'Benefits Overview',
+    description: 'Summary of employee benefits and enrollment information',
+    category: 'Policy',
+    tags: ['benefits', 'insurance', 'compensation'],
+    createdBy: 'Sarah Wilson',
+    createdAt: '2024-01-08T10:15:00Z',
+    updatedAt: '2024-01-08T10:15:00Z',
+    status: 'draft',
+    folder: 'drafts'
+  },
+  {
     id: '5',
-    title: 'Frequently Asked Questions',
-    content: 'Common questions and answers about HR policies, benefits, and procedures.',
-    category: 'Support',
-    type: 'faq',
-    author: 'Lisa Thompson',
-    createdDate: '2024-01-12',
-    updatedDate: '2024-01-22',
-    views: 423,
-    rating: 4.7,
-    tags: ['faq', 'support', 'help'],
-    status: 'published',
-    folder: 'all'
+    title: 'Remote Work Policy',
+    description: 'Guidelines for remote work arrangements',
+    category: 'Policy',
+    tags: ['remote', 'work-from-home', 'policy'],
+    createdBy: 'John Smith',
+    createdAt: '2024-01-14T13:10:00Z',
+    updatedAt: '2024-01-14T13:10:00Z',
+    status: 'sent',
+    folder: 'sent'
+  }
+]
+
+const mockFileDocuments: FileDocument[] = [
+  {
+    id: '6',
+    title: 'Q1 HR Budget Report',
+    description: 'Financial report for HR department Q1 2024',
+    category: 'Report',
+    tags: ['finance', 'budget', 'quarterly'],
+    createdBy: 'Sarah Wilson',
+    createdAt: '2024-01-16T09:30:00Z',
+    updatedAt: '2024-01-16T09:30:00Z',
+    status: 'approved',
+    folder: 'all',
+    type: 'pdf',
+    fileSize: '2.4 MB',
+    fileUrl: 'https://example.com/files/q1-budget.pdf',
+    previewUrl: 'https://www.africau.edu/images/default/sample.pdf'
+  },
+  {
+    id: '7',
+    title: 'Employee Training Manual',
+    description: 'Comprehensive training guide for new employees',
+    category: 'Training',
+    tags: ['training', 'manual', 'onboarding'],
+    createdBy: 'John Smith',
+    createdAt: '2024-01-15T14:45:00Z',
+    updatedAt: '2024-01-15T14:45:00Z',
+    status: 'pending',
+    folder: 'inbox',
+    type: 'word',
+    fileSize: '3.8 MB',
+    fileUrl: 'https://example.com/files/training-manual.docx'
+  },
+  {
+    id: '8',
+    title: 'Recruitment Strategy Document',
+    description: 'Strategic plan for talent acquisition in 2024',
+    category: 'Strategy',
+    tags: ['recruitment', 'strategy', 'talent'],
+    createdBy: 'Emily Davis',
+    createdAt: '2024-01-14T11:20:00Z',
+    updatedAt: '2024-01-14T11:20:00Z',
+    status: 'draft',
+    folder: 'drafts',
+    type: 'word',
+    fileSize: '1.7 MB',
+    fileUrl: 'https://example.com/files/recruitment-strategy.docx'
+  },
+  {
+    id: '9',
+    title: 'Compliance Checklist 2024',
+    description: 'Regulatory compliance requirements for HR',
+    category: 'Compliance',
+    tags: ['legal', 'compliance', 'regulations'],
+    createdBy: 'Sarah Wilson',
+    createdAt: '2024-01-13T10:15:00Z',
+    updatedAt: '2024-01-13T10:15:00Z',
+    status: 'sent',
+    folder: 'sent',
+    type: 'pdf',
+    fileSize: '1.2 MB',
+    fileUrl: 'https://example.com/files/compliance-checklist.pdf',
+    previewUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
   }
 ]
 
 export default function Documentation() {
   const { toast } = useToast()
-  const [documents, setDocuments] = useState<Document[]>(mockDocuments)
-  const [fileDocuments, setFileDocuments] = useState<FileDocument[]>(mockFileDocuments)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [selectedType, setSelectedType] = useState('all')
-  const [selectedFolder, setSelectedFolder] = useState<'inbox' | 'sent' | 'drafts' | 'all'>('all')
-  const [isFileUploadDialogOpen, setIsFileUploadDialogOpen] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [selectedFileDoc, setSelectedFileDoc] = useState<FileDocument | null>(null)
-  const [isFilePreviewDialogOpen, setIsFilePreviewDialogOpen] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
-
-  const categories = Array.from(new Set(documents.map(doc => doc.category)))
-  const types = Array.from(new Set(documents.map(doc => doc.type)))
-
+  const [selectedStatus, setSelectedStatus] = useState('all')
+  const [currentFolder, setCurrentFolder] = useState<'inbox' | 'sent' | 'drafts' | 'all'>('all')
+  
+  const [isAddDocDialogOpen, setIsAddDocDialogOpen] = useState(false)
+  const [isViewDocDialogOpen, setIsViewDocDialogOpen] = useState(false)
+  const [isEditDocDialogOpen, setIsEditDocDialogOpen] = useState(false)
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false)
+  
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
+  const [selectedFileDocument, setSelectedFileDocument] = useState<FileDocument | null>(null)
+  
+  const [documents, setDocuments] = useState<Document[]>(mockDocuments)
+  const [fileDocuments, setFileDocuments] = useState<FileDocument[]>(mockFileDocuments)
+  
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [dragActive, setDragActive] = useState(false)
+  
+  // Filter documents based on search, category, status, and folder
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+    
     const matchesCategory = selectedCategory === 'all' || doc.category === selectedCategory
-    const matchesType = selectedType === 'all' || doc.type === selectedType
-    const matchesFolder = selectedFolder === 'all' || doc.folder === selectedFolder || doc.folder === 'all'
-    return matchesSearch && matchesCategory && matchesType && matchesFolder && doc.status === 'published'
+    const matchesStatus = selectedStatus === 'all' || doc.status === selectedStatus
+    const matchesFolder = currentFolder === 'all' || doc.folder === currentFolder
+    
+    return matchesSearch && matchesCategory && matchesStatus && matchesFolder
   })
-
+  
   const filteredFileDocuments = fileDocuments.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesFolder = selectedFolder === 'all' || doc.folder === selectedFolder
-    return matchesSearch && matchesFolder
+    
+    const matchesCategory = selectedCategory === 'all' || doc.category === selectedCategory
+    const matchesStatus = selectedStatus === 'all' || doc.status === selectedStatus
+    const matchesFolder = currentFolder === 'all' || doc.folder === currentFolder
+    
+    return matchesSearch && matchesCategory && matchesStatus && matchesFolder
   })
-
-  const getTypeIcon = (type: Document['type']) => {
-    switch (type) {
-      case 'guide': return BookOpen
-      case 'policy': return FileText
-      case 'procedure': return FileText
-      case 'faq': return HelpCircle
-      case 'video': return Video
-      default: return FileText
-    }
+  
+  // Get unique categories from all documents
+  const categories = Array.from(new Set([
+    ...documents.map(doc => doc.category),
+    ...fileDocuments.map(doc => doc.category)
+  ])).sort()
+  
+  // Count documents in each folder
+  const folderCounts = {
+    inbox: documents.filter(doc => doc.folder === 'inbox').length + 
+           fileDocuments.filter(doc => doc.folder === 'inbox').length,
+    sent: documents.filter(doc => doc.folder === 'sent').length + 
+          fileDocuments.filter(doc => doc.folder === 'sent').length,
+    drafts: documents.filter(doc => doc.folder === 'drafts').length + 
+            fileDocuments.filter(doc => doc.folder === 'drafts').length,
+    all: documents.length + fileDocuments.length
   }
-
-  const getTypeColor = (type: Document['type']) => {
-    switch (type) {
-      case 'guide': return 'bg-blue-100 text-blue-800'
-      case 'policy': return 'bg-red-100 text-red-800'
-      case 'procedure': return 'bg-green-100 text-green-800'
-      case 'faq': return 'bg-yellow-100 text-yellow-800'
-      case 'video': return 'bg-purple-100 text-purple-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getFileTypeIcon = (fileType: FileDocument['fileType']) => {
-    switch (fileType) {
-      case 'pdf': return FileText
-      case 'doc': 
-      case 'docx': return File
-      default: return FileIcon
-    }
-  }
-
-  const getFileTypeColor = (fileType: FileDocument['fileType']) => {
-    switch (fileType) {
-      case 'pdf': return 'bg-red-100 text-red-800'
-      case 'doc': 
-      case 'docx': return 'bg-blue-100 text-blue-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getFolderIcon = (folder: string) => {
-    switch (folder) {
-      case 'inbox': return Inbox
-      case 'sent': return Send
-      case 'drafts': return FilePenLine
-      case 'all': return Folder
-      default: return Folder
-    }
-  }
-
+  
   const handleAddDocument = () => {
-    setSelectedDoc(null)
-    setIsDialogOpen(true)
+    setSelectedDocument(null)
+    setIsAddDocDialogOpen(true)
   }
-
-  const handleEditDocument = (doc: Document) => {
-    setSelectedDoc(doc)
-    setIsDialogOpen(true)
-  }
-
+  
   const handleViewDocument = (doc: Document) => {
-    // Increment view count
-    setDocuments(prev => prev.map(d => 
-      d.id === doc.id ? { ...d, views: d.views + 1 } : d
-    ))
-    setSelectedDoc(doc)
-    setIsViewDialogOpen(true)
+    setSelectedDocument(doc)
+    setIsViewDocDialogOpen(true)
   }
-
+  
+  const handleEditDocument = (doc: Document) => {
+    setSelectedDocument(doc)
+    setIsEditDocDialogOpen(true)
+  }
+  
   const handleDeleteDocument = (id: string) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== id))
+    setDocuments(documents.filter(doc => doc.id !== id))
+    setFileDocuments(fileDocuments.filter(doc => doc.id !== id))
     toast({
       title: "Document Deleted",
       description: "Document has been successfully deleted.",
     })
   }
-
+  
   const handleSaveDocument = () => {
-    if (selectedDoc && selectedDoc.id && selectedDoc.id !== 'new') {
+    if (selectedDocument) {
       // Update existing document
-      setDocuments(prev => prev.map(doc => 
-        doc.id === selectedDoc.id ? { ...selectedDoc, updatedDate: new Date().toISOString().split('T')[0] } : doc
+      setDocuments(documents.map(doc => 
+        doc.id === selectedDocument.id ? selectedDocument : doc
       ))
       toast({
         title: "Document Updated",
@@ -334,1013 +310,1182 @@ export default function Documentation() {
       const newDoc: Document = {
         id: Date.now().toString(),
         title: "New Document",
-        content: "Document content goes here...",
-        category: "General",
-        type: 'guide',
-        author: "Current User",
-        folder: 'inbox',
-        createdDate: new Date().toISOString().split('T')[0],
-        updatedDate: new Date().toISOString().split('T')[0],
-        views: 0,
-        rating: 0,
-        tags: ['new'],
-        status: 'published'
+        description: "Document description",
+        category: "Policy",
+        tags: ["new"],
+        createdBy: "Current User",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: 'draft',
+        folder: 'drafts'
       }
-      setDocuments(prev => [...prev, newDoc])
+      setDocuments([...documents, newDoc])
       toast({
         title: "Document Created",
         description: "New document has been successfully created.",
       })
     }
-    setIsDialogOpen(false)
+    setIsAddDocDialogOpen(false)
+    setIsEditDocDialogOpen(false)
   }
-
-  const handleViewFileDocument = (doc: FileDocument) => {
-    setSelectedFileDoc(doc)
-    setIsFilePreviewDialogOpen(true)
+  
+  const handleUploadFile = () => {
+    setUploadedFile(null)
+    setIsUploadDialogOpen(true)
   }
-
-  const handleDownload = (doc: Document) => {
-    // Create a blob with the document content
-    const content = `${doc.title}\n\n${doc.content}\n\nAuthor: ${doc.author}\nCreated: ${doc.createdDate}\nTags: ${doc.tags.join(', ')}`
-    const blob = new Blob([content], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${doc.title.replace(/\s+/g, '_')}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    
-    toast({
-      title: "Document Downloaded",
-      description: `${doc.title} has been downloaded.`,
-    })
-  }
-
-  const handleFileDocumentDownload = (doc: FileDocument) => {
-    // For demonstration purposes, we'll create a dummy file
-    let content = ''
-    
-    if (doc.fileType === 'pdf') {
-      content = `This is a simulated PDF file for ${doc.title}`
-    } else {
-      content = `This is a simulated Word document for ${doc.title}`
-    }
-    
-    const blob = new Blob([content], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${doc.title.replace(/\s+/g, '_')}.${doc.fileType}`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    
-    toast({
-      title: "File Downloaded",
-      description: `${doc.title} has been downloaded.`,
-    })
-  }
-
-  const handleUpload = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.txt,.md,.pdf'
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (file) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const content = e.target?.result as string
-          const newDoc: Document = {
-            id: Date.now().toString(),
-            title: file.name.replace(/\.[^/.]+$/, ""),
-            content: content,
-            category: "Uploaded",
-            type: 'guide',
-            author: "Current User",
-            createdDate: new Date().toISOString().split('T')[0],
-            updatedDate: new Date().toISOString().split('T')[0],
-            views: 0,
-            rating: 0,
-            tags: ['uploaded'],
-            status: 'published'
-          }
-          setDocuments(prev => [...prev, newDoc])
-          toast({
-            title: "Document Uploaded",
-            description: `${file.name} has been uploaded successfully.`,
-          })
-        }
-        reader.readAsText(file)
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast({
+          title: "File Too Large",
+          description: "Maximum file size is 10MB.",
+          variant: "destructive"
+        })
+        return
       }
+      
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Invalid File Type",
+          description: "Only PDF and Word documents are supported.",
+          variant: "destructive"
+        })
+        return
+      }
+      
+      setUploadedFile(file)
     }
-    input.click()
   }
-
-  const handleDragOver = (e: React.DragEvent) => {
+  
+  const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
-    setIsDragging(true)
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setDragActive(false)
+    }
   }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }
-
+  
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
-    setIsDragging(false)
+    e.stopPropagation()
+    setDragActive(false)
     
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0]
-      processFileUpload(file)
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast({
+          title: "File Too Large",
+          description: "Maximum file size is 10MB.",
+          variant: "destructive"
+        })
+        return
+      }
+      
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Invalid File Type",
+          description: "Only PDF and Word documents are supported.",
+          variant: "destructive"
+        })
+        return
+      }
+      
+      setUploadedFile(file)
     }
   }
-
-  const handleRating = (docId: string, rating: number) => {
-    setDocuments(prev => prev.map(doc => 
-      doc.id === docId ? { ...doc, rating } : doc
-    ))
-    toast({
-      title: "Rating Submitted",
-      description: "Thank you for your feedback!",
-    })
-  }
-
-  const handleFileUpload = () => {
-    setIsFileUploadDialogOpen(true)
-  }
-
-  const processFileUpload = (file: File) => {
-    // Check file type
-    const fileType = file.name.split('.').pop()?.toLowerCase()
-    if (!fileType || !['pdf', 'doc', 'docx'].includes(fileType)) {
+  
+  const handleUploadSubmit = () => {
+    if (!uploadedFile) {
       toast({
-        title: "Invalid File Type",
-        description: "Please upload a PDF or Word document.",
+        title: "No File Selected",
+        description: "Please select a file to upload.",
         variant: "destructive"
       })
       return
     }
-
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: "File Too Large",
-        description: "Maximum file size is 10MB.",
-        variant: "destructive"
-      })
-      return
+    
+    // Determine file type
+    let fileType: 'pdf' | 'word' | 'text' = 'text'
+    if (uploadedFile.type === 'application/pdf') {
+      fileType = 'pdf'
+    } else if (uploadedFile.type.includes('word')) {
+      fileType = 'word'
     }
-
-    // Create a preview URL for the file
-    let fileUrl = URL.createObjectURL(file)
-    setPreviewUrl(fileUrl)
-
-    // Create a new document entry
+    
+    // Create file URL for preview (in a real app, this would be a server upload)
+    const fileUrl = URL.createObjectURL(uploadedFile)
+    
+    // Create new file document
     const newFileDoc: FileDocument = {
-      id: `file-${Date.now()}`,
-      title: file.name.replace(/\.[^/.]+$/, ""),
-      fileType: fileType as 'pdf' | 'doc' | 'docx',
-      fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+      id: Date.now().toString(),
+      title: uploadedFile.name.split('.')[0],
+      description: "Uploaded document",
+      category: "Uploaded",
+      tags: ["uploaded"],
+      createdBy: "Current User",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'draft',
+      folder: 'drafts',
+      type: fileType,
+      fileSize: `${(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB`,
       fileUrl: fileUrl,
-      uploadDate: new Date().toISOString().split('T')[0],
-      author: "Current User",
-      folder: 'inbox',
-      tags: [fileType, 'uploaded']
+      previewUrl: fileType === 'pdf' ? fileUrl : undefined
     }
-
-    setFileDocuments(prev => [...prev, newFileDoc])
+    
+    setFileDocuments([...fileDocuments, newFileDoc])
+    setIsUploadDialogOpen(false)
     
     toast({
-      title: "File Uploaded Successfully",
-      description: `${file.name} has been uploaded and added to your documents.`,
+      title: "File Uploaded",
+      description: `${uploadedFile.name} has been successfully uploaded.`,
     })
-
-    // Close the dialog after a short delay to allow the user to see the preview
-    setTimeout(() => {
-      setIsFileUploadDialogOpen(false)
-      setPreviewUrl(null)
-    }, 3000)
   }
-
-  const handleMoveToFolder = (docId: string, folder: 'inbox' | 'sent' | 'drafts' | 'all') => {
-    setDocuments(prev => prev.map(doc => 
-      doc.id === docId ? { ...doc, folder } : doc
-    ))
+  
+  const handleViewFile = (doc: FileDocument) => {
+    setSelectedFileDocument(doc)
+    setIsPreviewDialogOpen(true)
+  }
+  
+  const handleDownloadFile = (doc: FileDocument) => {
+    if (doc.fileUrl) {
+      const a = document.createElement('a')
+      a.href = doc.fileUrl
+      a.download = doc.title
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      
+      toast({
+        title: "File Downloaded",
+        description: `${doc.title} has been downloaded.`,
+      })
+    }
+  }
+  
+  const handleMoveDocument = (docId: string, isFile: boolean, targetFolder: 'inbox' | 'sent' | 'drafts' | 'all') => {
+    if (isFile) {
+      setFileDocuments(fileDocuments.map(doc => 
+        doc.id === docId ? { ...doc, folder: targetFolder } : doc
+      ))
+    } else {
+      setDocuments(documents.map(doc => 
+        doc.id === docId ? { ...doc, folder: targetFolder } : doc
+      ))
+    }
     
     toast({
       title: "Document Moved",
-      description: `Document has been moved to ${folder}.`,
+      description: `Document has been moved to ${targetFolder}.`,
     })
   }
-
-  const handleMoveFileDocument = (docId: string, folder: 'inbox' | 'sent' | 'drafts' | 'all') => {
-    setFileDocuments(prev => prev.map(doc => 
-      doc.id === docId ? { ...doc, folder } : doc
-    ))
+  
+  const handleChangeStatus = (docId: string, isFile: boolean, newStatus: Document['status']) => {
+    if (isFile) {
+      setFileDocuments(fileDocuments.map(doc => 
+        doc.id === docId ? { ...doc, status: newStatus } : doc
+      ))
+    } else {
+      setDocuments(documents.map(doc => 
+        doc.id === docId ? { ...doc, status: newStatus } : doc
+      ))
+    }
     
     toast({
-      title: "File Moved",
-      description: `File has been moved to ${folder}.`,
+      title: "Status Updated",
+      description: `Document status has been changed to ${newStatus}.`,
     })
   }
-
+  
+  const getStatusBadge = (status: Document['status']) => {
+    switch (status) {
+      case 'draft':
+        return <Badge variant="outline">Draft</Badge>
+      case 'sent':
+        return <Badge className="bg-blue-100 text-blue-800">Sent</Badge>
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-800">Approved</Badge>
+      case 'declined':
+        return <Badge className="bg-red-100 text-red-800">Declined</Badge>
+      default:
+        return <Badge variant="outline">{status}</Badge>
+    }
+  }
+  
+  const getStatusIcon = (status: Document['status']) => {
+    switch (status) {
+      case 'draft': return <PenTool className="w-4 h-4" />
+      case 'sent': return <Send className="w-4 h-4" />
+      case 'pending': return <AlertCircle className="w-4 h-4" />
+      case 'approved': return <CheckCircle className="w-4 h-4" />
+      case 'declined': return <XCircle className="w-4 h-4" />
+      default: return <FileIcon className="w-4 h-4" />
+    }
+  }
+  
+  const getFileIcon = (type: FileDocument['type']) => {
+    switch (type) {
+      case 'pdf': return <FilePdf className="w-5 h-5 text-red-500" />
+      case 'word': return <FileTextIcon className="w-5 h-5 text-blue-500" />
+      default: return <FileIcon className="w-5 h-5 text-gray-500" />
+    }
+  }
+  
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Documentation</h1>
-          <p className="text-muted-foreground">Access guides, policies, and training materials</p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={handleFileUpload}>
-            <Upload className="w-4 h-4 mr-2" />
-            Upload
-          </Button>
-          <Button onClick={handleAddDocument}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Document
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Documentation</h1>
+        <p className="text-muted-foreground">
+          Manage and access all company documents and files
+        </p>
       </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <FileText className="w-8 h-8 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold">{documents.length}</p>
-                <p className="text-sm text-muted-foreground">Total Documents</p>
+      
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Sidebar */}
+        <div className="w-full md:w-64 space-y-6">
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="font-semibold">Document Mailbox</h3>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <Eye className="w-8 h-8 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold">{documents.reduce((sum, doc) => sum + doc.views, 0)}</p>
-                <p className="text-sm text-muted-foreground">Total Views</p>
+              
+              <div className="space-y-1">
+                <Button 
+                  variant={currentFolder === 'inbox' ? 'default' : 'ghost'} 
+                  className="w-full justify-start"
+                  onClick={() => setCurrentFolder('inbox')}
+                >
+                  <Inbox className="mr-2 h-4 w-4" />
+                  <span>Inbox</span>
+                  <Badge className="ml-auto" variant="outline">{folderCounts.inbox}</Badge>
+                </Button>
+                <Button 
+                  variant={currentFolder === 'sent' ? 'default' : 'ghost'} 
+                  className="w-full justify-start"
+                  onClick={() => setCurrentFolder('sent')}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  <span>Sent</span>
+                  <Badge className="ml-auto" variant="outline">{folderCounts.sent}</Badge>
+                </Button>
+                <Button 
+                  variant={currentFolder === 'drafts' ? 'default' : 'ghost'} 
+                  className="w-full justify-start"
+                  onClick={() => setCurrentFolder('drafts')}
+                >
+                  <PenTool className="mr-2 h-4 w-4" />
+                  <span>Drafts</span>
+                  <Badge className="ml-auto" variant="outline">{folderCounts.drafts}</Badge>
+                </Button>
+                <Button 
+                  variant={currentFolder === 'all' ? 'default' : 'ghost'} 
+                  className="w-full justify-start"
+                  onClick={() => setCurrentFolder('all')}
+                >
+                  <Folder className="mr-2 h-4 w-4" />
+                  <span>All Documents</span>
+                  <Badge className="ml-auto" variant="outline">{folderCounts.all}</Badge>
+                </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <Star className="w-8 h-8 text-yellow-500" />
-              <div>
-                <p className="text-2xl font-bold">{(documents.reduce((sum, doc) => sum + doc.rating, 0) / documents.length).toFixed(1)}</p>
-                <p className="text-sm text-muted-foreground">Avg Rating</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <BookOpen className="w-8 h-8 text-purple-500" />
-              <div>
-                <p className="text-2xl font-bold">{categories.length}</p>
-                <p className="text-sm text-muted-foreground">Categories</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="browse" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="browse">Browse Documents</TabsTrigger>
-          <TabsTrigger value="mailbox">Document Mailbox</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-          <TabsTrigger value="recent">Recently Added</TabsTrigger>
-          <TabsTrigger value="popular">Most Popular</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="browse" className="space-y-6">
-          {/* Filters */}
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search documents..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedType} onValueChange={setSelectedType}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {types.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Documents Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDocuments.map((doc) => {
-              const TypeIcon = getTypeIcon(doc.type)
-              return (
-                <Card key={doc.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewDocument(doc)}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <TypeIcon className="w-5 h-5 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <CardTitle className="text-base line-clamp-2">{doc.title}</CardTitle>
-                          <Badge className={getTypeColor(doc.type)} variant="outline">
-                            {doc.type}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="flex space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDownload(doc)
-                          }}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleEditDocument(doc)
-                          }}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteDocument(doc.id)
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-sm text-muted-foreground line-clamp-3">{doc.content}</p>
-                    
-                    <div className="flex flex-wrap gap-1">
-                      {doc.tags.map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <div className="flex items-center space-x-2">
-                        <User className="w-3 h-3" />
-                        <span>{doc.author}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Eye className="w-3 h-3" />
-                        <span>{doc.views} views</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-4 h-4 cursor-pointer ${
-                              star <= doc.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                            }`}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleRating(doc.id, star)
-                            }}
-                          />
-                        ))}
-                        <span className="text-sm text-muted-foreground ml-1">({doc.rating})</span>
-                      </div>
-                      <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        <span>{doc.updatedDate}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="mailbox" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* Folders Sidebar */}
-            <Card className="md:col-span-1">
-              <CardHeader>
-                <CardTitle>Folders</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 p-2">
-                {[
-                  { id: 'inbox', name: 'Inbox', icon: Inbox, count: documents.filter(d => d.folder === 'inbox').length },
-                  { id: 'sent', name: 'Sent', icon: Send, count: documents.filter(d => d.folder === 'sent').length },
-                  { id: 'drafts', name: 'Drafts', icon: FilePenLine, count: documents.filter(d => d.folder === 'drafts').length },
-                  { id: 'all', name: 'All Documents', icon: Folder, count: documents.length }
-                ].map((folder) => (
-                  <Button
-                    key={folder.id}
-                    variant={selectedFolder === folder.id ? "secondary" : "ghost"}
+              
+              <Separator />
+              
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Categories</h3>
+                <div className="space-y-1">
+                  <Button 
+                    variant={selectedCategory === 'all' ? 'default' : 'ghost'} 
+                    size="sm"
                     className="w-full justify-start"
-                    onClick={() => setSelectedFolder(folder.id as any)}
+                    onClick={() => setSelectedCategory('all')}
                   >
-                    <folder.icon className="w-4 h-4 mr-2" />
-                    <span>{folder.name}</span>
-                    <Badge variant="outline" className="ml-auto">
-                      {folder.count}
-                    </Badge>
+                    All Categories
                   </Button>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Document List */}
-            <Card className="md:col-span-3">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>
-                    {selectedFolder.charAt(0).toUpperCase() + selectedFolder.slice(1)}
-                  </CardTitle>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      placeholder="Search documents..."
-                      value={searchTerm} 
-                      onChange={(e) => setSearchTerm(e.target.value)} 
-                      className="w-60"
-                    />
-                    <Button variant="outline" onClick={handleUpload}>
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload
+                  {categories.map((category) => (
+                    <Button 
+                      key={category} 
+                      variant={selectedCategory === category ? 'default' : 'ghost'} 
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => setSelectedCategory(category)}
+                    >
+                      {category}
                     </Button>
+                  ))}
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Status</h3>
+                <div className="space-y-1">
+                  <Button 
+                    variant={selectedStatus === 'all' ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setSelectedStatus('all')}
+                  >
+                    All Status
+                  </Button>
+                  <Button 
+                    variant={selectedStatus === 'draft' ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setSelectedStatus('draft')}
+                  >
+                    <PenTool className="mr-2 h-3 w-3" />
+                    Draft
+                  </Button>
+                  <Button 
+                    variant={selectedStatus === 'sent' ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setSelectedStatus('sent')}
+                  >
+                    <Send className="mr-2 h-3 w-3" />
+                    Sent
+                  </Button>
+                  <Button 
+                    variant={selectedStatus === 'pending' ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setSelectedStatus('pending')}
+                  >
+                    <AlertCircle className="mr-2 h-3 w-3" />
+                    Pending
+                  </Button>
+                  <Button 
+                    variant={selectedStatus === 'approved' ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setSelectedStatus('approved')}
+                  >
+                    <CheckCircle className="mr-2 h-3 w-3" />
+                    Approved
+                  </Button>
+                  <Button 
+                    variant={selectedStatus === 'declined' ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setSelectedStatus('declined')}
+                  >
+                    <XCircle className="mr-2 h-3 w-3" />
+                    Declined
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="space-y-2">
+            <Button className="w-full" onClick={handleAddDocument}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Document
+            </Button>
+            <Button className="w-full" variant="outline" onClick={handleUploadFile}>
+              <Plus className="mr-2 h-4 w-4" />
+              Upload File
+            </Button>
+          </div>
+        </div>
+        
+        {/* Main Content */}
+        <div className="flex-1">
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search documents..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {currentFolder === 'inbox' ? 'Inbox' : 
+                 currentFolder === 'sent' ? 'Sent Documents' : 
+                 currentFolder === 'drafts' ? 'Drafts' : 'All Documents'}
+              </CardTitle>
+              <CardDescription>
+                {currentFolder === 'inbox' ? 'Documents requiring your attention' : 
+                 currentFolder === 'sent' ? 'Documents you have sent' : 
+                 currentFolder === 'drafts' ? 'Documents in progress' : 'Browse all documents'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredDocuments.length === 0 && filteredFileDocuments.length === 0 && (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No documents found</p>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {/* Regular Documents */}
-                  {filteredDocuments.length > 0 && (
-                    <div className="mb-4">
-                      <h3 className="text-sm font-medium mb-2">Documents</h3>
-                      {filteredDocuments.map((doc) => {
-                        const TypeIcon = getTypeIcon(doc.type)
-                        return (
-                          <div 
-                            key={doc.id} 
-                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer mb-2"
-                            onClick={() => handleViewDocument(doc)}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                                <TypeIcon className="w-5 h-5 text-primary" />
-                              </div>
-                              <div>
-                                <h4 className="font-medium">{doc.title}</h4>
-                                <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                                  <span>{doc.author}</span>
-                                  <span>•</span>
-                                  <span>{doc.updatedDate}</span>
-                                  <span>•</span>
-                                  <Badge className={getTypeColor(doc.type)} variant="outline">
-                                    {doc.type}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDownload(doc)
-                                }}
-                              >
-                                <Download className="w-4 h-4" />
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <MoreHorizontal className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMoveToFolder(doc.id, 'inbox'); }}>Move to Inbox</DropdownMenuItem>
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMoveToFolder(doc.id, 'sent'); }}>Move to Sent</DropdownMenuItem>
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMoveToFolder(doc.id, 'drafts'); }}>Move to Drafts</DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditDocument(doc); }}>Edit</DropdownMenuItem>
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc.id); }} className="text-red-600">Delete</DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
+                )}
+                
+                {/* Regular Documents */}
+                {filteredDocuments.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-medium">{doc.title}</h3>
+                          {getStatusBadge(doc.status)}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{doc.description}</p>
+                        <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                          <div className="flex items-center space-x-1">
+                            <User className="h-3 w-3" />
+                            <span>{doc.createdBy}</span>
                           </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                  
-                  {/* File Documents */}
-                  {filteredFileDocuments.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-medium mb-2">Files</h3>
-                      {filteredFileDocuments.map((doc) => {
-                        const FileTypeIcon = getFileTypeIcon(doc.fileType)
-                        return (
-                          <div 
-                            key={doc.id} 
-                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer mb-2"
-                            onClick={() => handleViewFileDocument(doc)}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                                <FileTypeIcon className="w-5 h-5 text-primary" />
-                              </div>
-                              <div>
-                                <h4 className="font-medium">{doc.title}</h4>
-                                <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                                  <span>{doc.fileSize}</span>
-                                  <span>•</span>
-                                  <span>{doc.uploadDate}</span>
-                                  <span>•</span>
-                                  <Badge className={getFileTypeColor(doc.fileType)} variant="outline">
-                                    {doc.fileType.toUpperCase()}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleFileDocumentDownload(doc)
-                                }}
-                              >
-                                <Download className="w-4 h-4" />
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <MoreHorizontal className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMoveFileDocument(doc.id, 'inbox'); }}>Move to Inbox</DropdownMenuItem>
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMoveFileDocument(doc.id, 'sent'); }}>Move to Sent</DropdownMenuItem>
-                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMoveFileDocument(doc.id, 'drafts'); }}>Move to Drafts</DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    setFileDocuments(prev => prev.filter(d => d.id !== doc.id));
-                                    toast({
-                                      title: "File Deleted",
-                                      description: "File has been successfully deleted.",
-                                    });
-                                  }} className="text-red-600">Delete</DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
+                          <div className="flex items-center space-x-1">
+                            <Clock className="h-3 w-3" />
+                            <span>{new Date(doc.updatedAt).toLocaleDateString()}</span>
                           </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                  
-                  {filteredDocuments.length === 0 && filteredFileDocuments.length === 0 && (
-                    <div className="text-center py-8">
-                      <Folder className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">No documents found in this folder</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="categories" className="space-y-6">
-          <div className="grid gap-6">
-            {categories.map((category) => {
-              const categoryDocs = documents.filter(doc => doc.category === category && doc.status === 'published')
-              return (
-                <Card key={category}>
-                  <CardHeader>
-                    <CardTitle>{category}</CardTitle>
-                    <CardDescription>{categoryDocs.length} documents</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {categoryDocs.slice(0, 4).map((doc) => {
-                        const TypeIcon = getTypeIcon(doc.type)
-                        return (
-                          <div key={doc.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer" onClick={() => handleViewDocument(doc)}>
-                            <TypeIcon className="w-5 h-5 text-primary" />
-                            <div className="flex-1">
-                              <h4 className="font-medium">{doc.title}</h4>
-                              <p className="text-sm text-muted-foreground">{doc.views} views • {doc.rating} rating</p>
-                            </div>
+                          <div className="flex items-center space-x-1">
+                            <Tag className="h-3 w-3" />
+                            <span>{doc.category}</span>
                           </div>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="recent" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {documents
-              .sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime())
-              .slice(0, 9)
-              .map((doc) => {
-                const TypeIcon = getTypeIcon(doc.type)
-                return (
-                  <Card key={doc.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewDocument(doc)}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-3">
-                        <TypeIcon className="w-8 h-8 text-primary" />
-                        <div className="flex-1">
-                          <h3 className="font-medium line-clamp-2">{doc.title}</h3>
-                          <p className="text-sm text-muted-foreground">Added {doc.createdDate}</p>
-                          <Badge className={getTypeColor(doc.type)} variant="outline" size="sm">
-                            {doc.type}
-                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {doc.tags.map((tag, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="popular" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {documents
-              .sort((a, b) => b.views - a.views)
-              .slice(0, 9)
-              .map((doc) => {
-                const TypeIcon = getTypeIcon(doc.type)
-                return (
-                  <Card key={doc.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewDocument(doc)}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-3">
-                        <TypeIcon className="w-8 h-8 text-primary" />
-                        <div className="flex-1">
-                          <h3 className="font-medium line-clamp-2">{doc.title}</h3>
-                          <p className="text-sm text-muted-foreground">{doc.views} views • {doc.rating} rating</p>
-                          <Badge className={getTypeColor(doc.type)} variant="outline" size="sm">
-                            {doc.type}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleViewDocument(doc)}>
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleEditDocument(doc)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewDocument(doc)}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditDocument(doc)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => {
+                            const content = `Title: ${doc.title}\nDescription: ${doc.description}\nCategory: ${doc.category}\nTags: ${doc.tags.join(', ')}\nCreated By: ${doc.createdBy}\nCreated At: ${new Date(doc.createdAt).toLocaleString()}\nStatus: ${doc.status}`
+                            const blob = new Blob([content], { type: 'text/plain' })
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = `${doc.title.replace(/\s+/g, '_')}.txt`
+                            document.body.appendChild(a)
+                            a.click()
+                            document.body.removeChild(a)
+                            URL.revokeObjectURL(url)
+                            
+                            toast({
+                              title: "Document Downloaded",
+                              description: `${doc.title} has been downloaded.`,
+                            })
+                          }}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Download
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleChangeStatus(doc.id, false, 'sent')}
+                            disabled={doc.status === 'sent'}
+                          >
+                            <Send className="mr-2 h-4 w-4" />
+                            Send for Approval
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleChangeStatus(doc.id, false, 'approved')}
+                            disabled={doc.status === 'approved'}
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Approve
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleChangeStatus(doc.id, false, 'declined')}
+                            disabled={doc.status === 'declined'}
+                          >
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Decline
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleMoveDocument(doc.id, false, 'inbox')}
+                            disabled={doc.folder === 'inbox'}
+                          >
+                            <Inbox className="mr-2 h-4 w-4" />
+                            Move to Inbox
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleMoveDocument(doc.id, false, 'sent')}
+                            disabled={doc.folder === 'sent'}
+                          >
+                            <Send className="mr-2 h-4 w-4" />
+                            Move to Sent
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleMoveDocument(doc.id, false, 'drafts')}
+                            disabled={doc.folder === 'drafts'}
+                          >
+                            <PenTool className="mr-2 h-4 w-4" />
+                            Move to Drafts
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* File Documents */}
+                {filteredFileDocuments.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                        {getFileIcon(doc.type)}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-medium">{doc.title}</h3>
+                          {getStatusBadge(doc.status)}
+                          <Badge variant="outline" className="text-xs">
+                            {doc.type.toUpperCase()}
                           </Badge>
                         </div>
+                        <p className="text-sm text-muted-foreground">{doc.description}</p>
+                        <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                          <div className="flex items-center space-x-1">
+                            <User className="h-3 w-3" />
+                            <span>{doc.createdBy}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Clock className="h-3 w-3" />
+                            <span>{new Date(doc.updatedAt).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <File className="h-3 w-3" />
+                            <span>{doc.fileSize}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {doc.tags.map((tag, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-          </div>
-        </TabsContent>
-      </Tabs>
-
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleViewFile(doc)}>
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDownloadFile(doc)}>
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewFile(doc)}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadFile(doc)}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Download
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleChangeStatus(doc.id, true, 'sent')}
+                            disabled={doc.status === 'sent'}
+                          >
+                            <Send className="mr-2 h-4 w-4" />
+                            Send for Approval
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleChangeStatus(doc.id, true, 'approved')}
+                            disabled={doc.status === 'approved'}
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Approve
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleChangeStatus(doc.id, true, 'declined')}
+                            disabled={doc.status === 'declined'}
+                          >
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Decline
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleMoveDocument(doc.id, true, 'inbox')}
+                            disabled={doc.folder === 'inbox'}
+                          >
+                            <Inbox className="mr-2 h-4 w-4" />
+                            Move to Inbox
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleMoveDocument(doc.id, true, 'sent')}
+                            disabled={doc.folder === 'sent'}
+                          >
+                            <Send className="mr-2 h-4 w-4" />
+                            Move to Sent
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleMoveDocument(doc.id, true, 'drafts')}
+                            disabled={doc.folder === 'drafts'}
+                          >
+                            <PenTool className="mr-2 h-4 w-4" />
+                            Move to Drafts
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      
       {/* Add/Edit Document Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isAddDocDialogOpen || isEditDocDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setIsAddDocDialogOpen(false)
+          setIsEditDocDialogOpen(false)
+        }
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              {selectedDoc ? 'Edit Document' : 'Add New Document'}
+              {isEditDocDialogOpen ? 'Edit Document' : 'Create New Document'}
             </DialogTitle>
             <DialogDescription>
-              {selectedDoc ? 'Update document information' : 'Create a new document'}
+              {isEditDocDialogOpen ? 'Update document details' : 'Create a new document with details and metadata'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" placeholder="Enter document title" defaultValue={selectedDoc?.title} />
+              <Label htmlFor="title">Document Title</Label>
+              <Input 
+                id="title" 
+                placeholder="Enter document title" 
+                value={selectedDocument?.title || ''}
+                onChange={(e) => setSelectedDocument(prev => prev ? {...prev, title: e.target.value} : null)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select defaultValue={selectedDoc?.category}>
+              <Select 
+                value={selectedDocument?.category || ''}
+                onValueChange={(value) => setSelectedDocument(prev => prev ? {...prev, category: value} : null)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="HR Procedures">HR Procedures</SelectItem>
-                  <SelectItem value="Company Policies">Company Policies</SelectItem>
-                  <SelectItem value="Training">Training</SelectItem>
-                  <SelectItem value="Support">Support</SelectItem>
-                  <SelectItem value="General">General</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="type">Type</Label>
-              <Select defaultValue={selectedDoc?.type}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="guide">Guide</SelectItem>
-                  <SelectItem value="policy">Policy</SelectItem>
-                  <SelectItem value="procedure">Procedure</SelectItem>
-                  <SelectItem value="faq">FAQ</SelectItem>
-                  <SelectItem value="video">Video</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags (comma separated)</Label>
-              <Input id="tags" placeholder="tag1, tag2, tag3" defaultValue={selectedDoc?.tags.join(', ')} />
             </div>
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="content">Content</Label>
-              <Textarea id="content" placeholder="Enter document content" rows={8} defaultValue={selectedDoc?.content} />
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description" 
+                placeholder="Enter document description" 
+                value={selectedDocument?.description || ''}
+                onChange={(e) => setSelectedDocument(prev => prev ? {...prev, description: e.target.value} : null)}
+              />
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label htmlFor="tags">Tags (comma separated)</Label>
+              <Input 
+                id="tags" 
+                placeholder="policy, handbook, official" 
+                value={selectedDocument?.tags.join(', ') || ''}
+                onChange={(e) => {
+                  const tagsArray = e.target.value.split(',').map(tag => tag.trim()).filter(Boolean)
+                  setSelectedDocument(prev => prev ? {...prev, tags: tagsArray} : null)
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select 
+                value={selectedDocument?.status || 'draft'}
+                onValueChange={(value: Document['status']) => setSelectedDocument(prev => prev ? {...prev, status: value} : null)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="declined">Declined</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="folder">Folder</Label>
+              <Select 
+                value={selectedDocument?.folder || 'drafts'}
+                onValueChange={(value: 'inbox' | 'sent' | 'drafts' | 'all') => setSelectedDocument(prev => prev ? {...prev, folder: value} : null)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select folder" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inbox">Inbox</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="drafts">Drafts</SelectItem>
+                  <SelectItem value="all">All Documents</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Document Content Editor */}
+            <div className="col-span-2 space-y-2">
+              <Label htmlFor="content">Document Content</Label>
+              <Textarea 
+                id="content" 
+                placeholder="Enter document content here..." 
+                className="min-h-[200px]"
+              />
             </div>
           </div>
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsAddDocDialogOpen(false)
+              setIsEditDocDialogOpen(false)
+            }}>
               Cancel
             </Button>
             <Button onClick={handleSaveDocument}>
-              {selectedDoc ? 'Update' : 'Create'} Document
+              {isEditDocDialogOpen ? 'Update' : 'Create'} Document
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* File Upload Dialog */}
-      <Dialog open={isFileUploadDialogOpen} onOpenChange={setIsFileUploadDialogOpen}>
-        <DialogContent className="max-w-2xl">
+      
+      {/* View Document Dialog */}
+      <Dialog open={isViewDocDialogOpen} onOpenChange={setIsViewDocDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle>{selectedDocument?.title}</DialogTitle>
+                <div className="flex items-center space-x-2 mt-1">
+                  <Badge variant="outline">{selectedDocument?.category}</Badge>
+                  {selectedDocument && getStatusBadge(selectedDocument.status)}
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => {
+                if (selectedDocument) {
+                  handleEditDocument(selectedDocument)
+                  setIsViewDocDialogOpen(false)
+                }
+              }}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <h3 className="font-medium">Description</h3>
+              <p className="text-muted-foreground">{selectedDocument?.description}</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="font-medium mb-2">Metadata</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Created By:</span>
+                    <span>{selectedDocument?.createdBy}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Created Date:</span>
+                    <span>{selectedDocument ? new Date(selectedDocument.createdAt).toLocaleDateString() : ''}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Last Updated:</span>
+                    <span>{selectedDocument ? new Date(selectedDocument.updatedAt).toLocaleDateString() : ''}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Status:</span>
+                    <span>{selectedDocument?.status}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="font-medium mb-2">Tags</h3>
+                <div className="flex flex-wrap gap-1">
+                  {selectedDocument?.tags.map((tag, index) => (
+                    <Badge key={index} variant="outline">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            <div className="space-y-2">
+              <h3 className="font-medium">Document Content</h3>
+              <div className="p-4 border rounded-lg bg-muted/20 min-h-[200px]">
+                <p>This is a sample document content. In a real application, this would contain the actual document text or a rich text editor component.</p>
+                <p className="mt-4">The document would typically include sections like:</p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>Introduction</li>
+                  <li>Main content sections</li>
+                  <li>Policies or procedures</li>
+                  <li>References and appendices</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDocDialogOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              const content = `Title: ${selectedDocument?.title}\nDescription: ${selectedDocument?.description}\nCategory: ${selectedDocument?.category}\nTags: ${selectedDocument?.tags.join(', ')}\nCreated By: ${selectedDocument?.createdBy}\nCreated At: ${selectedDocument ? new Date(selectedDocument.createdAt).toLocaleString() : ''}\nStatus: ${selectedDocument?.status}`
+              const blob = new Blob([content], { type: 'text/plain' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `${selectedDocument?.title.replace(/\s+/g, '_')}.txt`
+              document.body.appendChild(a)
+              a.click()
+              document.body.removeChild(a)
+              URL.revokeObjectURL(url)
+              
+              toast({
+                title: "Document Downloaded",
+                description: `${selectedDocument?.title} has been downloaded.`,
+              })
+            }}>
+              <Download className="mr-2 h-4 w-4" />
+              Download
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Upload File Dialog */}
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>
             <DialogDescription>
-              Upload PDF or Word documents to your document library
+              Upload a PDF or Word document to the system
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6 py-4">
-            {/* File Drop Zone */}
+          
+          <div className="space-y-4 py-4">
             <div 
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
-                isDragging ? 'border-primary bg-primary/10' : 'hover:bg-accent/50'
+              className={`border-2 border-dashed rounded-lg p-6 text-center ${
+                dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
               }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
+              onDragEnter={handleDrag}
+              onDragOver={handleDrag}
+              onDragLeave={handleDrag}
               onDrop={handleDrop}
-              onClick={() => {
-                const input = document.createElement('input')
-                input.type = 'file'
-                input.accept = '.pdf,.doc,.docx'
-                input.onchange = (e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0]
-                  if (file) {
-                    processFileUpload(file)
-                  }
-                }
-                input.click()
-              }}
             >
-              <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-medium mb-2">Drop your file here or click to browse</h3>
-              <p className="text-sm text-muted-foreground">
-                Supports PDF, DOC, and DOCX files up to 10MB
-              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={handleFileChange}
+              />
+              
+              {uploadedFile ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center">
+                    {uploadedFile.type === 'application/pdf' ? (
+                      <FilePdf className="h-12 w-12 text-red-500" />
+                    ) : (
+                      <FileTextIcon className="h-12 w-12 text-blue-500" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium">{uploadedFile.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setUploadedFile(null)}
+                  >
+                    Change File
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center">
+                    <File className="h-12 w-12 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p>Drag and drop your file here or</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Browse Files
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Supported formats: PDF, DOC, DOCX (Max 10MB)
+                  </p>
+                </div>
+              )}
             </div>
-
-            {/* File Preview */}
-            {previewUrl && (
+            
+            {uploadedFile && (
               <div className="space-y-4">
-                <h3 className="font-medium">File Preview</h3>
-                <div className="border rounded-lg p-4 bg-muted/50">
-                  {previewUrl && previewUrl.endsWith('.pdf') ? (
-                    <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
-                      <iframe 
-                        src={previewUrl} 
-                        className="w-full h-full rounded-lg"
-                        title="PDF Preview"
-                      />
-                    </div>
-                  ) : previewUrl ? (
-                    <div className="aspect-video bg-muted rounded-lg flex flex-col items-center justify-center p-8">
-                      <FileIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                      <p className="text-center text-muted-foreground">
-                        Preview not available for Word documents.
-                        <br />
-                        The document will be available after upload.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-muted rounded-lg flex flex-col items-center justify-center p-8">
-                      <Upload className="w-16 h-16 text-muted-foreground mb-4" />
-                      <p className="text-center text-muted-foreground">
-                        No file selected yet. Drop a file or click to browse.
-                      </p>
-                    </div>
-                  )}
+                <div className="space-y-2">
+                  <Label htmlFor="upload-title">Document Title</Label>
+                  <Input 
+                    id="upload-title" 
+                    placeholder="Enter document title" 
+                    defaultValue={uploadedFile.name.split('.')[0]}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="upload-description">Description</Label>
+                  <Textarea 
+                    id="upload-description" 
+                    placeholder="Enter document description" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="upload-category">Category</Label>
+                  <Select defaultValue="Uploaded">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      ))}
+                      <SelectItem value="Uploaded">Uploaded</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="upload-tags">Tags (comma separated)</Label>
+                  <Input 
+                    id="upload-tags" 
+                    placeholder="uploaded, document, file" 
+                    defaultValue="uploaded"
+                  />
                 </div>
               </div>
             )}
           </div>
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={() => setIsFileUploadDialogOpen(false)}>Cancel</Button>
-          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUploadSubmit}
+              disabled={!uploadedFile}
+            >
+              Upload Document
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-
+      
       {/* File Preview Dialog */}
-      <Dialog open={isFilePreviewDialogOpen} onOpenChange={setIsFilePreviewDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh]">
+      <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              {selectedFileDoc && (
-                <>
-                  {React.createElement(getFileTypeIcon(selectedFileDoc.fileType), { className: "w-5 h-5" })}
-                  <span>{selectedFileDoc.title}</span>
-                  <Badge className={getFileTypeColor(selectedFileDoc.fileType)} variant="outline">
-                    {selectedFileDoc.fileType.toUpperCase()}
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle>{selectedFileDocument?.title}</DialogTitle>
+                <div className="flex items-center space-x-2 mt-1">
+                  <Badge variant="outline">{selectedFileDocument?.category}</Badge>
+                  {selectedFileDocument && getStatusBadge(selectedFileDocument.status)}
+                  <Badge variant="outline" className="text-xs">
+                    {selectedFileDocument?.type.toUpperCase()}
                   </Badge>
-                </>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedFileDoc && (
-                <div className="flex items-center space-x-4 text-sm">
-                  <span>By {selectedFileDoc.author}</span>
-                  <span>•</span>
-                  <span>Size: {selectedFileDoc.fileSize}</span>
-                  <span>•</span>
-                  <span>Uploaded: {selectedFileDoc.uploadDate}</span>
                 </div>
-              )}
-            </DialogDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => handleDownloadFile(selectedFileDocument!)}>
+                <Download className="mr-2 h-4 w-4" />
+                Download
+              </Button>
+            </div>
           </DialogHeader>
-          {selectedFileDoc && (
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {selectedFileDoc.tags.map((tag, index) => (
-                  <Badge key={index} variant="secondary">
-                    {tag}
-                  </Badge>
-                ))}
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="font-medium mb-2">File Information</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">File Type:</span>
+                    <span>{selectedFileDocument?.type.toUpperCase()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">File Size:</span>
+                    <span>{selectedFileDocument?.fileSize}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Created By:</span>
+                    <span>{selectedFileDocument?.createdBy}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Created Date:</span>
+                    <span>{selectedFileDocument ? new Date(selectedFileDocument.createdAt).toLocaleDateString() : ''}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Status:</span>
+                    <span>{selectedFileDocument?.status}</span>
+                  </div>
+                </div>
               </div>
               
-              {/* File Preview */}
-              <div className="border rounded-lg overflow-hidden">
-                {selectedFileDoc.fileType === 'pdf' ? (
-                  <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
-                    <iframe 
-                      src={selectedFileDoc.fileUrl} 
-                      className="w-full h-[500px] rounded-lg"
-                      title="PDF Preview"
-                    />
-                  </div>
+              <div>
+                <h3 className="font-medium mb-2">Description</h3>
+                <p className="text-sm text-muted-foreground">{selectedFileDocument?.description}</p>
+                
+                <h3 className="font-medium mt-4 mb-2">Tags</h3>
+                <div className="flex flex-wrap gap-1">
+                  {selectedFileDocument?.tags.map((tag, index) => (
+                    <Badge key={index} variant="outline">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            <div className="space-y-2">
+              <h3 className="font-medium">Document Preview</h3>
+              <div className="border rounded-lg overflow-hidden bg-muted/20 h-[400px]">
+                {selectedFileDocument?.type === 'pdf' && selectedFileDocument.previewUrl ? (
+                  <iframe 
+                    src={selectedFileDocument.previewUrl} 
+                    className="w-full h-full"
+                    title={selectedFileDocument.title}
+                  />
                 ) : (
-                  <div className="aspect-video bg-muted rounded-lg flex flex-col items-center justify-center p-8">
-                    <FileIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                    <p className="text-center text-muted-foreground">
-                      Preview not available for Word documents.
-                      <br />
-                      Please download the file to view its contents.
+                  <div className="flex flex-col items-center justify-center h-full">
+                    {getFileIcon(selectedFileDocument?.type || 'text')}
+                    <p className="mt-4 text-muted-foreground">
+                      {selectedFileDocument?.type === 'word' 
+                        ? 'Word documents cannot be previewed in the browser. Please download to view.' 
+                        : 'No preview available for this document type.'}
                     </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-4"
+                      onClick={() => handleDownloadFile(selectedFileDocument!)}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download to View
+                    </Button>
                   </div>
                 )}
               </div>
-              
-              <DialogFooter>
-                <Button onClick={() => handleFileDocumentDownload(selectedFileDoc)}>Download File</Button>
-              </DialogFooter>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* View Document Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              {selectedDoc && (
-                <>
-                  {React.createElement(getTypeIcon(selectedDoc.type), { className: "w-5 h-5" })}
-                  <span>{selectedDoc.title}</span>
-                  <Badge className={getTypeColor(selectedDoc.type)} variant="outline">
-                    {selectedDoc.type}
-                  </Badge>
-                </>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedDoc && (
-                <div className="flex items-center space-x-4 text-sm">
-                  <span>By {selectedDoc.author}</span>
-                  <span>•</span>
-                  <span>{selectedDoc.views} views</span>
-                  <span>•</span>
-                  <span>Updated {selectedDoc.updatedDate}</span>
-                  <span>•</span>
-                  <div className="flex items-center space-x-1">
-                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <span>{selectedDoc.rating}</span>
-                  </div>
-                </div>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedDoc && (
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {selectedDoc.tags.map((tag, index) => (
-                  <Badge key={index} variant="secondary">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              <div className="prose max-w-none">
-                <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {selectedDoc.content}
-                </div>
-              </div>
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">Rate this document:</span>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`w-5 h-5 cursor-pointer ${
-                        star <= selectedDoc.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                      }`}
-                      onClick={() => handleRating(selectedDoc.id, star)}
-                    />
-                  ))}
-                </div>
-                <div className="flex space-x-2">
-                  <Button variant="outline" onClick={() => handleDownload(selectedDoc)}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
-                  </Button>
-                  <Button variant="outline" onClick={() => {
-                    setIsViewDialogOpen(false)
-                    handleEditDocument(selectedDoc)
-                  }}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                </div>
-              </div>
+          </div>
+          
+          <div className="flex justify-between">
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => {
+                if (selectedFileDocument) {
+                  handleChangeStatus(selectedFileDocument.id, true, 'approved')
+                }
+              }}>
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Approve
+              </Button>
+              <Button variant="outline" onClick={() => {
+                if (selectedFileDocument) {
+                  handleChangeStatus(selectedFileDocument.id, true, 'declined')
+                }
+              }}>
+                <XCircle className="mr-2 h-4 w-4" />
+                Decline
+              </Button>
             </div>
-          )}
+            <Button variant="outline" onClick={() => setIsPreviewDialogOpen(false)}>
+              Close
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
