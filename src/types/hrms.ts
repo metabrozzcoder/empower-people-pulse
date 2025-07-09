@@ -43,6 +43,7 @@ export interface Task {
   estimatedHours: number
   actualHours?: number
   tags: string[]
+  position?: number
 }
 
 export interface Shift {

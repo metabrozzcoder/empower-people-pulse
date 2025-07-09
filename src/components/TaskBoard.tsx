@@ -18,6 +18,8 @@ interface TaskBoardProps {
 export function TaskBoard({ tasks, onTaskUpdate, onTaskDelete, onTaskCreate }: TaskBoardProps) {
   const { toast } = useToast()
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const [dragOverColumn, setDragOverColumn] = useState<Task['status'] | null>(null)
 
   const statuses: Task['status'][] = ['Todo', 'In Progress', 'Review', 'Done']
   
@@ -41,22 +43,64 @@ export function TaskBoard({ tasks, onTaskUpdate, onTaskDelete, onTaskCreate }: T
     e.dataTransfer.effectAllowed = 'move'
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, status: Task['status'], index?: number) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
+    setDragOverColumn(status)
+    setDragOverIndex(index ?? null)
   }
 
-  const handleDrop = (e: React.DragEvent, newStatus: Task['status']) => {
+  const handleDragLeave = () => {
+    setDragOverIndex(null)
+    setDragOverColumn(null)
+  }
+
+  const handleDrop = (e: React.DragEvent, newStatus: Task['status'], dropIndex?: number) => {
     e.preventDefault()
-    if (draggedTask && draggedTask.status !== newStatus) {
-      const updatedTask = { ...draggedTask, status: newStatus }
+    
+    if (!draggedTask) return
+
+    const sourceTasks = tasksByStatus[draggedTask.status]
+    const targetTasks = tasksByStatus[newStatus]
+    
+    // If same status, reorder within column
+    if (draggedTask.status === newStatus && dropIndex !== undefined) {
+      const currentIndex = sourceTasks.findIndex(t => t.id === draggedTask.id)
+      const newIndex = dropIndex
+      
+      if (currentIndex !== newIndex) {
+        // Create new array with reordered tasks
+        const reorderedTasks = [...sourceTasks]
+        reorderedTasks.splice(currentIndex, 1)
+        reorderedTasks.splice(newIndex, 0, draggedTask)
+        
+        // Update all tasks in this column with new positions
+        reorderedTasks.forEach((task, index) => {
+          onTaskUpdate({ ...task, position: index })
+        })
+        
+        toast({
+          title: "Task Reordered",
+          description: `Task moved within ${newStatus}`,
+        })
+      }
+    } else if (draggedTask.status !== newStatus) {
+      // Move to different column
+      const updatedTask = { 
+        ...draggedTask, 
+        status: newStatus,
+        position: dropIndex ?? targetTasks.length 
+      }
       onTaskUpdate(updatedTask)
       toast({
         title: "Task Updated",
         description: `Task moved to ${newStatus}`,
       })
     }
+    
     setDraggedTask(null)
+    setDragOverIndex(null)
+    setDragOverColumn(null)
   }
 
   const handleTaskEdit = (task: Task) => {
@@ -73,8 +117,9 @@ export function TaskBoard({ tasks, onTaskUpdate, onTaskDelete, onTaskCreate }: T
         <div
           key={status}
           className="space-y-4"
-          onDragOver={handleDragOver}
+          onDragOver={(e) => handleDragOver(e, status)}
           onDrop={(e) => handleDrop(e, status)}
+          onDragLeave={handleDragLeave}
         >
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
@@ -90,79 +135,101 @@ export function TaskBoard({ tasks, onTaskUpdate, onTaskDelete, onTaskCreate }: T
             </div>
           </div>
 
-          <div className="space-y-3 min-h-[500px] p-3 bg-muted/20 rounded-lg">
-            {tasksByStatus[status].map((task) => (
-              <Card
-                key={task.id}
-                className="cursor-move hover:shadow-md transition-shadow bg-background"
-                draggable
-                onDragStart={(e) => handleDragStart(e, task)}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1 flex-1">
-                      <CardTitle className="text-sm font-medium">{task.title}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${getPriorityColor(task.priority)}`} />
-                        <Badge variant="outline" className="text-xs">
-                          {task.priority}
-                        </Badge>
+          <div className="space-y-1 min-h-[500px] p-3 bg-muted/20 rounded-lg">
+            {tasksByStatus[status].map((task, index) => (
+              <div key={task.id}>
+                {/* Drop zone above task */}
+                <div
+                  className={`h-2 rounded transition-all ${
+                    dragOverColumn === status && dragOverIndex === index
+                      ? 'bg-primary/20 border-2 border-dashed border-primary'
+                      : 'hover:bg-muted/40'
+                  }`}
+                  onDragOver={(e) => handleDragOver(e, status, index)}
+                  onDrop={(e) => handleDrop(e, status, index)}
+                />
+                <Card
+                  className="cursor-move hover:shadow-md transition-shadow bg-background mb-2"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, task)}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 flex-1">
+                        <CardTitle className="text-sm font-medium">{task.title}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${getPriorityColor(task.priority)}`} />
+                          <Badge variant="outline" className="text-xs">
+                            {task.priority}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex space-x-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleTaskEdit(task)}>
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => onTaskDelete(task.id)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex space-x-1">
-                      <Button variant="ghost" size="sm" onClick={() => handleTaskEdit(task)}>
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => onTaskDelete(task.id)}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0 space-y-3">
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {task.description}
-                  </p>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0 space-y-3">
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {task.description}
+                    </p>
 
-                  {task.estimatedHours && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span>Progress</span>
-                        <span>{Math.round(((task.actualHours || 0) / task.estimatedHours) * 100)}%</span>
+                    {task.estimatedHours && (
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span>Progress</span>
+                          <span>{Math.round(((task.actualHours || 0) / task.estimatedHours) * 100)}%</span>
+                        </div>
+                        <Progress value={((task.actualHours || 0) / task.estimatedHours) * 100} className="h-1" />
                       </div>
-                      <Progress value={((task.actualHours || 0) / task.estimatedHours) * 100} className="h-1" />
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(task.dueDate).toLocaleDateString()}
-                    </div>
-                    <Avatar className="w-6 h-6">
-                      <AvatarFallback className="text-xs">
-                        {task.assignedTo.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1">
-                    {task.tags.slice(0, 2).map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        <Tag className="w-3 h-3 mr-1" />
-                        {tag}
-                      </Badge>
-                    ))}
-                    {task.tags.length > 2 && (
-                      <Badge variant="secondary" className="text-xs">
-                        +{task.tags.length - 2}
-                      </Badge>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        {new Date(task.dueDate).toLocaleDateString()}
+                      </div>
+                      <Avatar className="w-6 h-6">
+                        <AvatarFallback className="text-xs">
+                          {task.assignedTo.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1">
+                      {task.tags.slice(0, 2).map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          <Tag className="w-3 h-3 mr-1" />
+                          {tag}
+                        </Badge>
+                      ))}
+                      {task.tags.length > 2 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{task.tags.length - 2}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             ))}
+            
+            {/* Drop zone at the bottom */}
+            <div
+              className={`h-4 rounded transition-all ${
+                dragOverColumn === status && dragOverIndex === tasksByStatus[status].length
+                  ? 'bg-primary/20 border-2 border-dashed border-primary'
+                  : 'hover:bg-muted/40'
+              }`}
+              onDragOver={(e) => handleDragOver(e, status, tasksByStatus[status].length)}
+              onDrop={(e) => handleDrop(e, status, tasksByStatus[status].length)}
+            />
           </div>
         </div>
       ))}
