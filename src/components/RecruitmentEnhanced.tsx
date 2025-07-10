@@ -24,7 +24,8 @@ import {
   Trash2,
   Eye,
   UserCheck,
-  MessageSquare
+  MessageSquare,
+  Download
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
