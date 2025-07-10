@@ -8,6 +8,7 @@ export interface User {
   phone: string
   avatar?: string
   role: 'Admin' | 'HR' | 'Guest'
+  position?: string
   status: 'Active' | 'Inactive' | 'Pending'
   department?: string
   organization?: string
@@ -39,6 +40,7 @@ const initialUsers: User[] = [
     email: 'sarah.wilson@company.com',
     phone: '+1 (555) 123-4567',
     role: 'Admin',
+    position: 'Head of Reporters',
     status: 'Active',
     department: 'HR',
     organization: 'MediaTech Solutions',
@@ -55,6 +57,7 @@ const initialUsers: User[] = [
     email: 'john.smith@company.com',
     phone: '+1 (555) 234-5678',
     role: 'HR',
+    position: 'Admin',
     status: 'Active',
     department: 'HR',
     organization: 'MediaTech Solutions',
@@ -71,6 +74,7 @@ const initialUsers: User[] = [
     email: 'abd@company.com',
     phone: '+1 (555) 345-6789',
     role: 'Guest',
+    position: 'Initiator',
     status: 'Active',
     department: 'Guest',
     organization: 'MediaTech Solutions',
@@ -87,6 +91,7 @@ const initialUsers: User[] = [
     email: 'emma.martinez@company.com',
     phone: '+1 (555) 456-7890',
     role: 'HR',
+    position: 'Reporter',
     status: 'Active',
     department: 'HR',
     organization: 'MediaTech Solutions',
@@ -104,6 +109,7 @@ const initialUsers: User[] = [
     email: 'michael.chen@company.com',
     phone: '+1 (555) 567-8901',
     role: 'Guest',
+    position: 'Driver',
     status: 'Active',
     department: 'Support',
     organization: 'MediaTech Solutions',
@@ -121,6 +127,7 @@ const initialUsers: User[] = [
     email: 'lisa.thompson@company.com',
     phone: '+1 (555) 678-9012',
     role: 'Guest',
+    position: 'Equipment Department',
     status: 'Active',
     department: 'Operations',
     organization: 'MediaTech Solutions',
@@ -138,6 +145,7 @@ const initialUsers: User[] = [
     email: 'robert.davis@company.com',
     phone: '+1 (555) 789-0123',
     role: 'HR',
+    position: 'Reporter',
     status: 'Active',
     department: 'HR',
     organization: 'MediaTech Solutions',

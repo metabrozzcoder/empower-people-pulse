@@ -28,10 +28,21 @@ import { User, CreateUserRequest } from '@/services/api'
 import { useToast } from '@/hooks/use-toast'
 import { mockEmployees } from '@/data/mockEmployees'
 
+// Define job positions for shooting request system
+const JOB_POSITIONS = [
+  'Reporter',
+  'Admin',
+  'Head of Reporters',
+  'Driver',
+  'Equipment Department',
+  'Initiator'
+]
+
 // Define all available sections
 const ALL_SECTIONS = [
   'Dashboard',
   'AI Assistant', 
+  'Shooting Requests',
   'Employees',
   'Projects',
   'Recruitment',
@@ -78,6 +89,7 @@ const ROLE_DEFAULT_SECTIONS = {
   HR: [
     'Dashboard',
     'AI Assistant',
+    'Shooting Requests',
     'Employees', 
     'Projects',
     'Recruitment',
@@ -91,7 +103,7 @@ const ROLE_DEFAULT_SECTIONS = {
     'Settings'
   ],
   Guest: ['Chat'], // Only chat by default, can be expanded
-  Employee: ['Dashboard', 'Organizations', 'Chat', 'Scheduling', 'Documentation'] // Default sections for Employee role
+  Employee: ['Dashboard', 'Shooting Requests', 'Organizations', 'Chat', 'Scheduling', 'Documentation'] // Default sections for Employee role
 }
 
 export default function UserManagement() {
@@ -101,7 +113,6 @@ export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('all')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [isEmployeeDialogOpen, setIsEmployeeDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [formData, setFormData] = useState({
     name: '',
@@ -109,23 +120,14 @@ export default function UserManagement() {
     email: '',
     phone: '',
     role: '',
+    position: '',
+    position: '',
     organization: '',
     department: '',
     linkedEmployee: ''
   })
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [selectedAccessRules, setSelectedAccessRules] = useState<string[]>([])
-  const [employeeData, setEmployeeData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    position: '',
-    department: '',
-    salary: '',
-    location: '',
-    manager: ''
-  })
   const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
 
   const filteredUsers = users.filter(user => {
@@ -184,21 +186,6 @@ export default function UserManagement() {
     setIsDialogOpen(true)
   }
 
-  const handleAddEmployee = () => {
-    setEmployeeData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      position: '',
-      department: '',
-      salary: '',
-      location: '',
-      manager: ''
-    })
-    setIsEmployeeDialogOpen(true)
-  }
-
   const toggleSection = (section: string) => {
     setSelectedSections(prev => 
       prev.includes(section) 
@@ -240,6 +227,7 @@ export default function UserManagement() {
       email: user.email,
       phone: user.phone,
       role: user.role,
+      position: user.position || '',
       organization: user.organization || '',
       department: user.department || '',
       linkedEmployee: user.linkedEmployee || ''
@@ -281,6 +269,8 @@ export default function UserManagement() {
       ? ['full_access', 'user_management', 'system_settings']
       : formData.role === 'HR' 
       ? ['employee_management', 'recruitment', 'performance_review'] 
+      : formData.role === 'Employee'
+      ? ['organization_access', 'chat_access', 'scheduling_access', 'documentation_access', 'shooting_request_access']
       : ['chat_access']
 
     if (selectedUser) {
@@ -290,6 +280,7 @@ export default function UserManagement() {
         email: formData.email,
         phone: formData.phone || '',
         role: formData.role as 'Admin' | 'HR' | 'Guest',
+        position: formData.position,
         department: formData.department,
         organization: formData.organization,
         linkedEmployee: formData.linkedEmployee,
@@ -312,6 +303,7 @@ export default function UserManagement() {
         name: fullName,
         email: formData.email,
         phone: formData.phone || '',
+        position: formData.position,
         role: formData.role as 'Admin' | 'HR' | 'Guest',
         status: 'Active' as const,
         department: formData.department,
@@ -347,63 +339,6 @@ export default function UserManagement() {
     })
     setSelectedSections([])
     setGeneratedCredentials({ username: '', password: '', guestId: '' })
-  }
-
-  const handleSaveEmployee = () => {
-    if (!employeeData.firstName || !employeeData.lastName || !employeeData.email || !employeeData.position) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      })
-      return
-    }
-
-    // Create new employee
-    const newEmployee = {
-      id: employees.length + 1,
-      name: `${employeeData.firstName} ${employeeData.lastName}`,
-      email: employeeData.email,
-      position: employeeData.position,
-      department: employeeData.department || 'General',
-      hireDate: new Date().toISOString().split('T')[0],
-      birthday: "2025-07-08", // Default placeholder
-      salary: parseInt(employeeData.salary) || 50000,
-      status: 'Active' as const,
-      phone: employeeData.phone || '+1 (555) 000-0000',
-      location: employeeData.location || 'Remote',
-      manager: employeeData.manager || undefined,
-      performanceScore: 85 // Default score for new employees
-    }
-
-    // Add to employees
-    setEmployees([...employees, newEmployee])
-    
-    // Update mockEmployees to make it available in Employees page
-    mockEmployees.push(newEmployee)
-
-    toast({
-      title: "Employee Created",
-      description: `${newEmployee.name} has been added as an employee.`,
-    })
-
-    // Optionally create a user account for this employee
-    if (window.confirm("Would you like to create a user account for this employee?")) {
-      setFormData({
-        name: employeeData.firstName,
-        surname: employeeData.lastName,
-        email: employeeData.email,
-        phone: employeeData.phone,
-        role: 'HR',
-        organization: '',
-        department: employeeData.department,
-        linkedEmployee: ''
-      })
-      setIsEmployeeDialogOpen(false)
-      setIsDialogOpen(true)
-    } else {
-      setIsEmployeeDialogOpen(false)
-    }
   }
 
   const exportUserList = () => {
@@ -458,10 +393,6 @@ export default function UserManagement() {
           <Button variant="outline" onClick={exportUserList}>
             <Download className="w-4 h-4 mr-2" />
             Export
-          </Button>
-          <Button variant="outline" onClick={handleAddEmployee}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Employee
           </Button>
           <Button onClick={handleAddUser} className="flex items-center space-x-2">
             <Plus className="w-4 h-4" />
@@ -833,6 +764,22 @@ export default function UserManagement() {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="position">Job Position</Label>
+                  <Select
+                    value={formData.position}
+                    onValueChange={(value) => handleFormChange('position', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select job position" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {JOB_POSITIONS.map(position => (
+                        <SelectItem key={position} value={position}>{position}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="organization">Organization</Label>
                   <Select
                     value={formData.organization}
@@ -1021,130 +968,6 @@ export default function UserManagement() {
             </Button>
             <Button onClick={handleSaveUser}>
               {selectedUser ? 'Update' : 'Create'} User
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Employee Dialog */}
-      <Dialog open={isEmployeeDialogOpen} onOpenChange={setIsEmployeeDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Add New Employee</DialogTitle>
-            <DialogDescription>
-              Create a new employee profile with personal and professional details
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name *</Label>
-              <Input 
-                id="firstName" 
-                placeholder="Enter first name" 
-                value={employeeData.firstName}
-                onChange={(e) => setEmployeeData({...employeeData, firstName: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name *</Label>
-              <Input 
-                id="lastName" 
-                placeholder="Enter last name" 
-                value={employeeData.lastName}
-                onChange={(e) => setEmployeeData({...employeeData, lastName: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="Enter email address" 
-                value={employeeData.email}
-                onChange={(e) => setEmployeeData({...employeeData, email: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input 
-                id="phone" 
-                placeholder="Enter phone number" 
-                value={employeeData.phone}
-                onChange={(e) => setEmployeeData({...employeeData, phone: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="position">Position *</Label>
-              <Input 
-                id="position" 
-                placeholder="Enter job position" 
-                value={employeeData.position}
-                onChange={(e) => setEmployeeData({...employeeData, position: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
-              <Select 
-                value={employeeData.department} 
-                onValueChange={(value) => setEmployeeData({...employeeData, department: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Engineering">Engineering</SelectItem>
-                  <SelectItem value="Design">Design</SelectItem>
-                  <SelectItem value="Product">Product</SelectItem>
-                  <SelectItem value="Sales">Sales</SelectItem>
-                  <SelectItem value="Marketing">Marketing</SelectItem>
-                  <SelectItem value="HR">HR</SelectItem>
-                  <SelectItem value="Finance">Finance</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="salary">Salary</Label>
-              <Input 
-                id="salary" 
-                type="number" 
-                placeholder="Enter salary" 
-                value={employeeData.salary}
-                onChange={(e) => setEmployeeData({...employeeData, salary: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input 
-                id="location" 
-                placeholder="Enter work location" 
-                value={employeeData.location}
-                onChange={(e) => setEmployeeData({...employeeData, location: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="manager">Manager</Label>
-              <Select
-                value={employeeData.manager}
-                onValueChange={(value) => setEmployeeData({...employeeData, manager: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select manager" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="David Chen">David Chen</SelectItem>
-                  <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
-                  <SelectItem value="James Park">James Park</SelectItem>
-                  <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsEmployeeDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveEmployee}>
-              Create Employee
             </Button>
           </div>
         </DialogContent>

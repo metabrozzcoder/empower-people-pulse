@@ -46,6 +46,7 @@ export interface User {
   phone: string;
   avatar?: string;
   role: 'Admin' | 'HR' | 'Guest';
+  position?: string;
   status: 'Active' | 'Inactive' | 'Pending';
   department?: string;
   organization?: string;
@@ -75,6 +76,7 @@ export interface CreateUserRequest {
   email: string;
   phone?: string;
   role: 'Admin' | 'HR' | 'Guest';
+  position?: string;
   department?: string;
   organization?: string;
   linked_employee?: string;

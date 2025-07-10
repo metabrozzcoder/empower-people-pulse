@@ -26,7 +26,8 @@ import {
   ChevronDown,
   LogOut,
   FileSearch,
-  Scan
+  Scan,
+  Camera
 } from "lucide-react"
 import { NavLink, useNavigate } from "react-router-dom"
 import { useState } from "react"
@@ -64,6 +65,7 @@ const sidebarSections = [
     items: [
       { title: "Dashboard", url: "/", icon: LayoutDashboard, sectionName: "Dashboard" },
       { title: "AI Assistant", url: "/ai-assistant", icon: Brain, sectionName: "AI Assistant" },
+      { title: "Shooting Requests", url: "/shooting-requests", icon: Camera, sectionName: "Shooting Requests" },
     ]
   },
   {
