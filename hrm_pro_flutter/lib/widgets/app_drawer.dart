@@ -96,8 +96,8 @@ class AppDrawer extends ConsumerWidget {
           const DrawerItem(
             title: 'Shooting Requests',
             icon: Icons.videocam_outlined,
-            route: '/tasks',
-            sectionName: 'Tasks',
+            route: '/shooting-requests',
+            sectionName: 'Shooting Requests',
           ),
         ],
       ),

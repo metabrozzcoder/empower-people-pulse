@@ -60,6 +60,7 @@ class AuthService {
           updatedDate: DateTime.now().toString(),
           permissions: ['limited_access'],
           username: 'abd',
+          jobPosition: 'Employee',
         );
       }
       

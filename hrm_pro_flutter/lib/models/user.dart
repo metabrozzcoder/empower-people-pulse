@@ -13,7 +13,7 @@ class User with _$User {
     required String phone,
     String? avatar,
     required String role, // Admin, HR, Guest, etc.
-    String? jobPosition, // Reporter, Admin, Driver, Equipment Department, Initiator
+    String? jobPosition, // Reporter, Admin, Driver, Equipment Department, Initiator, Employee
     required String status,
     String? department,
     String? organization,
