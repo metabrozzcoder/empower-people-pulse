@@ -27,7 +27,6 @@ import { useUsers } from '@/context/UserContext'
 import { User, CreateUserRequest } from '@/services/api'
 import { useToast } from '@/hooks/use-toast'
 import { mockEmployees } from '@/data/mockEmployees'
-import { Checkbox } from "@/components/ui/checkbox"
 
 // Define all available sections
 const ALL_SECTIONS = [
