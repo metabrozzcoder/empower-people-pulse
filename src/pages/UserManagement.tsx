@@ -27,6 +27,7 @@ import { useUsers } from '@/context/UserContext'
 import { User, CreateUserRequest } from '@/services/api'
 import { useToast } from '@/hooks/use-toast'
 import { mockEmployees } from '@/data/mockEmployees'
+import { Checkbox } from "@/components/ui/checkbox"
 
 // Define all available sections
 const ALL_SECTIONS = [
@@ -48,6 +49,30 @@ const ALL_SECTIONS = [
   'Settings'
 ]
 
+// Mock access control rules
+const ACCESS_CONTROL_RULES = [
+  {
+    id: '1',
+    name: 'Office IP Only',
+    description: 'Allow access only from office IP addresses',
+  },
+  {
+    id: '2',
+    name: 'Business Hours Only',
+    description: 'Restrict access to business hours only',
+  },
+  {
+    id: '3',
+    name: 'Secure Location Access',
+    description: 'Allow access only from specific geographic locations',
+  },
+  {
+    id: '4',
+    name: 'Trusted Devices Only',
+    description: 'Allow access only from registered devices',
+  }
+]
+
 // Role-based default sections
 const ROLE_DEFAULT_SECTIONS = {
   Admin: ALL_SECTIONS,
@@ -66,7 +91,8 @@ const ROLE_DEFAULT_SECTIONS = {
     'Documentation',
     'Settings'
   ],
-  Guest: ['Chat'] // Only chat by default, can be expanded
+  Guest: ['Chat'], // Only chat by default, can be expanded
+  Employee: ['Dashboard', 'Organizations', 'Chat', 'Scheduling', 'Documentation'] // Default sections for Employee role
 }
 
 export default function UserManagement() {
@@ -89,6 +115,7 @@ export default function UserManagement() {
     linkedEmployee: ''
   })
   const [selectedSections, setSelectedSections] = useState<string[]>([])
+  const [selectedAccessRules, setSelectedAccessRules] = useState<string[]>([])
   const [employeeData, setEmployeeData] = useState({
     firstName: '',
     lastName: '',
@@ -173,6 +200,20 @@ export default function UserManagement() {
     setIsEmployeeDialogOpen(true)
   }
 
+  const toggleSection = (section: string) => {
+    setSelectedSections(prev => 
+      prev.includes(section) 
+        ? prev.filter(s => s !== section)
+        : [...prev, section]
+    )
+  }
+
+  const toggleAccessRule = (ruleId: string) => {
+    setSelectedAccessRules(prev => 
+      prev.includes(ruleId) ? prev.filter(id => id !== ruleId) : [...prev, ruleId]
+    )
+  }
+
   const handleFormChange = (field: string, value: string) => {
     const newFormData = { ...formData, [field]: value }
     setFormData(newFormData)
@@ -217,14 +258,6 @@ export default function UserManagement() {
     })
   }
 
-  const toggleSection = (section: string) => {
-    setSelectedSections(prev => 
-      prev.includes(section) 
-        ? prev.filter(s => s !== section)
-        : [...prev, section]
-    )
-  }
-
   const handleSaveUser = () => {
     if (!formData.name || !formData.surname || !formData.email || !formData.role) {
       toast({
@@ -264,6 +297,7 @@ export default function UserManagement() {
         permissions: userPermissions,
         username: generatedCredentials.username,
         password: generatedCredentials.password,
+        accessRules: selectedAccessRules,
         guestId: generatedCredentials.guestId,
         allowedSections: selectedSections,
         sectionAccess: [] // Clear any restrictions when updating allowed sections
@@ -287,6 +321,7 @@ export default function UserManagement() {
         permissions: userPermissions,
         username: generatedCredentials.username,
         password: generatedCredentials.password,
+        accessRules: selectedAccessRules,
         guestId: generatedCredentials.guestId,
         sectionAccess: [], // No restrictions by default
         allowedSections: selectedSections // Granted sections
@@ -794,6 +829,7 @@ export default function UserManagement() {
                       <SelectItem value="Admin">Admin</SelectItem>
                       <SelectItem value="HR">HR</SelectItem>
                       <SelectItem value="Guest">Guest</SelectItem>
+                      <SelectItem value="Employee">Employee</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -928,6 +964,55 @@ export default function UserManagement() {
                   <p className="text-sm text-muted-foreground">No sections selected - user will have no access</p>
                 )}
               </div>
+            </div>
+
+            <Separator />
+
+            {/* Access Control Rules */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Access Control Rules</h3>
+              </div>
+              
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  Select which access control rules should be applied to this user. These rules will restrict when and how the user can access the system.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto p-3 border rounded-lg">
+                {ACCESS_CONTROL_RULES.map((rule) => (
+                  <div key={rule.id} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded">
+                    <Checkbox 
+                      id={`rule-${rule.id}`}
+                      checked={selectedAccessRules.includes(rule.id)}
+                      onCheckedChange={() => toggleAccessRule(rule.id)}
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor={`rule-${rule.id}`} className="text-sm font-medium cursor-pointer">
+                        {rule.name}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">{rule.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {selectedAccessRules.length > 0 && (
+                <div className="p-4 border rounded-lg bg-muted/50">
+                  <h4 className="font-medium mb-2">Selected Access Rules</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedAccessRules.map((ruleId) => {
+                      const rule = ACCESS_CONTROL_RULES.find(r => r.id === ruleId);
+                      return rule ? (
+                        <Badge key={ruleId} className="text-xs">
+                          {rule.name}
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           
