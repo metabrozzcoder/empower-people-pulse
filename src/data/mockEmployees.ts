@@ -1,7 +1,7 @@
 
 import { Employee } from "@/types/employee"
 
-export const mockEmployees: Employee[] = [
+export let mockEmployees: Employee[] = [
   {
     id: 1,
     name: "Alice Johnson",

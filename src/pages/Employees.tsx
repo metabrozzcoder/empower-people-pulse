@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmployeeCard } from "@/components/EmployeeCard"
-import { mockEmployees } from "@/data/mockEmployees"
+import { mockEmployees } from "@/data/mockEmployees" 
 import { useToast } from "@/hooks/use-toast"
 
 export default function Employees() {
@@ -18,6 +18,17 @@ export default function Employees() {
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [employeeData, setEmployeeData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    position: '',
+    department: '',
+    salary: '',
+    location: '',
+    manager: ''
+  })
 
   const departments = useMemo(() => {
     const depts = Array.from(new Set(mockEmployees.map(emp => emp.department)))
@@ -36,6 +47,55 @@ export default function Employees() {
       return matchesSearch && matchesDepartment && matchesStatus
     })
   }, [searchTerm, departmentFilter, statusFilter])
+
+  const handleAddEmployeeSubmit = () => {
+    if (!employeeData.firstName || !employeeData.lastName || !employeeData.email || !employeeData.position) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Create new employee
+    const newEmployee = {
+      id: mockEmployees.length + 1,
+      name: `${employeeData.firstName} ${employeeData.lastName}`,
+      email: employeeData.email,
+      position: employeeData.position,
+      department: employeeData.department || 'General',
+      hireDate: new Date().toISOString().split('T')[0],
+      birthday: "2025-07-08", // Default placeholder
+      salary: parseInt(employeeData.salary) || 50000,
+      status: 'Active' as const,
+      phone: employeeData.phone || '+1 (555) 000-0000',
+      location: employeeData.location || 'Remote',
+      manager: employeeData.manager || undefined,
+      performanceScore: 85 // Default score for new employees
+    }
+
+    // Add to employees
+    mockEmployees.push(newEmployee)
+    
+    toast({
+      title: "Employee Added",
+      description: `${newEmployee.name} has been added successfully.`,
+    })
+    
+    setIsAddDialogOpen(false)
+    setEmployeeData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      position: '',
+      department: '',
+      salary: '',
+      location: '',
+      manager: ''
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -125,27 +185,56 @@ export default function Employees() {
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" placeholder="Enter first name" />
+              <Input 
+                id="firstName" 
+                placeholder="Enter first name" 
+                value={employeeData.firstName}
+                onChange={(e) => setEmployeeData({...employeeData, firstName: e.target.value})}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" placeholder="Enter last name" />
+              <Input 
+                id="lastName" 
+                placeholder="Enter last name" 
+                value={employeeData.lastName}
+                onChange={(e) => setEmployeeData({...employeeData, lastName: e.target.value})}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="Enter email address" />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="Enter email address" 
+                value={employeeData.email}
+                onChange={(e) => setEmployeeData({...employeeData, email: e.target.value})}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" placeholder="Enter phone number" />
+              <Input 
+                id="phone" 
+                placeholder="Enter phone number" 
+                value={employeeData.phone}
+                onChange={(e) => setEmployeeData({...employeeData, phone: e.target.value})}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="position">Position</Label>
-              <Input id="position" placeholder="Enter job position" />
+              <Input 
+                id="position" 
+                placeholder="Enter job position" 
+                value={employeeData.position}
+                onChange={(e) => setEmployeeData({...employeeData, position: e.target.value})}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              <Select>
+              <Select
+                value={employeeData.department}
+                onValueChange={(value) => setEmployeeData({...employeeData, department: value})}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
@@ -158,7 +247,13 @@ export default function Employees() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="salary">Salary</Label>
-              <Input id="salary" type="number" placeholder="Enter salary" />
+              <Input 
+                id="salary" 
+                type="number" 
+                placeholder="Enter salary" 
+                value={employeeData.salary}
+                onChange={(e) => setEmployeeData({...employeeData, salary: e.target.value})}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
@@ -166,11 +261,19 @@ export default function Employees() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
-              <Input id="location" placeholder="Enter work location" />
+              <Input 
+                id="location" 
+                placeholder="Enter work location" 
+                value={employeeData.location}
+                onChange={(e) => setEmployeeData({...employeeData, location: e.target.value})}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="manager">Manager</Label>
-              <Select>
+              <Select
+                value={employeeData.manager}
+                onValueChange={(value) => setEmployeeData({...employeeData, manager: value})}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select manager" />
                 </SelectTrigger>
@@ -190,13 +293,7 @@ export default function Employees() {
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => {
-              setIsAddDialogOpen(false)
-              toast({
-                title: "Employee Added",
-                description: "New employee has been successfully created.",
-              })
-            }}>
+            <Button onClick={handleAddEmployeeSubmit}>
               Create Employee
             </Button>
           </div>

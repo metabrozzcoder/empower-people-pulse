@@ -26,6 +26,7 @@ import { Separator } from '@/components/ui/separator'
 import { useUsers } from '@/context/UserContext'
 import { User, CreateUserRequest } from '@/services/api'
 import { useToast } from '@/hooks/use-toast'
+import { mockEmployees } from '@/data/mockEmployees'
 
 // Define all available sections
 const ALL_SECTIONS = [
@@ -71,9 +72,11 @@ const ROLE_DEFAULT_SECTIONS = {
 export default function UserManagement() {
   const { users, addUser, updateUser, deleteUser } = useUsers()
   const { toast } = useToast()
+  const [employees, setEmployees] = useState([...mockEmployees])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('all')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isEmployeeDialogOpen, setIsEmployeeDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [formData, setFormData] = useState({
     name: '',
@@ -86,6 +89,17 @@ export default function UserManagement() {
     linkedEmployee: ''
   })
   const [selectedSections, setSelectedSections] = useState<string[]>([])
+  const [employeeData, setEmployeeData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    position: '',
+    department: '',
+    salary: '',
+    location: '',
+    manager: ''
+  })
   const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
 
   const filteredUsers = users.filter(user => {
@@ -142,6 +156,21 @@ export default function UserManagement() {
     setSelectedSections([])
     setGeneratedCredentials({ username: '', password: '', guestId: '' })
     setIsDialogOpen(true)
+  }
+
+  const handleAddEmployee = () => {
+    setEmployeeData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      position: '',
+      department: '',
+      salary: '',
+      location: '',
+      manager: ''
+    })
+    setIsEmployeeDialogOpen(true)
   }
 
   const handleFormChange = (field: string, value: string) => {
@@ -286,6 +315,63 @@ export default function UserManagement() {
     setGeneratedCredentials({ username: '', password: '', guestId: '' })
   }
 
+  const handleSaveEmployee = () => {
+    if (!employeeData.firstName || !employeeData.lastName || !employeeData.email || !employeeData.position) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Create new employee
+    const newEmployee = {
+      id: employees.length + 1,
+      name: `${employeeData.firstName} ${employeeData.lastName}`,
+      email: employeeData.email,
+      position: employeeData.position,
+      department: employeeData.department || 'General',
+      hireDate: new Date().toISOString().split('T')[0],
+      birthday: "2025-07-08", // Default placeholder
+      salary: parseInt(employeeData.salary) || 50000,
+      status: 'Active' as const,
+      phone: employeeData.phone || '+1 (555) 000-0000',
+      location: employeeData.location || 'Remote',
+      manager: employeeData.manager || undefined,
+      performanceScore: 85 // Default score for new employees
+    }
+
+    // Add to employees
+    setEmployees([...employees, newEmployee])
+    
+    // Update mockEmployees to make it available in Employees page
+    mockEmployees.push(newEmployee)
+
+    toast({
+      title: "Employee Created",
+      description: `${newEmployee.name} has been added as an employee.`,
+    })
+
+    // Optionally create a user account for this employee
+    if (window.confirm("Would you like to create a user account for this employee?")) {
+      setFormData({
+        name: employeeData.firstName,
+        surname: employeeData.lastName,
+        email: employeeData.email,
+        phone: employeeData.phone,
+        role: 'HR',
+        organization: '',
+        department: employeeData.department,
+        linkedEmployee: ''
+      })
+      setIsEmployeeDialogOpen(false)
+      setIsDialogOpen(true)
+    } else {
+      setIsEmployeeDialogOpen(false)
+    }
+  }
+
   const exportUserList = () => {
     const userData = users.map(user => ({
       Name: user.name,
@@ -337,7 +423,11 @@ export default function UserManagement() {
         <div className="flex space-x-2">
           <Button variant="outline" onClick={exportUserList}>
             <Download className="w-4 h-4 mr-2" />
-            Export Users
+            Export
+          </Button>
+          <Button variant="outline" onClick={handleAddEmployee}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Employee
           </Button>
           <Button onClick={handleAddUser} className="flex items-center space-x-2">
             <Plus className="w-4 h-4" />
@@ -847,6 +937,130 @@ export default function UserManagement() {
             </Button>
             <Button onClick={handleSaveUser}>
               {selectedUser ? 'Update' : 'Create'} User
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Employee Dialog */}
+      <Dialog open={isEmployeeDialogOpen} onOpenChange={setIsEmployeeDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Employee</DialogTitle>
+            <DialogDescription>
+              Create a new employee profile with personal and professional details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name *</Label>
+              <Input 
+                id="firstName" 
+                placeholder="Enter first name" 
+                value={employeeData.firstName}
+                onChange={(e) => setEmployeeData({...employeeData, firstName: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name *</Label>
+              <Input 
+                id="lastName" 
+                placeholder="Enter last name" 
+                value={employeeData.lastName}
+                onChange={(e) => setEmployeeData({...employeeData, lastName: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="Enter email address" 
+                value={employeeData.email}
+                onChange={(e) => setEmployeeData({...employeeData, email: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input 
+                id="phone" 
+                placeholder="Enter phone number" 
+                value={employeeData.phone}
+                onChange={(e) => setEmployeeData({...employeeData, phone: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="position">Position *</Label>
+              <Input 
+                id="position" 
+                placeholder="Enter job position" 
+                value={employeeData.position}
+                onChange={(e) => setEmployeeData({...employeeData, position: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Select 
+                value={employeeData.department} 
+                onValueChange={(value) => setEmployeeData({...employeeData, department: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Engineering">Engineering</SelectItem>
+                  <SelectItem value="Design">Design</SelectItem>
+                  <SelectItem value="Product">Product</SelectItem>
+                  <SelectItem value="Sales">Sales</SelectItem>
+                  <SelectItem value="Marketing">Marketing</SelectItem>
+                  <SelectItem value="HR">HR</SelectItem>
+                  <SelectItem value="Finance">Finance</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="salary">Salary</Label>
+              <Input 
+                id="salary" 
+                type="number" 
+                placeholder="Enter salary" 
+                value={employeeData.salary}
+                onChange={(e) => setEmployeeData({...employeeData, salary: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input 
+                id="location" 
+                placeholder="Enter work location" 
+                value={employeeData.location}
+                onChange={(e) => setEmployeeData({...employeeData, location: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="manager">Manager</Label>
+              <Select
+                value={employeeData.manager}
+                onValueChange={(value) => setEmployeeData({...employeeData, manager: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select manager" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="David Chen">David Chen</SelectItem>
+                  <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
+                  <SelectItem value="James Park">James Park</SelectItem>
+                  <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsEmployeeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEmployee}>
+              Create Employee
             </Button>
           </div>
         </DialogContent>
