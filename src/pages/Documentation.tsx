@@ -816,7 +816,18 @@ export default function Documentation() {
                       <Label htmlFor="status">Status</Label>
                       <Select 
                         value={newDocument.status} 
-                        onValueChange={(value) => setNewDocument({...newDocument, status: value as Document['status']})}
+                        onValueChange={(value) => {
+                          // If we're setting to a non-draft status but there's no assignee, don't allow it
+                          if (value !== 'Draft' && !newDocument.assignedTo) {
+                            toast({
+                              title: "Assignee Required",
+                              description: "You must select an assignee to change status from Draft",
+                              variant: "destructive"
+                            });
+                            return;
+                          }
+                          setNewDocument({...newDocument, status: value as Document['status']})
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select status" />
