@@ -16,6 +16,7 @@ import 'package:hrm_pro_flutter/screens/organizations_screen.dart';
 import 'package:hrm_pro_flutter/screens/profile_screen.dart';
 import 'package:hrm_pro_flutter/screens/projects_screen.dart';
 import 'package:hrm_pro_flutter/screens/project_detail_screen.dart';
+import 'package:hrm_pro_flutter/screens/shooting_request_screen.dart';
 import 'package:hrm_pro_flutter/screens/recruitment_screen.dart';
 import 'package:hrm_pro_flutter/screens/scheduling_screen.dart';
 import 'package:hrm_pro_flutter/screens/settings_screen.dart';
@@ -97,6 +98,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/tasks',
             builder: (context, state) => const TasksScreen(),
+          ),
+          
+          // Shooting Requests
+          GoRoute(
+            path: '/shooting-requests',
+            builder: (context, state) => const ShootingRequestScreen(),
           ),
           
           // Recruitment

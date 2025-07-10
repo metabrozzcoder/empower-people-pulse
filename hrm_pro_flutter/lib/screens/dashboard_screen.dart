@@ -40,6 +40,13 @@ class DashboardScreen extends ConsumerWidget {
         'route': '/tasks',
         'color': Colors.purple,
       },
+      {
+        'title': 'Shooting Requests',
+        'description': 'Manage shooting requests',
+        'icon': Icons.videocam_outlined,
+        'route': '/tasks',
+        'color': Colors.purple,
+      },
     ];
     
     // Upcoming events
