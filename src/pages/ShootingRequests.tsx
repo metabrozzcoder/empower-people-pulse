@@ -176,6 +176,7 @@ export default function ShootingRequests() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedInitiator, setSelectedInitiator] = useState('')
   
   // Get current user's job position
   const userPosition = currentUser?.position || 'Reporter'
@@ -506,7 +507,7 @@ export default function ShootingRequests() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="initiator">Initiator</Label>
-              <Select>
+              <Select value={selectedInitiator} onValueChange={setSelectedInitiator}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select initiator" />
                 </SelectTrigger>
