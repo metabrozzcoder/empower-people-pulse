@@ -16,9 +16,7 @@ import {
   Filter, 
   MapPin, 
   Calendar, 
-  User,
-  User,
-  MapPin,
+  User as UserIcon,
   Truck,
   Settings,
   FileText,
@@ -325,7 +323,7 @@ export default function ShootingRequests() {
                               {request.mainLocation}
                             </div>
                             <div className="flex items-center">
-                              <User className="h-4 w-4 mr-1" />
+                              <UserIcon className="h-4 w-4 mr-1" />
                               {request.numberOfCameramen} cameramen
                             </div>
                           </div>
@@ -579,14 +577,14 @@ export default function ShootingRequests() {
                 <div className="space-y-2">
                   <Label>Number of Cameramen</Label>
                   <div className="flex items-center">
-                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                     <span>{selectedRequest.numberOfCameramen}</span>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Reporter</Label>
                   <div className="flex items-center">
-                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                     <span>{mockUsers.find(u => u.id === selectedRequest.reporterId)?.name || 'Unknown'}</span>
                   </div>
                 </div>

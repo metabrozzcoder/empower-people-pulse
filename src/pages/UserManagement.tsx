@@ -389,16 +389,10 @@ export default function UserManagement() {
           <h1 className="text-3xl font-bold">User Management</h1>
           <p className="text-muted-foreground">Manage users, roles, positions, and section permissions</p>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={exportUserList}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <Button onClick={handleAddUser} className="flex items-center space-x-2">
-            <Plus className="w-4 h-4" />
-            <span>Add User</span>
-          </Button>
-        </div>
+        <Button onClick={handleAddUser} className="flex items-center space-x-2">
+          <Plus className="w-4 h-4" />
+          <span>Add User</span>
+        </Button>
       </div>
 
       {/* Stats Cards */}
