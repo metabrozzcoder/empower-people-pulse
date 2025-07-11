@@ -26,7 +26,6 @@ import { Separator } from '@/components/ui/separator'
 import { useUsers } from '@/context/UserContext'
 import { User, CreateUserRequest } from '@/services/api'
 import { useToast } from '@/hooks/use-toast'
-import { mockEmployees } from '@/data/mockEmployees'
 
 // Define job positions for the system
 const JOB_POSITIONS = [
@@ -109,7 +108,6 @@ const ROLE_DEFAULT_SECTIONS = {
 export default function UserManagement() {
   const { users, addUser, updateUser, deleteUser } = useUsers()
   const { toast } = useToast()
-  const [employees, setEmployees] = useState([...mockEmployees])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('all')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -389,10 +387,12 @@ export default function UserManagement() {
           <h1 className="text-3xl font-bold">User Management</h1>
           <p className="text-muted-foreground">Manage users, roles, positions, and section permissions</p>
         </div>
-        <Button onClick={handleAddUser} className="flex items-center space-x-2">
-          <Plus className="w-4 h-4" />
-          <span>Add User</span>
-        </Button>
+        <div>
+          <Button onClick={handleAddUser} className="flex items-center space-x-2">
+            <Plus className="w-4 h-4" />
+            <span>Add User</span>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
