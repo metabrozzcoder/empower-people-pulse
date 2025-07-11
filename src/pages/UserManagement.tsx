@@ -28,14 +28,15 @@ import { User, CreateUserRequest } from '@/services/api'
 import { useToast } from '@/hooks/use-toast'
 import { mockEmployees } from '@/data/mockEmployees'
 
-// Define job positions for shooting request system
+// Define job positions for the system
 const JOB_POSITIONS = [
   'Reporter',
   'Admin',
   'Head of Reporters',
   'Driver',
   'Equipment Department',
-  'Initiator'
+  'Initiator',
+  'Employee'
 ]
 
 // Define all available sections
@@ -89,7 +90,6 @@ const ROLE_DEFAULT_SECTIONS = {
   HR: [
     'Dashboard',
     'AI Assistant',
-    'Shooting Requests',
     'Employees', 
     'Projects',
     'Recruitment',
@@ -387,7 +387,7 @@ export default function UserManagement() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">User Management</h1>
-          <p className="text-muted-foreground">Manage users, roles, and section permissions</p>
+          <p className="text-muted-foreground">Manage users, roles, positions, and section permissions</p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" onClick={exportUserList}>
@@ -760,6 +760,7 @@ export default function UserManagement() {
                       <SelectItem value="HR">HR</SelectItem>
                       <SelectItem value="Guest">Guest</SelectItem>
                       <SelectItem value="Employee">Employee</SelectItem>
+                      <SelectItem value="Employee">Employee</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -829,6 +830,53 @@ export default function UserManagement() {
                         <SelectItem value="Michael Johnson">Michael Johnson</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                )}
+              </div>
+              
+              {/* Access Control Rules */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Access Control Rules</h3>
+                </div>
+                
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    Select which access control rules should be applied to this user. These rules will restrict when and how the user can access the system.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto p-3 border rounded-lg">
+                  {ACCESS_CONTROL_RULES.map((rule) => (
+                    <div key={rule.id} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded">
+                      <Checkbox 
+                        id={`rule-${rule.id}`}
+                        checked={selectedAccessRules.includes(rule.id)}
+                        onCheckedChange={() => toggleAccessRule(rule.id)}
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor={`rule-${rule.id}`} className="text-sm font-medium cursor-pointer">
+                          {rule.name}
+                        </Label>
+                        <p className="text-xs text-muted-foreground">{rule.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {selectedAccessRules.length > 0 && (
+                  <div className="p-4 border rounded-lg bg-muted/50">
+                    <h4 className="font-medium mb-2">Selected Access Rules</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedAccessRules.map((ruleId) => {
+                        const rule = ACCESS_CONTROL_RULES.find(r => r.id === ruleId);
+                        return rule ? (
+                          <Badge key={ruleId} className="text-xs">
+                            {rule.name}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
                   </div>
                 )}
               </div>

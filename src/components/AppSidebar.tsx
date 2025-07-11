@@ -65,13 +65,13 @@ const sidebarSections = [
     items: [
       { title: "Dashboard", url: "/", icon: LayoutDashboard, sectionName: "Dashboard" },
       { title: "AI Assistant", url: "/ai-assistant", icon: Brain, sectionName: "AI Assistant" },
-      { title: "Shooting Requests", url: "/shooting-requests", icon: Camera, sectionName: "Shooting Requests" },
     ]
   },
   {
     title: "HR & Projects",
     collapsible: true,
     items: [
+      { title: "Shooting Requests", url: "/shooting-requests", icon: Camera, sectionName: "Shooting Requests" },
       { title: "Employees", url: "/employees", icon: Users, sectionName: "Employees" },
       { title: "Recruitment", url: "/recruitment", icon: UserPlus, sectionName: "Recruitment" },
       { title: "Scheduling", url: "/scheduling", icon: Calendar, sectionName: "Scheduling" },
