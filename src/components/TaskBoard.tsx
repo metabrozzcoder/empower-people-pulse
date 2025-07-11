@@ -13,10 +13,11 @@ interface TaskBoardProps {
   onTaskUpdate: (task: Task) => void
   onTasksReorder: (tasks: Task[]) => void
   onTaskDelete: (taskId: string) => void
-  onTaskCreate: () => void
+  onTaskCreate: (status?: Task['status']) => void
+  onTaskEdit: (task: Task) => void
 }
 
-export function TaskBoard({ tasks, onTaskUpdate, onTasksReorder, onTaskDelete, onTaskCreate }: TaskBoardProps) {
+export function TaskBoard({ tasks, onTaskUpdate, onTasksReorder, onTaskDelete, onTaskCreate, onTaskEdit }: TaskBoardProps) {
   const { toast } = useToast()
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
@@ -107,13 +108,6 @@ export function TaskBoard({ tasks, onTaskUpdate, onTasksReorder, onTaskDelete, o
     setDragOverColumn(null)
   }
 
-  const handleTaskEdit = (task: Task) => {
-    // This would typically open a modal for editing
-    toast({
-      title: "Edit Task",
-      description: `Editing ${task.title}`,
-    })
-  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -133,7 +127,7 @@ export function TaskBoard({ tasks, onTaskUpdate, onTasksReorder, onTaskDelete, o
               <Badge variant="secondary" className="text-xs">
                 {tasksByStatus[status].length}
               </Badge>
-              <Button variant="ghost" size="sm" onClick={onTaskCreate}>
+              <Button variant="ghost" size="sm" onClick={() => onTaskCreate(status)}>
                 <Plus className="h-3 w-3" />
               </Button>
             </div>
@@ -169,7 +163,7 @@ export function TaskBoard({ tasks, onTaskUpdate, onTasksReorder, onTaskDelete, o
                         </div>
                       </div>
                       <div className="flex space-x-1">
-                        <Button variant="ghost" size="sm" onClick={() => handleTaskEdit(task)}>
+                        <Button variant="ghost" size="sm" onClick={() => onTaskEdit(task)}>
                           <Edit className="h-3 w-3" />
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => onTaskDelete(task.id)}>
