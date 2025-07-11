@@ -14,7 +14,7 @@ const Attendance = () => {
   const { toast } = useToast()
   const [selectedPeriod, setSelectedPeriod] = useState("week")
 
-  const attendanceData = [
+  const [attendanceData, setAttendanceData] = useState([
     {
       id: "1",
       employeeId: "sarah",
@@ -60,7 +60,7 @@ const Attendance = () => {
       lateCount: 0,
       absenceCount: 2
     }
-  ]
+  ])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -88,7 +88,7 @@ const Attendance = () => {
 
   const markAttendance = (employeeId: string, status: string) => {
     // Update the attendance data
-    setAttendanceData(prev => prev.map(emp => 
+    setAttendanceData(prev => prev.map(emp =>
       emp.employeeId === employeeId 
         ? { ...emp, todayStatus: status as any, checkInTime: status === 'Present' ? new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-' }
         : emp

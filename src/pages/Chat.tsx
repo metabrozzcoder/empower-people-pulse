@@ -18,6 +18,7 @@ import {
   Smile,
   Info,
   UserPlus,
+  Play,
   Settings,
   Archive,
   Trash2

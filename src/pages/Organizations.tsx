@@ -135,6 +135,7 @@ export default function Organizations() {
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null)
   const [selectedDept, setSelectedDept] = useState<Department | null>(null)
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
+  const [members, setMembers] = useState<DepartmentMember[]>(mockMembers)
 
   const filteredOrganizations = organizations.filter(org =>
     org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -591,6 +592,7 @@ export default function Organizations() {
                         <Badge variant="secondary">Manager</Badge>
                       )}
                       <Button variant="ghost" size="sm" onClick={() => {
+                        setMembers(prev => prev.filter(m => m.id !== member.id))
                         toast({
                           title: "Member Removed",
                           description: `${member.name} has been removed from the department.`,

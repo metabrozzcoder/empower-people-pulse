@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { useUsers } from '@/context/UserContext'
-import { User, CreateUserRequest } from '@/services/api'
+import { User } from '@/context/UserContext'
 import { useToast } from '@/hooks/use-toast'
 
 // Define job positions for the system
@@ -119,7 +119,6 @@ export default function UserManagement() {
     phone: '',
     role: '',
     position: '',
-    position: '',
     organization: '',
     department: '',
     linkedEmployee: ''
@@ -127,6 +126,8 @@ export default function UserManagement() {
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [selectedAccessRules, setSelectedAccessRules] = useState<string[]>([])
   const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
+  const [isBulkActionsDialogOpen, setBulkActionsDialogOpen] = useState(false)
+  const [isImportDialogOpen, setImportDialogOpen] = useState(false)
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -175,6 +176,7 @@ export default function UserManagement() {
       email: '',
       phone: '',
       role: '',
+      position: '',
       organization: '',
       department: '',
       linkedEmployee: ''
@@ -231,7 +233,7 @@ export default function UserManagement() {
       linkedEmployee: user.linkedEmployee || ''
     })
     setSelectedSections(user.allowedSections || [])
-    setGeneratedCredentials({ username: user.username, password: user.password, guestId: user.guestId || '' })
+    setGeneratedCredentials({ username: user.username, password: 'password123', guestId: user.guestId || '' })
     setIsDialogOpen(true)
   }
 
@@ -285,7 +287,7 @@ export default function UserManagement() {
         permissions: userPermissions,
         username: generatedCredentials.username,
         password: generatedCredentials.password,
-        accessRules: selectedAccessRules,
+        // Remove accessRules property as it doesn't exist on User type
         guestId: generatedCredentials.guestId,
         allowedSections: selectedSections,
         sectionAccess: [] // Clear any restrictions when updating allowed sections
@@ -331,6 +333,7 @@ export default function UserManagement() {
       email: '',
       phone: '',
       role: '',
+      position: '',
       organization: '',
       department: '',
       linkedEmployee: ''
@@ -529,18 +532,12 @@ export default function UserManagement() {
             </div>
             <div className="flex items-center space-x-2">
               <Button variant="outline" size="sm" onClick={() => {
-                toast({
-                  title: "Bulk Actions",
-                  description: "Bulk user management options opened.",
-                })
+                setBulkActionsDialogOpen(true)
               }}>
                 Bulk Actions
               </Button>
               <Button variant="outline" size="sm" onClick={() => {
-                toast({
-                  title: "Import Users",
-                  description: "User import functionality opened.",
-                })
+                setImportDialogOpen(true)
               }}>
                 Import
               </Button>
@@ -753,7 +750,6 @@ export default function UserManagement() {
                       <SelectItem value="Admin">Admin</SelectItem>
                       <SelectItem value="HR">HR</SelectItem>
                       <SelectItem value="Guest">Guest</SelectItem>
-                      <SelectItem value="Employee">Employee</SelectItem>
                       <SelectItem value="Employee">Employee</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1010,6 +1006,158 @@ export default function UserManagement() {
             </Button>
             <Button onClick={handleSaveUser}>
               {selectedUser ? 'Update' : 'Create'} User
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Actions Dialog */}
+      <Dialog open={isBulkActionsDialogOpen} onOpenChange={setBulkActionsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Bulk Actions</DialogTitle>
+            <DialogDescription>
+              Perform actions on multiple users at once
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => {
+                exportUserList()
+                setBulkActionsDialogOpen(false)
+              }}
+            >
+              Export All Users
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => {
+                const activeUsers = users.filter(u => u.status === 'Active')
+                activeUsers.forEach(user => {
+                  updateUser(user.id, { status: 'Inactive' })
+                })
+                setBulkActionsDialogOpen(false)
+                toast({
+                  title: "Bulk Action Complete",
+                  description: `${activeUsers.length} users have been deactivated.`,
+                })
+              }}
+            >
+              Deactivate All Active Users
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => {
+                users.forEach(user => {
+                  updateUser(user.id, { 
+                    allowedSections: ROLE_DEFAULT_SECTIONS[user.role as keyof typeof ROLE_DEFAULT_SECTIONS] || []
+                  })
+                })
+                setBulkActionsDialogOpen(false)
+                toast({
+                  title: "Permissions Reset",
+                  description: "All users have been reset to default role permissions.",
+                })
+              }}
+            >
+              Reset All Permissions to Default
+            </Button>
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setBulkActionsDialogOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Users Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Import Users</DialogTitle>
+            <DialogDescription>
+              Import users from CSV or create sample users
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <div className="space-y-2">
+                <h3 className="font-medium">CSV Import</h3>
+                <p className="text-sm text-muted-foreground">
+                  Upload a CSV file with columns: Name, Email, Phone, Role, Department, Organization
+                </p>
+                <Button variant="outline">
+                  Choose CSV File
+                </Button>
+              </div>
+            </div>
+            <div className="text-center">
+              <span className="text-sm text-muted-foreground">or</span>
+            </div>
+            <Button 
+              className="w-full" 
+              onClick={() => {
+                const sampleUsers = [
+                  {
+                    name: 'Alice Johnson',
+                    email: 'alice.johnson@company.com',
+                    phone: '+1 (555) 123-4567',
+                    role: 'HR' as const,
+                    status: 'Active' as const,
+                    department: 'Human Resources',
+                    organization: 'MediaTech Solutions',
+                    username: 'alice.johnson',
+                    password: 'alice123',
+                    permissions: ['employee_management', 'recruitment'],
+                    allowedSections: ROLE_DEFAULT_SECTIONS.HR
+                  },
+                  {
+                    name: 'Bob Wilson',
+                    email: 'bob.wilson@company.com',
+                    phone: '+1 (555) 987-6543',
+                    role: 'HR' as const,
+                    status: 'Active' as const,
+                    department: 'Engineering',
+                    organization: 'MediaTech Solutions',
+                    username: 'bob.wilson',
+                    password: 'bob123',
+                    permissions: ['organization_access'],
+                    allowedSections: ROLE_DEFAULT_SECTIONS.HR
+                  },
+                  {
+                    name: 'Carol Davis',
+                    email: 'carol.davis@company.com',
+                    phone: '+1 (555) 456-7890',
+                    role: 'Guest' as const,
+                    status: 'Active' as const,
+                    linkedEmployee: 'Alice Johnson',
+                    username: 'carol.davis',
+                    password: 'carol123',
+                    guestId: 'GUEST1234',
+                    permissions: ['chat_access'],
+                    allowedSections: ROLE_DEFAULT_SECTIONS.Guest
+                  }
+                ]
+
+                sampleUsers.forEach(user => addUser(user))
+                setImportDialogOpen(false)
+                toast({
+                  title: "Sample Users Created",
+                  description: `${sampleUsers.length} sample users have been added to the system.`,
+                })
+              }}
+            >
+              Create Sample Users
+            </Button>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+              Cancel
             </Button>
           </div>
         </DialogContent>

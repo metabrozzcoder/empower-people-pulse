@@ -16,6 +16,9 @@ import { useToast } from "@/hooks/use-toast"
 
 const Scheduling = () => {
   const { toast } = useToast()
+  const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false)
+  const [isManageShiftDialogOpen, setIsManageShiftDialogOpen] = useState(false)
+  const [selectedShift, setSelectedShift] = useState<any>(null)
   const [selectedWeek, setSelectedWeek] = useState("current")
   const [isAddShiftDialogOpen, setIsAddShiftDialogOpen] = useState(false)
   const [isViewScheduleDialogOpen, setIsViewScheduleDialogOpen] = useState(false)
@@ -337,14 +340,12 @@ const Scheduling = () => {
                                 <SelectItem value="Cancelled">Cancelled</SelectItem>
                               </SelectContent>
                             </Select>
-                             <Button variant="ghost" size="sm" onClick={() => {
-                               toast({
-                                 title: "Shift Options",
-                                 description: "Shift management options opened.",
-                               })
-                             }}>
-                               <MoreHorizontal className="h-4 w-4" />
-                             </Button>
+                              <Button variant="ghost" size="sm" onClick={() => {
+                                setSelectedShift(shift)
+                                setIsManageShiftDialogOpen(true)
+                              }}>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -580,6 +581,65 @@ const Scheduling = () => {
               setIsAddShiftDialogOpen(true)
             }}>
               Add New Shift
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Shift Dialog */}
+      <Dialog open={isManageShiftDialogOpen} onOpenChange={setIsManageShiftDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Shift</DialogTitle>
+            <DialogDescription>
+              Manage shift for {selectedShift ? getEmployeeInfo(selectedShift.employeeId).name : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => {
+                if (selectedShift) {
+                  updateShiftStatus(selectedShift.id, 'In Progress')
+                  setIsManageShiftDialogOpen(false)
+                }
+              }}
+            >
+              Mark as In Progress
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => {
+                if (selectedShift) {
+                  updateShiftStatus(selectedShift.id, 'Completed')
+                  setIsManageShiftDialogOpen(false)
+                }
+              }}
+            >
+              Mark as Completed
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => {
+                if (selectedShift) {
+                  setShifts(prev => prev.filter(s => s.id !== selectedShift.id))
+                  setIsManageShiftDialogOpen(false)
+                  toast({
+                    title: "Shift Deleted",
+                    description: "Shift has been successfully deleted.",
+                  })
+                }
+              }}
+            >
+              Delete Shift
+            </Button>
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setIsManageShiftDialogOpen(false)}>
+              Close
             </Button>
           </div>
         </DialogContent>

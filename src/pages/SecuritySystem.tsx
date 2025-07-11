@@ -115,6 +115,8 @@ export default function SecuritySystem() {
   const [devices, setDevices] = useState<SecurityDevice[]>(mockDevices)
   const [accessLogs] = useState<AccessLog[]>(mockAccessLogs)
   const [systemArmed, setSystemArmed] = useState(true)
+  const [isViewLogDialogOpen, setIsViewLogDialogOpen] = useState(false)
+  const [selectedLog, setSelectedLog] = useState<AccessLog | null>(null)
 
   const getDeviceIcon = (type: SecurityDevice['type']) => {
     switch (type) {
@@ -469,10 +471,8 @@ export default function SecuritySystem() {
                         <AlertTriangle className="w-5 h-5 text-red-500" />
                       )}
                       <Button variant="ghost" size="sm" onClick={() => {
-                        toast({
-                          title: "Log Details",
-                          description: `Viewing details for access attempt by ${log.userName}`,
-                        })
+                        setSelectedLog(log)
+                        setIsViewLogDialogOpen(true)
                       }}>
                         <Eye className="w-4 h-4" />
                       </Button>
