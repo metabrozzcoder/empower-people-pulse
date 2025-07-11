@@ -67,7 +67,7 @@ interface ExtraLocation {
   approved: boolean
 }
 
-interface User {
+interface ShootingRequestUser {
   id: string
   name: string
   position: string
@@ -89,7 +89,7 @@ interface Equipment {
 }
 
 // Mock data
-const mockUsers: User[] = [
+const mockUsers: ShootingRequestUser[] = [
   { id: '1', name: 'Sarah Wilson', position: 'Head of Reporters', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b25d0a63?w=80&h=80&fit=crop&crop=face' },
   { id: '2', name: 'John Smith', position: 'Admin', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face' },
   { id: '3', name: 'Emily Davis', position: 'Reporter', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face' },
