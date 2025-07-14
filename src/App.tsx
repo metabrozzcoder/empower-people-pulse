@@ -14,7 +14,7 @@ import Index from "./pages/Index"
 import Employees from "./pages/Employees"
 import Profile from "./pages/Profile"
 import AccountSettings from "./pages/AccountSettings"
-import AIAssistantPage from "./pages/AIAssistant"
+
 import ShootingRequests from "./pages/ShootingRequests"
 import Projects from "./pages/Projects"
 import Recruitment from "./pages/Recruitment"
@@ -67,7 +67,7 @@ function AppContent() {
           <main className="flex-1 p-4 lg:p-6">
             <Routes>
               <Route path="/" element={<ProtectedRoute sectionName="Dashboard"><Index /></ProtectedRoute>} />
-              <Route path="/ai-assistant" element={<ProtectedRoute sectionName="AI Assistant"><AIAssistantPage /></ProtectedRoute>} />
+              
               <Route path="/shooting-requests" element={<ProtectedRoute sectionName="Shooting Requests"><ShootingRequests /></ProtectedRoute>} />
               <Route path="/employees" element={<ProtectedRoute sectionName="Employees"><Employees /></ProtectedRoute>} />
               <Route path="/projects" element={<ProtectedRoute sectionName="Projects"><Projects /></ProtectedRoute>} />

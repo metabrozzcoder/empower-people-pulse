@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { UsersIcon, Plus, Search, User, Edit, Trash2, Building2, UserPlus } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -97,6 +98,7 @@ const mockDepartments: Department[] = [
 ]
 
 export default function Departments() {
+  const { toast } = useToast()
   const [departments, setDepartments] = useState<Department[]>(mockDepartments)
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -121,6 +123,28 @@ export default function Departments() {
 
   const handleDeleteDepartment = (id: string) => {
     setDepartments(departments.filter(dept => dept.id !== id))
+    toast({
+      title: "Department Deleted",
+      description: "Department has been successfully deleted.",
+    })
+  }
+
+  const handleSaveDepartment = () => {
+    // In a real app, this would validate and save the department
+    setIsDialogOpen(false)
+    toast({
+      title: selectedDept ? "Department Updated" : "Department Created",
+      description: selectedDept ? "Department has been updated successfully." : "New department has been created successfully.",
+    })
+  }
+
+  const handleSaveMembers = () => {
+    // In a real app, this would save the member changes
+    setIsMembersDialogOpen(false)
+    toast({
+      title: "Members Updated",
+      description: "Department members have been updated successfully.",
+    })
   }
 
   const handleManageMembers = (dept: Department) => {
@@ -306,7 +330,7 @@ export default function Departments() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setIsDialogOpen(false)}>
+            <Button onClick={handleSaveDepartment}>
               {selectedDept ? 'Update' : 'Create'} Department
             </Button>
           </div>
@@ -392,7 +416,7 @@ export default function Departments() {
             <Button variant="outline" onClick={() => setIsMembersDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setIsMembersDialogOpen(false)}>
+            <Button onClick={handleSaveMembers}>
               Save Changes
             </Button>
           </div>

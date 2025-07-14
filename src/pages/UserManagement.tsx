@@ -41,7 +41,6 @@ const JOB_POSITIONS = [
 // Define all available sections
 const ALL_SECTIONS = [
   'Dashboard',
-  'AI Assistant', 
   'Shooting Requests',
   'Employees',
   'Projects',
@@ -88,7 +87,7 @@ const ROLE_DEFAULT_SECTIONS = {
   Admin: ALL_SECTIONS,
   HR: [
     'Dashboard',
-    'AI Assistant',
+    
     'Employees', 
     'Projects',
     'Recruitment',
