@@ -527,7 +527,7 @@ export default function SecuritySystem() {
                     <h3 className="font-medium mb-2">Card + Biometric</h3>
                     <p className="text-2xl font-bold">45</p>
                     <p className="text-sm text-muted-foreground">Multi-Factor Users</p>
-                    <Button className="mt-3" size="sm" onClick={() => handleBiometricAction('Configure Multi-Factor')}>
+                    <Button className="mt-3" size="sm" onClick={() => navigate('/security-system/biometric/multi-factor')}>
                       Configure
                     </Button>
                   </CardContent>
