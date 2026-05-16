@@ -377,13 +377,11 @@ export default function SecuritySystem() {
                           </div>
                         </div>
                         <div className="flex space-x-2 mt-4">
-                          <Button variant="outline" size="sm" className="flex-1">
-                            <Eye className="w-4 h-4 mr-1" />
-                            <span onClick={() => handleDeviceAction(device.id, 'view')}>View</span>
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => handleDeviceAction(device.id, 'view')}>
+                            <Eye className="w-4 h-4 mr-1" />View
                           </Button>
-                          <Button variant="outline" size="sm" className="flex-1">
-                            <Settings className="w-4 h-4 mr-1" />
-                            <span onClick={() => handleDeviceAction(device.id, 'config')}>Config</span>
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => handleDeviceAction(device.id, 'config')}>
+                            <Settings className="w-4 h-4 mr-1" />Config
                           </Button>
                         </div>
                       </CardContent>
