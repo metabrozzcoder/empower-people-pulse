@@ -254,6 +254,33 @@ export function ProjectGrid({ projects, onProjectUpdate, onProjectDelete, onProj
                 ))}
               </div>
 
+              {project.checklist && project.checklist.length > 0 && (
+                <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Milestones</span>
+                    <span className="text-xs text-muted-foreground">
+                      {project.checklist.filter(i => i.done).length}/{project.checklist.length}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {project.checklist.map(item => (
+                      <label
+                        key={item.id}
+                        className="flex items-center gap-2 text-sm cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={item.done}
+                          onCheckedChange={() => handleChecklistToggle(project, item.id)}
+                        />
+                        <span className={item.done ? "line-through text-muted-foreground" : ""}>
+                          {item.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex space-x-2">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => {
                   if (project.status === 'In Progress') {
