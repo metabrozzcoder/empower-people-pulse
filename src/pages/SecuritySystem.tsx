@@ -158,17 +158,8 @@ export default function SecuritySystem() {
   }
 
   const handleDeviceAction = (deviceId: string, action: string) => {
-    if (action === 'view') {
-      toast({
-        title: "Device View",
-        description: "Opening device monitoring interface...",
-      })
-    } else if (action === 'config') {
-      toast({
-        title: "Device Configuration",
-        description: "Opening device configuration panel...",
-      })
-    }
+    if (action === 'view') navigate(`/security-system/devices/${deviceId}`)
+    else if (action === 'config') navigate(`/security-system/devices/${deviceId}?tab=config`)
   }
 
   const handleBiometricAction = (action: string) => {
