@@ -579,19 +579,19 @@ export default function SecuritySystem() {
                     <CardTitle>Quick Actions</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Button className="w-full" variant="outline" onClick={() => handleBiometricAction('Bulk User Enrollment')}>
+                    <Button className="w-full" variant="outline" onClick={() => navigate('/security-system/biometric/bulk-enroll')}>
                       <UserPlus className="w-4 h-4 mr-2" />
                       Bulk User Enrollment
                     </Button>
-                    <Button className="w-full" variant="outline" onClick={() => handleBiometricAction('Test Face Recognition')}>
+                    <Button className="w-full" variant="outline" onClick={() => navigate('/security-system/biometric/test-face')}>
                       <Camera className="w-4 h-4 mr-2" />
                       Test Face Recognition
                     </Button>
-                    <Button className="w-full" variant="outline" onClick={() => handleBiometricAction('Test Fingerprint Scanner')}>
+                    <Button className="w-full" variant="outline" onClick={() => navigate('/security-system/biometric/test-fingerprint')}>
                       <Fingerprint className="w-4 h-4 mr-2" />
                       Test Fingerprint Scanner
                     </Button>
-                    <Button className="w-full" variant="outline" onClick={() => handleBiometricAction('Configure Access Rules')}>
+                    <Button className="w-full" variant="outline" onClick={() => navigate('/security-system/biometric/access-rules')}>
                       <Settings className="w-4 h-4 mr-2" />
                       Configure Access Rules
                     </Button>
