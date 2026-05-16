@@ -505,7 +505,7 @@ export default function SecuritySystem() {
                     <h3 className="font-medium mb-2">Fingerprint Scanner</h3>
                     <p className="text-2xl font-bold">156</p>
                     <p className="text-sm text-muted-foreground">Enrolled Users</p>
-                    <Button className="mt-3" size="sm" onClick={() => handleBiometricAction('Enroll Fingerprint')}>
+                    <Button className="mt-3" size="sm" onClick={() => navigate('/security-system/biometric/fingerprint')}>
                       Enroll New
                     </Button>
                   </CardContent>
