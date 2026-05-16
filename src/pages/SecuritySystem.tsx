@@ -113,6 +113,7 @@ const mockAccessLogs: AccessLog[] = [
 
 export default function SecuritySystem() {
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [devices, setDevices] = useState<SecurityDevice[]>(mockDevices)
   const [accessLogs] = useState<AccessLog[]>(mockAccessLogs)
   const [systemArmed, setSystemArmed] = useState(true)
