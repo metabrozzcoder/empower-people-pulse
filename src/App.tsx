@@ -29,6 +29,8 @@ import UserManagement from "./pages/UserManagement"
 import RoleManagement from "./pages/RoleManagement"
 import AccessControl from "./pages/AccessControl"
 import SecuritySystem from "./pages/SecuritySystem"
+import DeviceDetail from "./pages/security/DeviceDetail"
+import BiometricConfig from "./pages/security/BiometricConfig"
 import Documentation from "./pages/Documentation"
 import Settings from "./pages/Settings"
 import NotFound from "./pages/NotFound"
@@ -89,6 +91,8 @@ function AppContent() {
               
               {/* New pages */}
               <Route path="/security-system" element={<ProtectedRoute allowedRoles={['Admin']}><SecuritySystem /></ProtectedRoute>} />
+              <Route path="/security-system/devices/:id" element={<ProtectedRoute allowedRoles={['Admin']}><DeviceDetail /></ProtectedRoute>} />
+              <Route path="/security-system/biometric/:section" element={<ProtectedRoute allowedRoles={['Admin']}><BiometricConfig /></ProtectedRoute>} />
               <Route path="/documentation" element={<ProtectedRoute sectionName="Documentation"><Documentation /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               

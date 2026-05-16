@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -112,6 +113,7 @@ const mockAccessLogs: AccessLog[] = [
 
 export default function SecuritySystem() {
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [devices, setDevices] = useState<SecurityDevice[]>(mockDevices)
   const [accessLogs] = useState<AccessLog[]>(mockAccessLogs)
   const [systemArmed, setSystemArmed] = useState(true)
@@ -156,17 +158,8 @@ export default function SecuritySystem() {
   }
 
   const handleDeviceAction = (deviceId: string, action: string) => {
-    if (action === 'view') {
-      toast({
-        title: "Device View",
-        description: "Opening device monitoring interface...",
-      })
-    } else if (action === 'config') {
-      toast({
-        title: "Device Configuration",
-        description: "Opening device configuration panel...",
-      })
-    }
+    if (action === 'view') navigate(`/security-system/devices/${deviceId}`)
+    else if (action === 'config') navigate(`/security-system/devices/${deviceId}?tab=config`)
   }
 
   const handleBiometricAction = (action: string) => {
@@ -384,13 +377,11 @@ export default function SecuritySystem() {
                           </div>
                         </div>
                         <div className="flex space-x-2 mt-4">
-                          <Button variant="outline" size="sm" className="flex-1">
-                            <Eye className="w-4 h-4 mr-1" />
-                            <span onClick={() => handleDeviceAction(device.id, 'view')}>View</span>
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => handleDeviceAction(device.id, 'view')}>
+                            <Eye className="w-4 h-4 mr-1" />View
                           </Button>
-                          <Button variant="outline" size="sm" className="flex-1">
-                            <Settings className="w-4 h-4 mr-1" />
-                            <span onClick={() => handleDeviceAction(device.id, 'config')}>Config</span>
+                          <Button variant="outline" size="sm" className="flex-1" onClick={() => handleDeviceAction(device.id, 'config')}>
+                            <Settings className="w-4 h-4 mr-1" />Config
                           </Button>
                         </div>
                       </CardContent>
@@ -514,7 +505,7 @@ export default function SecuritySystem() {
                     <h3 className="font-medium mb-2">Fingerprint Scanner</h3>
                     <p className="text-2xl font-bold">156</p>
                     <p className="text-sm text-muted-foreground">Enrolled Users</p>
-                    <Button className="mt-3" size="sm" onClick={() => handleBiometricAction('Enroll Fingerprint')}>
+                    <Button className="mt-3" size="sm" onClick={() => navigate('/security-system/biometric/fingerprint')}>
                       Enroll New
                     </Button>
                   </CardContent>
@@ -525,7 +516,7 @@ export default function SecuritySystem() {
                     <h3 className="font-medium mb-2">Facial Recognition</h3>
                     <p className="text-2xl font-bold">89</p>
                     <p className="text-sm text-muted-foreground">Enrolled Users</p>
-                    <Button className="mt-3" size="sm" onClick={() => handleBiometricAction('Enroll Facial Recognition')}>
+                    <Button className="mt-3" size="sm" onClick={() => navigate('/security-system/biometric/facial')}>
                       Enroll New
                     </Button>
                   </CardContent>
@@ -536,7 +527,7 @@ export default function SecuritySystem() {
                     <h3 className="font-medium mb-2">Card + Biometric</h3>
                     <p className="text-2xl font-bold">45</p>
                     <p className="text-sm text-muted-foreground">Multi-Factor Users</p>
-                    <Button className="mt-3" size="sm" onClick={() => handleBiometricAction('Configure Multi-Factor')}>
+                    <Button className="mt-3" size="sm" onClick={() => navigate('/security-system/biometric/multi-factor')}>
                       Configure
                     </Button>
                   </CardContent>
@@ -588,19 +579,19 @@ export default function SecuritySystem() {
                     <CardTitle>Quick Actions</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Button className="w-full" variant="outline" onClick={() => handleBiometricAction('Bulk User Enrollment')}>
+                    <Button className="w-full" variant="outline" onClick={() => navigate('/security-system/biometric/bulk-enroll')}>
                       <UserPlus className="w-4 h-4 mr-2" />
                       Bulk User Enrollment
                     </Button>
-                    <Button className="w-full" variant="outline" onClick={() => handleBiometricAction('Test Face Recognition')}>
+                    <Button className="w-full" variant="outline" onClick={() => navigate('/security-system/biometric/test-face')}>
                       <Camera className="w-4 h-4 mr-2" />
                       Test Face Recognition
                     </Button>
-                    <Button className="w-full" variant="outline" onClick={() => handleBiometricAction('Test Fingerprint Scanner')}>
+                    <Button className="w-full" variant="outline" onClick={() => navigate('/security-system/biometric/test-fingerprint')}>
                       <Fingerprint className="w-4 h-4 mr-2" />
                       Test Fingerprint Scanner
                     </Button>
-                    <Button className="w-full" variant="outline" onClick={() => handleBiometricAction('Configure Access Rules')}>
+                    <Button className="w-full" variant="outline" onClick={() => navigate('/security-system/biometric/access-rules')}>
                       <Settings className="w-4 h-4 mr-2" />
                       Configure Access Rules
                     </Button>
