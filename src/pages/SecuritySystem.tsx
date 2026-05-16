@@ -516,7 +516,7 @@ export default function SecuritySystem() {
                     <h3 className="font-medium mb-2">Facial Recognition</h3>
                     <p className="text-2xl font-bold">89</p>
                     <p className="text-sm text-muted-foreground">Enrolled Users</p>
-                    <Button className="mt-3" size="sm" onClick={() => handleBiometricAction('Enroll Facial Recognition')}>
+                    <Button className="mt-3" size="sm" onClick={() => navigate('/security-system/biometric/facial')}>
                       Enroll New
                     </Button>
                   </CardContent>
