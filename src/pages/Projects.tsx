@@ -324,8 +324,10 @@ const Projects = () => {
               <Input id="editDueDate" type="date" defaultValue={selectedProject?.dueDate} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editProgress">Progress (%)</Label>
-              <Input id="editProgress" type="number" min="0" max="100" defaultValue={selectedProject?.progress} />
+              <Label>Progress</Label>
+              <p className="text-sm text-muted-foreground pt-2">
+                {selectedProject?.progress}% — controlled by the checklist on the project card.
+              </p>
             </div>
           </div>
           <div className="flex justify-end space-x-2">
