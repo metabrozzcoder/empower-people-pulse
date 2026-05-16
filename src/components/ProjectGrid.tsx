@@ -72,6 +72,22 @@ export function ProjectGrid({ projects, onProjectUpdate, onProjectDelete, onProj
     })
   }
 
+  const handleChecklistToggle = (project: Project, itemId: string) => {
+    const checklist = (project.checklist ?? []).map(item =>
+      item.id === itemId ? { ...item, done: !item.done } : item
+    )
+    const total = checklist.length
+    const doneCount = checklist.filter(i => i.done).length
+    const progress = total === 0 ? project.progress : Math.round((doneCount / total) * 100)
+
+    let status = project.status
+    if (progress === 100 && status !== 'Completed') status = 'Completed'
+    else if (progress < 100 && status === 'Completed') status = 'In Progress'
+    else if (progress > 0 && status === 'Planning') status = 'In Progress'
+
+    onProjectUpdate({ ...project, checklist, progress, status })
+  }
+
   const handleProjectAction = (action: string, project: Project) => {
     switch (action) {
       case 'edit':
