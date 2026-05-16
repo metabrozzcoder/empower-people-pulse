@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { 
@@ -69,6 +70,22 @@ export function ProjectGrid({ projects, onProjectUpdate, onProjectDelete, onProj
       title: "Project Updated",
       description: `${project.title} status changed to ${newStatus}`,
     })
+  }
+
+  const handleChecklistToggle = (project: Project, itemId: string) => {
+    const checklist = (project.checklist ?? []).map(item =>
+      item.id === itemId ? { ...item, done: !item.done } : item
+    )
+    const total = checklist.length
+    const doneCount = checklist.filter(i => i.done).length
+    const progress = total === 0 ? project.progress : Math.round((doneCount / total) * 100)
+
+    let status = project.status
+    if (progress === 100 && status !== 'Completed') status = 'Completed'
+    else if (progress < 100 && status === 'Completed') status = 'In Progress'
+    else if (progress > 0 && status === 'Planning') status = 'In Progress'
+
+    onProjectUpdate({ ...project, checklist, progress, status })
   }
 
   const handleProjectAction = (action: string, project: Project) => {
@@ -236,6 +253,33 @@ export function ProjectGrid({ projects, onProjectUpdate, onProjectDelete, onProj
                   </Badge>
                 ))}
               </div>
+
+              {project.checklist && project.checklist.length > 0 && (
+                <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Milestones</span>
+                    <span className="text-xs text-muted-foreground">
+                      {project.checklist.filter(i => i.done).length}/{project.checklist.length}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {project.checklist.map(item => (
+                      <label
+                        key={item.id}
+                        className="flex items-center gap-2 text-sm cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={item.done}
+                          onCheckedChange={() => handleChecklistToggle(project, item.id)}
+                        />
+                        <span className={item.done ? "line-through text-muted-foreground" : ""}>
+                          {item.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex space-x-2">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => {

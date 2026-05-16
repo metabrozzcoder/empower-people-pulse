@@ -17,6 +17,12 @@ export interface Employee {
   contractType: 'Full-time' | 'Part-time' | 'Contract' | 'Intern'
 }
 
+export interface ProjectChecklistItem {
+  id: string
+  label: string
+  done: boolean
+}
+
 export interface Project {
   id: string
   title: string
@@ -29,6 +35,7 @@ export interface Project {
   progress: number
   department: string
   tags: string[]
+  checklist?: ProjectChecklistItem[]
 }
 
 export interface Task {

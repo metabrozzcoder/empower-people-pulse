@@ -16,6 +16,15 @@ const Projects = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const makeChecklist = (items: string[], progress: number) => {
+    const doneCount = Math.round((progress / 100) * items.length)
+    return items.map((label, i) => ({
+      id: `${i + 1}`,
+      label,
+      done: i < doneCount,
+    }))
+  }
+
   const [projects, setProjects] = useState<Project[]>([
     {
       id: "1",
@@ -26,9 +35,13 @@ const Projects = () => {
       assignedTo: ["sarah", "mike", "alex", "emma"],
       dueDate: "2024-02-15",
       createdDate: "2024-01-01",
-      progress: 65,
+      progress: 60,
       department: "Creative",
-      tags: ["branding", "design", "urgent", "graphics"]
+      tags: ["branding", "design", "urgent", "graphics"],
+      checklist: makeChecklist(
+        ["Concept approved", "Graphics designed", "Intro sequence produced", "Studio elements installed", "Final review"],
+        60
+      ),
     },
     {
       id: "2", 
@@ -41,7 +54,11 @@ const Projects = () => {
       createdDate: "2024-01-10",
       progress: 25,
       department: "Production",
-      tags: ["technical", "infrastructure", "urgent"]
+      tags: ["technical", "infrastructure", "urgent"],
+      checklist: makeChecklist(
+        ["Site survey complete", "Equipment ordered", "Cameras installed", "Lighting configured", "Audio calibrated", "Go-live test"],
+        25
+      ),
     },
     {
       id: "3",
@@ -52,9 +69,13 @@ const Projects = () => {
       assignedTo: ["lisa", "tom", "sarah"],
       dueDate: "2024-02-01",
       createdDate: "2024-01-05",
-      progress: 90,
+      progress: 100,
       department: "Content",
-      tags: ["planning", "content", "quarterly"]
+      tags: ["planning", "content", "quarterly"],
+      checklist: makeChecklist(
+        ["Topics brainstormed", "Calendar drafted", "Stakeholder review", "Final approval"],
+        100
+      ),
     },
     {
       id: "4",
@@ -65,9 +86,13 @@ const Projects = () => {
       assignedTo: ["alex", "mike"],
       dueDate: "2024-03-15",
       createdDate: "2024-01-12",
-      progress: 10,
+      progress: 0,
       department: "Technology",
-      tags: ["mobile", "app", "development", "streaming"]
+      tags: ["mobile", "app", "development", "streaming"],
+      checklist: makeChecklist(
+        ["Requirements gathered", "UI/UX designed", "Backend built", "Streaming integrated", "QA passed", "App store release"],
+        0
+      ),
     },
     {
       id: "5",
@@ -80,7 +105,11 @@ const Projects = () => {
       createdDate: "2023-12-15",
       progress: 100,
       department: "Production",
-      tags: ["podcast", "studio", "audio", "completed"]
+      tags: ["podcast", "studio", "audio", "completed"],
+      checklist: makeChecklist(
+        ["Space allocated", "Acoustic treatment", "Equipment installed", "Test recording"],
+        100
+      ),
     }
   ])
 
@@ -295,8 +324,10 @@ const Projects = () => {
               <Input id="editDueDate" type="date" defaultValue={selectedProject?.dueDate} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editProgress">Progress (%)</Label>
-              <Input id="editProgress" type="number" min="0" max="100" defaultValue={selectedProject?.progress} />
+              <Label>Progress</Label>
+              <p className="text-sm text-muted-foreground pt-2">
+                {selectedProject?.progress}% — controlled by the checklist on the project card.
+              </p>
             </div>
           </div>
           <div className="flex justify-end space-x-2">
