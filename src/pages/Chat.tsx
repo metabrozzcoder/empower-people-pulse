@@ -1,46 +1,36 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { 
-  MessageSquare, 
-  Send, 
-  Paperclip, 
-  Mic, 
-  Video, 
-  Phone, 
-  Search, 
-  MoreVertical,
-  Image as ImageIcon,
-  File,
-  Smile,
-  Info,
-  UserPlus,
-  Play,
-  Settings,
-  Archive,
-  Trash2
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  MessageSquare, Send, Paperclip, Mic, Video, Phone, Search,
+  MoreVertical, Image as ImageIcon, File as FileIcon, Smile, Info,
+  UserPlus, Play, Pause, Settings, Archive, Trash2, Reply, Copy,
+  Star, Pin, BellOff, Bell, Check, CheckCheck, Download, X,
+  CornerUpLeft, PlusCircle, ArchiveRestore, Square,
 } from 'lucide-react'
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from '@/components/ui/popover'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
+import { cn } from '@/lib/utils'
 
 interface ChatUser {
   id: string
@@ -49,6 +39,7 @@ interface ChatUser {
   status: 'online' | 'offline' | 'busy'
   lastSeen: string
   unreadCount: number
+  role?: string
 }
 
 interface Message {
@@ -60,163 +51,218 @@ interface Message {
   timestamp: string
   fileName?: string
   fileSize?: string
+  dataUrl?: string
+  duration?: number
+  replyTo?: { id: string; content: string; senderName: string }
+  starred?: boolean
+  status?: 'sent' | 'delivered' | 'read'
+  edited?: boolean
 }
 
+interface ConvMeta {
+  pinned?: boolean
+  muted?: boolean
+  archived?: boolean
+}
+
+const STORAGE_KEY = 'chat:v2'
+const META_KEY = 'chat:meta:v2'
+
 const mockUsers: ChatUser[] = [
-  {
-    id: '1',
-    name: 'John Smith',
-    status: 'online',
-    lastSeen: 'now',
-    unreadCount: 3,
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'
-  },
-  {
-    id: '2',
-    name: 'Sarah Connor',
-    status: 'online',
-    lastSeen: '2 min ago',
-    unreadCount: 0,
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face'
-  },
-  {
-    id: '3',
-    name: 'Mike Johnson',
-    status: 'busy',
-    lastSeen: '1 hour ago',
-    unreadCount: 1,
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face'
-  },
-  {
-    id: '4',
-    name: 'Emily Davis',
-    status: 'offline',
-    lastSeen: '3 hours ago',
-    unreadCount: 0,
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face'
-  }
+  { id: '1', name: 'John Smith', status: 'online', lastSeen: 'now', unreadCount: 3, role: 'Project Manager', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face' },
+  { id: '2', name: 'Sarah Connor', status: 'online', lastSeen: '2 min ago', unreadCount: 0, role: 'HR Lead', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face' },
+  { id: '3', name: 'Mike Johnson', status: 'busy', lastSeen: '1 hour ago', unreadCount: 1, role: 'Developer', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face' },
+  { id: '4', name: 'Emily Davis', status: 'offline', lastSeen: '3 hours ago', unreadCount: 0, role: 'Designer', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face' },
 ]
 
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    senderId: '1',
-    senderName: 'John Smith',
-    content: 'Hey! How is the project coming along?',
-    type: 'text',
-    timestamp: '10:30 AM'
-  },
-  {
-    id: '2',
-    senderId: 'me',
-    senderName: 'You',
-    content: 'Great! We are almost done with the first phase.',
-    type: 'text',
-    timestamp: '10:32 AM'
-  },
-  {
-    id: '3',
-    senderId: '1',
-    senderName: 'John Smith',
-    content: 'project-mockup.jpg',
-    type: 'image',
-    timestamp: '10:35 AM',
-    fileName: 'project-mockup.jpg',
-    fileSize: '2.4 MB'
-  },
-  {
-    id: '4',
-    senderId: 'me',
-    senderName: 'You',
-    content: 'Looks amazing! The design is exactly what we needed.',
-    type: 'text',
-    timestamp: '10:37 AM'
-  }
+const seedMessages = (userId: string): Message[] => [
+  { id: `${userId}-1`, senderId: userId, senderName: '', content: 'Hey! How is the project coming along?', type: 'text', timestamp: '10:30 AM', status: 'read' },
+  { id: `${userId}-2`, senderId: 'me', senderName: 'You', content: 'Great! We are almost done with the first phase.', type: 'text', timestamp: '10:32 AM', status: 'read' },
+  { id: `${userId}-3`, senderId: 'me', senderName: 'You', content: 'Looks amazing! The design is exactly what we needed.', type: 'text', timestamp: '10:37 AM', status: 'delivered' },
 ]
+
+const EMOJIS = ['😊','😂','❤️','👍','🎉','🔥','🙏','👏','😍','🤔','😎','💯','✅','🚀','💡','😢','😅','🙌','👀','🤝']
+
+const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
 export default function Chat() {
   const { toast } = useToast()
   const { currentUser } = useAuth()
+
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null)
-  const [message, setMessage] = useState('')
+  const [draft, setDraft] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [messages, setMessages] = useState<Message[]>(mockMessages)
+  const [filter, setFilter] = useState<'all' | 'unread' | 'archived'>('all')
+  const [conversations, setConversations] = useState<Record<string, Message[]>>({})
+  const [meta, setMeta] = useState<Record<string, ConvMeta>>({})
+  const [users, setUsers] = useState<ChatUser[]>(mockUsers)
+  const [replyTo, setReplyTo] = useState<Message | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [typing, setTyping] = useState(false)
+  const [inChatSearch, setInChatSearch] = useState('')
+  const [showInChatSearch, setShowInChatSearch] = useState(false)
 
-  // Filter users based on current user's role and linked employee
-  const getAvailableUsers = () => {
+  // Dialogs
+  const [isUserInfoOpen, setIsUserInfoOpen] = useState(false)
+  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false)
+  const [isChatSettingsOpen, setIsChatSettingsOpen] = useState(false)
+  const [isStarredOpen, setIsStarredOpen] = useState(false)
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false)
+  const [callState, setCallState] = useState<null | { type: 'voice' | 'video'; seconds: number }>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+
+  // Voice recording
+  const [recording, setRecording] = useState<{ seconds: number } | null>(null)
+  const recordTimer = useRef<number | null>(null)
+  const callTimer = useRef<number | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+
+  // Load persisted state
+  useEffect(() => {
+    try {
+      const c = localStorage.getItem(STORAGE_KEY)
+      const m = localStorage.getItem(META_KEY)
+      if (c) setConversations(JSON.parse(c))
+      if (m) setMeta(JSON.parse(m))
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations)) } catch {}
+  }, [conversations])
+
+  useEffect(() => {
+    try { localStorage.setItem(META_KEY, JSON.stringify(meta)) } catch {}
+  }, [meta])
+
+  // Available users (role-aware)
+  const availableUsers = useMemo(() => {
     if (currentUser?.role === 'Guest' && currentUser.linkedEmployee) {
-      // Guest users can only chat with their linked employee
-      return mockUsers.filter(user => user.name === currentUser.linkedEmployee)
+      return users.filter(u => u.name === currentUser.linkedEmployee)
     }
-    // Admin and HR can chat with everyone
-    return mockUsers
-  }
+    return users
+  }, [users, currentUser])
 
-  const availableUsers = getAvailableUsers()
-  const filteredUsers = availableUsers.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredUsers = useMemo(() => {
+    return availableUsers
+      .filter(u => u.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      .filter(u => {
+        const m = meta[u.id] || {}
+        if (filter === 'archived') return m.archived
+        if (m.archived) return false
+        if (filter === 'unread') return u.unreadCount > 0
+        return true
+      })
+      .sort((a, b) => {
+        const pa = meta[a.id]?.pinned ? 1 : 0
+        const pb = meta[b.id]?.pinned ? 1 : 0
+        return pb - pa
+      })
+  }, [availableUsers, searchTerm, filter, meta])
 
-  // Auto-select the first available user for guests
-  React.useEffect(() => {
-    if (currentUser?.role === 'Guest' && availableUsers.length > 0 && !selectedUser) {
-      setSelectedUser(availableUsers[0])
-    } else if (currentUser?.role !== 'Guest' && !selectedUser && availableUsers.length > 0) {
-      setSelectedUser(availableUsers[0])
+  // Auto-select first
+  useEffect(() => {
+    if (!selectedUser && availableUsers.length > 0) setSelectedUser(availableUsers[0])
+  }, [availableUsers, selectedUser])
+
+  // Ensure conversation exists for the selected user
+  useEffect(() => {
+    if (selectedUser && !conversations[selectedUser.id]) {
+      setConversations(prev => ({
+        ...prev,
+        [selectedUser.id]: seedMessages(selectedUser.id).map(m => ({
+          ...m,
+          senderName: m.senderId === 'me' ? 'You' : selectedUser.name,
+        })),
+      }))
     }
-  }, [currentUser, availableUsers, selectedUser])
+    // Clear unread on open
+    if (selectedUser && selectedUser.unreadCount > 0) {
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, unreadCount: 0 } : u))
+    }
+  }, [selectedUser])
+
+  const messages = selectedUser ? (conversations[selectedUser.id] || []) : []
+  const visibleMessages = inChatSearch
+    ? messages.filter(m => m.content.toLowerCase().includes(inChatSearch.toLowerCase()))
+    : messages
+
+  // Auto-scroll on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages.length, selectedUser?.id])
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online': return 'bg-green-500'
       case 'busy': return 'bg-yellow-500'
-      case 'offline': return 'bg-gray-400'
       default: return 'bg-gray-400'
     }
   }
 
+  const appendMessage = (uid: string, m: Message) => {
+    setConversations(prev => ({ ...prev, [uid]: [...(prev[uid] || []), m] }))
+  }
+
+  const updateMessage = (uid: string, id: string, patch: Partial<Message>) => {
+    setConversations(prev => ({
+      ...prev,
+      [uid]: (prev[uid] || []).map(m => m.id === id ? { ...m, ...patch } : m),
+    }))
+  }
+
   const handleSendMessage = () => {
-    if (message.trim() && selectedUser) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        senderId: 'me',
-        senderName: 'You',
-        content: message,
-        type: 'text',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-      setMessages([...messages, newMessage])
-      setMessage('')
-      
-      // Simulate response after a short delay
-      setTimeout(() => {
-        const responseMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          senderId: selectedUser.id,
-          senderName: selectedUser.name,
-          content: getRandomResponse(),
-          type: 'text',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-        setMessages(prev => [...prev, responseMessage])
-      }, 1500)
+    if (!draft.trim() || !selectedUser) return
+    if (editingId) {
+      updateMessage(selectedUser.id, editingId, { content: draft, edited: true })
+      setEditingId(null)
+      setDraft('')
+      setReplyTo(null)
+      return
     }
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      senderId: 'me',
+      senderName: 'You',
+      content: draft,
+      type: 'text',
+      timestamp: now(),
+      status: 'sent',
+      replyTo: replyTo ? { id: replyTo.id, content: replyTo.content.slice(0, 80), senderName: replyTo.senderName } : undefined,
+    }
+    appendMessage(selectedUser.id, newMessage)
+    setDraft('')
+    setReplyTo(null)
+
+    // Simulate delivered/read + typing reply
+    setTimeout(() => updateMessage(selectedUser.id, newMessage.id, { status: 'delivered' }), 500)
+    setTimeout(() => updateMessage(selectedUser.id, newMessage.id, { status: 'read' }), 1400)
+    setTyping(true)
+    setTimeout(() => {
+      setTyping(false)
+      appendMessage(selectedUser.id, {
+        id: (Date.now() + 1).toString(),
+        senderId: selectedUser.id,
+        senderName: selectedUser.name,
+        content: getRandomResponse(),
+        type: 'text',
+        timestamp: now(),
+        status: 'read',
+      })
+    }, 1800)
   }
 
   const getRandomResponse = () => {
-    const responses = [
+    const r = [
       "I'll look into that right away.",
-      "Thanks for the update. Let me know if you need anything else.",
-      "That sounds good. When do you need this by?",
+      "Thanks for the update — let me know if you need anything else.",
+      "Sounds good. When do you need this by?",
       "I've just sent you the files you requested.",
       "Can we schedule a meeting to discuss this further?",
       "I'll have that ready for you by tomorrow.",
-      "Great work on the project so far!",
-      "Let me check with the team and get back to you.",
-      "Do you have any specific requirements for this task?",
-      "I'm available for a call if you want to discuss this in detail."
     ]
-    return responses[Math.floor(Math.random() * responses.length)]
+    return r[Math.floor(Math.random() * r.length)]
   }
 
   const handleFileUpload = (type: 'image' | 'file') => {
@@ -225,139 +271,180 @@ export default function Chat() {
     input.accept = type === 'image' ? 'image/*' : '*'
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
-      if (file && selectedUser) {
-        const newMessage: Message = {
+      if (!file || !selectedUser) return
+      const reader = new FileReader()
+      reader.onload = () => {
+        appendMessage(selectedUser.id, {
           id: Date.now().toString(),
           senderId: 'me',
           senderName: 'You',
           content: file.name,
-          type: type,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type,
+          timestamp: now(),
           fileName: file.name,
-          fileSize: `${(file.size / 1024 / 1024).toFixed(1)} MB`
-        }
-        setMessages([...messages, newMessage])
-        toast({
-          title: "File Uploaded",
-          description: `${file.name} has been shared in the chat.`,
+          fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+          dataUrl: typeof reader.result === 'string' ? reader.result : undefined,
+          status: 'sent',
         })
+        toast({ title: 'Sent', description: `${file.name} shared.` })
       }
+      reader.readAsDataURL(file)
     }
     input.click()
   }
 
-  const handleVoiceCall = () => {
-    toast({
-      title: "Voice Call",
-      description: `Initiating voice call with ${selectedUser?.name}...`,
-    })
+  const startCall = (type: 'voice' | 'video') => {
+    if (!selectedUser) return
+    setCallState({ type, seconds: 0 })
+    callTimer.current = window.setInterval(() => {
+      setCallState(prev => prev ? { ...prev, seconds: prev.seconds + 1 } : prev)
+    }, 1000)
   }
-
-  const handleVideoCall = () => {
-    toast({
-      title: "Video Call",
-      description: `Starting video call with ${selectedUser?.name}...`,
-    })
-  }
-
-  const handleUserAction = (action: string) => {
-    switch (action) {
-      case 'User Info':
-        setIsUserInfoOpen(true)
-        break
-      case 'Add to Group':
-        setIsGroupDialogOpen(true)
-        break
-      case 'Chat Settings':
-        setIsChatSettingsOpen(true)
-        break
-      case 'Archive Chat':
-        handleArchiveChat()
-        break
-      case 'Delete Chat':
-        handleDeleteChat()
-        break
-      default:
-        toast({
-          title: action,
-          description: `${action} action performed for ${selectedUser?.name}.`,
-        })
+  const endCall = () => {
+    if (callTimer.current) window.clearInterval(callTimer.current)
+    callTimer.current = null
+    if (callState && selectedUser) {
+      toast({ title: 'Call ended', description: `${callState.type === 'voice' ? 'Voice' : 'Video'} call — ${formatDuration(callState.seconds)}` })
     }
+    setCallState(null)
   }
 
-  const [isUserInfoOpen, setIsUserInfoOpen] = useState(false)
-  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false)
-  const [isChatSettingsOpen, setIsChatSettingsOpen] = useState(false)
+  const formatDuration = (s: number) => {
+    const m = Math.floor(s / 60).toString().padStart(2, '0')
+    const ss = (s % 60).toString().padStart(2, '0')
+    return `${m}:${ss}`
+  }
 
-  const handleArchiveChat = () => {
-    toast({
-      title: "Chat Archived",
-      description: `Chat with ${selectedUser?.name} has been archived.`,
+  const startRecording = () => {
+    if (recording) return stopRecording()
+    setRecording({ seconds: 0 })
+    recordTimer.current = window.setInterval(() => {
+      setRecording(prev => prev ? { seconds: prev.seconds + 1 } : prev)
+    }, 1000)
+  }
+  const stopRecording = () => {
+    if (recordTimer.current) window.clearInterval(recordTimer.current)
+    recordTimer.current = null
+    const sec = recording?.seconds ?? 0
+    setRecording(null)
+    if (!selectedUser || sec < 1) return
+    appendMessage(selectedUser.id, {
+      id: Date.now().toString(),
+      senderId: 'me',
+      senderName: 'You',
+      content: 'voice-message',
+      type: 'voice',
+      timestamp: now(),
+      fileName: 'voice-message.webm',
+      duration: sec,
+      status: 'sent',
     })
+  }
+  const cancelRecording = () => {
+    if (recordTimer.current) window.clearInterval(recordTimer.current)
+    recordTimer.current = null
+    setRecording(null)
+  }
+
+  const toggleMeta = (uid: string, key: keyof ConvMeta) => {
+    setMeta(prev => ({ ...prev, [uid]: { ...prev[uid], [key]: !prev[uid]?.[key] } }))
   }
 
   const handleDeleteChat = () => {
-    toast({
-      title: "Chat Deleted", 
-      description: `Chat with ${selectedUser?.name} has been deleted.`,
-      variant: "destructive"
-    })
+    if (!selectedUser) return
+    setConversations(prev => { const n = { ...prev }; delete n[selectedUser.id]; return n })
+    toast({ title: 'Chat deleted', description: `Chat with ${selectedUser.name} cleared.`, variant: 'destructive' })
   }
 
-  const handleEmojiSelect = () => {
-    setMessage(prev => prev + "😊")
-    toast({
-      title: "Emoji Added",
-      description: "Emoji has been added to your message.",
-    })
+  const handleDeleteMessage = (id: string) => {
+    if (!selectedUser) return
+    setConversations(prev => ({ ...prev, [selectedUser.id]: prev[selectedUser.id].filter(m => m.id !== id) }))
   }
 
-  const handleVoiceRecord = () => {
-    toast({
-      title: "Voice Recording",
-      description: "Voice recording feature activated.",
+  const handleCopyMessage = (m: Message) => {
+    navigator.clipboard.writeText(m.content).then(() => toast({ title: 'Copied' }))
+  }
+
+  const handleStarMessage = (m: Message) => {
+    if (!selectedUser) return
+    updateMessage(selectedUser.id, m.id, { starred: !m.starred })
+  }
+
+  const handleEditMessage = (m: Message) => {
+    if (m.type !== 'text' || m.senderId !== 'me') return
+    setEditingId(m.id)
+    setDraft(m.content)
+    inputRef.current?.focus()
+  }
+
+  const insertEmoji = (e: string) => {
+    setDraft(prev => prev + e)
+    inputRef.current?.focus()
+  }
+
+  const downloadFile = (m: Message) => {
+    if (!m.dataUrl) {
+      toast({ title: 'Unavailable', description: 'File data is not stored locally.' })
+      return
+    }
+    const a = document.createElement('a')
+    a.href = m.dataUrl
+    a.download = m.fileName || 'file'
+    a.click()
+  }
+
+  const starredMessages = useMemo(() => {
+    const all: { user: ChatUser; m: Message }[] = []
+    Object.entries(conversations).forEach(([uid, msgs]) => {
+      const u = users.find(u => u.id === uid)
+      if (!u) return
+      msgs.filter(m => m.starred).forEach(m => all.push({ user: u, m }))
     })
-    
-    // Simulate voice recording and sending
-    setTimeout(() => {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        senderId: 'me',
-        senderName: 'You',
-        content: "voice-message.mp3",
-        type: 'voice',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        fileName: "voice-message.mp3",
-        fileSize: "1.2 MB"
-      }
-      setMessages([...messages, newMessage])
-      
-      toast({
-        title: "Voice Message Sent",
-        description: "Your voice message has been sent successfully.",
-      })
-    }, 3000)
+    return all
+  }, [conversations, users])
+
+  const addNewContact = (name: string, role: string) => {
+    const id = `u-${Date.now()}`
+    setUsers(prev => [...prev, { id, name, role, status: 'offline', lastSeen: 'just added', unreadCount: 0 }])
+    setIsNewChatOpen(false)
+    toast({ title: 'Contact added', description: name })
+  }
+
+  const StatusIcon = ({ status }: { status?: Message['status'] }) => {
+    if (status === 'read') return <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
+    if (status === 'delivered') return <CheckCheck className="w-3.5 h-3.5 opacity-70" />
+    return <Check className="w-3.5 h-3.5 opacity-70" />
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Communication Hub</h1>
-        <p className="text-muted-foreground">
-          Integrated messaging, voice calls, video calls, and file sharing
-        </p>
+      <div className="flex items-end justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">Communication Hub</h1>
+          <p className="text-muted-foreground">
+            Messaging, voice & video calls, file sharing — all in one place
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsStarredOpen(true)}>
+            <Star className="w-4 h-4 mr-2" /> Starred
+          </Button>
+          <Button onClick={() => setIsNewChatOpen(true)}>
+            <PlusCircle className="w-4 h-4 mr-2" /> New Chat
+          </Button>
+        </div>
       </div>
 
-      <div className="flex h-[calc(100vh-12rem)] space-x-4">
+      <div className="flex h-[calc(100vh-13rem)] space-x-4">
         {/* Chat List */}
         <Card className="w-80 flex flex-col">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 space-y-3">
             <CardTitle className="flex items-center space-x-2">
               <MessageSquare className="w-5 h-5" />
               <span>Messages</span>
             </CardTitle>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder="Search conversations..."
                 value={searchTerm}
@@ -365,42 +452,59 @@ export default function Chat() {
                 className="pl-10"
               />
             </div>
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="unread">Unread</TabsTrigger>
+                <TabsTrigger value="archived">Archived</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </CardHeader>
           <CardContent className="flex-1 p-0">
             <ScrollArea className="h-full">
-              <div className="space-y-1 p-4">
-                {filteredUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                      selectedUser?.id === user.id ? 'bg-accent' : 'hover:bg-accent/50'
-                    }`}
-                    onClick={() => setSelectedUser(user)}
-                  >
-                    <div className="relative">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={user.avatar} />
-                        <AvatarFallback>
-                          {user.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background ${getStatusColor(user.status)}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium truncate">{user.name}</p>
-                        {user.unreadCount > 0 && (
-                          <Badge variant="destructive" className="text-xs">
-                            {user.unreadCount}
-                          </Badge>
-                        )}
+              <div className="space-y-1 p-2">
+                {filteredUsers.length === 0 && (
+                  <p className="text-center text-sm text-muted-foreground py-8">No conversations</p>
+                )}
+                {filteredUsers.map((user) => {
+                  const m = meta[user.id] || {}
+                  const lastMsg = (conversations[user.id] || []).slice(-1)[0]
+                  return (
+                    <div
+                      key={user.id}
+                      className={cn(
+                        'group flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors',
+                        selectedUser?.id === user.id ? 'bg-accent' : 'hover:bg-accent/50'
+                      )}
+                      onClick={() => setSelectedUser(user)}
+                    >
+                      <div className="relative">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={user.avatar} />
+                          <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        </Avatar>
+                        <div className={cn('absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background', getStatusColor(user.status))} />
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {user.status === 'online' ? 'Online' : `Last seen ${user.lastSeen}`}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-medium truncate flex items-center gap-1">
+                            {m.pinned && <Pin className="w-3 h-3 text-muted-foreground" />}
+                            {user.name}
+                          </p>
+                          <div className="flex items-center gap-1">
+                            {m.muted && <BellOff className="w-3 h-3 text-muted-foreground" />}
+                            {user.unreadCount > 0 && (
+                              <Badge variant="destructive" className="text-xs">{user.unreadCount}</Badge>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {lastMsg ? (lastMsg.type === 'text' ? lastMsg.content : `[${lastMsg.type}] ${lastMsg.fileName || ''}`) : (user.status === 'online' ? 'Online' : `Last seen ${user.lastSeen}`)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </ScrollArea>
           </CardContent>
@@ -408,153 +512,276 @@ export default function Chat() {
 
         {/* Chat Window */}
         {selectedUser ? (
-          <Card className="flex-1 flex flex-col">
-            {/* Chat Header */}
+          <Card className="flex-1 flex flex-col min-w-0">
+            {/* Header */}
             <CardHeader className="pb-3 border-b">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center space-x-3 min-w-0">
                   <div className="relative">
                     <Avatar className="w-10 h-10">
                       <AvatarImage src={selectedUser.avatar} />
-                      <AvatarFallback>
-                        {selectedUser.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
+                      <AvatarFallback>{selectedUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                     </Avatar>
-                    <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background ${getStatusColor(selectedUser.status)}`} />
+                    <div className={cn('absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background', getStatusColor(selectedUser.status))} />
                   </div>
-                  <div>
-                    <h3 className="font-semibold">{selectedUser.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedUser.status === 'online' ? 'Online' : `Last seen ${selectedUser.lastSeen}`}
+                  <div className="min-w-0">
+                    <h3 className="font-semibold truncate">{selectedUser.name}</h3>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {typing ? <span className="text-primary">typing…</span> : (selectedUser.status === 'online' ? 'Online' : `Last seen ${selectedUser.lastSeen}`)}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Button variant="ghost" size="sm" onClick={handleVoiceCall}>
+                <div className="flex items-center space-x-1">
+                  <Button variant="ghost" size="sm" onClick={() => setShowInChatSearch(s => !s)} title="Search in chat">
+                    <Search className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => startCall('voice')} title="Voice call">
                     <Phone className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={handleVideoCall}>
+                  <Button variant="ghost" size="sm" onClick={() => startCall('video')} title="Video call">
                     <Video className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleUserAction('User Info')}>
+                  <Button variant="ghost" size="sm" onClick={() => setIsUserInfoOpen(true)} title="Contact info">
                     <Info className="w-4 h-4" />
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
+                      <Button variant="ghost" size="sm"><MoreVertical className="w-4 h-4" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleUserAction('Add to Group')}>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Add to Group
+                      <DropdownMenuItem onClick={() => toggleMeta(selectedUser.id, 'pinned')}>
+                        <Pin className="w-4 h-4 mr-2" /> {meta[selectedUser.id]?.pinned ? 'Unpin' : 'Pin'} Chat
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleUserAction('Chat Settings')}>
-                        <Settings className="w-4 h-4 mr-2" />
-                        Chat Settings
+                      <DropdownMenuItem onClick={() => toggleMeta(selectedUser.id, 'muted')}>
+                        {meta[selectedUser.id]?.muted ? <Bell className="w-4 h-4 mr-2" /> : <BellOff className="w-4 h-4 mr-2" />}
+                        {meta[selectedUser.id]?.muted ? 'Unmute' : 'Mute'} Notifications
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setIsGroupDialogOpen(true)}>
+                        <UserPlus className="w-4 h-4 mr-2" /> Add to Group
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setIsChatSettingsOpen(true)}>
+                        <Settings className="w-4 h-4 mr-2" /> Chat Settings
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleUserAction('Archive Chat')}>
-                        <Archive className="w-4 h-4 mr-2" />
-                        Archive Chat
+                      <DropdownMenuItem onClick={() => toggleMeta(selectedUser.id, 'archived')}>
+                        {meta[selectedUser.id]?.archived ? <ArchiveRestore className="w-4 h-4 mr-2" /> : <Archive className="w-4 h-4 mr-2" />}
+                        {meta[selectedUser.id]?.archived ? 'Unarchive' : 'Archive'} Chat
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleUserAction('Delete Chat')} className="text-red-600">
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete Chat
+                      <DropdownMenuItem onClick={handleDeleteChat} className="text-destructive">
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete Chat
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               </div>
+              {showInChatSearch && (
+                <div className="relative mt-3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    placeholder="Search in this conversation..."
+                    value={inChatSearch}
+                    onChange={(e) => setInChatSearch(e.target.value)}
+                    className="pl-10"
+                    autoFocus
+                  />
+                </div>
+              )}
             </CardHeader>
 
             {/* Messages */}
-            <CardContent className="flex-1 p-0">
-              <ScrollArea className="h-[calc(100vh-20rem)] p-4">
-                <div className="space-y-4">
-                  {messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.senderId === 'me' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          msg.senderId === 'me'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-accent'
-                        }`}
-                      >
-                        {msg.type === 'text' && <p>{msg.content}</p>}
-                        {msg.type === 'image' && (
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2">
-                              <ImageIcon className="w-4 h-4" />
-                              <span className="text-sm">{msg.fileName}</span>
-                            </div>
-                            <div className="w-48 h-32 bg-muted rounded border flex items-center justify-center">
-                              <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                            </div>
-                          </div>
+            <CardContent className="flex-1 p-0 min-h-0">
+              <ScrollArea className="h-full p-4">
+                <div className="space-y-3">
+                  {visibleMessages.length === 0 && (
+                    <p className="text-center text-sm text-muted-foreground py-12">No messages found</p>
+                  )}
+                  {visibleMessages.map((msg) => {
+                    const mine = msg.senderId === 'me'
+                    return (
+                      <div key={msg.id} className={cn('group flex items-end gap-2', mine ? 'justify-end' : 'justify-start')}>
+                        {!mine && (
+                          <Avatar className="w-7 h-7">
+                            <AvatarImage src={selectedUser.avatar} />
+                            <AvatarFallback className="text-xs">{selectedUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          </Avatar>
                         )}
-                        {msg.type === 'file' && (
-                          <div className="flex items-center space-x-2">
-                            <File className="w-4 h-4" />
-                            <div>
-                              <p className="text-sm">{msg.fileName}</p>
-                              <p className="text-xs opacity-70">{msg.fileSize}</p>
+                        <div className={cn(
+                          'relative max-w-xs lg:max-w-md px-3 py-2 rounded-2xl shadow-sm',
+                          mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm'
+                        )}>
+                          {msg.replyTo && (
+                            <div className={cn('text-xs mb-1 pl-2 border-l-2', mine ? 'border-primary-foreground/40 opacity-80' : 'border-primary/50 opacity-80')}>
+                              <p className="font-semibold">{msg.replyTo.senderName}</p>
+                              <p className="truncate">{msg.replyTo.content}</p>
                             </div>
+                          )}
+                          {msg.type === 'text' && <p className="whitespace-pre-wrap break-words text-sm">{msg.content}</p>}
+                          {msg.type === 'image' && (
+                            <div className="space-y-1">
+                              {msg.dataUrl ? (
+                                <img
+                                  src={msg.dataUrl}
+                                  alt={msg.fileName}
+                                  className="rounded-md max-w-full max-h-64 cursor-pointer object-cover"
+                                  onClick={() => setImagePreview(msg.dataUrl!)}
+                                />
+                              ) : (
+                                <div className="w-48 h-32 bg-muted rounded border flex items-center justify-center">
+                                  <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                                </div>
+                              )}
+                              <p className="text-xs opacity-80">{msg.fileName} · {msg.fileSize}</p>
+                            </div>
+                          )}
+                          {msg.type === 'file' && (
+                            <div className="flex items-center gap-2">
+                              <FileIcon className="w-5 h-5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-sm truncate">{msg.fileName}</p>
+                                <p className="text-xs opacity-70">{msg.fileSize}</p>
+                              </div>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => downloadFile(msg)}>
+                                <Download className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          )}
+                          {msg.type === 'voice' && (
+                            <div className="flex items-center gap-2">
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-full bg-background/20" onClick={() => toast({ title: 'Playing voice message' })}>
+                                <Play className="h-3.5 w-3.5" />
+                              </Button>
+                              <div className="flex items-end gap-0.5 h-6">
+                                {[3,5,8,4,6,9,5,7,4,6].map((h,i) => (
+                                  <span key={i} className={cn('w-0.5 rounded', mine ? 'bg-primary-foreground/70' : 'bg-foreground/60')} style={{ height: `${h*2}px` }} />
+                                ))}
+                              </div>
+                              <span className="text-xs opacity-80">{formatDuration(msg.duration || 0)}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1 mt-1 justify-end">
+                            {msg.starred && <Star className="w-3 h-3 fill-current" />}
+                            {msg.edited && <span className="text-[10px] opacity-70">edited</span>}
+                            <span className="text-[10px] opacity-70">{msg.timestamp}</span>
+                            {mine && <StatusIcon status={msg.status} />}
                           </div>
-                        )}
-                        {msg.type === 'voice' && (
-                          <div className="flex items-center space-x-2">
-                            <Mic className="w-4 h-4" />
-                            <div>
-                              <p className="text-sm">Voice Message</p>
-                              <p className="text-xs opacity-70">{msg.fileSize}</p>
-                            </div>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
-                              <Play className="h-3 w-3" />
+
+                          {/* Hover actions */}
+                          <div className={cn(
+                            'absolute -top-3 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 bg-popover border rounded-full shadow px-1 py-0.5',
+                            mine ? 'right-2' : 'left-2'
+                          )}>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setReplyTo(msg)} title="Reply">
+                              <Reply className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleStarMessage(msg)} title="Star">
+                              <Star className={cn('h-3 w-3', msg.starred && 'fill-current text-yellow-500')} />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleCopyMessage(msg)} title="Copy">
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                            {mine && msg.type === 'text' && (
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleEditMessage(msg)} title="Edit">
+                                <CornerUpLeft className="h-3 w-3" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => handleDeleteMessage(msg.id)} title="Delete">
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
-                        )}
-                        <p className="text-xs opacity-70 mt-1">{msg.timestamp}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {typing && (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="w-7 h-7">
+                        <AvatarImage src={selectedUser.avatar} />
+                        <AvatarFallback className="text-xs">{selectedUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                      </Avatar>
+                      <div className="bg-accent rounded-2xl rounded-bl-sm px-3 py-2 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/60 animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/60 animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-foreground/60 animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
                     </div>
-                  ))}
+                  )}
+                  <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
             </CardContent>
 
-            {/* Message Input */}
-            <div className="p-4 border-t">
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm" onClick={() => handleFileUpload('file')}>
+            {/* Reply / Edit banner */}
+            {(replyTo || editingId) && (
+              <div className="px-4 py-2 border-t bg-muted/50 flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  {editingId ? <CornerUpLeft className="w-4 h-4" /> : <Reply className="w-4 h-4" />}
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold">{editingId ? 'Editing message' : `Replying to ${replyTo?.senderName}`}</p>
+                    <p className="text-xs text-muted-foreground truncate">{editingId ? draft : replyTo?.content}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => { setReplyTo(null); setEditingId(null); setDraft('') }}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* Recording bar */}
+            {recording && (
+              <div className="px-4 py-2 border-t bg-destructive/10 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+                  <span className="text-sm">Recording… {formatDuration(recording.seconds)}</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={cancelRecording}>Cancel</Button>
+                  <Button size="sm" onClick={stopRecording}><Send className="w-4 h-4 mr-1" />Send</Button>
+                </div>
+              </div>
+            )}
+
+            {/* Input */}
+            <div className="p-3 border-t">
+              <div className="flex items-end gap-2">
+                <Button variant="ghost" size="sm" onClick={() => handleFileUpload('file')} title="Attach file">
                   <Paperclip className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleFileUpload('image')}>
+                <Button variant="ghost" size="sm" onClick={() => handleFileUpload('image')} title="Attach image">
                   <ImageIcon className="w-4 h-4" />
                 </Button>
                 <div className="flex-1 relative">
                   <Input
-                    placeholder="Type a message..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="pr-20"
+                    ref={inputRef}
+                    placeholder={editingId ? 'Edit your message...' : 'Type a message...'}
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage() } }}
+                    className="pr-10"
                   />
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-                    <Button variant="ghost" size="sm" onClick={handleEmojiSelect}>
-                      <Smile className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={handleVoiceRecord}>
-                      <Mic className="w-4 h-4" />
-                    </Button>
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Emoji">
+                          <Smile className="w-4 h-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 p-2" align="end">
+                        <div className="grid grid-cols-8 gap-1">
+                          {EMOJIS.map(e => (
+                            <button key={e} onClick={() => insertEmoji(e)} className="text-xl hover:bg-accent rounded p-1">{e}</button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
-                <Button onClick={handleSendMessage} disabled={!message.trim()}>
-                  <Send className="w-4 h-4" />
-                </Button>
+                {draft.trim() || editingId ? (
+                  <Button onClick={handleSendMessage}><Send className="w-4 h-4" /></Button>
+                ) : (
+                  <Button variant={recording ? 'destructive' : 'default'} onClick={startRecording} title="Record voice">
+                    {recording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </Button>
+                )}
               </div>
             </div>
           </Card>
@@ -576,26 +803,35 @@ export default function Chat() {
         <Dialog open={isUserInfoOpen} onOpenChange={setIsUserInfoOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>User Information</DialogTitle>
-              <DialogDescription>View detailed user information and status</DialogDescription>
+              <DialogTitle>Contact Information</DialogTitle>
+              <DialogDescription>Details and shared content</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
                 <Avatar className="w-16 h-16">
                   <AvatarImage src={selectedUser.avatar} />
-                  <AvatarFallback>
-                    {selectedUser.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
+                  <AvatarFallback>{selectedUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="font-semibold text-lg">{selectedUser.name}</h3>
-                  <p className="text-muted-foreground">{selectedUser.status}</p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.role || 'Team member'}</p>
+                  <Badge variant="outline" className="mt-1 capitalize">{selectedUser.status}</Badge>
                 </div>
               </div>
-              <div className="space-y-2">
-                <p><strong>Status:</strong> {selectedUser.status}</p>
-                <p><strong>Last Seen:</strong> {selectedUser.lastSeen}</p>
-                <p><strong>Unread Messages:</strong> {selectedUser.unreadCount}</p>
+              <Separator />
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="p-2 rounded bg-accent">
+                  <p className="text-lg font-semibold">{messages.length}</p>
+                  <p className="text-xs text-muted-foreground">Messages</p>
+                </div>
+                <div className="p-2 rounded bg-accent">
+                  <p className="text-lg font-semibold">{messages.filter(m => m.type !== 'text').length}</p>
+                  <p className="text-xs text-muted-foreground">Media</p>
+                </div>
+                <div className="p-2 rounded bg-accent">
+                  <p className="text-lg font-semibold">{messages.filter(m => m.starred).length}</p>
+                  <p className="text-xs text-muted-foreground">Starred</p>
+                </div>
               </div>
             </div>
           </DialogContent>
@@ -607,43 +843,162 @@ export default function Chat() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add to Group</DialogTitle>
+            <DialogDescription>Select a group to add {selectedUser?.name}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <p>Select a group to add {selectedUser?.name} to:</p>
-            <div className="space-y-2">
-              {['HR Team', 'Project Alpha', 'Management'].map((group) => (
-                <Button key={group} variant="outline" className="w-full justify-start">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  {group}
-                </Button>
-              ))}
-            </div>
+          <div className="space-y-2">
+            {['HR Team', 'Project Alpha', 'Management', 'Design Crew'].map((group) => (
+              <Button
+                key={group}
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => {
+                  toast({ title: 'Added to group', description: `${selectedUser?.name} added to ${group}` })
+                  setIsGroupDialogOpen(false)
+                }}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />{group}
+              </Button>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Chat Settings Dialog */}
+      {/* Chat Settings */}
       <Dialog open={isChatSettingsOpen} onOpenChange={setIsChatSettingsOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Chat Settings</DialogTitle>
+            <DialogDescription>Manage how this conversation behaves</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label>Notifications</label>
-              <input type="checkbox" defaultChecked />
+              <Label htmlFor="pin">Pin conversation</Label>
+              <Switch id="pin" checked={!!meta[selectedUser?.id || '']?.pinned} onCheckedChange={() => selectedUser && toggleMeta(selectedUser.id, 'pinned')} />
             </div>
             <div className="flex items-center justify-between">
-              <label>Sound</label>
-              <input type="checkbox" defaultChecked />
+              <Label htmlFor="mute">Mute notifications</Label>
+              <Switch id="mute" checked={!!meta[selectedUser?.id || '']?.muted} onCheckedChange={() => selectedUser && toggleMeta(selectedUser.id, 'muted')} />
             </div>
             <div className="flex items-center justify-between">
-              <label>Show Read Receipts</label>
-              <input type="checkbox" defaultChecked />
+              <Label htmlFor="arch">Archive</Label>
+              <Switch id="arch" checked={!!meta[selectedUser?.id || '']?.archived} onCheckedChange={() => selectedUser && toggleMeta(selectedUser.id, 'archived')} />
             </div>
+            <Separator />
+            <Button variant="destructive" className="w-full" onClick={() => { handleDeleteChat(); setIsChatSettingsOpen(false) }}>
+              <Trash2 className="w-4 h-4 mr-2" /> Clear conversation
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Starred Messages */}
+      <Dialog open={isStarredOpen} onOpenChange={setIsStarredOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Starred Messages</DialogTitle>
+            <DialogDescription>All messages you've marked as important</DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-96">
+            <div className="space-y-2">
+              {starredMessages.length === 0 && (
+                <p className="text-center text-sm text-muted-foreground py-6">No starred messages yet</p>
+              )}
+              {starredMessages.map(({ user, m }) => (
+                <div key={m.id} className="p-3 border rounded-lg flex items-start gap-3">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={user.avatar} />
+                    <AvatarFallback className="text-xs">{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <span className="text-xs text-muted-foreground">{m.timestamp}</span>
+                    </div>
+                    <p className="text-sm truncate">{m.content}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => { setSelectedUser(user); setIsStarredOpen(false) }}>
+                    Open
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Chat */}
+      <NewChatDialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen} onCreate={addNewContact} />
+
+      {/* Call Overlay */}
+      {callState && selectedUser && (
+        <Dialog open onOpenChange={(o) => !o && endCall()}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>{callState.type === 'voice' ? 'Voice Call' : 'Video Call'}</DialogTitle>
+              <DialogDescription>Connected with {selectedUser.name}</DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center gap-3 py-4">
+              <Avatar className="w-24 h-24">
+                <AvatarImage src={selectedUser.avatar} />
+                <AvatarFallback className="text-2xl">{selectedUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+              </Avatar>
+              <p className="font-semibold text-lg">{selectedUser.name}</p>
+              <p className="text-sm text-muted-foreground tabular-nums">{formatDuration(callState.seconds)}</p>
+            </div>
+            <DialogFooter className="sm:justify-center">
+              <Button variant="destructive" onClick={endCall} className="rounded-full px-6">
+                <Phone className="w-4 h-4 mr-2 rotate-[135deg]" /> End Call
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Image Preview */}
+      {imagePreview && (
+        <Dialog open onOpenChange={() => setImagePreview(null)}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader><DialogTitle>Image Preview</DialogTitle></DialogHeader>
+            <img src={imagePreview} alt="preview" className="w-full max-h-[70vh] object-contain rounded" />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
+  )
+}
+
+function NewChatDialog({ open, onOpenChange, onCreate }: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  onCreate: (name: string, role: string) => void
+}) {
+  const [name, setName] = useState('')
+  const [role, setRole] = useState('')
+  useEffect(() => { if (!open) { setName(''); setRole('') } }, [open])
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>New Conversation</DialogTitle>
+          <DialogDescription>Add a contact and start chatting</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="cname">Name</Label>
+            <Input id="cname" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Alex Morgan" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="crole">Role</Label>
+            <Input id="crole" value={role} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Marketing Lead" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button disabled={!name.trim()} onClick={() => onCreate(name.trim(), role.trim() || 'Team member')}>
+            Add Contact
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
