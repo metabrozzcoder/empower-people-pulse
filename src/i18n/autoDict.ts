@@ -144,9 +144,8 @@ export const ru: Record<string, string> = {
   "Leave a note for the submitter…": "Оставьте заметку отправителю…",
   "Provide context for the approver…": "Контекст для согласующего…",
   "Department": "Отдел", "DD/MM/YYYY": "ДД/ММ/ГГГГ", "MM/DD/YYYY": "ММ/ДД/ГГГГ", "YYYY-MM-DD": "ГГГГ-ММ-ДД",
-  "Search": "Поиск", "To": "Кому", "From": "От",
+  "To": "Кому", "From": "От",
   "No organizations yet. Click \"Add Organization\" to create one.": "Организаций пока нет. Нажмите «Добавить организацию», чтобы создать.",
-  "Loading…": "Загрузка…",
 
   // App / sidebar / global
   "Dashboard": "Главная", "Employees": "Сотрудники", "Recruitment": "Подбор персонала",
