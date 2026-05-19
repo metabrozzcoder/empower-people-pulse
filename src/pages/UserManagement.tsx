@@ -202,11 +202,19 @@ export default function UserManagement() {
     return pwd
   }
 
-  const buildUsername = (name: string, surname: string) => {
-    const base = `${(name || '').toLowerCase()}${surname ? '.' + surname.toLowerCase() : ''}`
+  const LOGIN_DOMAIN = 'ark.local'
+
+  const buildLoginEmail = (name: string, surname: string) => {
+    const clean = (s: string) => (s || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/\s+/g, '')
-      .replace(/[^a-z0-9.]/g, '')
-    return base || `user${Math.floor(1000 + Math.random() * 9000)}`
+      .replace(/[^a-z0-9]/g, '')
+    const n = clean(name)
+    const s = clean(surname)
+    const local = n && s ? `${n}.${s}` : (n || s || `user${Math.floor(1000 + Math.random() * 9000)}`)
+    const suffix = Math.floor(100 + Math.random() * 900)
+    return `${local}.${suffix}@${LOGIN_DOMAIN}`
   }
 
   const handleAddUser = () => {
@@ -217,7 +225,7 @@ export default function UserManagement() {
     })
     setSelectedSections([])
     setGeneratedCredentials({
-      username: `user${Math.floor(1000 + Math.random() * 9000)}`,
+      username: buildLoginEmail('', ''),
       password: generateStrongPassword(),
       guestId: '',
     })
@@ -242,10 +250,12 @@ export default function UserManagement() {
     const newFormData = { ...formData, [field]: value }
     setFormData(newFormData)
 
-    // Always keep username synced to name/surname; keep existing password unless none.
+    // Re-generate login email when name/surname changes; keep password unless none.
     if (field === 'name' || field === 'surname' || field === 'role') {
       setGeneratedCredentials(prev => ({
-        username: buildUsername(newFormData.name, newFormData.surname),
+        username: (field === 'name' || field === 'surname')
+          ? buildLoginEmail(newFormData.name, newFormData.surname)
+          : prev.username || buildLoginEmail(newFormData.name, newFormData.surname),
         password: prev.password || generateStrongPassword(),
         guestId: (newFormData.role || formData.role) === 'Guest'
           ? (prev.guestId || `GUEST${Math.floor(1000 + Math.random() * 9000)}`)
