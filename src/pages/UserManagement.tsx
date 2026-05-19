@@ -1095,64 +1095,6 @@ export default function UserManagement() {
                 </Button>
               </div>
             </div>
-            <div className="text-center">
-              <span className="text-sm text-muted-foreground">or</span>
-            </div>
-            <Button 
-              className="w-full" 
-              onClick={() => {
-                const sampleUsers = [
-                  {
-                    name: 'Alice Johnson',
-                    email: 'alice.johnson@company.com',
-                    phone: '+1 (555) 123-4567',
-                    role: 'HR' as const,
-                    status: 'Active' as const,
-                    department: 'Human Resources',
-                    organization: 'MediaTech Solutions',
-                    username: 'alice.johnson',
-                    password: 'alice123',
-                    permissions: ['employee_management', 'recruitment'],
-                    allowedSections: ROLE_DEFAULT_SECTIONS.HR
-                  },
-                  {
-                    name: 'Bob Wilson',
-                    email: 'bob.wilson@company.com',
-                    phone: '+1 (555) 987-6543',
-                    role: 'HR' as const,
-                    status: 'Active' as const,
-                    department: 'Engineering',
-                    organization: 'MediaTech Solutions',
-                    username: 'bob.wilson',
-                    password: 'bob123',
-                    permissions: ['organization_access'],
-                    allowedSections: ROLE_DEFAULT_SECTIONS.HR
-                  },
-                  {
-                    name: 'Carol Davis',
-                    email: 'carol.davis@company.com',
-                    phone: '+1 (555) 456-7890',
-                    role: 'Guest' as const,
-                    status: 'Active' as const,
-                    linkedEmployee: 'Alice Johnson',
-                    username: 'carol.davis',
-                    password: 'carol123',
-                    guestId: 'GUEST1234',
-                    permissions: ['chat_access'],
-                    allowedSections: ROLE_DEFAULT_SECTIONS.Guest
-                  }
-                ]
-
-                sampleUsers.forEach(user => addUser(user))
-                setImportDialogOpen(false)
-                toast({
-                  title: "Sample Users Created",
-                  description: `${sampleUsers.length} sample users have been added to the system.`,
-                })
-              }}
-            >
-              Create Sample Users
-            </Button>
           </div>
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
