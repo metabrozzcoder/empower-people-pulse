@@ -17,7 +17,13 @@ import {
   Phone,
   Calendar,
   Building2,
-  Download
+  Download,
+  Copy,
+  RefreshCw,
+  KeyRound,
+  AtSign,
+  IdCard,
+  Check
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
@@ -127,6 +133,26 @@ export default function UserManagement() {
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [selectedAccessRules, setSelectedAccessRules] = useState<string[]>([])
   const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
+  const [copiedField, setCopiedField] = useState<string | null>(null)
+
+  const copyToClipboard = (value: string, field: string) => {
+    if (!value) return
+    navigator.clipboard.writeText(value)
+    setCopiedField(field)
+    setTimeout(() => setCopiedField(null), 1500)
+  }
+
+  const regeneratePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+    const specials = '!@#$%&*'
+    let pwd = ''
+    const arr = new Uint32Array(10)
+    crypto.getRandomValues(arr)
+    for (let i = 0; i < 10; i++) pwd += chars[arr[i] % chars.length]
+    pwd += specials[Math.floor(Math.random() * specials.length)]
+    pwd += Math.floor(Math.random() * 10).toString()
+    setGeneratedCredentials(prev => ({ ...prev, password: pwd }))
+  }
   const [isBulkActionsDialogOpen, setBulkActionsDialogOpen] = useState(false)
   const [isImportDialogOpen, setImportDialogOpen] = useState(false)
 
@@ -267,10 +293,10 @@ export default function UserManagement() {
   }
 
   const handleSaveUser = async () => {
-    if (!formData.name || !formData.surname || !formData.email || !formData.role) {
+    if (!formData.name || !formData.surname || !formData.role) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields.",
+        description: "Please fill in name, surname and role.",
         variant: "destructive"
       })
       return
@@ -283,6 +309,11 @@ export default function UserManagement() {
         variant: "destructive"
       })
       return
+    }
+
+    // Ensure email is set (auto-fill from username if empty)
+    if (!formData.email && generatedCredentials.username) {
+      formData.email = `${generatedCredentials.username}@ark.local`
     }
 
     const fullName = `${formData.name} ${formData.surname}`
@@ -745,11 +776,11 @@ export default function UserManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email">Email <span className="text-xs text-muted-foreground">(optional — auto-filled)</span></Label>
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="Enter email address" 
+                    placeholder="Auto-generated from name" 
                     value={formData.email}
                     onChange={(e) => handleFormChange('email', e.target.value)}
                   />
@@ -897,30 +928,59 @@ export default function UserManagement() {
                 )}
               </div>
               
-              {/* Auto-generated credentials display */}
-              <div className="p-4 bg-muted rounded-lg">
-                <h4 className="font-medium mb-2">Auto-generated Credentials</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <Label>Username</Label>
-                    <div className="font-mono bg-background p-2 rounded border">
-                      {generatedCredentials.username || 'Enter a name to generate'}
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Password</Label>
-                    <div className="font-mono bg-background p-2 rounded border">
-                      {generatedCredentials.password || 'Auto-generated when name is entered'}
-                    </div>
-                  </div>
-                  {formData.role === 'Guest' && (
-                    <div className="col-span-2">
-                      <Label>Guest ID</Label>
-                      <div className="font-mono bg-background p-2 rounded border">
-                        {generatedCredentials.guestId || 'Enter name, surname and select Guest role to generate'}
+              {/* Auto-generated credentials — premium card */}
+              <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background p-5 shadow-sm">
+                <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
+                <div className="relative">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                        <KeyRound className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold leading-tight">Login Credentials</h4>
+                        <p className="text-xs text-muted-foreground">Auto-generated — share with the user</p>
                       </div>
                     </div>
-                  )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={regeneratePassword}
+                      className="h-8 gap-1.5"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      New password
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {[
+                      { key: 'username', label: 'Username', value: generatedCredentials.username, icon: AtSign, empty: 'Enter a name to generate' },
+                      { key: 'password', label: 'Password', value: generatedCredentials.password, icon: KeyRound, empty: 'Will be generated' },
+                      ...(formData.role === 'Guest' ? [{ key: 'guestId', label: 'Guest ID', value: generatedCredentials.guestId, icon: IdCard, empty: 'Select Guest role' }] : []),
+                    ].map(({ key, label, value, icon: Icon, empty }) => (
+                      <div key={key} className="group flex items-center gap-3 rounded-lg border bg-background/80 backdrop-blur-sm p-3 transition-all hover:border-primary/40 hover:shadow-sm">
+                        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
+                          <div className={`font-mono text-sm truncate ${value ? 'text-foreground' : 'text-muted-foreground/60 italic'}`}>
+                            {value || empty}
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={!value}
+                          onClick={() => copyToClipboard(value, key)}
+                          className="h-8 w-8 shrink-0"
+                        >
+                          {copiedField === key ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
