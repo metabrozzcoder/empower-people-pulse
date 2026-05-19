@@ -146,7 +146,7 @@ export default function ShootingRequests() {
     } else {
       setRequests((data ?? []) as ShootingRow[])
       const ids = new Set<string>()
-      ;(data ?? []).forEach((r: ShootingRow) => {
+      ;(data ?? []).forEach((r: { requester_id: string | null; moderator_id: string | null; director_id: string | null; tech_supply_id: string | null; driver_id: string | null }) => {
         if (r.requester_id) ids.add(r.requester_id)
         if (r.moderator_id) ids.add(r.moderator_id)
         if (r.director_id) ids.add(r.director_id)
