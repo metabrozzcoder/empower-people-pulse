@@ -166,7 +166,7 @@ export const ru: Record<string, string> = {
   "Notifications": "Уведомления", "No notifications": "Нет уведомлений",
   "Yesterday": "Вчера", "Tomorrow": "Завтра", "Now": "Сейчас",
   "Pending": "В ожидании", "Approved": "Одобрено", "Completed": "Завершено",
-  "In Progress": "В работе", "To Do": "К выполнению", "Done": "Готово",
+  "In Progress": "В работе", "To Do": "К выполнению",
   "Type a message": "Введите сообщение", "Send": "Отправить", "Reply": "Ответить",
   "Online": "В сети", "Offline": "Не в сети", "Away": "Отошёл", "Busy": "Занят",
   "Today": "Сегодня", "Week": "Неделя", "Month": "Месяц", "Year": "Год",
