@@ -583,14 +583,18 @@ export default function Chat() {
                   <div className="relative">
                     <Avatar className="w-10 h-10">
                       <AvatarImage src={selectedUser.avatar} />
-                      <AvatarFallback>{selectedUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                      <AvatarFallback>
+                        {selectedUser.isGroup ? <Users className="w-5 h-5" /> : selectedUser.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
                     </Avatar>
                     <div className={cn('absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background', getStatusColor(selectedUser.status))} />
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-semibold truncate">{selectedUser.name}</h3>
                     <p className="text-sm text-muted-foreground truncate">
-                      {typing ? <span className="text-primary">typing…</span> : (selectedUser.status === 'online' ? 'Online' : `Last seen ${selectedUser.lastSeen}`)}
+                      {typing ? <span className="text-primary">typing…</span>
+                        : selectedUser.isGroup ? `${selectedUser.members?.length || 0} members`
+                        : (selectedUser.status === 'online' ? 'Online' : `Last seen ${selectedUser.lastSeen}`)}
                     </p>
                   </div>
                 </div>
