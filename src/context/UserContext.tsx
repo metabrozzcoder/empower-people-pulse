@@ -71,7 +71,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       lastLogin: '—',
       createdDate: p.created_at?.split('T')[0] ?? '',
       permissions: [],
-      username: p.email ?? '',
+      username: p.username ?? p.email ?? '',
       password: '',
     }))
     setUsers(list)
