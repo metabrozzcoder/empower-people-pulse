@@ -389,7 +389,17 @@ export default function Chat() {
 
   const handleDeleteMessage = (id: string) => {
     if (!selectedUser) return
+    if (!isAdmin) {
+      toast({ title: 'Not allowed', description: 'Only Admins can delete messages.', variant: 'destructive' })
+      return
+    }
     setConversations(prev => ({ ...prev, [selectedUser.id]: prev[selectedUser.id].filter(m => m.id !== id) }))
+  }
+
+  const handleArchiveMessage = (m: Message) => {
+    if (!selectedUser) return
+    updateMessage(selectedUser.id, m.id, { archived: !m.archived })
+    toast({ title: m.archived ? 'Unarchived' : 'Message archived' })
   }
 
   const handleCopyMessage = (m: Message) => {
