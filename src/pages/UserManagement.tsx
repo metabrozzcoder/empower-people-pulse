@@ -202,32 +202,25 @@ export default function UserManagement() {
     return pwd
   }
 
-  const generateCredentials = (name: string, surname: string, role: string) => {
-    if (!name && !surname) return { username: '', password: '', guestId: '' }
+  const buildUsername = (name: string, surname: string) => {
     const base = `${(name || '').toLowerCase()}${surname ? '.' + surname.toLowerCase() : ''}`
       .replace(/\s+/g, '')
       .replace(/[^a-z0-9.]/g, '')
-    const username = base || `user${Math.floor(Math.random() * 10000)}`
-    const password = generateStrongPassword()
-    const guestId = role === 'Guest' ? `GUEST${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}` : ''
-    return { username, password, guestId }
+    return base || `user${Math.floor(1000 + Math.random() * 9000)}`
   }
 
   const handleAddUser = () => {
     setSelectedUser(null)
     setFormData({
-      name: '',
-      surname: '',
-      email: '',
-      phone: '',
-      role: '',
-      position: '',
-      organization: '',
-      department: '',
-      linkedEmployee: ''
+      name: '', surname: '', email: '', phone: '',
+      role: '', position: '', organization: '', department: '', linkedEmployee: ''
     })
     setSelectedSections([])
-    setGeneratedCredentials({ username: '', password: generateStrongPassword(), guestId: '' })
+    setGeneratedCredentials({
+      username: `user${Math.floor(1000 + Math.random() * 9000)}`,
+      password: generateStrongPassword(),
+      guestId: '',
+    })
     setIsDialogOpen(true)
   }
 
@@ -248,13 +241,16 @@ export default function UserManagement() {
   const handleFormChange = (field: string, value: string) => {
     const newFormData = { ...formData, [field]: value }
     setFormData(newFormData)
-    
-    // Auto-generate credentials as soon as name (or surname) is entered
+
+    // Always keep username synced to name/surname; keep existing password unless none.
     if (field === 'name' || field === 'surname' || field === 'role') {
-      if (newFormData.name || newFormData.surname) {
-        const credentials = generateCredentials(newFormData.name, newFormData.surname, newFormData.role || formData.role)
-        setGeneratedCredentials(credentials)
-      }
+      setGeneratedCredentials(prev => ({
+        username: buildUsername(newFormData.name, newFormData.surname),
+        password: prev.password || generateStrongPassword(),
+        guestId: (newFormData.role || formData.role) === 'Guest'
+          ? (prev.guestId || `GUEST${Math.floor(1000 + Math.random() * 9000)}`)
+          : '',
+      }))
     }
 
     // Auto-select sections based on role
@@ -309,9 +305,16 @@ export default function UserManagement() {
       return
     }
 
-    // Ensure email is set (auto-fill from username if empty)
-    if (!formData.email && generatedCredentials.username) {
-      formData.email = `${generatedCredentials.username}@ark.local`
+    // Ensure we always have a username + password before saving
+    const username = generatedCredentials.username || buildUsername(formData.name, formData.surname)
+    const password = generatedCredentials.password || generateStrongPassword()
+    if (!generatedCredentials.username || !generatedCredentials.password) {
+      setGeneratedCredentials(prev => ({ ...prev, username, password }))
+    }
+
+    // Email is optional in the UI — derive a stable login email from the username if blank
+    if (!formData.email) {
+      formData.email = `${username}@ark.local`
     }
 
     const fullName = `${formData.name} ${formData.surname}`
@@ -360,8 +363,8 @@ export default function UserManagement() {
         organization: formData.organization,
         linkedEmployee: formData.linkedEmployee,
         permissions: userPermissions,
-        username: generatedCredentials.username,
-        password: generatedCredentials.password,
+        username,
+        password,
         accessRules: selectedAccessRules,
         guestId: generatedCredentials.guestId,
         sectionAccess: [], // No restrictions by default
@@ -372,7 +375,7 @@ export default function UserManagement() {
         await addUser(newUser)
         toast({
           title: "User Created Successfully",
-          description: `Login: ${formData.email} / Password: ${generatedCredentials.password}${generatedCredentials.guestId ? ` / Guest ID: ${generatedCredentials.guestId}` : ''}. Share these credentials with the user — no email verification required.`,
+          description: `Login: ${formData.email} / Password: ${password}${generatedCredentials.guestId ? ` / Guest ID: ${generatedCredentials.guestId}` : ''}. Share these credentials with the user — no email verification required.`,
         })
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Failed to create user'

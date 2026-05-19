@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { email, password, name, role, phone, department, position } = body ?? {};
+    const { email, password, name, username, role, phone, department, position } = body ?? {};
     if (!email || !password || !name) {
       return new Response(JSON.stringify({ error: "email, password and name are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: { name },
+      user_metadata: { name, username },
     });
     if (createErr || !created.user) {
       return new Response(JSON.stringify({ error: createErr?.message ?? "Failed to create user" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
     const uid = created.user.id;
     // Update profile (trigger created it with defaults)
-    await admin.from("profiles").update({ name, phone, department, position }).eq("id", uid);
+    await admin.from("profiles").update({ name, phone, department, position, username }).eq("id", uid);
     // Replace default 'guest' role with chosen role
     await admin.from("user_roles").delete().eq("user_id", uid);
     await admin.from("user_roles").insert({ user_id: uid, role: validRole });

@@ -71,7 +71,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       lastLogin: '—',
       createdDate: p.created_at?.split('T')[0] ?? '',
       permissions: [],
-      username: p.email ?? '',
+      username: p.username ?? p.email ?? '',
       password: '',
     }))
     setUsers(list)
@@ -85,11 +85,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const addUser = async (user: Omit<User, 'id' | 'createdDate' | 'lastLogin'>) => {
     const role = user.role === 'Admin' ? 'admin' : user.role === 'HR' ? 'hr' : 'guest'
     const password = user.password && user.password.length >= 6 ? user.password : Math.random().toString(36).slice(2, 10) + 'A1'
-    const { error } = await supabase.functions.invoke('admin-create-user', {
+    const { data, error } = await supabase.functions.invoke('admin-create-user', {
       body: {
         email: user.email,
         password,
         name: user.name,
+        username: user.username,
         role,
         phone: user.phone,
         department: user.department,
@@ -97,6 +98,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       },
     })
     if (error) throw error
+    if (data && (data as { error?: string }).error) throw new Error((data as { error: string }).error)
     await refresh()
   }
 
