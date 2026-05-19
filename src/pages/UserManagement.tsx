@@ -202,11 +202,19 @@ export default function UserManagement() {
     return pwd
   }
 
-  const buildUsername = (name: string, surname: string) => {
-    const base = `${(name || '').toLowerCase()}${surname ? '.' + surname.toLowerCase() : ''}`
+  const LOGIN_DOMAIN = 'ark.local'
+
+  const buildLoginEmail = (name: string, surname: string) => {
+    const clean = (s: string) => (s || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/\s+/g, '')
-      .replace(/[^a-z0-9.]/g, '')
-    return base || `user${Math.floor(1000 + Math.random() * 9000)}`
+      .replace(/[^a-z0-9]/g, '')
+    const n = clean(name)
+    const s = clean(surname)
+    const local = n && s ? `${n}.${s}` : (n || s || `user${Math.floor(1000 + Math.random() * 9000)}`)
+    const suffix = Math.floor(100 + Math.random() * 900)
+    return `${local}.${suffix}@${LOGIN_DOMAIN}`
   }
 
   const handleAddUser = () => {
@@ -217,7 +225,7 @@ export default function UserManagement() {
     })
     setSelectedSections([])
     setGeneratedCredentials({
-      username: `user${Math.floor(1000 + Math.random() * 9000)}`,
+      username: buildLoginEmail('', ''),
       password: generateStrongPassword(),
       guestId: '',
     })
@@ -242,10 +250,12 @@ export default function UserManagement() {
     const newFormData = { ...formData, [field]: value }
     setFormData(newFormData)
 
-    // Always keep username synced to name/surname; keep existing password unless none.
+    // Re-generate login email when name/surname changes; keep password unless none.
     if (field === 'name' || field === 'surname' || field === 'role') {
       setGeneratedCredentials(prev => ({
-        username: buildUsername(newFormData.name, newFormData.surname),
+        username: (field === 'name' || field === 'surname')
+          ? buildLoginEmail(newFormData.name, newFormData.surname)
+          : prev.username || buildLoginEmail(newFormData.name, newFormData.surname),
         password: prev.password || generateStrongPassword(),
         guestId: (newFormData.role || formData.role) === 'Guest'
           ? (prev.guestId || `GUEST${Math.floor(1000 + Math.random() * 9000)}`)
@@ -305,17 +315,14 @@ export default function UserManagement() {
       return
     }
 
-    // Ensure we always have a username + password before saving
-    const username = generatedCredentials.username || buildUsername(formData.name, formData.surname)
+    // Login email and password are auto-generated; user has no manual control
+    const loginEmail = generatedCredentials.username || buildLoginEmail(formData.name, formData.surname)
     const password = generatedCredentials.password || generateStrongPassword()
     if (!generatedCredentials.username || !generatedCredentials.password) {
-      setGeneratedCredentials(prev => ({ ...prev, username, password }))
+      setGeneratedCredentials(prev => ({ ...prev, username: loginEmail, password }))
     }
-
-    // Email is optional in the UI — derive a stable login email from the username if blank
-    if (!formData.email) {
-      formData.email = `${username}@ark.local`
-    }
+    // The generated email IS the Supabase login email
+    formData.email = loginEmail
 
     const fullName = `${formData.name} ${formData.surname}`
     const userPermissions = formData.role === 'Admin' 
@@ -363,7 +370,7 @@ export default function UserManagement() {
         organization: formData.organization,
         linkedEmployee: formData.linkedEmployee,
         permissions: userPermissions,
-        username,
+        username: loginEmail,
         password,
         accessRules: selectedAccessRules,
         guestId: generatedCredentials.guestId,
@@ -375,7 +382,7 @@ export default function UserManagement() {
         await addUser(newUser)
         toast({
           title: "User Created Successfully",
-          description: `Login: ${formData.email} / Password: ${password}${generatedCredentials.guestId ? ` / Guest ID: ${generatedCredentials.guestId}` : ''}. Share these credentials with the user — no email verification required.`,
+          description: `Login: ${loginEmail} • Password: ${password}${generatedCredentials.guestId ? ` • Guest ID: ${generatedCredentials.guestId}` : ''}. Synced to Supabase — share credentials with the user.`,
         })
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Failed to create user'
@@ -777,13 +784,13 @@ export default function UserManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                  <Label htmlFor="email">Login Email <span className="text-xs text-muted-foreground">(auto-generated)</span></Label>
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="Enter email address" 
-                    value={formData.email}
-                    onChange={(e) => handleFormChange('email', e.target.value)}
+                    value={generatedCredentials.username}
+                    readOnly
+                    className="bg-muted/40 font-mono text-sm"
                   />
                 </div>
                 <div className="space-y-2">
@@ -957,7 +964,7 @@ export default function UserManagement() {
 
                   <div className="space-y-2.5">
                     {[
-                      { key: 'username', label: 'Username', value: generatedCredentials.username, icon: AtSign, empty: 'Enter a name to generate' },
+                      { key: 'username', label: 'Login Email', value: generatedCredentials.username, icon: AtSign, empty: 'Enter name & surname to generate' },
                       { key: 'password', label: 'Password', value: generatedCredentials.password, icon: KeyRound, empty: 'Will be generated' },
                       ...(formData.role === 'Guest' ? [{ key: 'guestId', label: 'Guest ID', value: generatedCredentials.guestId, icon: IdCard, empty: 'Select Guest role' }] : []),
                     ].map(({ key, label, value, icon: Icon, empty }) => {

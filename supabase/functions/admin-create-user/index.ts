@@ -34,7 +34,8 @@ Deno.serve(async (req) => {
     if (!email || !password || !name) {
       return new Response(JSON.stringify({ error: "email, password and name are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const validRole = ["admin", "hr", "guest"].includes(role) ? role : "guest";
+    const allowedRoles = ["admin", "hr", "guest", "shooting_moderator", "director", "tech_supply", "driver"];
+    const validRole = allowedRoles.includes(role) ? role : "guest";
 
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email,
