@@ -273,10 +273,10 @@ export default function UserManagement() {
   }
 
   const handleSaveUser = async () => {
-    if (!formData.name || !formData.surname || !formData.email || !formData.role) {
+    if (!formData.name || !formData.surname || !formData.role) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields.",
+        description: "Please fill in name, surname and role.",
         variant: "destructive"
       })
       return
@@ -289,6 +289,11 @@ export default function UserManagement() {
         variant: "destructive"
       })
       return
+    }
+
+    // Ensure email is set (auto-fill from username if empty)
+    if (!formData.email && generatedCredentials.username) {
+      formData.email = `${generatedCredentials.username}@ark.local`
     }
 
     const fullName = `${formData.name} ${formData.surname}`
