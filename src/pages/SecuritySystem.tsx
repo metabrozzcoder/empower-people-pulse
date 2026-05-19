@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -86,6 +87,7 @@ export default function SecuritySystem() {
   }
 
   const toggleSystemArmed = () => {
+  const { t } = useTranslation()
     setSystemArmed(!systemArmed)
     toast({
       title: systemArmed ? "System Disarmed" : "System Armed",
@@ -122,8 +124,8 @@ export default function SecuritySystem() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Security System</h1>
-          <p className="text-muted-foreground">Monitor and manage building security and access control</p>
+          <h1 className="text-3xl font-bold">{t('pages.securitySystem.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.securitySystem.subtitle')}</p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">

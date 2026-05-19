@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -57,6 +58,7 @@ export default function Departments() {
   )
 
   const handleAddDepartment = () => {
+  const { t } = useTranslation()
     setSelectedDept(null)
     setIsDialogOpen(true)
   }
@@ -102,8 +104,8 @@ export default function Departments() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Departments</h1>
-          <p className="text-muted-foreground">Manage departments and their members</p>
+          <h1 className="text-3xl font-bold">{t('pages.departments.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.departments.subtitle')}</p>
         </div>
         <Button onClick={handleAddDepartment} className="flex items-center space-x-2">
           <Plus className="w-4 h-4" />

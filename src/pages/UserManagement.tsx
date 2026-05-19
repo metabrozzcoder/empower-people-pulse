@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -168,6 +169,7 @@ export default function UserManagement() {
   }
 
   const handleAddUser = () => {
+  const { t } = useTranslation()
     setSelectedUser(null)
     setFormData({
       name: '',
@@ -386,8 +388,8 @@ export default function UserManagement() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">User Management</h1>
-          <p className="text-muted-foreground">Manage users, roles, positions, and section permissions</p>
+          <h1 className="text-3xl font-bold">{t('pages.userManagement.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.userManagement.subtitle')}</p>
         </div>
         <div>
           <Button onClick={handleAddUser} className="flex items-center space-x-2">

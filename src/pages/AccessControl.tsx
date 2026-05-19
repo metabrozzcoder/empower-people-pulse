@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -50,6 +51,7 @@ export default function AccessControl() {
   )
 
   const handleAddRule = () => {
+  const { t } = useTranslation()
     setSelectedRule(null)
     setIsDialogOpen(true)
   }
@@ -104,8 +106,8 @@ export default function AccessControl() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Access Control</h1>
-          <p className="text-muted-foreground">Manage access restrictions and security policies</p>
+          <h1 className="text-3xl font-bold">{t('pages.accessControl.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.accessControl.subtitle')}</p>
         </div>
         <Button onClick={handleAddRule} className="flex items-center space-x-2">
           <Plus className="w-4 h-4" />

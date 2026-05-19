@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -69,6 +70,7 @@ export default function RoleManagement() {
   )
 
   const handleAddRole = () => {
+  const { t } = useTranslation()
     setSelectedRole(null)
     setSelectedPermissions([])
     setIsDialogOpen(true)
@@ -143,8 +145,8 @@ export default function RoleManagement() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Role Management</h1>
-          <p className="text-muted-foreground">Manage user roles and permissions</p>
+          <h1 className="text-3xl font-bold">{t('pages.roleManagement.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.roleManagement.subtitle')}</p>
         </div>
         <Button onClick={handleAddRole} className="flex items-center space-x-2">
           <Plus className="w-4 h-4" />
