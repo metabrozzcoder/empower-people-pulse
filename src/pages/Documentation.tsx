@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -24,138 +24,73 @@ import {
 } from '@/components/ui/select'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
-  FileText,
-  Upload,
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Paperclip,
-  Send,
-  Download,
-  Eye,
-  UserCheck,
-  Inbox,
-  FileUp,
-  RefreshCw,
-  MessageSquare,
+  FileText, Upload, Plus, Edit, Trash2, Search, CheckCircle2, XCircle, Clock,
+  Paperclip, Send, Download, Eye, UserCheck, Inbox, FileUp, RefreshCw, MessageSquare, Loader2,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/context/AuthContext'
 
 type ApprovalStatus = 'Draft' | 'Pending' | 'Approved' | 'Rejected'
 type Priority = 'Low' | 'Normal' | 'High' | 'Urgent'
 
-interface DocAttachment {
-  id: string
-  name: string
-  size: string
-  type: string
-}
+interface Assigner { id: string; name: string; role: string }
 
-interface DocRequest {
+interface DocRow {
   id: string
   title: string
-  description: string
-  category: string
-  priority: Priority
-  status: ApprovalStatus
-  submittedBy: string
-  receiver: string
-  createdAt: string
-  updatedAt: string
-  attachments: DocAttachment[]
-  reviewerComment?: string
+  description: string | null
+  category: string | null
+  priority: string
+  status: string
+  owner_id: string
+  approver_id: string | null
+  receiver_name: string | null
+  file_path: string | null
+  file_type: string | null
+  file_size: number | null
+  approver_comment: string | null
+  created_at: string
+  updated_at: string
+  reviewed_at: string | null
 }
-
-// Leadership / approver roster
-const leadership = [
-  { id: 'ceo', name: 'Sarah Mitchell', role: 'CEO' },
-  { id: 'coo', name: 'David Chen', role: 'COO' },
-  { id: 'hr-lead', name: 'Maria Rodriguez', role: 'Head of HR' },
-  { id: 'finance-lead', name: 'Robert Kim', role: 'Head of Finance' },
-  { id: 'ops-lead', name: 'Jennifer Park', role: 'Operations Director' },
-]
 
 const categories = ['HR Request', 'Finance', 'Leave Request', 'Equipment', 'Policy', 'Contract', 'Other']
 const priorities: Priority[] = ['Low', 'Normal', 'High', 'Urgent']
 
-const CURRENT_USER = 'Current Employee'
-
-const seed: DocRequest[] = [
-  {
-    id: 'd1',
-    title: 'Annual Leave Request – March 2024',
-    description: 'Requesting 5 days of annual leave from March 18 to March 22 for personal travel.',
-    category: 'Leave Request',
-    priority: 'Normal',
-    status: 'Pending',
-    submittedBy: CURRENT_USER,
-    receiver: 'Maria Rodriguez',
-    createdAt: '2024-01-15T10:30:00Z',
-    updatedAt: '2024-01-15T10:30:00Z',
-    attachments: [{ id: 'a1', name: 'Leave_Form.pdf', size: '120 KB', type: 'pdf' }],
-  },
-  {
-    id: 'd2',
-    title: 'Equipment Purchase – New Laptop',
-    description: 'Current device is 5 years old and slows down editing workflow. Quote attached.',
-    category: 'Equipment',
-    priority: 'High',
-    status: 'Approved',
-    submittedBy: CURRENT_USER,
-    receiver: 'Robert Kim',
-    createdAt: '2024-01-10T09:15:00Z',
-    updatedAt: '2024-01-12T14:00:00Z',
-    attachments: [{ id: 'a2', name: 'Quote_MacBookPro.pdf', size: '340 KB', type: 'pdf' }],
-    reviewerComment: 'Approved. Please coordinate with IT for procurement.',
-  },
-  {
-    id: 'd3',
-    title: 'Expense Reimbursement – Client Dinner',
-    description: 'Reimbursement request for client dinner on Jan 8.',
-    category: 'Finance',
-    priority: 'Normal',
-    status: 'Rejected',
-    submittedBy: CURRENT_USER,
-    receiver: 'Robert Kim',
-    createdAt: '2024-01-09T18:20:00Z',
-    updatedAt: '2024-01-11T11:00:00Z',
-    attachments: [{ id: 'a3', name: 'Receipt.jpg', size: '1.1 MB', type: 'jpg' }],
-    reviewerComment: 'Missing itemised receipt. Please resubmit with full breakdown.',
-  },
-  {
-    id: 'd4',
-    title: 'Remote Work Policy Amendment Proposal',
-    description: 'Draft proposal to extend remote work allowance to 3 days/week.',
-    category: 'Policy',
-    priority: 'Low',
-    status: 'Draft',
-    submittedBy: CURRENT_USER,
-    receiver: 'Sarah Mitchell',
-    createdAt: '2024-01-14T08:00:00Z',
-    updatedAt: '2024-01-14T08:00:00Z',
-    attachments: [],
-  },
-]
+const STATUS_DB_TO_UI: Record<string, ApprovalStatus> = {
+  draft: 'Draft', pending: 'Pending', approved: 'Approved', rejected: 'Rejected',
+}
+const STATUS_UI_TO_DB: Record<ApprovalStatus, string> = {
+  Draft: 'draft', Pending: 'pending', Approved: 'approved', Rejected: 'rejected',
+}
 
 const emptyForm = {
   title: '',
   description: '',
   category: 'HR Request',
   priority: 'Normal' as Priority,
-  receiver: leadership[0].name,
-  attachments: [] as DocAttachment[],
+  approverId: '',
+  receiverName: '',
+  file: null as File | null,
+  existingFilePath: null as string | null,
+  existingFileType: null as string | null,
+  existingFileSize: null as number | null,
 }
 
 export default function Documentation() {
   const { t } = useTranslation()
   const { toast } = useToast()
+  const { currentUser } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [docs, setDocs] = useState<DocRequest[]>(seed)
+  const [docs, setDocs] = useState<DocRow[]>([])
+  const [assigners, setAssigners] = useState<Assigner[]>([])
+  const [profileNames, setProfileNames] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(true)
+  const [assignersLoading, setAssignersLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
   const [tab, setTab] = useState<'my' | 'inbox' | 'drafts' | 'all'>('my')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'All' | ApprovalStatus>('All')
@@ -164,141 +99,233 @@ export default function Documentation() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
 
-  const [viewing, setViewing] = useState<DocRequest | null>(null)
+  const [viewing, setViewing] = useState<DocRow | null>(null)
   const [reviewComment, setReviewComment] = useState('')
 
+  // ---------- Load assigners (admin + hr users) ----------
+  const loadAssigners = useCallback(async () => {
+    setAssignersLoading(true)
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('user_id, role')
+      .in('role', ['admin', 'hr'])
+    const ids = Array.from(new Set((roles ?? []).map((r) => r.user_id)))
+    if (ids.length === 0) { setAssigners([]); setAssignersLoading(false); return }
+    const { data: profs } = await supabase
+      .from('profiles')
+      .select('id, name, position, department')
+      .in('id', ids)
+    const roleByUser = new Map<string, string>()
+    ;(roles ?? []).forEach((r) => {
+      const cur = roleByUser.get(r.user_id)
+      if (!cur || r.role === 'admin') roleByUser.set(r.user_id, r.role)
+    })
+    const list: Assigner[] = (profs ?? []).map((p: { id: string; name: string; position: string | null; department: string | null }) => ({
+      id: p.id,
+      name: p.name,
+      role: p.position || (roleByUser.get(p.id) === 'admin' ? 'Administrator' : 'HR Manager'),
+    }))
+    setAssigners(list.sort((a, b) => a.name.localeCompare(b.name)))
+    setAssignersLoading(false)
+  }, [])
+
+  const loadDocs = useCallback(async () => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('documents')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) {
+      toast({ title: 'Failed to load documents', description: error.message, variant: 'destructive' })
+    }
+    const rows = (data ?? []) as unknown as DocRow[]
+    setDocs(rows)
+    // hydrate profile names for owners + approvers
+    const idsNeeded = new Set<string>()
+    rows.forEach((r) => { idsNeeded.add(r.owner_id); if (r.approver_id) idsNeeded.add(r.approver_id) })
+    const missing = Array.from(idsNeeded).filter((id) => !profileNames[id])
+    if (missing.length) {
+      const { data: profs } = await supabase.from('profiles').select('id, name').in('id', missing)
+      const next = { ...profileNames }
+      ;(profs ?? []).forEach((p: { id: string; name: string }) => { next[p.id] = p.name })
+      setProfileNames(next)
+    }
+    setLoading(false)
+  }, [toast, profileNames])
+
+  useEffect(() => {
+    loadAssigners()
+    loadDocs()
+    // Realtime sync
+    const channel = supabase
+      .channel('documents-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => {
+        loadDocs()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const ownerName = (id: string) => profileNames[id] || (id === currentUser?.id ? currentUser?.name ?? 'You' : '—')
+
   const filtered = useMemo(() => {
+    const me = currentUser?.id
     return docs.filter((d) => {
+      const status = STATUS_DB_TO_UI[d.status] ?? 'Draft'
       const tabMatch =
-        tab === 'my'
-          ? d.submittedBy === CURRENT_USER && d.status !== 'Draft'
-          : tab === 'inbox'
-          ? leadership.some((l) => l.name === d.receiver) && d.status === 'Pending'
-          : tab === 'drafts'
-          ? d.status === 'Draft' && d.submittedBy === CURRENT_USER
-          : true
-      const statusMatch = statusFilter === 'All' || d.status === statusFilter
-      const searchMatch =
-        !search ||
-        d.title.toLowerCase().includes(search.toLowerCase()) ||
-        d.description.toLowerCase().includes(search.toLowerCase()) ||
-        d.receiver.toLowerCase().includes(search.toLowerCase())
+        tab === 'my'   ? d.owner_id === me && status !== 'Draft'
+      : tab === 'inbox' ? d.approver_id === me && status === 'Pending'
+      : tab === 'drafts' ? d.owner_id === me && status === 'Draft'
+      : true
+      const statusMatch = statusFilter === 'All' || status === statusFilter
+      const q = search.toLowerCase()
+      const searchMatch = !q
+        || d.title.toLowerCase().includes(q)
+        || (d.description ?? '').toLowerCase().includes(q)
+        || (d.receiver_name ?? '').toLowerCase().includes(q)
       return tabMatch && statusMatch && searchMatch
     })
-  }, [docs, tab, search, statusFilter])
+  }, [docs, tab, search, statusFilter, currentUser])
 
-  const counts = useMemo(
-    () => ({
-      my: docs.filter((d) => d.submittedBy === CURRENT_USER && d.status !== 'Draft').length,
-      inbox: docs.filter((d) => d.status === 'Pending').length,
-      drafts: docs.filter((d) => d.status === 'Draft' && d.submittedBy === CURRENT_USER).length,
+  const counts = useMemo(() => {
+    const me = currentUser?.id
+    return {
+      my: docs.filter((d) => d.owner_id === me && d.status !== 'draft').length,
+      inbox: docs.filter((d) => d.approver_id === me && d.status === 'pending').length,
+      drafts: docs.filter((d) => d.owner_id === me && d.status === 'draft').length,
       all: docs.length,
-    }),
-    [docs]
-  )
+    }
+  }, [docs, currentUser])
 
   const openCompose = () => {
     setEditingId(null)
-    setForm(emptyForm)
+    setForm({ ...emptyForm, approverId: assigners[0]?.id ?? '', receiverName: assigners[0]?.name ?? '' })
     setComposeOpen(true)
   }
 
-  const openEdit = (doc: DocRequest) => {
-    setEditingId(doc.id)
+  const openEdit = (d: DocRow) => {
+    setEditingId(d.id)
     setForm({
-      title: doc.title,
-      description: doc.description,
-      category: doc.category,
-      priority: doc.priority,
-      receiver: doc.receiver,
-      attachments: [...doc.attachments],
+      title: d.title,
+      description: d.description ?? '',
+      category: d.category ?? 'HR Request',
+      priority: (d.priority as Priority) ?? 'Normal',
+      approverId: d.approver_id ?? '',
+      receiverName: d.receiver_name ?? '',
+      file: null,
+      existingFilePath: d.file_path,
+      existingFileType: d.file_type,
+      existingFileSize: d.file_size,
     })
     setComposeOpen(true)
   }
 
   const handleFilePick = () => fileInputRef.current?.click()
-
-  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files) return
-    const newOnes: DocAttachment[] = Array.from(files).map((f) => ({
-      id: `${Date.now()}-${f.name}`,
-      name: f.name,
-      size: `${Math.max(1, Math.round(f.size / 1024))} KB`,
-      type: f.name.split('.').pop() ?? 'file',
-    }))
-    setForm((p) => ({ ...p, attachments: [...p.attachments, ...newOnes] }))
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (f) setForm((p) => ({ ...p, file: f }))
     e.target.value = ''
   }
 
-  const removeAttachment = (id: string) =>
-    setForm((p) => ({ ...p, attachments: p.attachments.filter((a) => a.id !== id) }))
-
-  const persist = (status: ApprovalStatus) => {
-    if (!form.title.trim()) {
-      toast({ title: 'Title is required', variant: 'destructive' })
-      return
+  const persist = async (uiStatus: ApprovalStatus) => {
+    if (!currentUser) return
+    if (!form.title.trim()) { toast({ title: 'Title is required', variant: 'destructive' }); return }
+    if (uiStatus === 'Pending' && !form.approverId) {
+      toast({ title: 'Please assign a receiver', variant: 'destructive' }); return
     }
-    if (status === 'Pending' && !form.receiver) {
-      toast({ title: 'Please assign a receiver', variant: 'destructive' })
-      return
-    }
-    const now = new Date().toISOString()
-    if (editingId) {
-      setDocs((prev) =>
-        prev.map((d) =>
-          d.id === editingId
-            ? { ...d, ...form, status, updatedAt: now }
-            : d
-        )
-      )
-      toast({ title: status === 'Draft' ? 'Draft saved' : 'Request updated and sent for approval' })
-    } else {
-      const doc: DocRequest = {
-        id: Date.now().toString(),
-        ...form,
-        status,
-        submittedBy: CURRENT_USER,
-        createdAt: now,
-        updatedAt: now,
+    setSaving(true)
+    try {
+      let filePath = form.existingFilePath
+      let fileType = form.existingFileType
+      let fileSize = form.existingFileSize
+      if (form.file) {
+        const ext = form.file.name.split('.').pop() ?? 'bin'
+        const key = `${currentUser.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const { error: upErr } = await supabase.storage.from('documents').upload(key, form.file, { upsert: false })
+        if (upErr) throw upErr
+        filePath = key
+        fileType = form.file.type || ext
+        fileSize = form.file.size
       }
-      setDocs((prev) => [doc, ...prev])
-      toast({
-        title: status === 'Draft' ? 'Draft saved' : 'Submitted for approval',
-        description: status === 'Draft' ? undefined : `Sent to ${form.receiver}`,
-      })
+
+      const approver = assigners.find((a) => a.id === form.approverId)
+      const payload = {
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        category: form.category,
+        priority: form.priority,
+        status: STATUS_UI_TO_DB[uiStatus],
+        approver_id: form.approverId || null,
+        receiver_name: approver?.name ?? form.receiverName ?? null,
+        file_path: filePath,
+        file_type: fileType,
+        file_size: fileSize,
+      }
+
+      if (editingId) {
+        const { error } = await supabase.from('documents').update(payload as never).eq('id', editingId)
+        if (error) throw error
+        toast({ title: uiStatus === 'Draft' ? 'Draft saved' : 'Request updated' })
+      } else {
+        const { error } = await supabase.from('documents').insert({
+          ...payload,
+          owner_id: currentUser.id,
+        } as never)
+        if (error) throw error
+        toast({
+          title: uiStatus === 'Draft' ? 'Draft saved' : 'Submitted for approval',
+          description: uiStatus === 'Draft' ? undefined : `Sent to ${approver?.name}`,
+        })
+      }
+      setComposeOpen(false); setEditingId(null); setForm(emptyForm)
+      loadDocs()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Save failed'
+      toast({ title: 'Save failed', description: msg, variant: 'destructive' })
+    } finally {
+      setSaving(false)
     }
-    setComposeOpen(false)
-    setEditingId(null)
-    setForm(emptyForm)
   }
 
-  const deleteDoc = (id: string) => {
-    setDocs((prev) => prev.filter((d) => d.id !== id))
+  const deleteDoc = async (d: DocRow) => {
+    const { error } = await supabase.from('documents').delete().eq('id', d.id)
+    if (error) { toast({ title: 'Delete failed', description: error.message, variant: 'destructive' }); return }
+    if (d.file_path) supabase.storage.from('documents').remove([d.file_path])
     toast({ title: 'Document deleted' })
+    loadDocs()
   }
 
-  const reassign = (doc: DocRequest, receiver: string) => {
-    setDocs((prev) =>
-      prev.map((d) => (d.id === doc.id ? { ...d, receiver, updatedAt: new Date().toISOString() } : d))
-    )
-    toast({ title: 'Receiver updated', description: `Reassigned to ${receiver}` })
+  const reassign = async (d: DocRow, approverId: string) => {
+    const approver = assigners.find((a) => a.id === approverId)
+    const { error } = await supabase
+      .from('documents')
+      .update({ approver_id: approverId, receiver_name: approver?.name ?? null } as never)
+      .eq('id', d.id)
+    if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return }
+    toast({ title: 'Receiver updated', description: `Reassigned to ${approver?.name}` })
+    loadDocs()
   }
 
-  const decide = (doc: DocRequest, status: 'Approved' | 'Rejected') => {
-    setDocs((prev) =>
-      prev.map((d) =>
-        d.id === doc.id
-          ? { ...d, status, reviewerComment: reviewComment || d.reviewerComment, updatedAt: new Date().toISOString() }
-          : d
-      )
-    )
-    toast({
-      title: status === 'Approved' ? 'Document approved' : 'Document rejected',
-      description: doc.title,
-    })
-    setReviewComment('')
-    setViewing(null)
+  const decide = async (d: DocRow, uiStatus: 'Approved' | 'Rejected') => {
+    const { error } = await supabase
+      .from('documents')
+      .update({
+        status: STATUS_UI_TO_DB[uiStatus],
+        approver_comment: reviewComment || d.approver_comment,
+        reviewed_at: new Date().toISOString(),
+      } as never)
+      .eq('id', d.id)
+    if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return }
+    toast({ title: uiStatus === 'Approved' ? 'Document approved' : 'Document rejected', description: d.title })
+    setReviewComment(''); setViewing(null); loadDocs()
+  }
+
+  const downloadAttachment = async (d: DocRow) => {
+    if (!d.file_path) return
+    const { data, error } = await supabase.storage.from('documents').createSignedUrl(d.file_path, 60)
+    if (error || !data?.signedUrl) { toast({ title: 'Download failed', description: error?.message, variant: 'destructive' }); return }
+    window.open(data.signedUrl, '_blank')
   }
 
   const statusBadge = (s: ApprovalStatus) => {
@@ -309,14 +336,8 @@ export default function Documentation() {
       Rejected: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
     }
     const Icon = s === 'Approved' ? CheckCircle2 : s === 'Rejected' ? XCircle : s === 'Pending' ? Clock : Edit
-    return (
-      <Badge className={`${map[s]} gap-1`}>
-        <Icon className="h-3 w-3" />
-        {s}
-      </Badge>
-    )
+    return <Badge className={`${map[s]} gap-1`}><Icon className="h-3 w-3" />{s}</Badge>
   }
-
   const priorityBadge = (p: Priority) => {
     const map: Record<Priority, string> = {
       Urgent: 'bg-red-100 text-red-800 border-red-200',
@@ -327,9 +348,10 @@ export default function Documentation() {
     return <Badge variant="outline" className={`text-xs ${map[p]}`}>{p}</Badge>
   }
 
+  const fmtSize = (n: number | null) => !n ? '' : n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${Math.round(n / 1024)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`
+
   return (
     <div className="space-y-6">
-      {/* Hero */}
       <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-background to-accent/10 p-6 backdrop-blur-xl">
         <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -337,23 +359,17 @@ export default function Documentation() {
             <p className="text-muted-foreground">{t('pages.documentation.subtitle')}</p>
           </div>
           <Button size="lg" onClick={openCompose} className="shadow-lg">
-            <Upload className="mr-2 h-4 w-4" />
-            New Document Request
+            <Upload className="mr-2 h-4 w-4" /> New Document Request
           </Button>
         </div>
       </div>
 
-      {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: 'My Submissions', value: counts.my, icon: FileText },
           { label: 'Pending Review', value: counts.inbox, icon: Clock },
           { label: 'Drafts', value: counts.drafts, icon: Edit },
-          {
-            label: 'Approved',
-            value: docs.filter((d) => d.status === 'Approved').length,
-            icon: CheckCircle2,
-          },
+          { label: 'Approved', value: docs.filter((d) => d.status === 'approved').length, icon: CheckCircle2 },
         ].map((c) => (
           <Card key={c.label} className="backdrop-blur">
             <CardContent className="flex items-center justify-between p-4">
@@ -367,146 +383,107 @@ export default function Documentation() {
         ))}
       </div>
 
-      {/* Toolbar + Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <TabsList>
-            <TabsTrigger value="my" className="gap-2">
-              <Send className="h-4 w-4" /> My Submissions
-            </TabsTrigger>
-            <TabsTrigger value="inbox" className="gap-2">
-              <Inbox className="h-4 w-4" /> Approval Inbox
-            </TabsTrigger>
-            <TabsTrigger value="drafts" className="gap-2">
-              <Edit className="h-4 w-4" /> Drafts
-            </TabsTrigger>
-            <TabsTrigger value="all" className="gap-2">
-              <FileText className="h-4 w-4" /> All
-            </TabsTrigger>
+            <TabsTrigger value="my" className="gap-2"><Send className="h-4 w-4" /> My Submissions</TabsTrigger>
+            <TabsTrigger value="inbox" className="gap-2"><Inbox className="h-4 w-4" /> Approval Inbox</TabsTrigger>
+            <TabsTrigger value="drafts" className="gap-2"><Edit className="h-4 w-4" /> Drafts</TabsTrigger>
+            <TabsTrigger value="all" className="gap-2"><FileText className="h-4 w-4" /> All</TabsTrigger>
           </TabsList>
-
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search documents…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-64 pl-9"
-              />
+              <Input placeholder="Search documents…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-64 pl-9" />
             </div>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {(['All', 'Pending', 'Approved', 'Rejected', 'Draft'] as const).map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="ghost" size="icon" onClick={() => toast({ title: 'Refreshed' })}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+            <Button variant="ghost" size="icon" onClick={() => loadDocs()}><RefreshCw className="h-4 w-4" /></Button>
           </div>
         </div>
 
         <TabsContent value={tab} className="mt-4">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <Card><CardContent className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" /> Loading documents…
+            </CardContent></Card>
+          ) : filtered.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
                 <FileUp className="h-10 w-10 text-muted-foreground" />
                 <p className="text-muted-foreground">No documents in this view.</p>
-                <Button onClick={openCompose}>
-                  <Plus className="mr-2 h-4 w-4" /> Create one
-                </Button>
+                <Button onClick={openCompose}><Plus className="mr-2 h-4 w-4" /> Create one</Button>
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-3">
-              {filtered.map((doc) => (
-                <Card key={doc.id} className="transition hover:shadow-md">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback>
-                          {doc.submittedBy
-                            .split(' ')
-                            .map((n) => n[0])
-                            .join('')
-                            .slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-semibold">{doc.title}</h3>
-                          {statusBadge(doc.status)}
-                          {priorityBadge(doc.priority)}
-                          <Badge variant="outline" className="text-xs">
-                            {doc.category}
-                          </Badge>
-                        </div>
-                        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{doc.description}</p>
-                        <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <UserCheck className="h-3 w-3" />
-                            Receiver: <span className="font-medium text-foreground">{doc.receiver}</span>
-                          </span>
-                          <span>Updated {new Date(doc.updatedAt).toLocaleDateString()}</span>
-                          {doc.attachments.length > 0 && (
+              {filtered.map((d) => {
+                const status = STATUS_DB_TO_UI[d.status] ?? 'Draft'
+                const submitter = ownerName(d.owner_id)
+                return (
+                  <Card key={d.id} className="transition hover:shadow-md">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback>{submitter.split(' ').map((n) => n[0]).join('').slice(0, 2)}</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold">{d.title}</h3>
+                            {statusBadge(status)}
+                            {priorityBadge((d.priority as Priority) ?? 'Normal')}
+                            {d.category && <Badge variant="outline" className="text-xs">{d.category}</Badge>}
+                          </div>
+                          {d.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{d.description}</p>}
+                          <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
-                              <Paperclip className="h-3 w-3" />
-                              {doc.attachments.length} file{doc.attachments.length > 1 ? 's' : ''}
+                              <UserCheck className="h-3 w-3" />
+                              Receiver: <span className="font-medium text-foreground">{d.receiver_name ?? (d.approver_id ? ownerName(d.approver_id) : '—')}</span>
                             </span>
+                            <span>Updated {new Date(d.updated_at).toLocaleDateString()}</span>
+                            {d.file_path && (
+                              <span className="flex items-center gap-1">
+                                <Paperclip className="h-3 w-3" /> 1 file
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-shrink-0 items-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => setViewing(d)} title="View"><Eye className="h-4 w-4" /></Button>
+                          {(d.owner_id === currentUser?.id) && (
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(d)} title="Edit"><Edit className="h-4 w-4" /></Button>
+                          )}
+                          {(d.owner_id === currentUser?.id || currentUser?.role === 'Admin') && (
+                            <Button variant="ghost" size="icon" onClick={() => deleteDoc(d)} title="Delete" className="text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex flex-shrink-0 items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setViewing(doc)} title="View">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {(doc.status === 'Draft' || doc.status === 'Rejected' || doc.submittedBy === CURRENT_USER) && (
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(doc)} title="Edit">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteDoc(doc.id)}
-                          title="Delete"
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Quick reassign for pending docs */}
-                    {doc.status === 'Pending' && doc.submittedBy === CURRENT_USER && (
-                      <div className="mt-3 flex items-center gap-2 border-t pt-3">
-                        <Label className="text-xs text-muted-foreground">Reassign receiver:</Label>
-                        <Select value={doc.receiver} onValueChange={(v) => reassign(doc, v)}>
-                          <SelectTrigger className="h-8 w-64">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {leadership.map((l) => (
-                              <SelectItem key={l.id} value={l.name}>
-                                {l.name} — {l.role}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                      {status === 'Pending' && d.owner_id === currentUser?.id && (
+                        <div className="mt-3 flex items-center gap-2 border-t pt-3">
+                          <Label className="text-xs text-muted-foreground">Reassign receiver:</Label>
+                          <Select value={d.approver_id ?? ''} onValueChange={(v) => reassign(d, v)}>
+                            <SelectTrigger className="h-8 w-64"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent>
+                              {assigners.map((l) => (
+                                <SelectItem key={l.id} value={l.id}>{l.name} — {l.role}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           )}
         </TabsContent>
@@ -517,132 +494,89 @@ export default function Documentation() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editingId ? 'Edit Document Request' : 'New Document Request'}</DialogTitle>
-            <DialogDescription>
-              Upload supporting documents and assign a leadership receiver for approval.
-            </DialogDescription>
+            <DialogDescription>Upload a supporting document and assign a receiver for approval.</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label>Title *</Label>
-              <Input
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="e.g. Annual Leave Request – March 2024"
-              />
+              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Annual Leave Request" />
             </div>
-
             <div className="grid gap-2">
               <Label>Description</Label>
-              <Textarea
-                rows={4}
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Provide context for the approver…"
-              />
+              <Textarea rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Provide context for the approver…" />
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Category</Label>
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
                 <Label>Priority</Label>
-                <Select
-                  value={form.priority}
-                  onValueChange={(v) => setForm({ ...form, priority: v as Priority })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {priorities.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {p}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v as Priority })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{priorities.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="grid gap-2">
               <Label>Assign to (Receiver) *</Label>
-              <Select value={form.receiver} onValueChange={(v) => setForm({ ...form, receiver: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {leadership.map((l) => (
-                    <SelectItem key={l.id} value={l.name}>
-                      {l.name} — {l.role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {assignersLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading approvers…
+                </div>
+              ) : assigners.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No admin or HR users found. Ask an admin to assign roles.</p>
+              ) : (
+                <Select
+                  value={form.approverId}
+                  onValueChange={(v) => {
+                    const a = assigners.find((x) => x.id === v)
+                    setForm({ ...form, approverId: v, receiverName: a?.name ?? '' })
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select an approver" /></SelectTrigger>
+                  <SelectContent>
+                    {assigners.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>{l.name} — {l.role}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="grid gap-2">
-              <Label>Attachments</Label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={handleFiles}
-              />
+              <Label>Attachment</Label>
+              <input ref={fileInputRef} type="file" className="hidden" onChange={handleFile} />
               <Button variant="outline" onClick={handleFilePick} className="justify-start">
                 <Upload className="mr-2 h-4 w-4" />
-                Upload files
+                {form.file ? form.file.name : form.existingFilePath ? 'Replace file' : 'Upload file'}
               </Button>
-              {form.attachments.length > 0 && (
-                <div className="space-y-1">
-                  {form.attachments.map((a) => (
-                    <div
-                      key={a.id}
-                      className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Paperclip className="h-3 w-3 text-muted-foreground" />
-                        <span className="font-medium">{a.name}</span>
-                        <span className="text-xs text-muted-foreground">{a.size}</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive"
-                        onClick={() => removeAttachment(a.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
+              {(form.file || form.existingFilePath) && (
+                <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="h-3 w-3 text-muted-foreground" />
+                    <span className="font-medium">{form.file ? form.file.name : form.existingFilePath?.split('/').pop()}</span>
+                    <span className="text-xs text-muted-foreground">{form.file ? fmtSize(form.file.size) : fmtSize(form.existingFileSize)}</span>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                    onClick={() => setForm((p) => ({ ...p, file: null, existingFilePath: null, existingFileSize: null, existingFileType: null }))}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
                 </div>
               )}
             </div>
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setComposeOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="outline" onClick={() => persist('Draft')}>
-              Save Draft
-            </Button>
-            <Button onClick={() => persist('Pending')}>
-              <Send className="mr-2 h-4 w-4" />
+            <Button variant="ghost" onClick={() => setComposeOpen(false)} disabled={saving}>Cancel</Button>
+            <Button variant="outline" onClick={() => persist('Draft')} disabled={saving}>Save Draft</Button>
+            <Button onClick={() => persist('Pending')} disabled={saving}>
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
               Submit for Approval
             </Button>
           </DialogFooter>
@@ -652,93 +586,69 @@ export default function Documentation() {
       {/* View / Review Dialog */}
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
         <DialogContent className="max-w-2xl">
-          {viewing && (
-            <>
-              <DialogHeader>
-                <div className="flex items-center gap-2">
-                  {statusBadge(viewing.status)}
-                  {priorityBadge(viewing.priority)}
-                  <Badge variant="outline">{viewing.category}</Badge>
-                </div>
-                <DialogTitle className="mt-2">{viewing.title}</DialogTitle>
-                <DialogDescription>
-                  From <b>{viewing.submittedBy}</b> · To <b>{viewing.receiver}</b> ·{' '}
-                  {new Date(viewing.createdAt).toLocaleString()}
-                </DialogDescription>
-              </DialogHeader>
+          {viewing && (() => {
+            const status = STATUS_DB_TO_UI[viewing.status] ?? 'Draft'
+            return (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center gap-2">
+                    {statusBadge(status)}
+                    {priorityBadge((viewing.priority as Priority) ?? 'Normal')}
+                    {viewing.category && <Badge variant="outline">{viewing.category}</Badge>}
+                  </div>
+                  <DialogTitle className="mt-2">{viewing.title}</DialogTitle>
+                  <DialogDescription>
+                    From <b>{ownerName(viewing.owner_id)}</b> · To <b>{viewing.receiver_name ?? (viewing.approver_id ? ownerName(viewing.approver_id) : '—')}</b> · {new Date(viewing.created_at).toLocaleString()}
+                  </DialogDescription>
+                </DialogHeader>
 
-              <div className="space-y-4">
-                <p className="text-sm">{viewing.description}</p>
-
-                {viewing.attachments.length > 0 && (
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Attachments</Label>
-                    {viewing.attachments.map((a) => (
-                      <div
-                        key={a.id}
-                        className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm"
-                      >
+                <div className="space-y-4">
+                  {viewing.description && <p className="text-sm">{viewing.description}</p>}
+                  {viewing.file_path && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Attachment</Label>
+                      <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
                         <div className="flex items-center gap-2">
                           <Paperclip className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-medium">{a.name}</span>
-                          <span className="text-xs text-muted-foreground">{a.size}</span>
+                          <span className="font-medium">{viewing.file_path.split('/').pop()}</span>
+                          <span className="text-xs text-muted-foreground">{fmtSize(viewing.file_size)}</span>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toast({ title: 'Download started', description: a.name })}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => downloadAttachment(viewing)}>
                           <Download className="mr-1 h-3 w-3" /> Download
                         </Button>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  )}
+                  {viewing.approver_comment && (
+                    <div className="rounded-md border bg-muted/30 p-3">
+                      <Label className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <MessageSquare className="h-3 w-3" /> Reviewer comment
+                      </Label>
+                      <p className="mt-1 text-sm">{viewing.approver_comment}</p>
+                    </div>
+                  )}
+                  {status === 'Pending' && viewing.approver_id === currentUser?.id && (
+                    <div className="space-y-2 border-t pt-3">
+                      <Label>Review comment (optional)</Label>
+                      <Textarea rows={3} value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} placeholder="Leave a note for the submitter…" />
+                    </div>
+                  )}
+                </div>
 
-                {viewing.reviewerComment && (
-                  <div className="rounded-md border bg-muted/30 p-3">
-                    <Label className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MessageSquare className="h-3 w-3" /> Reviewer comment
-                    </Label>
-                    <p className="mt-1 text-sm">{viewing.reviewerComment}</p>
-                  </div>
-                )}
-
-                {viewing.status === 'Pending' && (
-                  <div className="space-y-2 border-t pt-3">
-                    <Label>Review comment (optional)</Label>
-                    <Textarea
-                      rows={3}
-                      value={reviewComment}
-                      onChange={(e) => setReviewComment(e.target.value)}
-                      placeholder="Leave a note for the submitter…"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <DialogFooter className="gap-2">
-                {viewing.status === 'Pending' ? (
-                  <>
-                    <Button variant="outline" onClick={() => setViewing(null)}>
-                      Close
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => decide(viewing, 'Rejected')}
-                    >
-                      <XCircle className="mr-2 h-4 w-4" /> Reject
-                    </Button>
-                    <Button onClick={() => decide(viewing, 'Approved')}>
-                      <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
-                    </Button>
-                  </>
-                ) : (
-                  <Button onClick={() => setViewing(null)}>Close</Button>
-                )}
-              </DialogFooter>
-            </>
-          )}
+                <DialogFooter className="gap-2">
+                  {status === 'Pending' && viewing.approver_id === currentUser?.id ? (
+                    <>
+                      <Button variant="outline" onClick={() => setViewing(null)}>Close</Button>
+                      <Button variant="destructive" onClick={() => decide(viewing, 'Rejected')}><XCircle className="mr-2 h-4 w-4" /> Reject</Button>
+                      <Button onClick={() => decide(viewing, 'Approved')}><CheckCircle2 className="mr-2 h-4 w-4" /> Approve</Button>
+                    </>
+                  ) : (
+                    <Button onClick={() => setViewing(null)}>Close</Button>
+                  )}
+                </DialogFooter>
+              </>
+            )
+          })()}
         </DialogContent>
       </Dialog>
     </div>
