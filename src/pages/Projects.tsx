@@ -111,7 +111,7 @@ const Projects = () => {
       if (error) return toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
       toast({ title: 'Project updated' })
     } else {
-      const { error } = await supabase.from('projects').insert({ ...payload, owner_id: user?.id })
+      const { error } = await supabase.from('projects').insert({ ...payload, owner_id: session?.user?.id })
       if (error) return toast({ title: 'Create failed', description: error.message, variant: 'destructive' })
       toast({ title: 'Project created' })
     }
