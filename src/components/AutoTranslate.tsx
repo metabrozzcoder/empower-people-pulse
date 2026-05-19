@@ -3,16 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { getDict } from '@/i18n/autoDict'
 
 /**
- * Walks the DOM and translates any English text node / placeholder / title / aria-label
- * whose trimmed text matches a key in the active language dictionary.
- *
- * Runs on every i18n language change and observes DOM mutations so dynamically rendered
- * content (dialogs, dropdowns, table rows) also gets translated.
- *
- * Stores original English in a data attribute so language switching is reversible.
+ * Translates English UI strings to the active language by walking the DOM.
+ * Optimized: batches work in rAF, pauses the observer during writes to avoid
+ * feedback loops, and skips nodes whose value already matches the target.
  */
 const ATTRS = ['placeholder', 'title', 'aria-label'] as const
-const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'CODE', 'PRE'])
+const SKIP_TAGS = new Set([
+  'SCRIPT', 'STYLE', 'NOSCRIPT', 'CODE', 'PRE', 'SVG', 'PATH', 'CANVAS',
+])
 
 export function AutoTranslate() {
   const { i18n } = useTranslation()
@@ -20,6 +18,10 @@ export function AutoTranslate() {
   useEffect(() => {
     const lang = i18n.language?.split('-')[0] ?? 'en'
     const dict = getDict(lang)
+    let obs: MutationObserver | null = null
+    let scheduled = false
+    const pending = new Set<Node>()
+    let cancelled = false
 
     const translateTextNode = (node: Text) => {
       const parent = node.parentElement
@@ -30,21 +32,14 @@ export function AutoTranslate() {
       const trimmed = raw.trim()
       if (!trimmed) return
 
-      // Restore original if we have one
-      const original = (node as Text & { __i18nOrig?: string }).__i18nOrig ?? trimmed
-      ;(node as Text & { __i18nOrig?: string }).__i18nOrig = original
+      const holder = node as Text & { __i18nOrig?: string }
+      const original = holder.__i18nOrig ?? trimmed
+      holder.__i18nOrig = original
 
-      if (!dict) {
-        if (raw !== original) node.nodeValue = raw.replace(trimmed, original)
-        return
-      }
-      const translated = dict[original]
-      if (translated && translated !== trimmed) {
-        node.nodeValue = raw.replace(trimmed, translated)
-      } else if (!translated && raw !== original) {
-        // No mapping in this language → fall back to original English
-        node.nodeValue = raw.replace(trimmed, original)
-      }
+      const target = dict ? (dict[original] ?? original) : original
+      if (target === trimmed) return
+      const next = raw.replace(trimmed, target)
+      if (next !== raw) node.nodeValue = next
     }
 
     const translateAttrs = (el: Element) => {
@@ -55,13 +50,8 @@ export function AutoTranslate() {
         const elx = el as Element & Record<string, string | undefined>
         const original = elx[key] ?? val.trim()
         elx[key] = original
-        if (!dict) {
-          if (val.trim() !== original) el.setAttribute(attr, original)
-          continue
-        }
-        const t = dict[original]
-        if (t && t !== val) el.setAttribute(attr, t)
-        else if (!t && val.trim() !== original) el.setAttribute(attr, original)
+        const target = dict ? (dict[original] ?? original) : original
+        if (target !== val) el.setAttribute(attr, target)
       }
     }
 
@@ -77,31 +67,61 @@ export function AutoTranslate() {
       const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
       let n: Node | null
       while ((n = walker.nextNode())) translateTextNode(n as Text)
-      el.querySelectorAll('*').forEach(translateAttrs)
+      const descendants = el.querySelectorAll('input,textarea,button,[placeholder],[title],[aria-label]')
+      descendants.forEach(translateAttrs)
     }
 
+    const flush = () => {
+      scheduled = false
+      if (cancelled) return
+      const nodes = Array.from(pending)
+      pending.clear()
+      if (!nodes.length) return
+      // Pause observer while we mutate to avoid feedback loops
+      obs?.disconnect()
+      for (const n of nodes) {
+        if (n.isConnected) walk(n)
+      }
+      if (!cancelled) startObserving()
+    }
+
+    const schedule = (n: Node) => {
+      pending.add(n)
+      if (scheduled) return
+      scheduled = true
+      requestAnimationFrame(flush)
+    }
+
+    const startObserving = () => {
+      obs?.observe(document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: [...ATTRS],
+      })
+    }
+
+    // Initial pass
     walk(document.body)
 
-    const obs = new MutationObserver((mutations) => {
+    obs = new MutationObserver((mutations) => {
       for (const m of mutations) {
         if (m.type === 'childList') {
-          m.addedNodes.forEach((n) => walk(n))
-        } else if (m.type === 'characterData' && m.target.nodeType === Node.TEXT_NODE) {
-          translateTextNode(m.target as Text)
+          m.addedNodes.forEach((n) => schedule(n))
+        } else if (m.type === 'characterData') {
+          schedule(m.target)
         } else if (m.type === 'attributes' && m.target.nodeType === Node.ELEMENT_NODE) {
-          translateAttrs(m.target as Element)
+          schedule(m.target)
         }
       }
     })
-    obs.observe(document.body, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: [...ATTRS],
-    })
+    startObserving()
 
-    return () => obs.disconnect()
+    return () => {
+      cancelled = true
+      obs?.disconnect()
+    }
   }, [i18n.language])
 
   return null
