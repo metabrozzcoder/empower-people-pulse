@@ -174,8 +174,11 @@ export default function UserManagement() {
   }
 
   const generateCredentials = (name: string, surname: string, role: string) => {
-    if (!name || !surname) return { username: '', password: '', guestId: '' }
-    const username = `${name.toLowerCase()}.${surname.toLowerCase()}`.replace(/\s+/g, '')
+    if (!name && !surname) return { username: '', password: '', guestId: '' }
+    const base = `${(name || '').toLowerCase()}${surname ? '.' + surname.toLowerCase() : ''}`
+      .replace(/\s+/g, '')
+      .replace(/[^a-z0-9.]/g, '')
+    const username = base || `user${Math.floor(Math.random() * 10000)}`
     const password = generateStrongPassword()
     const guestId = role === 'Guest' ? `GUEST${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}` : ''
     return { username, password, guestId }
