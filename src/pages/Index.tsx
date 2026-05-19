@@ -8,30 +8,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { format, isToday, isTomorrow } from "date-fns"
 import { useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
-
-const quickActions = [
-  {
-    title: "Chat",
-    description: "Start a conversation",
-    icon: MessageCircle,
-    href: "/chat",
-    color: "bg-blue-50 text-blue-600 border-blue-200"
-  },
-  {
-    title: "Calendar",
-    description: "View schedule",
-    icon: Calendar,
-    href: "/scheduling",
-    color: "bg-green-50 text-green-600 border-green-200"
-  },
-  {
-    title: "Tasks",
-    description: "Manage tasks",
-    icon: CheckSquare,
-    href: "/tasks",
-    color: "bg-purple-50 text-purple-600 border-purple-200"
-  }
-]
+import { useTranslation } from "react-i18next"
 
 const upcomingEvents: { id: number; title: string; date: string; type: string }[] = []
 
