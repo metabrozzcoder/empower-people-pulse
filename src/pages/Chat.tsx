@@ -672,6 +672,11 @@ export default function Chat() {
                           'relative max-w-xs lg:max-w-md px-3 py-2 rounded-2xl shadow-sm',
                           mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm'
                         )}>
+                          {msg.forwarded && (
+                            <div className={cn('text-xs mb-1 flex items-center gap-1 italic', mine ? 'opacity-80' : 'opacity-70')}>
+                              <Forward className="w-3 h-3" /> Forwarded
+                            </div>
+                          )}
                           {msg.replyTo && (
                             <div className={cn('text-xs mb-1 pl-2 border-l-2', mine ? 'border-primary-foreground/40 opacity-80' : 'border-primary/50 opacity-80')}>
                               <p className="font-semibold">{msg.replyTo.senderName}</p>
