@@ -114,49 +114,84 @@ const AccountSettings = () => {
   const [disable2faOpen, setDisable2faOpen] = useState(false)
   const [disableCode, setDisableCode] = useState("")
 
+  // Load settings from Supabase (with localStorage fallback for offline)
   useEffect(() => {
-    const savedNotifications = localStorage.getItem("notifications")
-    const savedPreferences = localStorage.getItem("preferences")
-    const savedSecurity = localStorage.getItem("security")
+    if (!currentUser) return
+    let cancelled = false
+    ;(async () => {
+      const { data } = await supabase
+        .from('user_settings')
+        .select('notifications, preferences, security')
+        .eq('user_id', currentUser.id)
+        .maybeSingle()
+      if (cancelled) return
+      if (data) {
+        const d = data as { notifications: typeof notifications; preferences: typeof preferences; security: typeof security }
+        if (d.notifications && Object.keys(d.notifications).length) setNotifications({ ...notifications, ...d.notifications })
+        if (d.preferences && Object.keys(d.preferences).length) setPreferences({ ...preferences, ...d.preferences })
+        if (d.security && Object.keys(d.security).length) setSecurity({ ...security, ...d.security })
+      } else {
+        // fallback: migrate any local data
+        const savedNotifications = localStorage.getItem('notifications')
+        const savedPreferences = localStorage.getItem('preferences')
+        const savedSecurity = localStorage.getItem('security')
+        if (savedNotifications) setNotifications(JSON.parse(savedNotifications))
+        if (savedPreferences) setPreferences(JSON.parse(savedPreferences))
+        if (savedSecurity) setSecurity(JSON.parse(savedSecurity))
+      }
+    })()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id])
 
-    if (savedNotifications) setNotifications(JSON.parse(savedNotifications))
-    if (savedPreferences) setPreferences(JSON.parse(savedPreferences))
-    if (savedSecurity) setSecurity(JSON.parse(savedSecurity))
-  }, [])
+  const upsertSettings = async (patch: Partial<{ notifications: typeof notifications; preferences: typeof preferences; security: typeof security }>) => {
+    if (!currentUser) return
+    await supabase.from('user_settings').upsert({
+      user_id: currentUser.id,
+      notifications: patch.notifications ?? notifications,
+      preferences: patch.preferences ?? preferences,
+      security: patch.security ?? security,
+    } as never, { onConflict: 'user_id' })
+  }
 
   const persistSecurity = (next: typeof security) => {
     setSecurity(next)
-    localStorage.setItem("security", JSON.stringify(next))
+    localStorage.setItem('security', JSON.stringify(next))
+    upsertSettings({ security: next })
   }
 
   const handleProfileSave = async () => {
-    localStorage.setItem("userProfile", JSON.stringify(profile))
+    localStorage.setItem('userProfile', JSON.stringify(profile))
     if (currentUser) {
-      await supabase.from("profiles").update({
+      await supabase.from('profiles').update({
         name: profile.name,
         phone: profile.phone,
         department: profile.department,
         avatar_url: profile.avatar,
-      } as never).eq("id", currentUser.id)
+      } as never).eq('id', currentUser.id)
     }
-    toast({ title: "Profile Updated", description: "Your profile has been successfully updated." })
+    toast({ title: 'Profile Updated', description: 'Your profile has been successfully updated.' })
   }
 
-  const handleNotificationSave = () => {
-    localStorage.setItem("notifications", JSON.stringify(notifications))
-    toast({ title: "Notifications Updated", description: "Your notification preferences have been saved." })
+  const handleNotificationSave = async () => {
+    localStorage.setItem('notifications', JSON.stringify(notifications))
+    await upsertSettings({ notifications })
+    toast({ title: 'Notifications Updated', description: 'Your notification preferences have been saved.' })
   }
 
-  const handleSecuritySave = () => {
-    localStorage.setItem("security", JSON.stringify(security))
-    toast({ title: "Security Settings Updated", description: "Your security settings have been updated." })
+  const handleSecuritySave = async () => {
+    localStorage.setItem('security', JSON.stringify(security))
+    await upsertSettings({ security })
+    toast({ title: 'Security Settings Updated', description: 'Your security settings have been updated.' })
   }
 
-  const handlePreferencesSave = () => {
-    localStorage.setItem("preferences", JSON.stringify(preferences))
+  const handlePreferencesSave = async () => {
+    localStorage.setItem('preferences', JSON.stringify(preferences))
     document.documentElement.lang = preferences.language
-    toast({ title: "Preferences Updated", description: "Your preferences have been saved and applied." })
+    await upsertSettings({ preferences })
+    toast({ title: 'Preferences Updated', description: 'Your preferences have been saved and applied.' })
   }
+
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
