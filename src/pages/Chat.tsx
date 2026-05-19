@@ -776,9 +776,14 @@ export default function Chat() {
                                 <CornerUpLeft className="h-3 w-3" />
                               </Button>
                             )}
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => handleDeleteMessage(msg.id)} title="Delete">
-                              <Trash2 className="h-3 w-3" />
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleArchiveMessage(msg)} title={msg.archived ? 'Unarchive' : 'Archive'}>
+                              {msg.archived ? <ArchiveRestore className="h-3 w-3" /> : <Archive className="h-3 w-3" />}
                             </Button>
+                            {isAdmin && (
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => handleDeleteMessage(msg.id)} title="Delete">
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
