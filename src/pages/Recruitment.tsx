@@ -1,9 +1,11 @@
 
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { RecruitmentEnhanced } from "@/components/RecruitmentEnhanced"
 import { useToast } from "@/hooks/use-toast"
 
 const Recruitment = () => {
+  const { t } = useTranslation()
   const { toast } = useToast()
 
   const handleCandidateAction = (action: string, candidateId: string) => {
@@ -17,10 +19,8 @@ const Recruitment = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">AI-Powered Recruitment</h1>
-        <p className="text-muted-foreground">
-          Streamline your hiring process with intelligent candidate screening and comprehensive management.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">{t('pages.recruitment.title')}</h1>
+        <p className="text-muted-foreground">{t('pages.recruitment.subtitle')}</p>
       </div>
 
       <RecruitmentEnhanced 

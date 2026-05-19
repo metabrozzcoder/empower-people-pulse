@@ -1,5 +1,6 @@
 
 import { useState } from "react"
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +12,7 @@ import { Clock, Calendar, Users, CheckCircle, XCircle, AlertTriangle, Download }
 import { useToast } from "@/hooks/use-toast"
 
 const Attendance = () => {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [selectedPeriod, setSelectedPeriod] = useState("week")
 
@@ -136,10 +138,8 @@ const Attendance = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Attendance Tracking</h1>
-        <p className="text-muted-foreground">
-          Real-time attendance monitoring and workforce analytics.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">{t('pages.attendance.title')}</h1>
+        <p className="text-muted-foreground">{t('pages.attendance.subtitle')}</p>
       </div>
 
       {/* Today's Overview */}
