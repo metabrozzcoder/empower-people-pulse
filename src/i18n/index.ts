@@ -17,6 +17,7 @@ i18n
     fallbackLng: 'en',
     supportedLngs: ['en', 'ru', 'uz'],
     interpolation: { escapeValue: false },
+    react: { useSuspense: false },
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
