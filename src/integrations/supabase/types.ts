@@ -154,11 +154,13 @@ export type Database = {
           category: string | null
           created_at: string
           description: string | null
-          file_path: string
+          file_path: string | null
           file_size: number | null
           file_type: string | null
           id: string
           owner_id: string
+          priority: string
+          receiver_name: string | null
           reviewed_at: string | null
           status: string
           title: string
@@ -170,11 +172,13 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
-          file_path: string
+          file_path?: string | null
           file_size?: number | null
           file_type?: string | null
           id?: string
           owner_id: string
+          priority?: string
+          receiver_name?: string | null
           reviewed_at?: string | null
           status?: string
           title: string
@@ -186,11 +190,13 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
-          file_path?: string
+          file_path?: string | null
           file_size?: number | null
           file_type?: string | null
           id?: string
           owner_id?: string
+          priority?: string
+          receiver_name?: string | null
           reviewed_at?: string | null
           status?: string
           title?: string
@@ -607,6 +613,33 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          notifications: Json
+          preferences: Json
+          security: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          notifications?: Json
+          preferences?: Json
+          security?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          notifications?: Json
+          preferences?: Json
+          security?: Json
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
