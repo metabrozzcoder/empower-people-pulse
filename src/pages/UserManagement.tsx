@@ -370,7 +370,7 @@ export default function UserManagement() {
         organization: formData.organization,
         linkedEmployee: formData.linkedEmployee,
         permissions: userPermissions,
-        username,
+        username: loginEmail,
         password,
         accessRules: selectedAccessRules,
         guestId: generatedCredentials.guestId,
