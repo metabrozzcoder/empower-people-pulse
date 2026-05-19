@@ -241,13 +241,16 @@ export default function UserManagement() {
   const handleFormChange = (field: string, value: string) => {
     const newFormData = { ...formData, [field]: value }
     setFormData(newFormData)
-    
-    // Auto-generate credentials as soon as name (or surname) is entered
+
+    // Always keep username synced to name/surname; keep existing password unless none.
     if (field === 'name' || field === 'surname' || field === 'role') {
-      if (newFormData.name || newFormData.surname) {
-        const credentials = generateCredentials(newFormData.name, newFormData.surname, newFormData.role || formData.role)
-        setGeneratedCredentials(credentials)
-      }
+      setGeneratedCredentials(prev => ({
+        username: buildUsername(newFormData.name, newFormData.surname),
+        password: prev.password || generateStrongPassword(),
+        guestId: (newFormData.role || formData.role) === 'Guest'
+          ? (prev.guestId || `GUEST${Math.floor(1000 + Math.random() * 9000)}`)
+          : '',
+      }))
     }
 
     // Auto-select sections based on role
