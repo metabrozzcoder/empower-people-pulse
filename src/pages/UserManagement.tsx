@@ -198,7 +198,7 @@ export default function UserManagement() {
       linkedEmployee: ''
     })
     setSelectedSections([])
-    setGeneratedCredentials({ username: '', password: '', guestId: '' })
+    setGeneratedCredentials({ username: '', password: generateStrongPassword(), guestId: '' })
     setIsDialogOpen(true)
   }
 
