@@ -138,22 +138,24 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
-  // Load persisted state
+  // Load persisted state + real users from DB
   useEffect(() => {
     try {
       const c = localStorage.getItem(STORAGE_KEY)
       const m = localStorage.getItem(META_KEY)
-      const u = localStorage.getItem(USERS_KEY)
       if (c) setConversations(JSON.parse(c))
       if (m) setMeta(JSON.parse(m))
-      if (u) {
-        const stored: ChatUser[] = JSON.parse(u)
-        // Merge: keep stored groups + added; refresh employee list from source
-        const base = buildInitialUsers()
+    } catch {}
+    fetchUsersFromDb().then((base) => {
+      try {
+        const u = localStorage.getItem(USERS_KEY)
+        const stored: ChatUser[] = u ? JSON.parse(u) : []
         const extras = stored.filter(s => !base.find(b => b.id === s.id))
         setUsers([...base, ...extras])
+      } catch {
+        setUsers(base)
       }
-    } catch {}
+    })
   }, [])
 
   useEffect(() => {
