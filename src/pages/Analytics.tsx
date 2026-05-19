@@ -48,7 +48,7 @@ const Analytics = () => {
       setLoading(true)
       const [e, pr, p, t, sr, a] = await Promise.all([
         supabase.from('employees').select('id,department,salary,performance_score,status,name,hire_date'),
-        supabase.from('profiles').select('id,department'),
+        supabase.from('profiles_public' as never).select('id,department'),
         supabase.from('projects').select('id,status,progress'),
         supabase.from('tasks').select('id,status,priority'),
         supabase.from('shooting_requests').select('id,status'),

@@ -61,7 +61,7 @@ const Scheduling = () => {
     setLoading(true)
     const [{ data: s }, { data: p }] = await Promise.all([
       supabase.from('shifts').select('*').order('date', { ascending: true }),
-      supabase.from('profiles').select('id, name'),
+      supabase.from('profiles_public' as never).select('id, name'),
     ])
     setShifts((s as ShiftRow[]) ?? [])
     setProfiles((p as ProfileOption[]) ?? [])
