@@ -1,0 +1,100 @@
+{
+  "common": {
+    "logout": "Chiqish",
+    "login": "Kirish",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "edit": "Tahrirlash",
+    "delete": "O'chirish",
+    "add": "Qo'shish",
+    "create": "Yaratish",
+    "search": "Qidirish",
+    "filter": "Filtr",
+    "loading": "Yuklanmoqda...",
+    "noData": "Ma'lumot yo'q",
+    "actions": "Amallar",
+    "name": "Nomi",
+    "description": "Tavsif",
+    "status": "Holati",
+    "language": "Til",
+    "profile": "Profil",
+    "accountSettings": "Hisob sozlamalari",
+    "settings": "Sozlamalar",
+    "today": "Bugun",
+    "tomorrow": "Ertaga",
+    "close": "Yopish",
+    "confirm": "Tasdiqlash",
+    "back": "Orqaga"
+  },
+  "sidebar": {
+    "groups": {
+      "main": "Asosiy menyu",
+      "hr": "HR va loyihalar",
+      "organization": "Tashkilot",
+      "communication": "Aloqa",
+      "analytics": "Boshqaruv va tahlil",
+      "documentation": "Hujjatlar",
+      "system": "Tizim"
+    },
+    "items": {
+      "dashboard": "Boshqaruv paneli",
+      "shootingRequests": "Suratga olish so'rovlari",
+      "employees": "Xodimlar",
+      "recruitment": "Ishga qabul",
+      "scheduling": "Jadval",
+      "projects": "Loyihalar",
+      "tasks": "Vazifalar",
+      "organizations": "Tashkilotlar",
+      "chat": "Chat",
+      "userManagement": "Foydalanuvchilarni boshqarish",
+      "accessControl": "Kirish nazorati",
+      "analytics": "Tahlil",
+      "documentation": "Hujjatlar",
+      "securitySystem": "Xavfsizlik tizimi"
+    }
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Boshqaruv paneli",
+      "subtitle": "Xush kelibsiz! Ish maydoningiz haqida umumiy ma'lumot.",
+      "quickActions": {
+        "chat": "Chat",
+        "chatDesc": "Suhbatni boshlash",
+        "calendar": "Kalendar",
+        "calendarDesc": "Jadvalni ko'rish",
+        "tasks": "Vazifalar",
+        "tasksDesc": "Vazifalarni boshqarish"
+      },
+      "upcomingEvents": "Kelgusi tadbirlar",
+      "upcomingEventsDesc": "Muhim sanalar va muddatlar",
+      "viewAllEvents": "Barcha tadbirlar",
+      "birthdays": "Xodimlarning tug'ilgan kunlari",
+      "birthdaysDesc": "Bugun va ertangi bayramlar",
+      "noBirthdays": "Bugun va ertaga tug'ilgan kunlar yo'q"
+    },
+    "employees": { "title": "Xodimlar", "subtitle": "Jamoangiz va ularning ma'lumotlarini boshqaring." },
+    "projects": { "title": "Loyihalar", "subtitle": "Barcha loyihalarni kuzating va boshqaring." },
+    "tasks": { "title": "Vazifalar", "subtitle": "Ish elementlarini tashkil eting va kuzating." },
+    "scheduling": { "title": "Jadval", "subtitle": "Smenalarni rejalashtiring va jadvalni boshqaring." },
+    "attendance": { "title": "Davomat", "subtitle": "Davomat va ish vaqtini kuzating." },
+    "analytics": { "title": "Tahlil", "subtitle": "Tashkilot bo'ylab tahlillar va hisobotlar." },
+    "organizations": { "title": "Tashkilotlar", "subtitle": "Tashkilotlar va bo'limlarni boshqaring." },
+    "departments": { "title": "Bo'limlar", "subtitle": "Bo'limlarni boshqaring." },
+    "chat": { "title": "Chat", "subtitle": "Ichki aloqa." },
+    "userManagement": { "title": "Foydalanuvchilarni boshqarish", "subtitle": "Foydalanuvchi hisoblarini yarating va boshqaring." },
+    "roleManagement": { "title": "Rollarni boshqarish", "subtitle": "Rollar va ruxsatlarni belgilang." },
+    "accessControl": { "title": "Kirish nazorati", "subtitle": "Bo'lim darajasidagi kirishni sozlang." },
+    "securitySystem": { "title": "Xavfsizlik tizimi", "subtitle": "Qurilmalar va biometrik ro'yxatga olishni kuzating." },
+    "documentation": { "title": "Hujjatlar", "subtitle": "Bilimlar bazasi va hujjat pochta qutisi." },
+    "settings": { "title": "Sozlamalar", "subtitle": "Ilova sozlamalari." },
+    "profile": { "title": "Profil", "subtitle": "Shaxsiy ma'lumotlaringiz." },
+    "accountSettings": { "title": "Hisob sozlamalari", "subtitle": "Hisobingizni boshqaring." },
+    "shootingRequests": { "title": "Suratga olish so'rovlari", "subtitle": "Media suratga olish so'rovlarini boshqaring." },
+    "recruitment": { "title": "AI yordamida ishga qabul", "subtitle": "Aqlli nomzodlarni tanlash bilan ishga qabul jarayonini optimallashtiring." }
+  },
+  "languages": {
+    "en": "English",
+    "ru": "Русский",
+    "uz": "O'zbek"
+  }
+}

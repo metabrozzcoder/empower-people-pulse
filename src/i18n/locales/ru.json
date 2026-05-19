@@ -1,0 +1,100 @@
+{
+  "common": {
+    "logout": "Выйти",
+    "login": "Войти",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "edit": "Изменить",
+    "delete": "Удалить",
+    "add": "Добавить",
+    "create": "Создать",
+    "search": "Поиск",
+    "filter": "Фильтр",
+    "loading": "Загрузка...",
+    "noData": "Нет данных",
+    "actions": "Действия",
+    "name": "Имя",
+    "description": "Описание",
+    "status": "Статус",
+    "language": "Язык",
+    "profile": "Профиль",
+    "accountSettings": "Настройки аккаунта",
+    "settings": "Настройки",
+    "today": "Сегодня",
+    "tomorrow": "Завтра",
+    "close": "Закрыть",
+    "confirm": "Подтвердить",
+    "back": "Назад"
+  },
+  "sidebar": {
+    "groups": {
+      "main": "Главное меню",
+      "hr": "HR и проекты",
+      "organization": "Организация",
+      "communication": "Коммуникации",
+      "analytics": "Управление и аналитика",
+      "documentation": "Документация",
+      "system": "Система"
+    },
+    "items": {
+      "dashboard": "Панель управления",
+      "shootingRequests": "Заявки на съёмку",
+      "employees": "Сотрудники",
+      "recruitment": "Рекрутинг",
+      "scheduling": "Расписание",
+      "projects": "Проекты",
+      "tasks": "Задачи",
+      "organizations": "Организации",
+      "chat": "Чат",
+      "userManagement": "Управление пользователями",
+      "accessControl": "Контроль доступа",
+      "analytics": "Аналитика",
+      "documentation": "Документация",
+      "securitySystem": "Система безопасности"
+    }
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Панель управления",
+      "subtitle": "С возвращением! Обзор вашего рабочего пространства.",
+      "quickActions": {
+        "chat": "Чат",
+        "chatDesc": "Начать разговор",
+        "calendar": "Календарь",
+        "calendarDesc": "Посмотреть расписание",
+        "tasks": "Задачи",
+        "tasksDesc": "Управление задачами"
+      },
+      "upcomingEvents": "Предстоящие события",
+      "upcomingEventsDesc": "Важные даты и сроки",
+      "viewAllEvents": "Все события",
+      "birthdays": "Дни рождения сотрудников",
+      "birthdaysDesc": "Празднования сегодня и завтра",
+      "noBirthdays": "Нет дней рождений сегодня и завтра"
+    },
+    "employees": { "title": "Сотрудники", "subtitle": "Управляйте сотрудниками и их данными." },
+    "projects": { "title": "Проекты", "subtitle": "Отслеживайте и управляйте проектами." },
+    "tasks": { "title": "Задачи", "subtitle": "Организуйте и отслеживайте задачи." },
+    "scheduling": { "title": "Расписание", "subtitle": "Планируйте смены и расписание." },
+    "attendance": { "title": "Посещаемость", "subtitle": "Отслеживайте посещаемость и часы работы." },
+    "analytics": { "title": "Аналитика", "subtitle": "Аналитика и отчёты по всей организации." },
+    "organizations": { "title": "Организации", "subtitle": "Управляйте организациями и их подразделениями." },
+    "departments": { "title": "Отделы", "subtitle": "Управляйте отделами." },
+    "chat": { "title": "Чат", "subtitle": "Внутренняя коммуникация." },
+    "userManagement": { "title": "Управление пользователями", "subtitle": "Создавайте и управляйте учётными записями." },
+    "roleManagement": { "title": "Управление ролями", "subtitle": "Определите роли и разрешения." },
+    "accessControl": { "title": "Контроль доступа", "subtitle": "Настройка доступа к разделам." },
+    "securitySystem": { "title": "Система безопасности", "subtitle": "Мониторинг устройств и биометрия." },
+    "documentation": { "title": "Документация", "subtitle": "База знаний и почтовый ящик документов." },
+    "settings": { "title": "Настройки", "subtitle": "Настройки приложения." },
+    "profile": { "title": "Профиль", "subtitle": "Ваша личная информация." },
+    "accountSettings": { "title": "Настройки аккаунта", "subtitle": "Управление вашим аккаунтом." },
+    "shootingRequests": { "title": "Заявки на съёмку", "subtitle": "Управление заявками на съёмку." },
+    "recruitment": { "title": "Рекрутинг с ИИ", "subtitle": "Оптимизируйте процесс найма с интеллектуальным отбором кандидатов." }
+  },
+  "languages": {
+    "en": "English",
+    "ru": "Русский",
+    "uz": "O'zbek"
+  }
+}
