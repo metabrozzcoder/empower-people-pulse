@@ -990,7 +990,20 @@ export default function Chat() {
       </Dialog>
 
       {/* New Chat */}
-      <NewChatDialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen} onCreate={addNewContact} />
+      <NewChatDialog
+        open={isNewChatOpen}
+        onOpenChange={setIsNewChatOpen}
+        employees={users.filter(u => !u.isGroup)}
+        onStart={startConversation}
+      />
+
+      {/* Forward Dialog */}
+      <ForwardDialog
+        message={forwardMsg}
+        onOpenChange={(o) => !o && setForwardMsg(null)}
+        targets={users.filter(u => u.id !== selectedUser?.id)}
+        onForward={handleForward}
+      />
 
       {/* Call Overlay */}
       {callState && selectedUser && (
