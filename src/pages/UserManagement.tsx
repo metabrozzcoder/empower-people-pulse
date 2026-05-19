@@ -784,13 +784,13 @@ export default function UserManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                  <Label htmlFor="email">Login Email <span className="text-xs text-muted-foreground">(auto-generated)</span></Label>
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="Enter email address" 
-                    value={formData.email}
-                    onChange={(e) => handleFormChange('email', e.target.value)}
+                    value={generatedCredentials.username}
+                    readOnly
+                    className="bg-muted/40 font-mono text-sm"
                   />
                 </div>
                 <div className="space-y-2">
