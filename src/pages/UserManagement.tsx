@@ -964,7 +964,7 @@ export default function UserManagement() {
 
                   <div className="space-y-2.5">
                     {[
-                      { key: 'username', label: 'Username', value: generatedCredentials.username, icon: AtSign, empty: 'Enter a name to generate' },
+                      { key: 'username', label: 'Login Email', value: generatedCredentials.username, icon: AtSign, empty: 'Enter name & surname to generate' },
                       { key: 'password', label: 'Password', value: generatedCredentials.password, icon: KeyRound, empty: 'Will be generated' },
                       ...(formData.role === 'Guest' ? [{ key: 'guestId', label: 'Guest ID', value: generatedCredentials.guestId, icon: IdCard, empty: 'Select Guest role' }] : []),
                     ].map(({ key, label, value, icon: Icon, empty }) => {
