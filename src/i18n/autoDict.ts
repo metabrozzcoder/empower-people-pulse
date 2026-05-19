@@ -154,6 +154,22 @@ export const ru: Record<string, string> = {
   "Access Control": "Контроль доступа", "Role Management": "Управление ролями",
   "Attendance": "Посещаемость", "Shooting Requests": "Заявки на съёмку",
   "Account Settings": "Настройки аккаунта",
+
+  // Extra common UI
+  "Yes": "Да", "No": "Нет", "OK": "ОК", "Done": "Готово", "Continue": "Продолжить",
+  "Apply": "Применить", "Reset": "Сбросить", "Clear": "Очистить", "Refresh": "Обновить",
+  "Upload": "Загрузить", "Download": "Скачать", "Open": "Открыть", "View": "Просмотр",
+  "View All": "Показать все", "Show More": "Показать больше", "Show Less": "Свернуть",
+  "Details": "Подробности", "Information": "Информация", "Summary": "Сводка",
+  "Username": "Имя пользователя", "Sign In": "Войти", "Sign Out": "Выйти", "Sign Up": "Регистрация",
+  "Forgot Password": "Забыли пароль", "Remember Me": "Запомнить меня",
+  "Notifications": "Уведомления", "No notifications": "Нет уведомлений",
+  "Yesterday": "Вчера", "Tomorrow": "Завтра", "Now": "Сейчас",
+  "Pending": "В ожидании", "Approved": "Одобрено", "Completed": "Завершено",
+  "In Progress": "В работе", "To Do": "К выполнению", "Done": "Готово",
+  "Type a message": "Введите сообщение", "Send": "Отправить", "Reply": "Ответить",
+  "Online": "В сети", "Offline": "Не в сети", "Away": "Отошёл", "Busy": "Занят",
+  "Today": "Сегодня", "Week": "Неделя", "Month": "Месяц", "Year": "Год",
 }
 
 export const uz: Record<string, string> = {
