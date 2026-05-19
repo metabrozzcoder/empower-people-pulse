@@ -162,14 +162,6 @@ export default function Chat() {
     try { localStorage.setItem(USERS_KEY, JSON.stringify(users)) } catch {}
   }, [users])
 
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations)) } catch {}
-  }, [conversations])
-
-  useEffect(() => {
-    try { localStorage.setItem(META_KEY, JSON.stringify(meta)) } catch {}
-  }, [meta])
-
   // Available users (role-aware)
   const availableUsers = useMemo(() => {
     if (currentUser?.role === 'Guest' && currentUser.linkedEmployee) {
