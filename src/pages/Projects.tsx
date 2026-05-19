@@ -13,6 +13,9 @@ import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 
+// Use session for owner_id
+
+
 interface ProjectRow {
   id: string
   name: string
