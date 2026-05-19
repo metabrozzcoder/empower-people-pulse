@@ -31,6 +31,7 @@ import {
 } from "lucide-react"
 import { NavLink, useNavigate } from "react-router-dom"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/AuthContext"
 import {
@@ -61,59 +62,65 @@ import {
 const sidebarSections = [
   {
     title: "Main Menu",
+    titleKey: "sidebar.groups.main",
     collapsible: false,
     items: [
-      { title: "Dashboard", url: "/", icon: LayoutDashboard, sectionName: "Dashboard" },
-      
-      { title: "Shooting Requests", url: "/shooting-requests", icon: Camera, sectionName: "Shooting Requests" },
+      { title: "Dashboard", titleKey: "sidebar.items.dashboard", url: "/", icon: LayoutDashboard, sectionName: "Dashboard" },
+      { title: "Shooting Requests", titleKey: "sidebar.items.shootingRequests", url: "/shooting-requests", icon: Camera, sectionName: "Shooting Requests" },
     ]
   },
   {
     title: "HR & Projects",
+    titleKey: "sidebar.groups.hr",
     collapsible: true,
     items: [
-      { title: "Employees", url: "/employees", icon: Users, sectionName: "Employees" },
-      { title: "Recruitment", url: "/recruitment", icon: UserPlus, sectionName: "Recruitment" },
-      { title: "Scheduling", url: "/scheduling", icon: Calendar, sectionName: "Scheduling" },
-      { title: "Projects", url: "/projects", icon: Briefcase, sectionName: "Projects" },
-      { title: "Tasks", url: "/tasks", icon: ClipboardList, sectionName: "Tasks" },
+      { title: "Employees", titleKey: "sidebar.items.employees", url: "/employees", icon: Users, sectionName: "Employees" },
+      { title: "Recruitment", titleKey: "sidebar.items.recruitment", url: "/recruitment", icon: UserPlus, sectionName: "Recruitment" },
+      { title: "Scheduling", titleKey: "sidebar.items.scheduling", url: "/scheduling", icon: Calendar, sectionName: "Scheduling" },
+      { title: "Projects", titleKey: "sidebar.items.projects", url: "/projects", icon: Briefcase, sectionName: "Projects" },
+      { title: "Tasks", titleKey: "sidebar.items.tasks", url: "/tasks", icon: ClipboardList, sectionName: "Tasks" },
     ]
   },
   {
     title: "Organization",
+    titleKey: "sidebar.groups.organization",
     collapsible: true,
     items: [
-      { title: "Organizations", url: "/organizations", icon: Building2, sectionName: "Organizations" },
+      { title: "Organizations", titleKey: "sidebar.items.organizations", url: "/organizations", icon: Building2, sectionName: "Organizations" },
     ]
   },
   {
     title: "Communication",
+    titleKey: "sidebar.groups.communication",
     collapsible: true,
     items: [
-      { title: "Chat", url: "/chat", icon: MessageSquare, sectionName: "Chat" },
+      { title: "Chat", titleKey: "sidebar.items.chat", url: "/chat", icon: MessageSquare, sectionName: "Chat" },
     ]
   },
   {
     title: "Management & Analytics",
+    titleKey: "sidebar.groups.analytics",
     collapsible: true,
     items: [
-      { title: "User Management", url: "/user-management", icon: UserCheck, sectionName: "User Management", allowedRoles: ["Admin"] },
-      { title: "Access Control", url: "/access-control", icon: Shield, sectionName: "Access Control", allowedRoles: ["Admin"] },
-      { title: "Analytics", url: "/analytics", icon: BarChart3, sectionName: "Analytics" },
+      { title: "User Management", titleKey: "sidebar.items.userManagement", url: "/user-management", icon: UserCheck, sectionName: "User Management", allowedRoles: ["Admin"] },
+      { title: "Access Control", titleKey: "sidebar.items.accessControl", url: "/access-control", icon: Shield, sectionName: "Access Control", allowedRoles: ["Admin"] },
+      { title: "Analytics", titleKey: "sidebar.items.analytics", url: "/analytics", icon: BarChart3, sectionName: "Analytics" },
     ]
   },
   {
     title: "Documentation",
+    titleKey: "sidebar.groups.documentation",
     collapsible: true,
     items: [
-      { title: "Documentation", url: "/documentation", icon: FileSearch, sectionName: "Documentation" },
+      { title: "Documentation", titleKey: "sidebar.items.documentation", url: "/documentation", icon: FileSearch, sectionName: "Documentation" },
     ]
   },
   {
     title: "System",
+    titleKey: "sidebar.groups.system",
     collapsible: true,
     items: [
-      { title: "Security System", url: "/security-system", icon: Scan, allowedRoles: ["Admin"] },
+      { title: "Security System", titleKey: "sidebar.items.securitySystem", url: "/security-system", icon: Scan, allowedRoles: ["Admin"] },
     ]
   }
 ]
@@ -121,6 +128,7 @@ const sidebarSections = [
 export function AppSidebar() {
   const { toast } = useToast()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { logout, currentUser } = useAuth()
   const [openSections, setOpenSections] = useState<string[]>([
     "Main Menu", "HR & Projects", "Organization"
