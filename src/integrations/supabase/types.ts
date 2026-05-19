@@ -499,45 +499,131 @@ export type Database = {
         }
         Relationships: []
       }
+      shooting_request_history: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          note: string | null
+          request_id: string
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          request_id: string
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          request_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shooting_request_history_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "shooting_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shooting_requests: {
         Row: {
           assignee_id: string | null
           created_at: string
+          decline_reason: string | null
           description: string | null
+          director_decided_at: string | null
+          director_id: string | null
+          director_note: string | null
+          driver_assigned_at: string | null
+          driver_id: string | null
           equipment: Json | null
+          equipment_assigned_at: string | null
+          equipment_note: string | null
           id: string
           location: string | null
+          moderator_decided_at: string | null
+          moderator_id: string | null
+          moderator_note: string | null
           requester_id: string | null
           scheduled_date: string | null
+          sensitive: boolean
           status: string | null
+          tech_supply_id: string | null
           title: string
           updated_at: string
+          vehicle_info: string | null
+          workflow_status: string
         }
         Insert: {
           assignee_id?: string | null
           created_at?: string
+          decline_reason?: string | null
           description?: string | null
+          director_decided_at?: string | null
+          director_id?: string | null
+          director_note?: string | null
+          driver_assigned_at?: string | null
+          driver_id?: string | null
           equipment?: Json | null
+          equipment_assigned_at?: string | null
+          equipment_note?: string | null
           id?: string
           location?: string | null
+          moderator_decided_at?: string | null
+          moderator_id?: string | null
+          moderator_note?: string | null
           requester_id?: string | null
           scheduled_date?: string | null
+          sensitive?: boolean
           status?: string | null
+          tech_supply_id?: string | null
           title: string
           updated_at?: string
+          vehicle_info?: string | null
+          workflow_status?: string
         }
         Update: {
           assignee_id?: string | null
           created_at?: string
+          decline_reason?: string | null
           description?: string | null
+          director_decided_at?: string | null
+          director_id?: string | null
+          director_note?: string | null
+          driver_assigned_at?: string | null
+          driver_id?: string | null
           equipment?: Json | null
+          equipment_assigned_at?: string | null
+          equipment_note?: string | null
           id?: string
           location?: string | null
+          moderator_decided_at?: string | null
+          moderator_id?: string | null
+          moderator_note?: string | null
           requester_id?: string | null
           scheduled_date?: string | null
+          sensitive?: boolean
           status?: string | null
+          tech_supply_id?: string | null
           title?: string
           updated_at?: string
+          vehicle_info?: string | null
+          workflow_status?: string
         }
         Relationships: []
       }
