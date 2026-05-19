@@ -957,27 +957,45 @@ export default function UserManagement() {
                       { key: 'username', label: 'Username', value: generatedCredentials.username, icon: AtSign, empty: 'Enter a name to generate' },
                       { key: 'password', label: 'Password', value: generatedCredentials.password, icon: KeyRound, empty: 'Will be generated' },
                       ...(formData.role === 'Guest' ? [{ key: 'guestId', label: 'Guest ID', value: generatedCredentials.guestId, icon: IdCard, empty: 'Select Guest role' }] : []),
-                    ].map(({ key, label, value, icon: Icon, empty }) => (
-                      <div key={key} className="group flex items-center gap-3 rounded-lg border bg-background/80 backdrop-blur-sm p-3 transition-all hover:border-primary/40 hover:shadow-sm">
-                        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
-                          <div className={`font-mono text-sm truncate ${value ? 'text-foreground' : 'text-muted-foreground/60 italic'}`}>
-                            {value || empty}
+                    ].map(({ key, label, value, icon: Icon, empty }) => {
+                      const isPassword = key === 'password'
+                      const displayValue = value
+                        ? (isPassword && !showPassword ? '•'.repeat(value.length) : value)
+                        : empty
+                      return (
+                        <div key={key} className="group flex items-center gap-2 rounded-lg border bg-background/80 backdrop-blur-sm p-3 transition-all hover:border-primary/40 hover:shadow-sm">
+                          <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
+                            <div className={`font-mono text-sm truncate ${value ? 'text-foreground' : 'text-muted-foreground/60 italic'}`}>
+                              {displayValue}
+                            </div>
                           </div>
+                          {isPassword && value && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setShowPassword(s => !s)}
+                              className="h-8 w-8 shrink-0"
+                              title={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={!value}
+                            onClick={() => copyToClipboard(value, key)}
+                            className="h-8 w-8 shrink-0"
+                          >
+                            {copiedField === key ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={!value}
-                          onClick={() => copyToClipboard(value, key)}
-                          className="h-8 w-8 shrink-0"
-                        >
-                          {copiedField === key ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               </div>
