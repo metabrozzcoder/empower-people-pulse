@@ -37,12 +37,16 @@ interface ShootingRow {
   sensitive: boolean
   moderator_id: string | null
   moderator_note: string | null
+  moderator_decided_at: string | null
   director_id: string | null
   director_note: string | null
+  director_decided_at: string | null
   tech_supply_id: string | null
   equipment_note: string | null
+  equipment_assigned_at: string | null
   driver_id: string | null
   vehicle_info: string | null
+  driver_assigned_at: string | null
   decline_reason: string | null
   created_at: string
   updated_at: string
