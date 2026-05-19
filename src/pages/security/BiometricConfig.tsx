@@ -98,7 +98,7 @@ function EnrollPanel({ kind, toast }: { kind: 'fingerprint' | 'facial'; toast: a
           <Select value={employeeId} onValueChange={setEmployeeId}>
             <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
             <SelectContent>
-              {mockEmployees.map(e => <SelectItem key={e.id} value={String(e.id)}>{e.name} — {e.department}</SelectItem>)}
+              {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}{e.department ? ` — ${e.department}` : ''}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
