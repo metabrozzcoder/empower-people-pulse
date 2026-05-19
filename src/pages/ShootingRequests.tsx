@@ -1,1387 +1,534 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge' 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { 
-  Camera, 
-  Plus, 
-  Search, 
-  Filter, 
-  MapPin, 
-  Calendar, 
-  UserIcon, 
-  Truck,
-  Settings,
-  FileText,
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle,
-  Car,
-  Package,
-  Edit,
-  Trash2,
-  MoreHorizontal,
-  Map
-} from 'lucide-react'
-import { useToast } from '@/hooks/use-toast' 
-import { useAuth } from '@/context/AuthContext'
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Progress } from '@/components/ui/progress'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Camera, Plus, MapPin, Calendar, AlertTriangle, CheckCircle2, XCircle, ArrowRight, Inbox, User as UserIcon, Truck, Package, ShieldCheck, Loader2, History } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
 
-interface ShootingRequest {
+type WorkflowStatus =
+  | 'pending_moderator'
+  | 'pending_director'
+  | 'pending_equipment'
+  | 'pending_driver'
+  | 'scheduled'
+  | 'completed'
+  | 'declined'
+
+type WorkflowRole = 'shooting_moderator' | 'director' | 'tech_supply' | 'driver'
+
+interface ShootingRow {
   id: string
-  projectTitle: string
-  shootingDate: string
-  mainLocation: string
-  extraLocations: ExtraLocation[]
-  numberOfCameramen: number
-  notes?: string
-  initiatorId: string
-  reporterId: string
-  status: 'Draft' | 'Submitted' | 'Admin Approved' | 'Equipment Assigned' | 'Trip Started' | 'Trip Returned' | 'Equipment Returned' | 'Finished' | 'Rejected'
-  driverId?: string
-  equipmentAssigned?: boolean
-  equipmentReturned?: boolean
-  tripStatus?: 'Not Started' | 'Started' | 'Arrived' | 'Waiting' | 'Returning' | 'Returned'
-  createdAt: string
-  updatedAt: string
-  assignedEquipment?: string[]
-  currentLocation?: { lat: number, lng: number }
+  title: string
+  description: string | null
+  location: string | null
+  scheduled_date: string | null
+  requester_id: string | null
+  workflow_status: WorkflowStatus
+  sensitive: boolean
+  moderator_id: string | null
+  moderator_note: string | null
+  director_id: string | null
+  director_note: string | null
+  tech_supply_id: string | null
+  equipment_note: string | null
+  driver_id: string | null
+  vehicle_info: string | null
+  decline_reason: string | null
+  created_at: string
+  updated_at: string
 }
 
-interface ExtraLocation {
+interface HistoryRow {
   id: string
-  name: string
-  approved: boolean
+  request_id: string
+  actor_id: string | null
+  action: string
+  from_status: string | null
+  to_status: string | null
+  note: string | null
+  created_at: string
 }
 
-interface ShootingRequestUser {
-  id: string
-  name: string
-  position: string
-  avatar?: string
+const STATUS_LABEL: Record<WorkflowStatus, string> = {
+  pending_moderator: 'Awaiting moderator',
+  pending_director: 'Awaiting director',
+  pending_equipment: 'Awaiting equipment',
+  pending_driver: 'Awaiting driver',
+  scheduled: 'Scheduled',
+  completed: 'Completed',
+  declined: 'Declined',
 }
 
-interface Vehicle {
-  id: string
-  name: string
-  licensePlate: string
-  driverId: string
-  currentLocation?: { lat: number, lng: number }
+const STATUS_TONE: Record<WorkflowStatus, string> = {
+  pending_moderator: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30',
+  pending_director: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30',
+  pending_equipment: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
+  pending_driver: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30',
+  scheduled: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+  completed: 'bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30',
+  declined: 'bg-destructive/15 text-destructive border-destructive/30',
 }
 
-interface Equipment {
-  id: string
-  name: string
-  type: string
-  status: 'Available' | 'Assigned' | 'Maintenance'
-}
+const STAGE_ORDER: WorkflowStatus[] = [
+  'pending_moderator',
+  'pending_director',
+  'pending_equipment',
+  'pending_driver',
+  'scheduled',
+  'completed',
+]
 
-// Empty - production data
-const mockUsers: ShootingRequestUser[] = []
-const mockVehicles: Vehicle[] = []
-const mockEquipment: Equipment[] = []
-const mockRequests: ShootingRequest[] = []
+function stageRoleFor(status: WorkflowStatus): WorkflowRole | null {
+  switch (status) {
+    case 'pending_moderator': return 'shooting_moderator'
+    case 'pending_director': return 'director'
+    case 'pending_equipment': return 'tech_supply'
+    case 'pending_driver': return 'driver'
+    default: return null
+  }
+}
 
 export default function ShootingRequests() {
   const { t } = useTranslation()
   const { toast } = useToast()
   const { currentUser } = useAuth()
-  const [requests, setRequests] = useState<ShootingRequest[]>(mockRequests)
-  const [selectedRequest, setSelectedRequest] = useState<ShootingRequest | null>(null)
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [isAssignDriverDialogOpen, setIsAssignDriverDialogOpen] = useState(false)
-  const [isAssignEquipmentDialogOpen, setIsAssignEquipmentDialogOpen] = useState(false)
-  const [isGpsDialogOpen, setIsGpsDialogOpen] = useState(false)
-  const [isAddLocationDialogOpen, setIsAddLocationDialogOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState('all')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [selectedInitiator, setSelectedInitiator] = useState('')
-  const [selectedDriver, setSelectedDriver] = useState('')
-  const [selectedOperator, setSelectedOperator] = useState('')
-  const [selectedEquipment, setSelectedEquipment] = useState<string[]>([])
-  const [newLocationName, setNewLocationName] = useState('')
-  const [formData, setFormData] = useState({
-    projectTitle: '',
-    shootingDate: new Date().toISOString().split('T')[0],
-    mainLocation: '',
-    numberOfCameramen: '1',
-    notes: ''
-  })
-  
-  // Get current user's job position
-  const userPosition = currentUser?.position || 'Reporter'
-  
-  // Get operators for assignment
-  const operators = mockUsers.filter(user => user.position === 'Operator')
-  
-  // Get drivers for assignment
-  const drivers = mockUsers.filter(user => user.position === 'Driver')
-  
-  // Get available equipment
-  const availableEquipment = mockEquipment.filter(item => item.status === 'Available')
-  
-  // Filter requests based on job position and tab
-  const getFilteredRequests = () => {
-    let filtered = [...requests]
-    
-    // Filter by status if selected
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(r => r.status === statusFilter)
-    }
-    
-    // Filter by tab
-    if (activeTab === 'my') {
-      if (userPosition === 'Reporter') {
-        filtered = filtered.filter(r => r.reporterId === currentUser?.id)
-      } else if (userPosition === 'Driver') {
-        filtered = filtered.filter(r => r.driverId === currentUser?.id)
-      } else if (userPosition === 'Initiator') {
-        filtered = filtered.filter(r => r.initiatorId === currentUser?.id)
-      } else if (userPosition === 'Operator') {
-        filtered = filtered.filter(r => r.assignedEquipment?.includes(currentUser?.id || ''))
-      }
-    } else if (activeTab === 'pending') {
-      if (userPosition === 'Admin' || userPosition === 'Head of Reporters') {
-        filtered = filtered.filter(r => r.status === 'Submitted')
-      } else if (userPosition === 'Equipment Department') {
-        filtered = filtered.filter(r => 
-          r.status === 'Admin Approved' || 
-          r.status === 'Trip Returned'
-        )
-      } else if (userPosition === 'Driver') {
-        filtered = filtered.filter(r => 
-          r.status === 'Equipment Assigned' && 
-          r.driverId === currentUser?.id
-        )
-      } else if (userPosition === 'Reporter') {
-        filtered = filtered.filter(r => 
-          r.status === 'Equipment Returned' && 
-          r.reporterId === currentUser?.id
-        )
-      }
-    }
-    
-    return filtered
-  }
-  
-  const getStatusColor = (status: ShootingRequest['status']) => {
-    switch (status) {
-      case 'Draft': return 'bg-gray-100 text-gray-800'
-      case 'Submitted': return 'bg-blue-100 text-blue-800'
-      case 'Admin Approved': return 'bg-green-100 text-green-800'
-      case 'Equipment Assigned': return 'bg-purple-100 text-purple-800'
-      case 'Trip Started': return 'bg-yellow-100 text-yellow-800'
-      case 'Trip Returned': return 'bg-indigo-100 text-indigo-800'
-      case 'Equipment Returned': return 'bg-teal-100 text-teal-800'
-      case 'Finished': return 'bg-green-100 text-green-800'
-      case 'Rejected': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-  
-  const handleCreateRequest = () => {
-    // Find an operator automatically
-    const availableOperators = mockUsers.filter(user => user.position === 'Operator')
-    const randomOperator = availableOperators[Math.floor(Math.random() * availableOperators.length)]
-    
-    const newRequest: ShootingRequest = {
-      id: Date.now().toString(),
-      projectTitle: formData.projectTitle,
-      shootingDate: formData.shootingDate,
-      mainLocation: formData.mainLocation,
-      extraLocations: [],
-      numberOfCameramen: parseInt(formData.numberOfCameramen),
-      notes: formData.notes || undefined,
-      initiatorId: selectedInitiator,
-      reporterId: currentUser?.id || '3', // Default to Emily Davis if no current user
-      status: 'Draft',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    
-    setRequests([...requests, newRequest])
-    
-    toast({
-      title: "Request Created",
-      description: "Your shooting request has been created successfully.",
-    })
-    setIsCreateDialogOpen(false)
-    
-    // Reset form
-    setFormData({
-      projectTitle: '',
-      shootingDate: new Date().toISOString().split('T')[0],
-      mainLocation: '',
-      numberOfCameramen: '1',
-      notes: ''
-    })
-    setSelectedInitiator('')
-  }
-  
-  const handleViewRequest = (request: ShootingRequest) => {
-    setSelectedRequest(request)
-    setIsViewDialogOpen(true)
-  }
-  
-  const handleSubmitRequest = (requestId: string) => {
-    const updatedRequests = requests.map(req => 
-      req.id === requestId 
-        ? { ...req, status: 'Submitted' as const, updatedAt: new Date().toISOString() }
-        : req
-    )
-    setRequests(updatedRequests)
-    setIsViewDialogOpen(false)
-    
-    toast({
-      title: "Request Submitted",
-      description: "Your request has been submitted for approval.",
-    })
-  }
-  
-  const handleApproveRequest = () => {
-    if (!selectedRequest) return
-    
-    setIsAssignDriverDialogOpen(true)
-  }
-  
-  const handleAssignDriver = () => {
-    if (!selectedRequest || !selectedDriver) return
-    
-    const driverVehicle = mockVehicles.find(v => v.driverId === selectedDriver)
-    
-    const updatedRequests = requests.map(req => 
-      req.id === selectedRequest.id 
-        ? { 
-            ...req, 
-            status: 'Admin Approved' as const, 
-            driverId: selectedDriver,
-            updatedAt: new Date().toISOString() 
-          }
-        : req
-    )
-    
-    setRequests(updatedRequests)
-    setIsAssignDriverDialogOpen(false)
-    setIsViewDialogOpen(false)
-    
-    toast({
-      title: "Request Approved",
-      description: "The request has been approved and a driver has been assigned.",
-    })
-    
-    setSelectedDriver('')
-  }
-  
-  const handleRejectRequest = (requestId: string) => {
-    const updatedRequests = requests.map(req => 
-      req.id === requestId 
-        ? { ...req, status: 'Rejected' as const, updatedAt: new Date().toISOString() }
-        : req
-    )
-    setRequests(updatedRequests)
-    setIsViewDialogOpen(false)
-    
-    toast({
-      title: "Request Rejected",
-      description: "The request has been rejected.",
-      variant: "destructive"
-    })
-  }
-  
-  const handleAssignEquipment = () => {
-    if (!selectedRequest) return
-    
-    setIsAssignEquipmentDialogOpen(true)
-  }
-  
-  const handleConfirmEquipmentAssignment = () => {
-    if (!selectedRequest || selectedEquipment.length === 0) return
-    
-    const updatedRequests = requests.map(req => 
-      req.id === selectedRequest.id 
-        ? { 
-            ...req, 
-            status: 'Equipment Assigned' as const, 
-            equipmentAssigned: true,
-            assignedEquipment: selectedEquipment,
-            updatedAt: new Date().toISOString() 
-          }
-        : req
-    )
-    
-    setRequests(updatedRequests)
-    setIsAssignEquipmentDialogOpen(false)
-    setIsViewDialogOpen(false)
-    
-    toast({
-      title: "Equipment Assigned",
-      description: "Equipment has been assigned to the request.",
-    })
-    
-    setSelectedEquipment([])
-  }
-  
-  const handleUpdateTripStatus = (requestId: string, newStatus: ShootingRequest['tripStatus']) => {
-    const updatedRequests = requests.map(req => {
-      if (req.id === requestId) {
-        let newRequestStatus = req.status
-        
-        // Update request status based on trip status
-        if (newStatus === 'Started' && req.status === 'Equipment Assigned') {
-          newRequestStatus = 'Trip Started'
-        } else if (newStatus === 'Returned') {
-          newRequestStatus = 'Trip Returned'
-        }
-        
-        return { 
-          ...req, 
-          tripStatus: newStatus,
-          status: newRequestStatus as ShootingRequest['status'],
-          updatedAt: new Date().toISOString(),
-          // Update current location for tracking
-          currentLocation: { lat: 37.7749 + Math.random() * 0.1, lng: -122.4194 + Math.random() * 0.1 }
-        }
-      }
-      return req
-    })
-    
-    setRequests(updatedRequests)
-    
-    toast({
-      title: "Trip Status Updated",
-      description: `Trip status has been updated to ${newStatus}.`,
-    })
-  }
-  
-  const handleConfirmEquipmentReturn = (requestId: string) => {
-    const updatedRequests = requests.map(req => 
-      req.id === requestId 
-        ? { 
-            ...req, 
-            status: 'Equipment Returned' as const, 
-            equipmentReturned: true,
-            updatedAt: new Date().toISOString() 
-          }
-        : req
-    )
-    
-    setRequests(updatedRequests)
-    setIsViewDialogOpen(false)
-    
-    toast({
-      title: "Equipment Return Confirmed",
-      description: "Equipment return has been confirmed.",
-    })
-  }
-  
-  const handleFinalizeRequest = (requestId: string) => {
-    const updatedRequests = requests.map(req => 
-      req.id === requestId 
-        ? { ...req, status: 'Finished' as const, updatedAt: new Date().toISOString() }
-        : req
-    )
-    
-    setRequests(updatedRequests)
-    setIsViewDialogOpen(false)
-    
-    toast({
-      title: "Request Finalized",
-      description: "The request has been finalized.",
-    })
-  }
-  
-  const handleAddExtraLocation = () => {
-    if (!selectedRequest || !newLocationName) return
-    
-    const newLocation: ExtraLocation = {
-      id: Date.now().toString(),
-      name: newLocationName,
-      approved: false
-    }
-    
-    const updatedRequests = requests.map(req => 
-      req.id === selectedRequest.id 
-        ? { 
-            ...req, 
-            extraLocations: [...req.extraLocations, newLocation],
-            updatedAt: new Date().toISOString() 
-          }
-        : req
-    )
-    
-    setRequests(updatedRequests)
-    setIsAddLocationDialogOpen(false)
-    
-    // Update the selected request to reflect changes in the view dialog
-    setSelectedRequest({
-      ...selectedRequest,
-      extraLocations: [...selectedRequest.extraLocations, newLocation]
-    })
-    
-    toast({
-      title: "Location Added",
-      description: "Extra location has been added and is pending approval.",
-    })
-    
-    setNewLocationName('')
-  }
-  
-  const handleApproveExtraLocation = (requestId: string, locationId: string) => {
-    const updatedRequests = requests.map(req => {
-      if (req.id === requestId) {
-        const updatedLocations = req.extraLocations.map(loc => 
-          loc.id === locationId ? { ...loc, approved: true } : loc
-        )
-        
-        return { 
-          ...req, 
-          extraLocations: updatedLocations,
-          updatedAt: new Date().toISOString() 
-        }
-      }
-      return req
-    })
-    
-    setRequests(updatedRequests)
-    
-    // Update the selected request to reflect changes in the view dialog
-    if (selectedRequest && selectedRequest.id === requestId) {
-      const updatedLocations = selectedRequest.extraLocations.map(loc => 
-        loc.id === locationId ? { ...loc, approved: true } : loc
-      )
-      
-      setSelectedRequest({
-        ...selectedRequest,
-        extraLocations: updatedLocations
+  const userId = currentUser?.id
+
+  const [roles, setRoles] = useState<string[]>([])
+  const [requests, setRequests] = useState<ShootingRow[]>([])
+  const [history, setHistory] = useState<HistoryRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [profiles, setProfiles] = useState<Record<string, { name: string; email: string }>>({})
+
+  const [tab, setTab] = useState('inbox')
+  const [selected, setSelected] = useState<ShootingRow | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [form, setForm] = useState({ title: '', description: '', location: '', scheduled_date: '', sensitive: false })
+  const [actionNote, setActionNote] = useState('')
+  const [vehicleInfo, setVehicleInfo] = useState('')
+  const [equipmentNote, setEquipmentNote] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const isAdmin = currentUser?.role === 'Admin' || roles.includes('admin')
+  const isModerator = isAdmin || roles.includes('shooting_moderator')
+  const isDirector = isAdmin || roles.includes('director')
+  const isTechSupply = isAdmin || roles.includes('tech_supply')
+  const isDriver = isAdmin || roles.includes('driver')
+
+  const loadRoles = useCallback(async () => {
+    if (!userId) return
+    const { data } = await supabase.from('user_roles').select('role').eq('user_id', userId)
+    setRoles((data ?? []).map((r: { role: string }) => r.role))
+  }, [userId])
+
+  const loadRequests = useCallback(async () => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('shooting_requests')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) {
+      toast({ title: 'Failed to load requests', description: error.message, variant: 'destructive' })
+    } else {
+      setRequests((data ?? []) as ShootingRow[])
+      const ids = new Set<string>()
+      ;(data ?? []).forEach((r: ShootingRow) => {
+        if (r.requester_id) ids.add(r.requester_id)
+        if (r.moderator_id) ids.add(r.moderator_id)
+        if (r.director_id) ids.add(r.director_id)
+        if (r.tech_supply_id) ids.add(r.tech_supply_id)
+        if (r.driver_id) ids.add(r.driver_id)
       })
+      if (ids.size > 0) {
+        const { data: ps } = await supabase.from('profiles').select('id,name,email').in('id', Array.from(ids))
+        const map: Record<string, { name: string; email: string }> = {}
+        ;(ps ?? []).forEach((p) => { map[p.id] = { name: p.name, email: p.email } })
+        setProfiles((prev) => ({ ...prev, ...map }))
+      }
     }
-    
-    toast({
-      title: "Location Approved",
-      description: "Extra location has been approved.",
+    setLoading(false)
+  }, [toast])
+
+  const loadHistory = useCallback(async (requestId: string) => {
+    const { data } = await supabase
+      .from('shooting_request_history')
+      .select('*')
+      .eq('request_id', requestId)
+      .order('created_at', { ascending: false })
+    setHistory((data ?? []) as HistoryRow[])
+  }, [])
+
+  useEffect(() => {
+    loadRoles()
+    loadRequests()
+  }, [loadRoles, loadRequests])
+
+  useEffect(() => {
+    if (selected) loadHistory(selected.id)
+  }, [selected, loadHistory])
+
+  const recordHistory = async (requestId: string, action: string, from: string, to: string, note?: string) => {
+    if (!userId) return
+    await supabase.from('shooting_request_history').insert({
+      request_id: requestId,
+      actor_id: userId,
+      action,
+      from_status: from,
+      to_status: to,
+      note: note ?? null,
     })
   }
-  
-  const handleChangeOperator = () => {
-    if (!selectedRequest || !selectedOperator) return
-    
-    const updatedRequests = requests.map(req => 
-      req.id === selectedRequest.id 
-        ? { 
-            ...req, 
-            reporterId: selectedOperator,
-            updatedAt: new Date().toISOString() 
-          }
-        : req
-    )
-    
-    setRequests(updatedRequests)
-    
-    // Update the selected request
-    setSelectedRequest({
-      ...selectedRequest,
-      reporterId: selectedOperator
+
+  const myRequests = useMemo(() => requests.filter((r) => r.requester_id === userId), [requests, userId])
+
+  const inbox = useMemo(() => {
+    if (isAdmin) return requests.filter((r) => r.workflow_status.startsWith('pending_'))
+    return requests.filter((r) => {
+      const role = stageRoleFor(r.workflow_status)
+      if (!role) return false
+      if (role === 'shooting_moderator' && isModerator) return true
+      if (role === 'director' && isDirector) return true
+      if (role === 'tech_supply' && isTechSupply) return true
+      if (role === 'driver' && isDriver) return true
+      return false
     })
-    
-    toast({
-      title: "Operator Changed",
-      description: "The operator has been changed successfully.",
-    })
-    
-    setSelectedOperator('')
+  }, [requests, isAdmin, isModerator, isDirector, isTechSupply, isDriver])
+
+  const handleCreate = async () => {
+    if (!userId) {
+      toast({ title: 'Sign in required', variant: 'destructive' })
+      return
+    }
+    if (!form.title.trim()) {
+      toast({ title: 'Title required', variant: 'destructive' })
+      return
+    }
+    setSubmitting(true)
+    const { data, error } = await supabase
+      .from('shooting_requests')
+      .insert({
+        title: form.title,
+        description: form.description || null,
+        location: form.location || null,
+        scheduled_date: form.scheduled_date || null,
+        sensitive: form.sensitive,
+        requester_id: userId,
+        workflow_status: 'pending_moderator',
+        status: 'pending',
+      })
+      .select('*')
+      .single()
+    setSubmitting(false)
+    if (error) {
+      toast({ title: 'Failed to create', description: error.message, variant: 'destructive' })
+      return
+    }
+    await recordHistory(data.id, 'created', '', 'pending_moderator', form.sensitive ? 'Marked sensitive' : undefined)
+    toast({ title: 'Request submitted', description: 'Sent to the shooting moderator.' })
+    setCreateOpen(false)
+    setForm({ title: '', description: '', location: '', scheduled_date: '', sensitive: false })
+    loadRequests()
   }
-  
-  const toggleEquipmentSelection = (equipmentId: string) => {
-    setSelectedEquipment(prev => 
-      prev.includes(equipmentId)
-        ? prev.filter(id => id !== equipmentId)
-        : [...prev, equipmentId]
-    )
+
+  const transition = async (
+    req: ShootingRow,
+    next: WorkflowStatus,
+    extra: Partial<ShootingRow>,
+    action: string,
+    note?: string,
+  ) => {
+    setSubmitting(true)
+    const { error } = await supabase
+      .from('shooting_requests')
+      .update({ workflow_status: next, ...extra, updated_at: new Date().toISOString() })
+      .eq('id', req.id)
+    if (error) {
+      setSubmitting(false)
+      toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
+      return
+    }
+    await recordHistory(req.id, action, req.workflow_status, next, note)
+    setSubmitting(false)
+    setActionNote('')
+    setVehicleInfo('')
+    setEquipmentNote('')
+    toast({ title: 'Updated', description: STATUS_LABEL[next] })
+    await loadRequests()
+    setSelected((prev) => (prev ? { ...prev, workflow_status: next, ...extra } as ShootingRow : prev))
+    if (selected) loadHistory(selected.id)
   }
-  
-  const getUserById = (userId: string) => {
-    return mockUsers.find(user => user.id === userId)
+
+  const canActOnSelected = (req: ShootingRow): boolean => {
+    if (isAdmin) return true
+    const role = stageRoleFor(req.workflow_status)
+    if (!role) return false
+    if (role === 'shooting_moderator') return isModerator
+    if (role === 'director') return isDirector
+    if (role === 'tech_supply') return isTechSupply
+    if (role === 'driver') return isDriver
+    return false
   }
-  
-  const getVehicleByDriverId = (driverId: string) => {
-    return mockVehicles.find(vehicle => vehicle.driverId === driverId)
-  }
-  
-  const getEquipmentById = (equipmentId: string) => {
-    return mockEquipment.find(equipment => equipment.id === equipmentId)
-  }
-  
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">{t('pages.shootingRequests.title')}</h1>
-          <p className="text-muted-foreground">{t('pages.shootingRequests.subtitle')}</p>
-        </div>
-        {(userPosition === 'Reporter') && (
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Request
-          </Button>
-        )}
-      </div>
-      
-      <Tabs defaultValue="all" onValueChange={setActiveTab}>
-        <div className="flex justify-between items-center">
-          <TabsList>
-            <TabsTrigger value="all">All Requests</TabsTrigger>
-            <TabsTrigger value="my">My Requests</TabsTrigger>
-            <TabsTrigger value="pending">Pending Action</TabsTrigger>
-          </TabsList>
-          
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="Draft">Draft</SelectItem>
-              <SelectItem value="Submitted">Submitted</SelectItem>
-              <SelectItem value="Admin Approved">Admin Approved</SelectItem>
-              <SelectItem value="Equipment Assigned">Equipment Assigned</SelectItem>
-              <SelectItem value="Trip Started">Trip Started</SelectItem>
-              <SelectItem value="Trip Returned">Trip Returned</SelectItem>
-              <SelectItem value="Equipment Returned">Equipment Returned</SelectItem>
-              <SelectItem value="Finished">Finished</SelectItem>
-              <SelectItem value="Rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <TabsContent value="all" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Shooting Requests</CardTitle>
-              <CardDescription>View and manage all shooting requests in the system</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {getFilteredRequests().length > 0 ? (
-                <div className="space-y-4">
-                  {getFilteredRequests().map((request) => (
-                    <div 
-                      key={request.id} 
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors"
-                      onClick={() => handleViewRequest(request)}
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-primary/10 rounded-full">
-                          <Camera className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{request.projectTitle}</h3>
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              {new Date(request.shootingDate).toLocaleDateString()}
-                            </div>
-                            <div className="flex items-center">
-                              <MapPin className="h-4 w-4 mr-1" />
-                              {request.mainLocation}
-                            </div>
-                            <div className="flex items-center">
-                              <UserIcon className="h-4 w-4 mr-1" />
-                              {request.numberOfCameramen} cameramen
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <Badge className={getStatusColor(request.status)}>
-                          {request.status}
-                        </Badge>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No shooting requests found</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="my" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>My Shooting Requests</CardTitle>
-              <CardDescription>View and manage your shooting requests</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {getFilteredRequests().length > 0 ? (
-                <div className="space-y-4">
-                  {getFilteredRequests().map((request) => (
-                    <div 
-                      key={request.id} 
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors"
-                      onClick={() => handleViewRequest(request)}
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-primary/10 rounded-full">
-                          <Camera className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{request.projectTitle}</h3>
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              {new Date(request.shootingDate).toLocaleDateString()}
-                            </div>
-                            <div className="flex items-center">
-                              <MapPin className="h-4 w-4 mr-1" />
-                              {request.mainLocation}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <Badge className={getStatusColor(request.status)}>
-                          {request.status}
-                        </Badge>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No shooting requests found</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="pending" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Action</CardTitle>
-              <CardDescription>Requests that require your attention</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {getFilteredRequests().length > 0 ? (
-                <div className="space-y-4">
-                  {getFilteredRequests().map((request) => (
-                    <div 
-                      key={request.id} 
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors"
-                      onClick={() => handleViewRequest(request)}
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-primary/10 rounded-full">
-                          <Camera className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{request.projectTitle}</h3>
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              {new Date(request.shootingDate).toLocaleDateString()}
-                            </div>
-                            <div className="flex items-center">
-                              <MapPin className="h-4 w-4 mr-1" />
-                              {request.mainLocation}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <Badge className={getStatusColor(request.status)}>
-                          {request.status}
-                        </Badge>
-                        {userPosition === 'Admin' && request.status === 'Submitted' && (
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline" className="bg-green-50 text-green-600 border-green-200" onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedRequest(request)
-                              handleApproveRequest()
-                            }}>
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button size="sm" variant="outline" className="bg-red-50 text-red-600 border-red-200" onClick={(e) => {
-                              e.stopPropagation()
-                              handleRejectRequest(request.id)
-                            }}>
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Reject
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No pending actions</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
-      {/* Create Request Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Create Shooting Request</DialogTitle>
-            <DialogDescription>Fill in the details for your shooting request</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="projectTitle">Project Title *</Label>
-              <Input 
-                id="projectTitle" 
-                placeholder="Enter project title" 
-                value={formData.projectTitle}
-                onChange={(e) => setFormData({...formData, projectTitle: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="shootingDate">Shooting Date *</Label>
-              <Input 
-                id="shootingDate" 
-                type="date" 
-                value={formData.shootingDate}
-                onChange={(e) => setFormData({...formData, shootingDate: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="mainLocation">Main Location *</Label>
-              <Input 
-                id="mainLocation" 
-                placeholder="Enter main location" 
-                value={formData.mainLocation}
-                onChange={(e) => setFormData({...formData, mainLocation: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cameramen">Number of Cameramen *</Label>
-              <Select 
-                value={formData.numberOfCameramen}
-                onValueChange={(value) => setFormData({...formData, numberOfCameramen: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1</SelectItem>
-                  <SelectItem value="2">2</SelectItem>
-                  <SelectItem value="3">3</SelectItem>
-                  <SelectItem value="4">4</SelectItem>
-                  <SelectItem value="5">5</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="initiator">Initiator *</Label>
-              <Select value={selectedInitiator} onValueChange={setSelectedInitiator}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select initiator" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockUsers
-                    .filter(user => user.position === 'Initiator')
-                    .map(user => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name}
-                      </SelectItem>
-                    ))
-                  }
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (Optional)</Label>
-              <Textarea 
-                id="notes" 
-                placeholder="Enter any additional notes" 
-                value={formData.notes}
-                onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleCreateRequest}
-                disabled={!formData.projectTitle || !formData.mainLocation || !selectedInitiator}
-              >
-                Create Request
-              </Button>
+
+  const initials = (name?: string) => (name ?? '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
+
+  const renderCard = (r: ShootingRow) => (
+    <Card key={r.id} className="hover:shadow-md transition cursor-pointer" onClick={() => setSelected(r)}>
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-base truncate flex items-center gap-2">
+              {r.sensitive && <ShieldCheck className="w-4 h-4 text-amber-500" />}
+              {r.title}
+            </CardTitle>
+            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-3 flex-wrap">
+              {r.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{r.location}</span>}
+              {r.scheduled_date && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{r.scheduled_date}</span>}
             </div>
           </div>
+          <Badge variant="outline" className={STATUS_TONE[r.workflow_status]}>{STATUS_LABEL[r.workflow_status]}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {r.description && <p className="text-sm text-muted-foreground line-clamp-2">{r.description}</p>}
+        <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+          <Avatar className="w-5 h-5"><AvatarFallback className="text-[10px]">{initials(profiles[r.requester_id ?? '']?.name)}</AvatarFallback></Avatar>
+          <span>{profiles[r.requester_id ?? '']?.name ?? 'Unknown'}</span>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  const stageIdx = (s: WorkflowStatus) => {
+    if (s === 'declined') return -1
+    return STAGE_ORDER.indexOf(s)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2"><Camera className="w-7 h-7" />Shooting Requests</h1>
+          <p className="text-muted-foreground">Submit and route shooting requests through approval, equipment, and dispatch.</p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />New request
+        </Button>
+      </div>
+
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="inbox"><Inbox className="w-4 h-4 mr-2" />Inbox ({inbox.length})</TabsTrigger>
+          <TabsTrigger value="mine"><UserIcon className="w-4 h-4 mr-2" />My requests ({myRequests.length})</TabsTrigger>
+          <TabsTrigger value="all">All ({requests.length})</TabsTrigger>
+        </TabsList>
+        <TabsContent value="inbox" className="space-y-3 mt-4">
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : inbox.length === 0 ? (
+            <Card><CardContent className="p-6 text-center text-muted-foreground text-sm">Nothing waiting on you.</CardContent></Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{inbox.map(renderCard)}</div>
+          )}
+        </TabsContent>
+        <TabsContent value="mine" className="space-y-3 mt-4">
+          {myRequests.length === 0 ? (
+            <Card><CardContent className="p-6 text-center text-muted-foreground text-sm">You haven't submitted any requests yet.</CardContent></Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{myRequests.map(renderCard)}</div>
+          )}
+        </TabsContent>
+        <TabsContent value="all" className="space-y-3 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{requests.map(renderCard)}</div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Create dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New shooting request</DialogTitle>
+            <DialogDescription>It will be sent to the shooting moderator for review.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Title</Label>
+              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Short title" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Description</Label>
+              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What needs to be shot, context, audience..." />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Location</Label>
+                <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Scheduled date</Label>
+                <Input type="date" value={form.scheduled_date} onChange={(e) => setForm({ ...form, scheduled_date: e.target.value })} />
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={form.sensitive} onCheckedChange={(c) => setForm({ ...form, sensitive: !!c })} />
+              <span>Mark as sensitive (moderator will likely escalate to the director)</span>
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreate} disabled={submitting}>{submitting ? 'Submitting…' : 'Submit'}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      {/* View Request Dialog */}
-      {selectedRequest && (
-        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>{selectedRequest.projectTitle}</DialogTitle>
-              <DialogDescription>
-                Shooting request details and actions
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-6">
-              {/* Status */}
-              <div className="flex justify-between items-center">
-                <Badge className={getStatusColor(selectedRequest.status)}>
-                  {selectedRequest.status}
-                </Badge>
-                <div className="text-sm text-muted-foreground">
-                  Created: {new Date(selectedRequest.createdAt).toLocaleString()}
-                </div>
-              </div>
-              
-              {/* Request Details */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Shooting Date</Label>
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{new Date(selectedRequest.shootingDate).toLocaleDateString()}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Main Location</Label>
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{selectedRequest.mainLocation}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Number of Cameramen</Label>
-                  <div className="flex items-center">
-                    <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{selectedRequest.numberOfCameramen}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Reporter/Operator</Label>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{getUserById(selectedRequest.reporterId)?.name || 'Unknown'}</span>
-                    </div>
-                    {userPosition === 'Admin' && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setSelectedOperator(selectedRequest.reporterId)
-                          setIsViewDialogOpen(false)
-                          setTimeout(() => {
-                            setIsViewDialogOpen(true)
-                          }, 100)
-                        }}
-                      >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Change
-                      </Button>
-                    )}
-                  </div>
-                  {selectedOperator && (
-                    <div className="mt-2">
-                      <Select value={selectedOperator} onValueChange={setSelectedOperator}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select operator" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {operators.map(operator => (
-                            <SelectItem key={operator.id} value={operator.id}>
-                              {operator.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <div className="flex justify-end mt-2">
-                        <Button size="sm" onClick={handleChangeOperator}>
-                          Confirm Change
-                        </Button>
+
+      {/* Detail dialog */}
+      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {selected.sensitive && <ShieldCheck className="w-5 h-5 text-amber-500" />}
+                  {selected.title}
+                </DialogTitle>
+                <DialogDescription>
+                  <Badge variant="outline" className={STATUS_TONE[selected.workflow_status]}>{STATUS_LABEL[selected.workflow_status]}</Badge>
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* Stage progress */}
+              <div className="flex items-center gap-1 text-xs">
+                {STAGE_ORDER.slice(0, 5).map((s, i) => {
+                  const cur = stageIdx(selected.workflow_status)
+                  const done = cur > i || selected.workflow_status === 'completed'
+                  const active = cur === i
+                  return (
+                    <React.Fragment key={s}>
+                      <div className={`px-2 py-1 rounded border ${active ? STATUS_TONE[s] : done ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' : 'bg-muted text-muted-foreground border-border'}`}>
+                        {STATUS_LABEL[s].replace('Awaiting ', '')}
                       </div>
-                    </div>
-                  )}
-                </div>
-                
-                {selectedRequest.driverId && (
-                  <div className="space-y-2">
-                    <Label>Assigned Driver</Label>
-                    <div className="flex items-center">
-                      <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{getUserById(selectedRequest.driverId)?.name || 'Unknown'}</span>
-                    </div>
-                  </div>
-                )}
-                
-                {selectedRequest.tripStatus && (
-                  <div className="space-y-2">
-                    <Label>Trip Status</Label>
-                    <div className="flex items-center">
-                      <Truck className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{selectedRequest.tripStatus}</span>
-                      
-                      {userPosition === 'Driver' && selectedRequest.driverId === currentUser?.id && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="ml-2"
-                          onClick={() => setIsGpsDialogOpen(true)}
-                        >
-                          <Map className="h-3 w-3 mr-1" />
-                          GPS
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )}
+                      {i < 4 && <ArrowRight className="w-3 h-3 text-muted-foreground" />}
+                    </React.Fragment>
+                  )
+                })}
               </div>
-              
-              {/* Extra Locations */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Extra Locations</Label>
-                  {(userPosition === 'Reporter' || userPosition === 'Admin') && 
-                   selectedRequest.status !== 'Finished' && 
-                   selectedRequest.status !== 'Rejected' && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setIsAddLocationDialogOpen(true)}
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add Location
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><div className="text-muted-foreground text-xs">Requester</div>{profiles[selected.requester_id ?? '']?.name ?? '—'}</div>
+                <div><div className="text-muted-foreground text-xs">Date</div>{selected.scheduled_date ?? '—'}</div>
+                <div><div className="text-muted-foreground text-xs">Location</div>{selected.location ?? '—'}</div>
+                <div><div className="text-muted-foreground text-xs">Created</div>{new Date(selected.created_at).toLocaleString()}</div>
+              </div>
+              {selected.description && (
+                <div className="text-sm"><div className="text-muted-foreground text-xs mb-1">Description</div>{selected.description}</div>
+              )}
+
+              {/* Stage summaries */}
+              {selected.moderator_note && (
+                <div className="text-sm rounded-md border p-2"><div className="text-xs text-muted-foreground">Moderator note</div>{selected.moderator_note}</div>
+              )}
+              {selected.director_note && (
+                <div className="text-sm rounded-md border p-2"><div className="text-xs text-muted-foreground">Director note</div>{selected.director_note}</div>
+              )}
+              {selected.equipment_note && (
+                <div className="text-sm rounded-md border p-2"><div className="text-xs text-muted-foreground flex items-center gap-1"><Package className="w-3 h-3" />Equipment</div>{selected.equipment_note}</div>
+              )}
+              {selected.vehicle_info && (
+                <div className="text-sm rounded-md border p-2"><div className="text-xs text-muted-foreground flex items-center gap-1"><Truck className="w-3 h-3" />Vehicle / driver</div>{selected.vehicle_info}</div>
+              )}
+              {selected.decline_reason && (
+                <div className="text-sm rounded-md border border-destructive/30 bg-destructive/5 p-2"><div className="text-xs text-destructive flex items-center gap-1"><XCircle className="w-3 h-3" />Declined</div>{selected.decline_reason}</div>
+              )}
+
+              {/* Stage actions */}
+              {canActOnSelected(selected) && selected.workflow_status === 'pending_moderator' && (
+                <div className="space-y-2 border-t pt-3">
+                  <Label className="text-xs">Moderator note (optional)</Label>
+                  <Textarea value={actionNote} onChange={(e) => setActionNote(e.target.value)} placeholder="Notes for next stage…" />
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" disabled={submitting} onClick={() => transition(selected, 'pending_equipment', { moderator_id: userId!, moderator_note: actionNote || null, moderator_decided_at: new Date().toISOString() }, 'moderator_approved', actionNote)}>
+                      <CheckCircle2 className="w-4 h-4 mr-1" />Approve → Equipment
                     </Button>
-                  )}
+                    <Button size="sm" variant="secondary" disabled={submitting} onClick={() => transition(selected, 'pending_director', { moderator_id: userId!, moderator_note: actionNote || null, moderator_decided_at: new Date().toISOString() }, 'escalated_to_director', actionNote)}>
+                      <AlertTriangle className="w-4 h-4 mr-1" />Escalate to Director
+                    </Button>
+                    <Button size="sm" variant="destructive" disabled={submitting || !actionNote.trim()} onClick={() => transition(selected, 'declined', { moderator_id: userId!, decline_reason: actionNote, moderator_decided_at: new Date().toISOString() }, 'moderator_declined', actionNote)}>
+                      <XCircle className="w-4 h-4 mr-1" />Decline
+                    </Button>
+                  </div>
                 </div>
-                
-                {selectedRequest.extraLocations.length > 0 ? (
+              )}
+
+              {canActOnSelected(selected) && selected.workflow_status === 'pending_director' && (
+                <div className="space-y-2 border-t pt-3">
+                  <Label className="text-xs">Director note</Label>
+                  <Textarea value={actionNote} onChange={(e) => setActionNote(e.target.value)} />
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" disabled={submitting} onClick={() => transition(selected, 'pending_equipment', { director_id: userId!, director_note: actionNote || null, director_decided_at: new Date().toISOString() }, 'director_approved', actionNote)}>
+                      <CheckCircle2 className="w-4 h-4 mr-1" />Approve → Equipment
+                    </Button>
+                    <Button size="sm" variant="destructive" disabled={submitting || !actionNote.trim()} onClick={() => transition(selected, 'declined', { director_id: userId!, decline_reason: actionNote, director_decided_at: new Date().toISOString() }, 'director_declined', actionNote)}>
+                      <XCircle className="w-4 h-4 mr-1" />Decline
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {canActOnSelected(selected) && selected.workflow_status === 'pending_equipment' && (
+                <div className="space-y-2 border-t pt-3">
+                  <Label className="text-xs">Equipment provided</Label>
+                  <Textarea value={equipmentNote} onChange={(e) => setEquipmentNote(e.target.value)} placeholder="List equipment assigned (e.g. 2× Sony A7, 1× boom mic, tripod)…" />
+                  <Button size="sm" disabled={submitting || !equipmentNote.trim()} onClick={() => transition(selected, 'pending_driver', { tech_supply_id: userId!, equipment_note: equipmentNote, equipment_assigned_at: new Date().toISOString() }, 'equipment_assigned', equipmentNote)}>
+                    <Package className="w-4 h-4 mr-1" />Mark provided → Driver
+                  </Button>
+                </div>
+              )}
+
+              {canActOnSelected(selected) && selected.workflow_status === 'pending_driver' && (
+                <div className="space-y-2 border-t pt-3">
+                  <Label className="text-xs">Vehicle / driver info</Label>
+                  <Textarea value={vehicleInfo} onChange={(e) => setVehicleInfo(e.target.value)} placeholder="Plate, vehicle, driver name…" />
+                  <Button size="sm" disabled={submitting || !vehicleInfo.trim()} onClick={() => transition(selected, 'scheduled', { driver_id: userId!, vehicle_info: vehicleInfo, driver_assigned_at: new Date().toISOString() }, 'driver_assigned', vehicleInfo)}>
+                    <Truck className="w-4 h-4 mr-1" />Assign & schedule
+                  </Button>
+                </div>
+              )}
+
+              {canActOnSelected(selected) && selected.workflow_status === 'scheduled' && (
+                <div className="space-y-2 border-t pt-3">
+                  <Button size="sm" disabled={submitting} onClick={() => transition(selected, 'completed', {}, 'completed')}>
+                    <CheckCircle2 className="w-4 h-4 mr-1" />Mark completed
+                  </Button>
+                </div>
+              )}
+
+              {/* History */}
+              {history.length > 0 && (
+                <div className="border-t pt-3">
+                  <div className="text-xs font-medium text-muted-foreground flex items-center gap-1 mb-2"><History className="w-3 h-3" />Activity</div>
                   <div className="space-y-2">
-                    {selectedRequest.extraLocations.map(location => (
-                      <div key={location.id} className="flex items-center justify-between p-2 border rounded">
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span>{location.name}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Badge variant={location.approved ? 'default' : 'outline'}>
-                            {location.approved ? 'Approved' : 'Pending Approval'}
-                          </Badge>
-                          
-                          {userPosition === 'Admin' && !location.approved && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleApproveExtraLocation(selectedRequest.id, location.id)}
-                            >
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            </Button>
-                          )}
+                    {history.map((h) => (
+                      <div key={h.id} className="text-xs flex items-start gap-2">
+                        <div className="text-muted-foreground whitespace-nowrap">{new Date(h.created_at).toLocaleString()}</div>
+                        <div>
+                          <span className="font-medium">{profiles[h.actor_id ?? '']?.name ?? 'System'}</span>
+                          {' · '}{h.action.replace(/_/g, ' ')}
+                          {h.note && <span className="text-muted-foreground"> — {h.note}</span>}
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No extra locations added</p>
-                )}
-              </div>
-              
-              {/* Assigned Equipment */}
-              {selectedRequest.assignedEquipment && selectedRequest.assignedEquipment.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Assigned Equipment</Label>
-                  <div className="space-y-2">
-                    {selectedRequest.assignedEquipment.map(equipmentId => {
-                      const equipment = getEquipmentById(equipmentId)
-                      return equipment ? (
-                        <div key={equipment.id} className="flex items-center justify-between p-2 border rounded">
-                          <div className="flex items-center">
-                            <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span>{equipment.name}</span>
-                          </div>
-                          <Badge variant="outline">
-                            {equipment.type}
-                          </Badge>
-                        </div>
-                      ) : null
-                    })}
-                  </div>
                 </div>
               )}
-              
-              {/* Notes */}
-              {selectedRequest.notes && (
-                <div className="space-y-2">
-                  <Label>Notes</Label>
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-sm">{selectedRequest.notes}</p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Action Buttons based on user position and request status */}
-              <div className="flex justify-end space-x-2">
-                {userPosition === 'Reporter' && selectedRequest.status === 'Draft' && (
-                  <Button onClick={() => handleSubmitRequest(selectedRequest.id)}>
-                    Submit Request
-                  </Button>
-                )}
-                
-                {userPosition === 'Reporter' && selectedRequest.status === 'Equipment Returned' && (
-                  <Button onClick={() => handleFinalizeRequest(selectedRequest.id)}>
-                    Finalize Request
-                  </Button>
-                )}
-                
-                {userPosition === 'Admin' && selectedRequest.status === 'Submitted' && (
-                  <div className="flex space-x-2">
-                    <Button variant="outline" className="bg-red-50 text-red-600 border-red-200" onClick={() => handleRejectRequest(selectedRequest.id)}>
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Reject
-                    </Button>
-                    <Button className="bg-green-600" onClick={handleApproveRequest}>
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Approve & Assign Driver
-                    </Button>
-                  </div>
-                )}
-                
-                {userPosition === 'Equipment Department' && selectedRequest.status === 'Admin Approved' && (
-                  <Button onClick={handleAssignEquipment}>
-                    <Package className="h-4 w-4 mr-1" />
-                    Assign Equipment
-                  </Button>
-                )}
-                
-                {userPosition === 'Equipment Department' && selectedRequest.status === 'Trip Returned' && (
-                  <Button onClick={() => handleConfirmEquipmentReturn(selectedRequest.id)}>
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Confirm Equipment Return
-                  </Button>
-                )}
-                
-                {userPosition === 'Driver' && selectedRequest.status === 'Equipment Assigned' && selectedRequest.driverId === currentUser?.id && (
-                  <Button onClick={() => handleUpdateTripStatus(selectedRequest.id, 'Started')}>
-                    <Truck className="h-4 w-4 mr-1" />
-                    Start Trip
-                  </Button>
-                )}
-                
-                {userPosition === 'Driver' && selectedRequest.status === 'Trip Started' && selectedRequest.driverId === currentUser?.id && (
-                  <Button onClick={() => handleUpdateTripStatus(selectedRequest.id, 'Returned')}>
-                    <Truck className="h-4 w-4 mr-1" />
-                    Complete Trip
-                  </Button>
-                )}
-                
-                <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-                  Close
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-      
-      {/* Assign Driver Dialog */}
-      <Dialog open={isAssignDriverDialogOpen} onOpenChange={setIsAssignDriverDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Assign Driver</DialogTitle>
-            <DialogDescription>Select a driver to assign to this request</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Select Driver</Label>
-              <Select value={selectedDriver} onValueChange={setSelectedDriver}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select driver" />
-                </SelectTrigger>
-                <SelectContent>
-                  {drivers.map(driver => (
-                    <SelectItem key={driver.id} value={driver.id}>
-                      {driver.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {selectedDriver && (
-              <div className="p-4 border rounded-lg bg-muted/50">
-                <h4 className="font-medium mb-2">Driver Information</h4>
-                <div className="flex items-center space-x-3">
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src={getUserById(selectedDriver)?.avatar} />
-                    <AvatarFallback>
-                      {getUserById(selectedDriver)?.name.split(' ').map(n => n[0]).join('') || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{getUserById(selectedDriver)?.name}</p>
-                    <p className="text-sm text-muted-foreground">{getUserById(selectedDriver)?.position}</p>
-                  </div>
-                </div>
-                
-                {getVehicleByDriverId(selectedDriver) && (
-                  <div className="mt-4">
-                    <h4 className="font-medium mb-2">Assigned Vehicle</h4>
-                    <div className="flex items-center space-x-2">
-                      <Car className="h-4 w-4 text-muted-foreground" />
-                      <span>{getVehicleByDriverId(selectedDriver)?.name}</span>
-                      <Badge variant="outline" className="ml-2">
-                        {getVehicleByDriverId(selectedDriver)?.licensePlate}
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsAssignDriverDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleAssignDriver}
-                disabled={!selectedDriver}
-              >
-                Assign Driver
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Assign Equipment Dialog */}
-      <Dialog open={isAssignEquipmentDialogOpen} onOpenChange={setIsAssignEquipmentDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Assign Equipment</DialogTitle>
-            <DialogDescription>Select equipment to assign to this request</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium">Available Equipment</h4>
-              <Badge variant="outline">
-                {selectedEquipment.length} items selected
-              </Badge>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-              {mockEquipment.map(equipment => (
-                <div 
-                  key={equipment.id} 
-                  className={`p-3 border rounded-lg ${
-                    equipment.status !== 'Available' ? 'opacity-50' : 
-                    selectedEquipment.includes(equipment.id) ? 'border-primary bg-primary/5' : ''
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        checked={selectedEquipment.includes(equipment.id)}
-                        onCheckedChange={() => {
-                          if (equipment.status === 'Available') {
-                            toggleEquipmentSelection(equipment.id)
-                          }
-                        }}
-                        disabled={equipment.status !== 'Available'}
-                      />
-                      <div>
-                        <p className="font-medium">{equipment.name}</p>
-                        <p className="text-sm text-muted-foreground">{equipment.type}</p>
-                      </div>
-                    </div>
-                    <Badge variant={
-                      equipment.status === 'Available' ? 'outline' : 
-                      equipment.status === 'Assigned' ? 'secondary' : 'destructive'
-                    }>
-                      {equipment.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsAssignEquipmentDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleConfirmEquipmentAssignment}
-                disabled={selectedEquipment.length === 0}
-              >
-                Assign Equipment
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* GPS Tracking Dialog */}
-      <Dialog open={isGpsDialogOpen} onOpenChange={setIsGpsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>GPS Tracking</DialogTitle>
-            <DialogDescription>Live location tracking for this request</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {selectedRequest && (
-              <>
-                <div className="h-64 bg-muted rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <Map className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground">Map would display here with current location</p>
-                    {selectedRequest.currentLocation && (
-                      <p className="text-sm font-mono mt-2">
-                        Lat: {selectedRequest.currentLocation.lat.toFixed(6)}, 
-                        Lng: {selectedRequest.currentLocation.lng.toFixed(6)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <h4 className="font-medium">Trip Information</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 border rounded-lg">
-                      <p className="text-sm text-muted-foreground">Status</p>
-                      <p className="font-medium">{selectedRequest.tripStatus || 'Not Started'}</p>
-                    </div>
-                    <div className="p-3 border rounded-lg">
-                      <p className="text-sm text-muted-foreground">Destination</p>
-                      <p className="font-medium">{selectedRequest.mainLocation}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                {userPosition === 'Driver' && selectedRequest.driverId === currentUser?.id && (
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Update Trip Status</h4>
-                    <div className="flex space-x-2">
-                      {selectedRequest.tripStatus === 'Not Started' && (
-                        <Button onClick={() => {
-                          handleUpdateTripStatus(selectedRequest.id, 'Started')
-                          setIsGpsDialogOpen(false)
-                        }}>
-                          Start Trip
-                        </Button>
-                      )}
-                      {selectedRequest.tripStatus === 'Started' && (
-                        <Button onClick={() => {
-                          handleUpdateTripStatus(selectedRequest.id, 'Arrived')
-                          setIsGpsDialogOpen(false)
-                        }}>
-                          Mark as Arrived
-                        </Button>
-                      )}
-                      {selectedRequest.tripStatus === 'Arrived' && (
-                        <Button onClick={() => {
-                          handleUpdateTripStatus(selectedRequest.id, 'Waiting')
-                          setIsGpsDialogOpen(false)
-                        }}>
-                          Mark as Waiting
-                        </Button>
-                      )}
-                      {(selectedRequest.tripStatus === 'Arrived' || selectedRequest.tripStatus === 'Waiting') && (
-                        <Button onClick={() => {
-                          handleUpdateTripStatus(selectedRequest.id, 'Returning')
-                          setIsGpsDialogOpen(false)
-                        }}>
-                          Start Return Trip
-                        </Button>
-                      )}
-                      {selectedRequest.tripStatus === 'Returning' && (
-                        <Button onClick={() => {
-                          handleUpdateTripStatus(selectedRequest.id, 'Returned')
-                          setIsGpsDialogOpen(false)
-                        }}>
-                          Complete Trip
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-            
-            <div className="flex justify-end">
-              <Button variant="outline" onClick={() => setIsGpsDialogOpen(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Add Extra Location Dialog */}
-      <Dialog open={isAddLocationDialogOpen} onOpenChange={setIsAddLocationDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Extra Location</DialogTitle>
-            <DialogDescription>Add an additional shooting location</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="locationName">Location Name *</Label>
-              <Input 
-                id="locationName" 
-                placeholder="Enter location name" 
-                value={newLocationName}
-                onChange={(e) => setNewLocationName(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsAddLocationDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleAddExtraLocation}
-                disabled={!newLocationName}
-              >
-                Add Location
-              </Button>
-            </div>
-          </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
