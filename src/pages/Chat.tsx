@@ -62,6 +62,7 @@ interface Message {
   status?: 'sent' | 'delivered' | 'read'
   edited?: boolean
   forwarded?: boolean
+  archived?: boolean
 }
 
 interface ConvMeta {
@@ -114,6 +115,8 @@ export default function Chat() {
   const [typing, setTyping] = useState(false)
   const [inChatSearch, setInChatSearch] = useState('')
   const [showInChatSearch, setShowInChatSearch] = useState(false)
+  const [showArchivedMsgs, setShowArchivedMsgs] = useState(false)
+  const isAdmin = currentUser?.role === 'Admin'
 
   // Dialogs
   const [isUserInfoOpen, setIsUserInfoOpen] = useState(false)
@@ -210,9 +213,11 @@ export default function Chat() {
   }, [selectedUser])
 
   const messages = selectedUser ? (conversations[selectedUser.id] || []) : []
+  const archivedCount = messages.filter(m => m.archived).length
+  const baseMessages = showArchivedMsgs ? messages : messages.filter(m => !m.archived)
   const visibleMessages = inChatSearch
-    ? messages.filter(m => m.content.toLowerCase().includes(inChatSearch.toLowerCase()))
-    : messages
+    ? baseMessages.filter(m => m.content.toLowerCase().includes(inChatSearch.toLowerCase()))
+    : baseMessages
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -384,7 +389,17 @@ export default function Chat() {
 
   const handleDeleteMessage = (id: string) => {
     if (!selectedUser) return
+    if (!isAdmin) {
+      toast({ title: 'Not allowed', description: 'Only Admins can delete messages.', variant: 'destructive' })
+      return
+    }
     setConversations(prev => ({ ...prev, [selectedUser.id]: prev[selectedUser.id].filter(m => m.id !== id) }))
+  }
+
+  const handleArchiveMessage = (m: Message) => {
+    if (!selectedUser) return
+    updateMessage(selectedUser.id, m.id, { archived: !m.archived })
+    toast({ title: m.archived ? 'Unarchived' : 'Message archived' })
   }
 
   const handleCopyMessage = (m: Message) => {
@@ -632,13 +647,19 @@ export default function Chat() {
                         <Settings className="w-4 h-4 mr-2" /> Chat Settings
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setShowArchivedMsgs(s => !s)}>
+                        {showArchivedMsgs ? <ArchiveRestore className="w-4 h-4 mr-2" /> : <Archive className="w-4 h-4 mr-2" />}
+                        {showArchivedMsgs ? 'Hide archived messages' : `Show archived messages${archivedCount ? ` (${archivedCount})` : ''}`}
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => toggleMeta(selectedUser.id, 'archived')}>
                         {meta[selectedUser.id]?.archived ? <ArchiveRestore className="w-4 h-4 mr-2" /> : <Archive className="w-4 h-4 mr-2" />}
                         {meta[selectedUser.id]?.archived ? 'Unarchive' : 'Archive'} Chat
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleDeleteChat} className="text-destructive">
-                        <Trash2 className="w-4 h-4 mr-2" /> Delete Chat
-                      </DropdownMenuItem>
+                      {isAdmin && (
+                        <DropdownMenuItem onClick={handleDeleteChat} className="text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" /> Delete Chat
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -676,7 +697,8 @@ export default function Chat() {
                         )}
                         <div className={cn(
                           'relative max-w-xs lg:max-w-md px-3 py-2 rounded-2xl shadow-sm',
-                          mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm'
+                          mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm',
+                          msg.archived && 'opacity-60 ring-1 ring-muted-foreground/30'
                         )}>
                           {msg.forwarded && (
                             <div className={cn('text-xs mb-1 flex items-center gap-1 italic', mine ? 'opacity-80' : 'opacity-70')}>
@@ -761,9 +783,14 @@ export default function Chat() {
                                 <CornerUpLeft className="h-3 w-3" />
                               </Button>
                             )}
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => handleDeleteMessage(msg.id)} title="Delete">
-                              <Trash2 className="h-3 w-3" />
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleArchiveMessage(msg)} title={msg.archived ? 'Unarchive' : 'Archive'}>
+                              {msg.archived ? <ArchiveRestore className="h-3 w-3" /> : <Archive className="h-3 w-3" />}
                             </Button>
+                            {isAdmin && (
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => handleDeleteMessage(msg.id)} title="Delete">
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -960,10 +987,14 @@ export default function Chat() {
               <Label htmlFor="arch">Archive</Label>
               <Switch id="arch" checked={!!meta[selectedUser?.id || '']?.archived} onCheckedChange={() => selectedUser && toggleMeta(selectedUser.id, 'archived')} />
             </div>
-            <Separator />
-            <Button variant="destructive" className="w-full" onClick={() => { handleDeleteChat(); setIsChatSettingsOpen(false) }}>
-              <Trash2 className="w-4 h-4 mr-2" /> Clear conversation
-            </Button>
+            {isAdmin && (
+              <>
+                <Separator />
+                <Button variant="destructive" className="w-full" onClick={() => { handleDeleteChat(); setIsChatSettingsOpen(false) }}>
+                  <Trash2 className="w-4 h-4 mr-2" /> Clear conversation
+                </Button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
