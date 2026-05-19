@@ -544,7 +544,9 @@ export default function Chat() {
                       <div className="relative">
                         <Avatar className="w-10 h-10">
                           <AvatarImage src={user.avatar} />
-                          <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          <AvatarFallback>
+                            {user.isGroup ? <Users className="w-5 h-5" /> : user.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
                         </Avatar>
                         <div className={cn('absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background', getStatusColor(user.status))} />
                       </div>
