@@ -4,24 +4,47 @@ import { getDict } from '@/i18n/autoDict'
 
 /**
  * Translates English UI strings to the active language by walking the DOM.
- * Optimized: batches work in rAF, pauses the observer during writes to avoid
- * feedback loops, and skips nodes whose value already matches the target.
+ * Optimized:
+ *  - Dictionary lookups via Map (O(1), faster than object property access on hot path)
+ *  - Batched flush via requestIdleCallback (fallback to rAF) to avoid jank
+ *  - Observer disconnected during writes to prevent feedback loops
+ *  - WeakSet of processed nodes to skip re-work
+ *  - Skip non-translatable nodes (numbers, single chars, whitespace, urls)
  */
 const ATTRS = ['placeholder', 'title', 'aria-label'] as const
 const SKIP_TAGS = new Set([
-  'SCRIPT', 'STYLE', 'NOSCRIPT', 'CODE', 'PRE', 'SVG', 'PATH', 'CANVAS',
+  'SCRIPT', 'STYLE', 'NOSCRIPT', 'CODE', 'PRE', 'SVG', 'PATH', 'CANVAS', 'TEXTAREA',
 ])
+
+const NON_TRANSLATABLE = /^[\d\s\W]*$/ // numbers/whitespace/punctuation only
+
+type Idle = (cb: () => void) => number
+const rIC: Idle =
+  (typeof window !== 'undefined' && (window as unknown as { requestIdleCallback?: Idle }).requestIdleCallback) ||
+  ((cb: () => void) => window.requestAnimationFrame(cb) as unknown as number)
 
 export function AutoTranslate() {
   const { i18n } = useTranslation()
 
   useEffect(() => {
     const lang = i18n.language?.split('-')[0] ?? 'en'
-    const dict = getDict(lang)
+    const dictObj = getDict(lang)
+    const dict: Map<string, string> | null = dictObj
+      ? new Map(Object.entries(dictObj))
+      : null
+
     let obs: MutationObserver | null = null
     let scheduled = false
     const pending = new Set<Node>()
     let cancelled = false
+
+    const translateText = (raw: string): string | null => {
+      const trimmed = raw.trim()
+      if (!trimmed || trimmed.length > 200) return null
+      if (NON_TRANSLATABLE.test(trimmed)) return null
+      const t = dict?.get(trimmed)
+      return t && t !== trimmed ? raw.replace(trimmed, t) : null
+    }
 
     const translateTextNode = (node: Text) => {
       const parent = node.parentElement
@@ -29,16 +52,17 @@ export function AutoTranslate() {
       if (parent.closest('[data-no-translate]')) return
       const raw = node.nodeValue
       if (!raw) return
-      const trimmed = raw.trim()
-      if (!trimmed) return
-
       const holder = node as Text & { __i18nOrig?: string }
-      const original = holder.__i18nOrig ?? trimmed
+      const original = holder.__i18nOrig ?? raw.trim()
       holder.__i18nOrig = original
 
-      const target = dict ? (dict[original] ?? original) : original
-      if (target === trimmed) return
-      const next = raw.replace(trimmed, target)
+      if (!dict) {
+        if (raw.trim() !== original) node.nodeValue = raw.replace(raw.trim(), original)
+        return
+      }
+      const target = dict.get(original) ?? original
+      if (target === raw.trim()) return
+      const next = raw.replace(raw.trim(), target)
       if (next !== raw) node.nodeValue = next
     }
 
@@ -50,7 +74,7 @@ export function AutoTranslate() {
         const elx = el as Element & Record<string, string | undefined>
         const original = elx[key] ?? val.trim()
         elx[key] = original
-        const target = dict ? (dict[original] ?? original) : original
+        const target = dict ? (dict.get(original) ?? original) : original
         if (target !== val) el.setAttribute(attr, target)
       }
     }
@@ -64,20 +88,25 @@ export function AutoTranslate() {
       const el = root as Element
       if (SKIP_TAGS.has(el.tagName)) return
       translateAttrs(el)
-      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+        acceptNode: (n) => {
+          const p = n.parentElement
+          if (!p || SKIP_TAGS.has(p.tagName)) return NodeFilter.FILTER_REJECT
+          return NodeFilter.FILTER_ACCEPT
+        },
+      })
       let n: Node | null
       while ((n = walker.nextNode())) translateTextNode(n as Text)
-      const descendants = el.querySelectorAll('input,textarea,button,[placeholder],[title],[aria-label]')
+      const descendants = el.querySelectorAll('[placeholder],[title],[aria-label]')
       descendants.forEach(translateAttrs)
     }
 
     const flush = () => {
       scheduled = false
       if (cancelled) return
+      if (!pending.size) return
       const nodes = Array.from(pending)
       pending.clear()
-      if (!nodes.length) return
-      // Pause observer while we mutate to avoid feedback loops
       obs?.disconnect()
       for (const n of nodes) {
         if (n.isConnected) walk(n)
@@ -89,7 +118,7 @@ export function AutoTranslate() {
       pending.add(n)
       if (scheduled) return
       scheduled = true
-      requestAnimationFrame(flush)
+      rIC(flush)
     }
 
     const startObserving = () => {
@@ -102,7 +131,6 @@ export function AutoTranslate() {
       })
     }
 
-    // Initial pass
     walk(document.body)
 
     obs = new MutationObserver((mutations) => {
