@@ -1,5 +1,6 @@
 
 import { useState, useMemo, useEffect } from "react"
+import { useTranslation } from 'react-i18next'
 import { Search, Filter, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -119,10 +120,8 @@ export default function Employees() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Employees</h1>
-          <p className="text-muted-foreground">
-            Manage your team of {employees.length} employees
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('pages.employees.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.employees.subtitle')}</p>
         </div>
         <Button className="mt-4 sm:mt-0" onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />

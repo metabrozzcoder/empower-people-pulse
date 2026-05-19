@@ -1,5 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useTranslation } from 'react-i18next'
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -9,6 +10,7 @@ import { Calendar, Mail, Phone, MapPin, Building, User, Award, Clock, TrendingUp
 import { useAuth } from "@/context/AuthContext"
 
 const Profile = () => {
+  const { t } = useTranslation()
   const { currentUser } = useAuth()
   
   const userProfile = {
@@ -43,10 +45,8 @@ const Profile = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
-        <p className="text-muted-foreground">
-          View and manage your professional profile.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">{t('pages.profile.title')}</h1>
+        <p className="text-muted-foreground">{t('pages.profile.subtitle')}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

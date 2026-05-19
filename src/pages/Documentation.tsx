@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -196,6 +197,7 @@ export default function Documentation() {
   )
 
   const openCompose = () => {
+  const { t } = useTranslation()
     setEditingId(null)
     setForm(emptyForm)
     setComposeOpen(true)
@@ -331,10 +333,8 @@ export default function Documentation() {
       <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-background to-accent/10 p-6 backdrop-blur-xl">
         <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Document Approvals</h1>
-            <p className="text-muted-foreground">
-              Upload and submit documents to leadership for approval. Track status, edit drafts, and manage receivers.
-            </p>
+            <h1 className="text-3xl font-bold tracking-tight">{t('pages.documentation.title')}</h1>
+            <p className="text-muted-foreground">{t('pages.documentation.subtitle')}</p>
           </div>
           <Button size="lg" onClick={openCompose} className="shadow-lg">
             <Upload className="mr-2 h-4 w-4" />

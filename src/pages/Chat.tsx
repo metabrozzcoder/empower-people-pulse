@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -249,6 +250,7 @@ export default function Chat() {
   }
 
   const handleSendMessage = () => {
+  const { t } = useTranslation()
     if (!draft.trim() || !selectedUser) return
     if (editingId) {
       updateMessage(selectedUser.id, editingId, { content: draft, edited: true })
@@ -503,10 +505,8 @@ export default function Chat() {
     <div className="space-y-6">
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Communication Hub</h1>
-          <p className="text-muted-foreground">
-            Messaging, voice & video calls, file sharing — all in one place
-          </p>
+          <h1 className="text-3xl font-bold">{t('pages.chat.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.chat.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsStarredOpen(true)}>

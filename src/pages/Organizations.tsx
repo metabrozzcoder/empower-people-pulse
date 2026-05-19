@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -65,6 +66,7 @@ export default function Organizations() {
   useEffect(() => { load() }, [])
 
   const openCreateOrg = () => {
+  const { t } = useTranslation()
     setEditingOrg(null)
     setOrgForm({ ...emptyOrg })
     setIsOrgDialogOpen(true)
@@ -161,8 +163,8 @@ export default function Organizations() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Organizations & Departments</h1>
-          <p className="text-muted-foreground">Manage your organization structure, departments, and teams</p>
+          <h1 className="text-3xl font-bold">{t('pages.organizations.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.organizations.subtitle')}</p>
         </div>
         <Button onClick={openCreateOrg} className="flex items-center space-x-2">
           <Plus className="w-4 h-4" />

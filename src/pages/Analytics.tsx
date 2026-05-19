@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -32,6 +33,7 @@ const downloadCsv = (rows: Record<string, unknown>[], filename: string) => {
 }
 
 const Analytics = () => {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [employees, setEmployees] = useState<EmployeeRow[]>([])
@@ -180,10 +182,8 @@ const Analytics = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">HR Analytics</h1>
-        <p className="text-muted-foreground">
-          Live metrics computed from employees, projects, tasks, attendance, and shooting requests.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">{t('pages.analytics.title')}</h1>
+        <p className="text-muted-foreground">{t('pages.analytics.subtitle')}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-6">

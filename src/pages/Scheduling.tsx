@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -47,6 +48,7 @@ const emptyForm = {
 }
 
 const Scheduling = () => {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [shifts, setShifts] = useState<ShiftRow[]>([])
   const [profiles, setProfiles] = useState<ProfileOption[]>([])
@@ -121,8 +123,8 @@ const Scheduling = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Smart Scheduling</h1>
-          <p className="text-muted-foreground">Shift management for your team.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('pages.scheduling.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.scheduling.subtitle')}</p>
         </div>
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Shift</Button>
       </div>

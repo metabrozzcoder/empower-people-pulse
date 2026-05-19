@@ -1,0 +1,100 @@
+{
+  "common": {
+    "logout": "Logout",
+    "login": "Login",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "noData": "No data",
+    "actions": "Actions",
+    "name": "Name",
+    "description": "Description",
+    "status": "Status",
+    "language": "Language",
+    "profile": "Profile",
+    "accountSettings": "Account Settings",
+    "settings": "Settings",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back"
+  },
+  "sidebar": {
+    "groups": {
+      "main": "Main Menu",
+      "hr": "HR & Projects",
+      "organization": "Organization",
+      "communication": "Communication",
+      "analytics": "Management & Analytics",
+      "documentation": "Documentation",
+      "system": "System"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "shootingRequests": "Shooting Requests",
+      "employees": "Employees",
+      "recruitment": "Recruitment",
+      "scheduling": "Scheduling",
+      "projects": "Projects",
+      "tasks": "Tasks",
+      "organizations": "Organizations",
+      "chat": "Chat",
+      "userManagement": "User Management",
+      "accessControl": "Access Control",
+      "analytics": "Analytics",
+      "documentation": "Documentation",
+      "securitySystem": "Security System"
+    }
+  },
+  "pages": {
+    "dashboard": {
+      "title": "Dashboard",
+      "subtitle": "Welcome back! Here's your workspace overview.",
+      "quickActions": {
+        "chat": "Chat",
+        "chatDesc": "Start a conversation",
+        "calendar": "Calendar",
+        "calendarDesc": "View schedule",
+        "tasks": "Tasks",
+        "tasksDesc": "Manage tasks"
+      },
+      "upcomingEvents": "Upcoming Events",
+      "upcomingEventsDesc": "Important dates and deadlines",
+      "viewAllEvents": "View All Events",
+      "birthdays": "Employee Birthdays",
+      "birthdaysDesc": "Today and tomorrow celebrations",
+      "noBirthdays": "No birthdays today or tomorrow"
+    },
+    "employees": { "title": "Employees", "subtitle": "Manage your team members and their information." },
+    "projects": { "title": "Projects", "subtitle": "Track and manage all projects." },
+    "tasks": { "title": "Tasks", "subtitle": "Organize and track work items." },
+    "scheduling": { "title": "Scheduling", "subtitle": "Plan shifts and manage schedules." },
+    "attendance": { "title": "Attendance", "subtitle": "Monitor attendance and working hours." },
+    "analytics": { "title": "Analytics", "subtitle": "Insights and reports across your organization." },
+    "organizations": { "title": "Organizations", "subtitle": "Manage organizations and their departments." },
+    "departments": { "title": "Departments", "subtitle": "Manage departments." },
+    "chat": { "title": "Chat", "subtitle": "Internal communication." },
+    "userManagement": { "title": "User Management", "subtitle": "Create and manage user accounts." },
+    "roleManagement": { "title": "Role Management", "subtitle": "Define roles and permissions." },
+    "accessControl": { "title": "Access Control", "subtitle": "Configure section-level access." },
+    "securitySystem": { "title": "Security System", "subtitle": "Monitor devices and biometric enrollment." },
+    "documentation": { "title": "Documentation", "subtitle": "Knowledge base and document mailbox." },
+    "settings": { "title": "Settings", "subtitle": "Application preferences." },
+    "profile": { "title": "Profile", "subtitle": "Your personal information." },
+    "accountSettings": { "title": "Account Settings", "subtitle": "Manage your account." },
+    "shootingRequests": { "title": "Shooting Requests", "subtitle": "Manage media shooting requests." },
+    "recruitment": { "title": "AI-Powered Recruitment", "subtitle": "Streamline your hiring process with intelligent candidate screening and comprehensive management." }
+  },
+  "languages": {
+    "en": "English",
+    "ru": "Русский",
+    "uz": "O'zbek"
+  }
+}

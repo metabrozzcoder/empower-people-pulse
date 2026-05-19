@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,6 +29,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
 
 export default function Settings() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const { currentUser } = useAuth()
 
@@ -41,8 +43,8 @@ export default function Settings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your account and system preferences</p>
+        <h1 className="text-3xl font-bold">{t('pages.settings.title')}</h1>
+        <p className="text-muted-foreground">{t('pages.settings.subtitle')}</p>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">

@@ -10,6 +10,8 @@ import { AppSidebar } from "@/components/AppSidebar"
 import { AuthProvider, useAuth } from "@/context/AuthContext"
 import { UserProvider } from "@/context/UserContext"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
+import { LanguageSwitcher } from "@/components/LanguageSwitcher"
+import { useTranslation } from "react-i18next"
 import Index from "./pages/Index"
 import Employees from "./pages/Employees"
 import Profile from "./pages/Profile"
@@ -40,6 +42,7 @@ const queryClient = new QueryClient()
 
 function AppContent() {
   const { logout, isAuthenticated, currentUser } = useAuth()
+  const { t } = useTranslation()
 
   if (!isAuthenticated) {
     return <Login />
@@ -51,9 +54,10 @@ function AppContent() {
         <AppSidebar />
         <div className="flex-1 flex flex-col">
           <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-14 items-center px-4 lg:px-6">
+            <div className="flex h-14 items-center px-4 lg:px-6 gap-2">
               <SidebarTrigger className="mr-2" />
               <div className="flex-1" />
+              <LanguageSwitcher />
               <Button
                 variant="outline"
                 size="sm"
@@ -62,7 +66,7 @@ function AppContent() {
                   window.location.href = '/#/'
                 }}
               >
-                Logout
+                {t('common.logout')}
               </Button>
             </div>
           </header>

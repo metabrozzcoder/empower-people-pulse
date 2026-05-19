@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,6 +45,7 @@ const generateOtp = (secret: string, step?: number) => {
 }
 
 const randomSecret = () => {
+  const { t } = useTranslation()
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
   let s = ""
   for (let i = 0; i < 16; i++) s += chars[Math.floor(Math.random() * chars.length)]
@@ -300,8 +302,8 @@ const AccountSettings = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
-        <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t('pages.accountSettings.title')}</h1>
+        <p className="text-muted-foreground">{t('pages.accountSettings.subtitle')}</p>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">

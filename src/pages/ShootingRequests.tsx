@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -138,6 +139,7 @@ export default function ShootingRequests() {
   
   // Filter requests based on job position and tab
   const getFilteredRequests = () => {
+  const { t } = useTranslation()
     let filtered = [...requests]
     
     // Filter by status if selected
@@ -531,8 +533,8 @@ export default function ShootingRequests() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Shooting Requests</h1>
-          <p className="text-muted-foreground">Manage shooting requests, equipment, and trips</p>
+          <h1 className="text-3xl font-bold">{t('pages.shootingRequests.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.shootingRequests.subtitle')}</p>
         </div>
         {(userPosition === 'Reporter') && (
           <Button onClick={() => setIsCreateDialogOpen(true)}>

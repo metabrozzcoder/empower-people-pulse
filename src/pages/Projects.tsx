@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,6 +53,7 @@ const statusColor = (s: string | null) =>
   : 'bg-blue-500/15 text-blue-700'
 
 const Projects = () => {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const { session } = useAuth()
   const [projects, setProjects] = useState<ProjectRow[]>([])
@@ -130,8 +132,8 @@ const Projects = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Project Management</h1>
-          <p className="text-muted-foreground">Manage and track all your projects.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('pages.projects.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.projects.subtitle')}</p>
         </div>
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />New Project</Button>
       </div>
