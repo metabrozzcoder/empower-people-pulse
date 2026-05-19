@@ -161,10 +161,22 @@ export default function UserManagement() {
     }
   }
 
+  const generateStrongPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+    const specials = '!@#$%&*'
+    let pwd = ''
+    const arr = new Uint32Array(10)
+    crypto.getRandomValues(arr)
+    for (let i = 0; i < 10; i++) pwd += chars[arr[i] % chars.length]
+    pwd += specials[Math.floor(Math.random() * specials.length)]
+    pwd += Math.floor(Math.random() * 10).toString()
+    return pwd
+  }
+
   const generateCredentials = (name: string, surname: string, role: string) => {
     if (!name || !surname) return { username: '', password: '', guestId: '' }
     const username = `${name.toLowerCase()}.${surname.toLowerCase()}`.replace(/\s+/g, '')
-    const password = `${name.toLowerCase()}123`
+    const password = generateStrongPassword()
     const guestId = role === 'Guest' ? `GUEST${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}` : ''
     return { username, password, guestId }
   }
