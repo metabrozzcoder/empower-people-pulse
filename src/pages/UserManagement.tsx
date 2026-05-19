@@ -202,32 +202,25 @@ export default function UserManagement() {
     return pwd
   }
 
-  const generateCredentials = (name: string, surname: string, role: string) => {
-    if (!name && !surname) return { username: '', password: '', guestId: '' }
+  const buildUsername = (name: string, surname: string) => {
     const base = `${(name || '').toLowerCase()}${surname ? '.' + surname.toLowerCase() : ''}`
       .replace(/\s+/g, '')
       .replace(/[^a-z0-9.]/g, '')
-    const username = base || `user${Math.floor(Math.random() * 10000)}`
-    const password = generateStrongPassword()
-    const guestId = role === 'Guest' ? `GUEST${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}` : ''
-    return { username, password, guestId }
+    return base || `user${Math.floor(1000 + Math.random() * 9000)}`
   }
 
   const handleAddUser = () => {
     setSelectedUser(null)
     setFormData({
-      name: '',
-      surname: '',
-      email: '',
-      phone: '',
-      role: '',
-      position: '',
-      organization: '',
-      department: '',
-      linkedEmployee: ''
+      name: '', surname: '', email: '', phone: '',
+      role: '', position: '', organization: '', department: '', linkedEmployee: ''
     })
     setSelectedSections([])
-    setGeneratedCredentials({ username: '', password: generateStrongPassword(), guestId: '' })
+    setGeneratedCredentials({
+      username: `user${Math.floor(1000 + Math.random() * 9000)}`,
+      password: generateStrongPassword(),
+      guestId: '',
+    })
     setIsDialogOpen(true)
   }
 
