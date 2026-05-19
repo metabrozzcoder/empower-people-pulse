@@ -375,7 +375,7 @@ export default function UserManagement() {
         await addUser(newUser)
         toast({
           title: "User Created Successfully",
-          description: `Login: ${formData.email} / Password: ${generatedCredentials.password}${generatedCredentials.guestId ? ` / Guest ID: ${generatedCredentials.guestId}` : ''}. Share these credentials with the user — no email verification required.`,
+          description: `Login: ${formData.email} / Password: ${password}${generatedCredentials.guestId ? ` / Guest ID: ${generatedCredentials.guestId}` : ''}. Share these credentials with the user — no email verification required.`,
         })
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Failed to create user'
