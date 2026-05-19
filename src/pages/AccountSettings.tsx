@@ -60,7 +60,7 @@ const randomBackupCodes = () =>
 const AccountSettings = () => {
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
-  const { currentUser, login } = useAuth()
+  const { currentUser } = useAuth()
 
   const [profile, setProfile] = useState({
     name: currentUser?.name || "",
