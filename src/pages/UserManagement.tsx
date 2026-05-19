@@ -222,6 +222,11 @@ export default function UserManagement() {
       if (newFormData.name && newFormData.surname) {
         const credentials = generateCredentials(newFormData.name, newFormData.surname, newFormData.role || formData.role)
         setGeneratedCredentials(credentials)
+        // Auto-fill email if user hasn't entered one
+        if (!newFormData.email && credentials.username) {
+          newFormData.email = `${credentials.username}@ark.local`
+          setFormData(newFormData)
+        }
       }
     }
 
