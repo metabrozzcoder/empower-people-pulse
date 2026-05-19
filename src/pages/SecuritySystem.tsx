@@ -49,6 +49,7 @@ const mockDevices: SecurityDevice[] = []
 const mockAccessLogs: AccessLog[] = []
 
 export default function SecuritySystem() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const navigate = useNavigate()
   const [devices, setDevices] = useState<SecurityDevice[]>(mockDevices)
@@ -87,7 +88,6 @@ export default function SecuritySystem() {
   }
 
   const toggleSystemArmed = () => {
-  const { t } = useTranslation()
     setSystemArmed(!systemArmed)
     toast({
       title: systemArmed ? "System Disarmed" : "System Armed",

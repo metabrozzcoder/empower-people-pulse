@@ -104,6 +104,7 @@ const EMOJIS = ['😊','😂','❤️','👍','🎉','🔥','🙏','👏','😍'
 const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
 export default function Chat() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const { currentUser } = useAuth()
 
@@ -250,7 +251,6 @@ export default function Chat() {
   }
 
   const handleSendMessage = () => {
-  const { t } = useTranslation()
     if (!draft.trim() || !selectedUser) return
     if (editingId) {
       updateMessage(selectedUser.id, editingId, { content: draft, edited: true })

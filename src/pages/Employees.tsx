@@ -48,6 +48,7 @@ const toViewEmployee = (e: DbEmployee, idx: number): Employee => ({
 })
 
 export default function Employees() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [searchTerm, setSearchTerm] = useState("")

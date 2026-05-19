@@ -39,6 +39,7 @@ interface AccessRule {
 const mockAccessRules: AccessRule[] = []
 
 export default function AccessControl() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [accessRules, setAccessRules] = useState<AccessRule[]>(mockAccessRules)
   const [searchTerm, setSearchTerm] = useState('')
@@ -51,7 +52,6 @@ export default function AccessControl() {
   )
 
   const handleAddRule = () => {
-  const { t } = useTranslation()
     setSelectedRule(null)
     setIsDialogOpen(true)
   }

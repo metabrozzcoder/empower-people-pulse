@@ -151,6 +151,7 @@ const emptyForm = {
 }
 
 export default function Documentation() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -197,7 +198,6 @@ export default function Documentation() {
   )
 
   const openCompose = () => {
-  const { t } = useTranslation()
     setEditingId(null)
     setForm(emptyForm)
     setComposeOpen(true)
