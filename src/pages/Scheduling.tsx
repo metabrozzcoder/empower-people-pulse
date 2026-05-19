@@ -65,7 +65,7 @@ const Scheduling = () => {
       }
     })
     
-    const csvContent = [
+    const csvContent = scheduleData.length === 0 ? '' : [
       Object.keys(scheduleData[0]).join(','),
       ...scheduleData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
     ].join('\n')
