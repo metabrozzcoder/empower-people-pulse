@@ -137,10 +137,30 @@ export default function Chat() {
     try {
       const c = localStorage.getItem(STORAGE_KEY)
       const m = localStorage.getItem(META_KEY)
+      const u = localStorage.getItem(USERS_KEY)
       if (c) setConversations(JSON.parse(c))
       if (m) setMeta(JSON.parse(m))
+      if (u) {
+        const stored: ChatUser[] = JSON.parse(u)
+        // Merge: keep stored groups + added; refresh employee list from source
+        const base = buildInitialUsers()
+        const extras = stored.filter(s => !base.find(b => b.id === s.id))
+        setUsers([...base, ...extras])
+      }
     } catch {}
   }, [])
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations)) } catch {}
+  }, [conversations])
+
+  useEffect(() => {
+    try { localStorage.setItem(META_KEY, JSON.stringify(meta)) } catch {}
+  }, [meta])
+
+  useEffect(() => {
+    try { localStorage.setItem(USERS_KEY, JSON.stringify(users)) } catch {}
+  }, [users])
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations)) } catch {}
