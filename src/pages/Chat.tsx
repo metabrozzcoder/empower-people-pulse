@@ -115,6 +115,8 @@ export default function Chat() {
   const [typing, setTyping] = useState(false)
   const [inChatSearch, setInChatSearch] = useState('')
   const [showInChatSearch, setShowInChatSearch] = useState(false)
+  const [showArchivedMsgs, setShowArchivedMsgs] = useState(false)
+  const isAdmin = currentUser?.role === 'Admin'
 
   // Dialogs
   const [isUserInfoOpen, setIsUserInfoOpen] = useState(false)
