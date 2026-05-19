@@ -691,7 +691,8 @@ export default function Chat() {
                         )}
                         <div className={cn(
                           'relative max-w-xs lg:max-w-md px-3 py-2 rounded-2xl shadow-sm',
-                          mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm'
+                          mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm',
+                          msg.archived && 'opacity-60 ring-1 ring-muted-foreground/30'
                         )}>
                           {msg.forwarded && (
                             <div className={cn('text-xs mb-1 flex items-center gap-1 italic', mine ? 'opacity-80' : 'opacity-70')}>
