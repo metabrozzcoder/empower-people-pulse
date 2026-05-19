@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useTheme } from "next-themes"
 import { useAuth } from "@/context/AuthContext"
 import { supabase } from "@/integrations/supabase/client"
+import i18n from "@/i18n"
 
 // Simple deterministic "hash" so we don't store raw passwords in localStorage.
 // Not cryptographically secure — adequate for the local-demo password feature.
