@@ -23,7 +23,9 @@ import {
   KeyRound,
   AtSign,
   IdCard,
-  Check
+  Check,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
