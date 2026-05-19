@@ -133,6 +133,18 @@ export default function UserManagement() {
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [selectedAccessRules, setSelectedAccessRules] = useState<string[]>([])
   const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
+  const [copiedField, setCopiedField] = useState<string | null>(null)
+
+  const copyToClipboard = (value: string, field: string) => {
+    if (!value) return
+    navigator.clipboard.writeText(value)
+    setCopiedField(field)
+    setTimeout(() => setCopiedField(null), 1500)
+  }
+
+  const regeneratePassword = () => {
+    setGeneratedCredentials(prev => ({ ...prev, password: prev.password ? generateStrongPasswordFn() : generateStrongPasswordFn() }))
+  }
   const [isBulkActionsDialogOpen, setBulkActionsDialogOpen] = useState(false)
   const [isImportDialogOpen, setImportDialogOpen] = useState(false)
 
