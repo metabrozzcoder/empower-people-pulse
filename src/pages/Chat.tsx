@@ -16,7 +16,7 @@ import {
   CornerUpLeft, PlusCircle, ArchiveRestore, Square, Users, Forward,
 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
-import { mockEmployees } from '@/data/mockEmployees'
+import { supabase } from '@/integrations/supabase/client'
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
   DialogFooter,
