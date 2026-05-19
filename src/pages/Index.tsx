@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Calendar, MessageCircle, CheckSquare, Gift } from "lucide-react"
-import { mockEmployees } from "@/data/mockEmployees"
+import { supabase } from "@/integrations/supabase/client"
 import { format, isToday, isTomorrow } from "date-fns"
 import { useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react"
 
 const quickActions = [
   {
@@ -32,45 +33,39 @@ const quickActions = [
   }
 ]
 
-const upcomingEvents = [
-  {
-    id: 1,
-    title: "All Hands Meeting",
-    date: "Today, 2:00 PM",
-    type: "meeting"
-  },
-  {
-    id: 2,
-    title: "New Employee Orientation",
-    date: "Tomorrow, 9:00 AM",
-    type: "orientation"
-  },
-  {
-    id: 3,
-    title: "Performance Review Deadline",
-    date: "Jul 15, 2025",
-    type: "deadline"
-  }
-]
+const upcomingEvents: { id: number; title: string; date: string; type: string }[] = []
 
-const getTodayAndTomorrowBirthdays = () => {
-  const today = new Date()
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  
-  return mockEmployees.filter(employee => {
-    const birthday = new Date(employee.birthday)
-    return isToday(birthday) || isTomorrow(birthday)
-  }).map(employee => ({
-    ...employee,
-    isToday: isToday(new Date(employee.birthday)),
-    formattedDate: format(new Date(employee.birthday), "MMM dd")
-  }))
+interface BirthdayEmp {
+  id: string
+  name: string
+  position?: string | null
+  avatar?: string | null
+  isToday: boolean
+  formattedDate: string
 }
 
 const Index = () => {
   const navigate = useNavigate()
-  const birthdayEmployees = getTodayAndTomorrowBirthdays()
+  const [birthdayEmployees, setBirthdayEmployees] = useState<BirthdayEmp[]>([])
+
+  useEffect(() => {
+    supabase.from('employees').select('id, name, position, avatar, birthday').then(({ data }) => {
+      const list = (data ?? [])
+        .filter((e) => e.birthday)
+        .map((e) => ({ ...e, _d: new Date(e.birthday as string) }))
+        .filter((e) => isToday(e._d) || isTomorrow(e._d))
+        .map((e) => ({
+          id: e.id,
+          name: e.name,
+          position: e.position,
+          avatar: e.avatar,
+          isToday: isToday(e._d),
+          formattedDate: format(e._d, 'MMM dd'),
+        }))
+      setBirthdayEmployees(list)
+    })
+  }, [])
+
   
   return (
     <div className="space-y-6">
