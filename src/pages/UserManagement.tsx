@@ -23,7 +23,9 @@ import {
   KeyRound,
   AtSign,
   IdCard,
-  Check
+  Check,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
@@ -134,6 +136,7 @@ export default function UserManagement() {
   const [selectedAccessRules, setSelectedAccessRules] = useState<string[]>([])
   const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(true)
 
   const copyToClipboard = (value: string, field: string) => {
     if (!value) return
@@ -251,11 +254,6 @@ export default function UserManagement() {
       if (newFormData.name || newFormData.surname) {
         const credentials = generateCredentials(newFormData.name, newFormData.surname, newFormData.role || formData.role)
         setGeneratedCredentials(credentials)
-        // Auto-fill email if user hasn't entered one
-        if (!newFormData.email && credentials.username) {
-          newFormData.email = `${credentials.username}@ark.local`
-          setFormData(newFormData)
-        }
       }
     }
 
@@ -776,11 +774,11 @@ export default function UserManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email <span className="text-xs text-muted-foreground">(optional — auto-filled)</span></Label>
+                  <Label htmlFor="email">Email <span className="text-xs text-muted-foreground">(optional)</span></Label>
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="Auto-generated from name" 
+                    placeholder="Enter email address" 
                     value={formData.email}
                     onChange={(e) => handleFormChange('email', e.target.value)}
                   />
@@ -959,27 +957,45 @@ export default function UserManagement() {
                       { key: 'username', label: 'Username', value: generatedCredentials.username, icon: AtSign, empty: 'Enter a name to generate' },
                       { key: 'password', label: 'Password', value: generatedCredentials.password, icon: KeyRound, empty: 'Will be generated' },
                       ...(formData.role === 'Guest' ? [{ key: 'guestId', label: 'Guest ID', value: generatedCredentials.guestId, icon: IdCard, empty: 'Select Guest role' }] : []),
-                    ].map(({ key, label, value, icon: Icon, empty }) => (
-                      <div key={key} className="group flex items-center gap-3 rounded-lg border bg-background/80 backdrop-blur-sm p-3 transition-all hover:border-primary/40 hover:shadow-sm">
-                        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
-                          <div className={`font-mono text-sm truncate ${value ? 'text-foreground' : 'text-muted-foreground/60 italic'}`}>
-                            {value || empty}
+                    ].map(({ key, label, value, icon: Icon, empty }) => {
+                      const isPassword = key === 'password'
+                      const displayValue = value
+                        ? (isPassword && !showPassword ? '•'.repeat(value.length) : value)
+                        : empty
+                      return (
+                        <div key={key} className="group flex items-center gap-2 rounded-lg border bg-background/80 backdrop-blur-sm p-3 transition-all hover:border-primary/40 hover:shadow-sm">
+                          <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
+                            <div className={`font-mono text-sm truncate ${value ? 'text-foreground' : 'text-muted-foreground/60 italic'}`}>
+                              {displayValue}
+                            </div>
                           </div>
+                          {isPassword && value && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setShowPassword(s => !s)}
+                              className="h-8 w-8 shrink-0"
+                              title={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={!value}
+                            onClick={() => copyToClipboard(value, key)}
+                            className="h-8 w-8 shrink-0"
+                          >
+                            {copiedField === key ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={!value}
-                          onClick={() => copyToClipboard(value, key)}
-                          className="h-8 w-8 shrink-0"
-                        >
-                          {copiedField === key ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               </div>
