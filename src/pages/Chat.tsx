@@ -112,7 +112,7 @@ export default function Chat() {
   const [filter, setFilter] = useState<'all' | 'unread' | 'archived'>('all')
   const [conversations, setConversations] = useState<Record<string, Message[]>>({})
   const [meta, setMeta] = useState<Record<string, ConvMeta>>({})
-  const [users, setUsers] = useState<ChatUser[]>(() => buildInitialUsers())
+  const [users, setUsers] = useState<ChatUser[]>([])
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [typing, setTyping] = useState(false)
