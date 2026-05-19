@@ -62,6 +62,7 @@ interface Message {
   status?: 'sent' | 'delivered' | 'read'
   edited?: boolean
   forwarded?: boolean
+  archived?: boolean
 }
 
 interface ConvMeta {
