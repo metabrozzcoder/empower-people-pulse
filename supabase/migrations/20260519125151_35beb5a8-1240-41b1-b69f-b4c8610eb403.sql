@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.organizations IS 'Organization records (refresh types)';

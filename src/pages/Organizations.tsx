@@ -1,202 +1,161 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Building2, Plus, Search, Users, Edit, Trash2, MapPin, Phone, Mail, UsersIcon, UserPlus } from 'lucide-react'
+import { Building2, Plus, Search, Edit, Trash2, MapPin, Phone, Mail, UsersIcon } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/integrations/supabase/client'
 
 interface Organization {
   id: string
   name: string
-  description: string
-  address: string
-  phone: string
-  email: string
-  employeeCount: number
-  departments: Department[]
-  status: 'Active' | 'Inactive'
-  createdDate: string
+  description: string | null
+  address: string | null
+  phone: string | null
+  email: string | null
+  status: string
 }
 
 interface Department {
   id: string
+  organization_id: string
   name: string
-  description: string
-  organizationId: string
-  managerId?: string
-  managerName?: string
-  memberCount: number
-  members: DepartmentMember[]
-  budget: number
-  status: 'Active' | 'Inactive'
-  createdDate: string
+  description: string | null
+  manager_name: string | null
+  budget: number | null
+  status: string
 }
 
-interface DepartmentMember {
-  id: string
-  name: string
-  position: string
-  email: string
-  avatar?: string
-  isManager: boolean
-}
-
-const mockMembers: DepartmentMember[] = []
-
-const mockOrganizations: Organization[] = []
+const emptyOrg = { name: '', description: '', address: '', phone: '', email: '', status: 'Active' }
+const emptyDept = { name: '', description: '', manager_name: '', budget: 0, status: 'Active' }
 
 export default function Organizations() {
   const { toast } = useToast()
-  const [organizations, setOrganizations] = useState<Organization[]>(mockOrganizations)
+  const [organizations, setOrganizations] = useState<Organization[]>([])
+  const [departments, setDepartments] = useState<Department[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [loading, setLoading] = useState(true)
+
   const [isOrgDialogOpen, setIsOrgDialogOpen] = useState(false)
   const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false)
-  const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false)
-  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null)
-  const [selectedDept, setSelectedDept] = useState<Department | null>(null)
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
-  const [members, setMembers] = useState<DepartmentMember[]>(mockMembers)
+  const [editingOrg, setEditingOrg] = useState<Organization | null>(null)
+  const [editingDept, setEditingDept] = useState<Department | null>(null)
+  const [activeOrgId, setActiveOrgId] = useState<string | null>(null)
+  const [orgForm, setOrgForm] = useState({ ...emptyOrg })
+  const [deptForm, setDeptForm] = useState({ ...emptyDept })
+
+  const load = async () => {
+    setLoading(true)
+    const [{ data: orgs, error: orgErr }, { data: depts, error: deptErr }] = await Promise.all([
+      supabase.from('organizations').select('*').order('created_at', { ascending: false }),
+      supabase.from('departments').select('*').order('created_at', { ascending: false }),
+    ])
+    if (orgErr) toast({ title: 'Failed to load organizations', description: orgErr.message, variant: 'destructive' })
+    if (deptErr) toast({ title: 'Failed to load departments', description: deptErr.message, variant: 'destructive' })
+    setOrganizations((orgs as Organization[]) ?? [])
+    setDepartments((depts as Department[]) ?? [])
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const openCreateOrg = () => {
+    setEditingOrg(null)
+    setOrgForm({ ...emptyOrg })
+    setIsOrgDialogOpen(true)
+  }
+  const openEditOrg = (org: Organization) => {
+    setEditingOrg(org)
+    setOrgForm({
+      name: org.name,
+      description: org.description ?? '',
+      address: org.address ?? '',
+      phone: org.phone ?? '',
+      email: org.email ?? '',
+      status: org.status,
+    })
+    setIsOrgDialogOpen(true)
+  }
+
+  const saveOrganization = async () => {
+    if (!orgForm.name.trim()) {
+      toast({ title: 'Name required', description: 'Please enter an organization name.', variant: 'destructive' })
+      return
+    }
+    if (editingOrg) {
+      const { error } = await supabase.from('organizations').update(orgForm).eq('id', editingOrg.id)
+      if (error) return toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
+      toast({ title: 'Organization updated' })
+    } else {
+      const { error } = await supabase.from('organizations').insert(orgForm)
+      if (error) return toast({ title: 'Create failed', description: error.message, variant: 'destructive' })
+      toast({ title: 'Organization created' })
+    }
+    setIsOrgDialogOpen(false)
+    await load()
+  }
+
+  const deleteOrganization = async (id: string) => {
+    const { error } = await supabase.from('organizations').delete().eq('id', id)
+    if (error) return toast({ title: 'Delete failed', description: error.message, variant: 'destructive' })
+    toast({ title: 'Organization deleted' })
+    await load()
+  }
+
+  const openCreateDept = (orgId: string) => {
+    setActiveOrgId(orgId)
+    setEditingDept(null)
+    setDeptForm({ ...emptyDept })
+    setIsDeptDialogOpen(true)
+  }
+  const openEditDept = (dept: Department) => {
+    setActiveOrgId(dept.organization_id)
+    setEditingDept(dept)
+    setDeptForm({
+      name: dept.name,
+      description: dept.description ?? '',
+      manager_name: dept.manager_name ?? '',
+      budget: Number(dept.budget ?? 0),
+      status: dept.status,
+    })
+    setIsDeptDialogOpen(true)
+  }
+
+  const saveDepartment = async () => {
+    if (!activeOrgId) return
+    if (!deptForm.name.trim()) {
+      toast({ title: 'Name required', description: 'Please enter a department name.', variant: 'destructive' })
+      return
+    }
+    if (editingDept) {
+      const { error } = await supabase.from('departments').update(deptForm).eq('id', editingDept.id)
+      if (error) return toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
+      toast({ title: 'Department updated' })
+    } else {
+      const { error } = await supabase.from('departments').insert({ ...deptForm, organization_id: activeOrgId })
+      if (error) return toast({ title: 'Create failed', description: error.message, variant: 'destructive' })
+      toast({ title: 'Department created' })
+    }
+    setIsDeptDialogOpen(false)
+    await load()
+  }
+
+  const deleteDepartment = async (id: string) => {
+    const { error } = await supabase.from('departments').delete().eq('id', id)
+    if (error) return toast({ title: 'Delete failed', description: error.message, variant: 'destructive' })
+    toast({ title: 'Department deleted' })
+    await load()
+  }
 
   const filteredOrganizations = organizations.filter(org =>
     org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    org.description.toLowerCase().includes(searchTerm.toLowerCase())
+    (org.description ?? '').toLowerCase().includes(searchTerm.toLowerCase())
   )
-
-  const handleAddOrganization = () => {
-    setSelectedOrg(null)
-    setIsOrgDialogOpen(true)
-  }
-
-  const handleEditOrganization = (org: Organization) => {
-    setSelectedOrg(org)
-    setIsOrgDialogOpen(true)
-  }
-
-  const handleDeleteOrganization = (id: string) => {
-    setOrganizations(organizations.filter(org => org.id !== id))
-    toast({
-      title: "Organization Deleted",
-      description: "Organization has been successfully deleted.",
-    })
-  }
-
-  const handleAddDepartment = (orgId: string) => {
-    const org = organizations.find(o => o.id === orgId)
-    if (org) {
-      setSelectedOrg(org)
-      setSelectedDept(null)
-      setIsDeptDialogOpen(true)
-    }
-  }
-
-  const handleEditDepartment = (dept: Department) => {
-    const org = organizations.find(o => o.id === dept.organizationId)
-    if (org) {
-      setSelectedOrg(org)
-      setSelectedDept(dept)
-      setIsDeptDialogOpen(true)
-    }
-  }
-
-  const handleDeleteDepartment = (orgId: string, deptId: string) => {
-    setOrganizations(organizations.map(org => 
-      org.id === orgId 
-        ? { ...org, departments: org.departments.filter(dept => dept.id !== deptId) }
-        : org
-    ))
-    toast({
-      title: "Department Deleted",
-      description: "Department has been successfully deleted.",
-    })
-  }
-
-  const handleManageMembers = (dept: Department) => {
-    const org = organizations.find(o => o.id === dept.organizationId)
-    if (org) {
-      setSelectedOrg(org)
-      setSelectedDept(dept)
-      setSelectedMembers(dept.members.map(m => m.id))
-      setIsMembersDialogOpen(true)
-    }
-  }
-
-  const handleSaveOrganization = () => {
-    if (selectedOrg && selectedOrg.id && selectedOrg.id !== 'new') {
-      // Update existing organization
-      toast({
-        title: "Organization Updated",
-        description: "Organization has been successfully updated.",
-      })
-    } else {
-      // Create new organization
-      const newOrg: Organization = {
-        id: Date.now().toString(),
-        name: "New Organization",
-        description: "New organization description",
-        address: "New address",
-        phone: "+1 (555) 000-0000",
-        email: "contact@neworg.com",
-        employeeCount: 0,
-        departments: [],
-        status: 'Active',
-        createdDate: new Date().toISOString().split('T')[0]
-      }
-      setOrganizations([...organizations, newOrg])
-      toast({
-        title: "Organization Created",
-        description: "New organization has been successfully created.",
-      })
-    }
-    setIsOrgDialogOpen(false)
-  }
-
-  const handleSaveDepartment = () => {
-    if (!selectedOrg) return
-
-    if (selectedDept && selectedDept.id && selectedDept.id !== 'new') {
-      // Update existing department
-      setOrganizations(organizations.map(org => 
-        org.id === selectedOrg.id 
-          ? { ...org, departments: org.departments.map(dept => dept.id === selectedDept.id ? selectedDept : dept) }
-          : org
-      ))
-      toast({
-        title: "Department Updated",
-        description: "Department has been successfully updated.",
-      })
-    } else {
-      // Create new department
-      const newDept: Department = {
-        id: Date.now().toString(),
-        name: "New Department",
-        description: "New department description",
-        organizationId: selectedOrg.id,
-        memberCount: 0,
-        members: [],
-        budget: 100000,
-        status: 'Active',
-        createdDate: new Date().toISOString().split('T')[0]
-      }
-      setOrganizations(organizations.map(org => 
-        org.id === selectedOrg.id 
-          ? { ...org, departments: [...org.departments, newDept] }
-          : org
-      ))
-      toast({
-        title: "Department Created",
-        description: "New department has been successfully created.",
-      })
-    }
-    setIsDeptDialogOpen(false)
-  }
 
   return (
     <div className="space-y-6">
@@ -205,7 +164,7 @@ export default function Organizations() {
           <h1 className="text-3xl font-bold">Organizations & Departments</h1>
           <p className="text-muted-foreground">Manage your organization structure, departments, and teams</p>
         </div>
-        <Button onClick={handleAddOrganization} className="flex items-center space-x-2">
+        <Button onClick={openCreateOrg} className="flex items-center space-x-2">
           <Plus className="w-4 h-4" />
           <span>Add Organization</span>
         </Button>
@@ -223,200 +182,126 @@ export default function Organizations() {
         </div>
       </div>
 
-      <div className="space-y-8">
-        {filteredOrganizations.map((org) => (
-          <Card key={org.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-6 h-6 text-primary" />
+      {loading ? (
+        <p className="text-muted-foreground">Loading…</p>
+      ) : filteredOrganizations.length === 0 ? (
+        <Card><CardContent className="p-8 text-center text-muted-foreground">No organizations yet. Click "Add Organization" to create one.</CardContent></Card>
+      ) : (
+        <div className="space-y-8">
+          {filteredOrganizations.map((org) => {
+            const orgDepts = departments.filter(d => d.organization_id === org.id)
+            return (
+              <Card key={org.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <Building2 className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl">{org.name}</CardTitle>
+                        <Badge variant={org.status === 'Active' ? 'default' : 'secondary'}>{org.status}</Badge>
+                      </div>
+                    </div>
+                    <div className="flex space-x-1">
+                      <Button variant="outline" size="sm" onClick={() => openCreateDept(org.id)}>
+                        <Plus className="w-4 h-4 mr-1" />Add Department
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEditOrg(org)}><Edit className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => deleteOrganization(org.id)}><Trash2 className="w-4 h-4" /></Button>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-xl">{org.name}</CardTitle>
-                    <Badge variant={org.status === 'Active' ? 'default' : 'secondary'}>
-                      {org.status}
-                    </Badge>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {org.description && <CardDescription>{org.description}</CardDescription>}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    {org.address && <div className="flex items-center space-x-2 text-muted-foreground"><MapPin className="w-4 h-4" /><span>{org.address}</span></div>}
+                    {org.phone && <div className="flex items-center space-x-2 text-muted-foreground"><Phone className="w-4 h-4" /><span>{org.phone}</span></div>}
+                    {org.email && <div className="flex items-center space-x-2 text-muted-foreground"><Mail className="w-4 h-4" /><span>{org.email}</span></div>}
                   </div>
-                </div>
-                <div className="flex space-x-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAddDepartment(org.id)}
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Department
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEditOrganization(org)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteOrganization(org.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <CardDescription>{org.description}</CardDescription>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="flex items-center space-x-2 text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span>{org.address}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-muted-foreground">
-                  <Phone className="w-4 h-4" />
-                  <span>{org.phone}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-muted-foreground">
-                  <Mail className="w-4 h-4" />
-                  <span>{org.email}</span>
-                </div>
-              </div>
 
-              {/* Departments Section */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Departments ({org.departments.length})</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {org.departments.map((dept) => (
-                    <Card key={dept.id} className="bg-muted/30">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                              <UsersIcon className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-base">{dept.name}</CardTitle>
-                              <Badge variant="outline" className="text-xs">
-                                {dept.memberCount} members
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="flex space-x-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleManageMembers(dept)}
-                              title="Manage Members"
-                            >
-                              <UserPlus className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditDepartment(dept)}
-                            >
-                              <Edit className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteDepartment(org.id, dept.id)}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <p className="text-xs text-muted-foreground">{dept.description}</p>
-                        {dept.managerName && (
-                          <p className="text-xs text-muted-foreground">
-                            Manager: {dept.managerName}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          Budget: ${dept.budget.toLocaleString()}
-                        </p>
-                        <div className="flex -space-x-1">
-                          {dept.members.slice(0, 3).map((member) => (
-                            <Avatar key={member.id} className="w-6 h-6 border-2 border-background" title={member.name}>
-                              <AvatarImage src={member.avatar} />
-                              <AvatarFallback className="text-xs">
-                                {member.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                          ))}
-                          {dept.members.length > 3 && (
-                            <div className="w-6 h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium">
-                              +{dept.members.length - 3}
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Departments ({orgDepts.length})</h3>
+                    {orgDepts.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No departments yet.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {orgDepts.map((dept) => (
+                          <Card key={dept.id} className="bg-muted/30">
+                            <CardHeader className="pb-2">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                                    <UsersIcon className="w-4 h-4 text-primary" />
+                                  </div>
+                                  <CardTitle className="text-base">{dept.name}</CardTitle>
+                                </div>
+                                <div className="flex space-x-1">
+                                  <Button variant="ghost" size="sm" onClick={() => openEditDept(dept)}><Edit className="w-3 h-3" /></Button>
+                                  <Button variant="ghost" size="sm" onClick={() => deleteDepartment(dept.id)}><Trash2 className="w-3 h-3" /></Button>
+                                </div>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-1">
+                              {dept.description && <p className="text-xs text-muted-foreground">{dept.description}</p>}
+                              {dept.manager_name && <p className="text-xs text-muted-foreground">Manager: {dept.manager_name}</p>}
+                              <p className="text-xs text-muted-foreground">Budget: ${Number(dept.budget ?? 0).toLocaleString()}</p>
+                              <Badge variant="outline" className="text-xs">{dept.status}</Badge>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
 
       {/* Organization Dialog */}
       <Dialog open={isOrgDialogOpen} onOpenChange={setIsOrgDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {selectedOrg ? 'Edit Organization' : 'Add New Organization'}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedOrg ? 'Update organization details' : 'Create a new organization'}
-            </DialogDescription>
+            <DialogTitle>{editingOrg ? 'Edit Organization' : 'Add New Organization'}</DialogTitle>
+            <DialogDescription>{editingOrg ? 'Update organization details' : 'Create a new organization'}</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Organization Name</Label>
-              <Input id="name" placeholder="Enter organization name" defaultValue={selectedOrg?.name} />
+              <Label>Organization Name</Label>
+              <Input value={orgForm.name} onChange={(e) => setOrgForm({ ...orgForm, name: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select defaultValue={selectedOrg?.status?.toLowerCase()}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
+              <Label>Status</Label>
+              <Select value={orgForm.status} onValueChange={(v) => setOrgForm({ ...orgForm, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea id="description" placeholder="Enter organization description" defaultValue={selectedOrg?.description} />
+              <Label>Description</Label>
+              <Textarea value={orgForm.description} onChange={(e) => setOrgForm({ ...orgForm, description: e.target.value })} />
             </div>
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Textarea id="address" placeholder="Enter organization address" defaultValue={selectedOrg?.address} />
+              <Label>Address</Label>
+              <Textarea value={orgForm.address} onChange={(e) => setOrgForm({ ...orgForm, address: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" placeholder="Enter phone number" defaultValue={selectedOrg?.phone} />
+              <Label>Phone</Label>
+              <Input value={orgForm.phone} onChange={(e) => setOrgForm({ ...orgForm, phone: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="Enter email address" defaultValue={selectedOrg?.email} />
+              <Label>Email</Label>
+              <Input type="email" value={orgForm.email} onChange={(e) => setOrgForm({ ...orgForm, email: e.target.value })} />
             </div>
           </div>
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsOrgDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveOrganization}>
-              {selectedOrg ? 'Update' : 'Create'} Organization
-            </Button>
+            <Button variant="outline" onClick={() => setIsOrgDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveOrganization}>{editingOrg ? 'Update' : 'Create'} Organization</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -425,157 +310,40 @@ export default function Organizations() {
       <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {selectedDept ? 'Edit Department' : 'Add New Department'}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedDept ? 'Update department information' : `Create a new department for ${selectedOrg?.name}`}
-            </DialogDescription>
+            <DialogTitle>{editingDept ? 'Edit Department' : 'Add New Department'}</DialogTitle>
+            <DialogDescription>{editingDept ? 'Update department information' : 'Create a new department'}</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="deptName">Department Name</Label>
-              <Input id="deptName" placeholder="Enter department name" defaultValue={selectedDept?.name} />
+              <Label>Department Name</Label>
+              <Input value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="manager">Department Manager</Label>
-              <Select defaultValue={selectedDept?.managerId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select manager" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">John Smith</SelectItem>
-                  <SelectItem value="2">Emily Davis</SelectItem>
-                  <SelectItem value="3">Mike Johnson</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Manager Name</Label>
+              <Input value={deptForm.manager_name} onChange={(e) => setDeptForm({ ...deptForm, manager_name: e.target.value })} />
             </div>
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="deptDescription">Description</Label>
-              <Textarea id="deptDescription" placeholder="Enter department description" defaultValue={selectedDept?.description} />
+              <Label>Description</Label>
+              <Textarea value={deptForm.description} onChange={(e) => setDeptForm({ ...deptForm, description: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="budget">Budget</Label>
-              <Input id="budget" type="number" placeholder="Enter budget amount" defaultValue={selectedDept?.budget} />
+              <Label>Budget</Label>
+              <Input type="number" value={deptForm.budget} onChange={(e) => setDeptForm({ ...deptForm, budget: Number(e.target.value) })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="deptStatus">Status</Label>
-              <Select defaultValue={selectedDept?.status?.toLowerCase()}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
+              <Label>Status</Label>
+              <Select value={deptForm.status} onValueChange={(v) => setDeptForm({ ...deptForm, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsDeptDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveDepartment}>
-              {selectedDept ? 'Update' : 'Create'} Department
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Members Management Dialog */}
-      <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>
-              Manage Members - {selectedDept?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Add or remove members from this department
-            </DialogDescription>
-          </DialogHeader>
-          <Tabs defaultValue="current" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="current">Current Members</TabsTrigger>
-              <TabsTrigger value="add">Add Members</TabsTrigger>
-            </TabsList>
-            <TabsContent value="current" className="space-y-4">
-              <div className="space-y-2">
-                {selectedDept?.members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={member.avatar} />
-                        <AvatarFallback>
-                          {member.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{member.name}</p>
-                        <p className="text-sm text-muted-foreground">{member.position}</p>
-                        <p className="text-xs text-muted-foreground">{member.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {member.isManager && (
-                        <Badge variant="secondary">Manager</Badge>
-                      )}
-                      <Button variant="ghost" size="sm" onClick={() => {
-                        setMembers(prev => prev.filter(m => m.id !== member.id))
-                        toast({
-                          title: "Member Removed",
-                          description: `${member.name} has been removed from the department.`,
-                        })
-                      }}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="add" className="space-y-4">
-              <div className="space-y-2">
-                <Label>Available Employees</Label>
-                {mockMembers.map((member) => (
-                  <div key={member.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                    <Checkbox
-                      checked={selectedMembers.includes(member.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedMembers([...selectedMembers, member.id])
-                        } else {
-                          setSelectedMembers(selectedMembers.filter(id => id !== member.id))
-                        }
-                      }}
-                    />
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={member.avatar} />
-                      <AvatarFallback>
-                        {member.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{member.name}</p>
-                      <p className="text-sm text-muted-foreground">{member.position}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsMembersDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              setIsMembersDialogOpen(false)
-              toast({
-                title: "Members Updated",
-                description: "Department members have been successfully updated.",
-              })
-            }}>
-              Save Changes
-            </Button>
+            <Button variant="outline" onClick={() => setIsDeptDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveDepartment}>{editingDept ? 'Update' : 'Create'} Department</Button>
           </div>
         </DialogContent>
       </Dialog>
