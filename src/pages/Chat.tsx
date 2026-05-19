@@ -987,10 +987,14 @@ export default function Chat() {
               <Label htmlFor="arch">Archive</Label>
               <Switch id="arch" checked={!!meta[selectedUser?.id || '']?.archived} onCheckedChange={() => selectedUser && toggleMeta(selectedUser.id, 'archived')} />
             </div>
-            <Separator />
-            <Button variant="destructive" className="w-full" onClick={() => { handleDeleteChat(); setIsChatSettingsOpen(false) }}>
-              <Trash2 className="w-4 h-4 mr-2" /> Clear conversation
-            </Button>
+            {isAdmin && (
+              <>
+                <Separator />
+                <Button variant="destructive" className="w-full" onClick={() => { handleDeleteChat(); setIsChatSettingsOpen(false) }}>
+                  <Trash2 className="w-4 h-4 mr-2" /> Clear conversation
+                </Button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
