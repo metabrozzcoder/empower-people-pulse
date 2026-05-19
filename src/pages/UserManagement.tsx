@@ -936,7 +936,43 @@ export default function UserManagement() {
                 )}
               </div>
               
-              {/* Credentials are auto-generated silently and shown in the success toast after save */}
+              {/* Simple auto-generated password box */}
+              {!selectedUser && (
+                <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Auto-generated password</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Share this temporary password with the user. They can change it later from their profile.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      readOnly
+                      value={generatedCredentials.password}
+                      className="font-mono text-sm bg-background"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={regeneratePassword}
+                      title="Generate new password"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => copyToClipboard(generatedCredentials.password, 'password')}
+                      title="Copy password"
+                    >
+                      {copiedField === 'password' ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <Separator />
