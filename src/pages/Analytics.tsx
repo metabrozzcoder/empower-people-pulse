@@ -1,113 +1,200 @@
-
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, Users, Target, Clock, DollarSign, Award } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { supabase } from "@/integrations/supabase/client"
+
+interface EmployeeRow { id: string; department: string | null; salary: number | null; performance_score: number | null; status: string | null; name: string; hire_date: string | null }
+interface ProjectRow { id: string; status: string | null; progress: number | null }
+interface TaskRow { id: string; status: string | null; priority: string | null }
+interface ShootingRow { id: string; status: string | null }
+interface AttendanceRow { id: string; date: string; status: string | null; hours: number | null }
+interface ProfileRow { id: string; department: string | null }
+
+const COLORS = ['hsl(var(--primary))', '#82ca9d', '#ffc658', '#ff7300', '#8884d8']
+
+const downloadCsv = (rows: Record<string, unknown>[], filename: string) => {
+  if (!rows.length) return
+  const csv = [Object.keys(rows[0]).join(','), ...rows.map(r => Object.values(r).map(v => `"${v ?? ''}"`).join(','))].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
 
 const Analytics = () => {
   const { toast } = useToast()
-  
-  const performanceData = [
-    { month: 'Jan', performance: 85, satisfaction: 78, productivity: 82 },
-    { month: 'Feb', performance: 88, satisfaction: 82, productivity: 85 },
-    { month: 'Mar', performance: 92, satisfaction: 85, productivity: 90 },
-    { month: 'Apr', performance: 87, satisfaction: 80, productivity: 88 },
-    { month: 'May', performance: 90, satisfaction: 88, productivity: 92 },
-    { month: 'Jun', performance: 94, satisfaction: 92, productivity: 95 }
-  ]
+  const [loading, setLoading] = useState(true)
+  const [employees, setEmployees] = useState<EmployeeRow[]>([])
+  const [profiles, setProfiles] = useState<ProfileRow[]>([])
+  const [projects, setProjects] = useState<ProjectRow[]>([])
+  const [tasks, setTasks] = useState<TaskRow[]>([])
+  const [shootings, setShootings] = useState<ShootingRow[]>([])
+  const [attendance, setAttendance] = useState<AttendanceRow[]>([])
 
-  const departmentData = [
-    { name: 'Production', employees: 45, performance: 92, budget: 280000 },
-    { name: 'Technical', employees: 32, performance: 88, budget: 220000 },
-    { name: 'Content', employees: 28, performance: 85, budget: 180000 },
-    { name: 'Creative', employees: 22, performance: 90, budget: 160000 },
-    { name: 'Admin', employees: 15, performance: 78, budget: 120000 }
-  ]
-
-  const recruitmentFunnelData = [
-    { stage: 'Applications', count: 450, color: '#8884d8' },
-    { stage: 'Screening', count: 120, color: '#82ca9d' },
-    { stage: 'Interviews', count: 45, color: '#ffc658' },
-    { stage: 'Offers', count: 12, color: '#ff7300' },
-    { stage: 'Hired', count: 8, color: '#00ff00' }
-  ]
-
-  const attendanceData = [
-    { day: 'Mon', present: 95, late: 3, absent: 2 },
-    { day: 'Tue', present: 92, late: 5, absent: 3 },
-    { day: 'Wed', present: 98, late: 1, absent: 1 },
-    { day: 'Thu', present: 89, late: 7, absent: 4 },
-    { day: 'Fri', present: 85, late: 8, absent: 7 }
-  ]
-
-  const exportReport = (reportType: string) => {
-    let data: any[] = []
-    let filename = ''
-    
-    switch (reportType) {
-      case 'performance':
-        data = performanceData
-        filename = 'performance_report'
-        break
-      case 'departments':
-        data = departmentData
-        filename = 'department_report'
-        break
-      case 'recruitment':
-        data = recruitmentFunnelData
-        filename = 'recruitment_report'
-        break
-      case 'attendance':
-        data = attendanceData
-        filename = 'attendance_report'
-        break
-      default:
-        return
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      const [e, pr, p, t, sr, a] = await Promise.all([
+        supabase.from('employees').select('id,department,salary,performance_score,status,name,hire_date'),
+        supabase.from('profiles').select('id,department'),
+        supabase.from('projects').select('id,status,progress'),
+        supabase.from('tasks').select('id,status,priority'),
+        supabase.from('shooting_requests').select('id,status'),
+        supabase.from('attendance').select('id,date,status,hours'),
+      ])
+      setEmployees((e.data ?? []) as EmployeeRow[])
+      setProfiles((pr.data ?? []) as ProfileRow[])
+      setProjects((p.data ?? []) as ProjectRow[])
+      setTasks((t.data ?? []) as TaskRow[])
+      setShootings((sr.data ?? []) as ShootingRow[])
+      setAttendance((a.data ?? []) as AttendanceRow[])
+      setLoading(false)
     }
-    
-    const csvContent = [
-      Object.keys(data[0]).join(','),
-      ...data.map(row => Object.values(row).join(','))
-    ].join('\n')
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    
-    toast({
-      title: "Report Exported",
-      description: `${reportType} report has been exported successfully.`,
+    load()
+  }, [])
+
+  const totalEmployees = employees.length || profiles.length
+  const avgPerformance = useMemo(() => {
+    const scores = employees.map(e => e.performance_score ?? 0).filter(s => s > 0)
+    return scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
+  }, [employees])
+
+  const departmentData = useMemo(() => {
+    const map = new Map<string, { name: string; employees: number; performance: number; budget: number; perfCount: number }>()
+    const source = employees.length > 0
+      ? employees.map(e => ({ dept: e.department || 'General', perf: e.performance_score ?? 0, salary: e.salary ?? 0 }))
+      : profiles.map(p => ({ dept: p.department || 'General', perf: 0, salary: 0 }))
+    source.forEach(({ dept, perf, salary }) => {
+      const cur = map.get(dept) ?? { name: dept, employees: 0, performance: 0, budget: 0, perfCount: 0 }
+      cur.employees += 1
+      cur.budget += salary
+      if (perf > 0) { cur.performance += perf; cur.perfCount += 1 }
+      map.set(dept, cur)
     })
+    return Array.from(map.values()).map(d => ({
+      name: d.name,
+      employees: d.employees,
+      performance: d.perfCount ? Math.round(d.performance / d.perfCount) : 0,
+      budget: d.budget,
+    }))
+  }, [employees, profiles])
+
+  const totalBudget = departmentData.reduce((s, d) => s + d.budget, 0)
+
+  const attendanceRate = useMemo(() => {
+    if (!attendance.length) return 0
+    const present = attendance.filter(a => (a.status ?? 'present') === 'present').length
+    return Math.round((present / attendance.length) * 100)
+  }, [attendance])
+
+  const weeklyAttendance = useMemo(() => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    const buckets = days.map(day => ({ day, present: 0, late: 0, absent: 0 }))
+    attendance.forEach(a => {
+      const d = new Date(a.date).getDay()
+      const status = (a.status ?? 'present').toLowerCase()
+      if (status === 'late') buckets[d].late += 1
+      else if (status === 'absent') buckets[d].absent += 1
+      else buckets[d].present += 1
+    })
+    // Show Mon-Fri
+    return [buckets[1], buckets[2], buckets[3], buckets[4], buckets[5]]
+  }, [attendance])
+
+  const recruitmentFunnel = useMemo(() => {
+    const stages = [
+      { stage: 'Draft', color: '#8884d8' },
+      { stage: 'Submitted', color: '#82ca9d' },
+      { stage: 'Admin Approved', color: '#ffc658' },
+      { stage: 'Completed', color: '#00C49F' },
+    ]
+    return stages.map(s => ({ ...s, count: shootings.filter(sh => sh.status === s.stage).length }))
+  }, [shootings])
+
+  const projectStats = useMemo(() => {
+    const total = projects.length
+    const inProgress = projects.filter(p => p.status === 'In Progress').length
+    const completed = projects.filter(p => p.status === 'Completed').length
+    const avgProgress = total ? Math.round(projects.reduce((s, p) => s + (p.progress ?? 0), 0) / total) : 0
+    return { total, inProgress, completed, avgProgress }
+  }, [projects])
+
+  const taskStats = useMemo(() => {
+    const total = tasks.length
+    const done = tasks.filter(t => t.status === 'done' || t.status === 'Done').length
+    const open = total - done
+    const critical = tasks.filter(t => (t.priority ?? '').toLowerCase() === 'critical').length
+    return { total, done, open, critical }
+  }, [tasks])
+
+  const performanceDist = useMemo(() => {
+    const scored = employees.filter(e => (e.performance_score ?? 0) > 0)
+    const bucket = (min: number, max: number) => scored.filter(e => (e.performance_score ?? 0) >= min && (e.performance_score ?? 0) <= max).length
+    const total = scored.length || 1
+    return [
+      { label: 'Excellent (90-100%)', pct: Math.round((bucket(90, 100) / total) * 100) },
+      { label: 'Good (80-89%)', pct: Math.round((bucket(80, 89) / total) * 100) },
+      { label: 'Average (70-79%)', pct: Math.round((bucket(70, 79) / total) * 100) },
+      { label: 'Below Average (<70%)', pct: Math.round((bucket(0, 69) / total) * 100) },
+    ]
+  }, [employees])
+
+  const topPerformer = useMemo(() => {
+    if (!employees.length) return null
+    return [...employees].sort((a, b) => (b.performance_score ?? 0) - (a.performance_score ?? 0))[0]
+  }, [employees])
+
+  const recentHires = useMemo(() => {
+    return [...employees]
+      .filter(e => e.hire_date)
+      .sort((a, b) => (b.hire_date ?? '').localeCompare(a.hire_date ?? ''))
+      .slice(0, 5)
+  }, [employees])
+
+  const exportReport = (type: string) => {
+    let data: Record<string, unknown>[] = []
+    switch (type) {
+      case 'departments': data = departmentData; break
+      case 'recruitment': data = recruitmentFunnel; break
+      case 'attendance': data = weeklyAttendance; break
+      case 'performance': data = departmentData.map(d => ({ department: d.name, avg_performance: d.performance })); break
+    }
+    if (!data.length) {
+      toast({ title: 'No data', description: 'Nothing to export yet.', variant: 'destructive' })
+      return
+    }
+    downloadCsv(data, type + '_report')
+    toast({ title: 'Report exported', description: `${type} report downloaded.` })
   }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">HR Analytics</h1>
         <p className="text-muted-foreground">
-          Comprehensive analytics and insights for data-driven HR decisions.
+          Live metrics computed from employees, projects, tasks, attendance, and shooting requests.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+            <CardTitle className="text-sm font-medium">Total People</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">142</div>
-            <p className="text-xs text-muted-foreground">+8% from last month</p>
+            <div className="text-2xl font-bold">{totalEmployees}</div>
+            <p className="text-xs text-muted-foreground">{employees.length} employees · {profiles.length} accounts</p>
           </CardContent>
         </Card>
         <Card>
@@ -116,8 +203,8 @@ const Analytics = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">89%</div>
-            <p className="text-xs text-muted-foreground">+2% from last quarter</p>
+            <div className="text-2xl font-bold">{avgPerformance}%</div>
+            <p className="text-xs text-muted-foreground">Across scored employees</p>
           </CardContent>
         </Card>
         <Card>
@@ -126,131 +213,50 @@ const Analytics = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">94%</div>
-            <p className="text-xs text-muted-foreground">+1% from last week</p>
+            <div className="text-2xl font-bold">{attendanceRate}%</div>
+            <p className="text-xs text-muted-foreground">{attendance.length} records</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Employee Satisfaction</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">87%</div>
-            <p className="text-xs text-muted-foreground">+5% from last survey</p>
+            <div className="text-2xl font-bold">{projectStats.inProgress}</div>
+            <p className="text-xs text-muted-foreground">{projectStats.total} total · {projectStats.avgProgress}% avg progress</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Turnover Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Open Tasks</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3.2%</div>
-            <p className="text-xs text-muted-foreground">-1.2% from last year</p>
+            <div className="text-2xl font-bold">{taskStats.open}</div>
+            <p className="text-xs text-muted-foreground">{taskStats.critical} critical · {taskStats.done} done</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total HR Budget</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Payroll</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$960K</div>
-            <p className="text-xs text-muted-foreground">82% utilized</p>
+            <div className="text-2xl font-bold">${(totalBudget / 1000).toFixed(0)}K</div>
+            <p className="text-xs text-muted-foreground">Sum of employee salaries</p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="performance" className="space-y-6">
+      <Tabs defaultValue="departments" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="departments">Departments</TabsTrigger>
-          <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="recruitment">Shooting Requests</TabsTrigger>
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
+          <TabsTrigger value="work">Projects & Tasks</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="performance" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Performance Trends</CardTitle>
-                    <CardDescription>Monthly performance, satisfaction, and productivity metrics</CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => exportReport('performance')}>
-                    Export
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={performanceData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="performance" stroke="#8884d8" strokeWidth={2} name="Performance" />
-                    <Line type="monotone" dataKey="satisfaction" stroke="#82ca9d" strokeWidth={2} name="Satisfaction" />
-                    <Line type="monotone" dataKey="productivity" stroke="#ffc658" strokeWidth={2} name="Productivity" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Distribution</CardTitle>
-                <CardDescription>Employee performance score ranges</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Excellent (90-100%)</span>
-                    <div className="flex items-center space-x-2">
-                      <Progress value={35} className="w-20 h-2" />
-                      <span className="text-sm font-medium">35%</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Good (80-89%)</span>
-                    <div className="flex items-center space-x-2">
-                      <Progress value={45} className="w-20 h-2" />
-                      <span className="text-sm font-medium">45%</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Average (70-79%)</span>
-                    <div className="flex items-center space-x-2">
-                      <Progress value={15} className="w-20 h-2" />
-                      <span className="text-sm font-medium">15%</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Below Average (&lt;70%)</span>
-                    <div className="flex items-center space-x-2">
-                      <Progress value={5} className="w-20 h-2" />
-                      <span className="text-sm font-medium">5%</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Top Performer:</span>
-                      <p className="font-medium">Sarah Chen (96%)</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Avg Score:</span>
-                      <p className="font-medium">84.2%</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
 
         <TabsContent value="departments" className="space-y-6">
           <Card>
@@ -258,87 +264,98 @@ const Analytics = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Department Comparison</CardTitle>
-                  <CardDescription>Performance and budget analysis by department</CardDescription>
+                  <CardDescription>Average performance per department</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => exportReport('departments')}>
-                  Export
-                </Button>
+                <Button variant="outline" size="sm" onClick={() => exportReport('departments')}>Export</Button>
               </div>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={departmentData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="performance" fill="#8884d8" name="Performance %" />
-                </BarChart>
-              </ResponsiveContainer>
+              {departmentData.length ? (
+                <ResponsiveContainer width="100%" height={350}>
+                  <BarChart data={departmentData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="performance" fill="hsl(var(--primary))" name="Performance %" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : <EmptyState loading={loading} message="No department data yet." />}
             </CardContent>
           </Card>
 
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
-              <CardHeader>
-                <CardTitle>Department Headcount</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Headcount</CardTitle></CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {departmentData.map((dept) => (
-                    <div key={dept.name} className="flex justify-between items-center">
-                      <span className="font-medium">{dept.name}</span>
+                <div className="space-y-3">
+                  {departmentData.map(d => (
+                    <div key={d.name} className="flex justify-between items-center">
+                      <span className="font-medium">{d.name}</span>
                       <div className="flex items-center space-x-2">
-                        <Progress value={(dept.employees / 142) * 100} className="w-20 h-2" />
-                        <span className="text-sm font-medium">{dept.employees}</span>
+                        <Progress value={totalEmployees ? (d.employees / totalEmployees) * 100 : 0} className="w-20 h-2" />
+                        <span className="text-sm font-medium w-6 text-right">{d.employees}</span>
                       </div>
                     </div>
                   ))}
-                </div>
-                <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
-                  <div className="flex justify-between">
-                    <span>Total Employees:</span>
-                    <span className="font-medium">142</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Largest Department:</span>
-                    <span className="font-medium">Production (45)</span>
-                  </div>
+                  {!departmentData.length && <EmptyState loading={loading} message="No employees yet." />}
                 </div>
               </CardContent>
             </Card>
-
             <Card>
-              <CardHeader>
-                <CardTitle>Budget Allocation</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Payroll Allocation</CardTitle></CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {departmentData.map((dept) => (
-                    <div key={dept.name} className="flex justify-between items-center">
-                      <span className="font-medium">{dept.name}</span>
+                <div className="space-y-3">
+                  {departmentData.map(d => (
+                    <div key={d.name} className="flex justify-between items-center">
+                      <span className="font-medium">{d.name}</span>
                       <div className="text-right">
-                        <div className="font-medium">${(dept.budget / 1000).toFixed(0)}K</div>
-                        <div className="text-sm text-muted-foreground">
-                          {Math.round((dept.budget / 960000) * 100)}%
+                        <div className="font-medium">${(d.budget / 1000).toFixed(1)}K</div>
+                        <div className="text-xs text-muted-foreground">
+                          {totalBudget ? Math.round((d.budget / totalBudget) * 100) : 0}%
                         </div>
                       </div>
                     </div>
                   ))}
-                </div>
-                <div className="mt-4 pt-4 border-t text-sm text-muted-foreground">
-                  <div className="flex justify-between">
-                    <span>Total Budget:</span>
-                    <span className="font-medium">$960K</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Utilization:</span>
-                    <span className="font-medium">82%</span>
-                  </div>
+                  {!departmentData.length && <EmptyState loading={loading} message="No payroll data yet." />}
                 </div>
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="performance" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Performance Distribution</CardTitle>
+                <Button variant="outline" size="sm" onClick={() => exportReport('performance')}>Export</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {performanceDist.map(p => (
+                  <div key={p.label} className="flex justify-between items-center">
+                    <span className="text-sm">{p.label}</span>
+                    <div className="flex items-center space-x-2">
+                      <Progress value={p.pct} className="w-32 h-2" />
+                      <span className="text-sm font-medium w-10 text-right">{p.pct}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Top Performer:</span>
+                  <p className="font-medium">{topPerformer ? `${topPerformer.name} (${topPerformer.performance_score ?? 0}%)` : '—'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Avg Score:</span>
+                  <p className="font-medium">{avgPerformance}%</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="recruitment" className="space-y-6">
@@ -347,109 +364,43 @@ const Analytics = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Recruitment Funnel</CardTitle>
-                    <CardDescription>Candidate flow through recruitment stages</CardDescription>
+                    <CardTitle>Shooting Request Funnel</CardTitle>
+                    <CardDescription>Requests grouped by status</CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => exportReport('recruitment')}>
-                    Export
-                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => exportReport('recruitment')}>Export</Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={recruitmentFunnelData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="count"
-                      label={({ name, count }) => `${name}: ${count}`}
-                    >
-                      {recruitmentFunnelData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                {recruitmentFunnel.some(s => s.count > 0) ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie data={recruitmentFunnel} cx="50%" cy="50%" outerRadius={100} dataKey="count" label={({ stage, count }) => `${stage}: ${count}`}>
+                        {recruitmentFunnel.map((entry, i) => (
+                          <Cell key={i} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : <EmptyState loading={loading} message="No shooting requests yet." />}
               </CardContent>
             </Card>
-
             <Card>
-              <CardHeader>
-                <CardTitle>Recruitment Metrics</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Recent Hires</CardTitle></CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Time to Hire</span>
-                    <span className="font-medium">18 days</span>
+                {recentHires.length ? (
+                  <div className="space-y-2 text-sm">
+                    {recentHires.map(h => (
+                      <div key={h.id} className="flex justify-between">
+                        <span>{h.name}</span>
+                        <span className="text-muted-foreground">{h.hire_date}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Cost per Hire</span>
-                    <span className="font-medium">$3,200</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Interview to Offer Ratio</span>
-                    <span className="font-medium">3.75:1</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Offer Accept Rate</span>
-                    <span className="font-medium">67%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Source Effectiveness</span>
-                    <span className="font-medium">LinkedIn 45%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Quality of Hire</span>
-                    <span className="font-medium">4.2/5</span>
-                  </div>
-                </div>
+                ) : <EmptyState loading={loading} message="No hires recorded yet." />}
               </CardContent>
             </Card>
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Open Positions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">8</div>
-                  <p className="text-sm text-muted-foreground">Active Positions</p>
-                </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">3</div>
-                  <p className="text-sm text-muted-foreground">Positions Filled</p>
-                </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">2</div>
-                  <p className="text-sm text-muted-foreground">Urgent Positions</p>
-                </div>
-              </div>
-              <div className="mt-4 space-y-2">
-                <h4 className="font-medium">Recent Hires</h4>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span>Sarah Chen - Video Editor</span>
-                    <span className="text-muted-foreground">2 days ago</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Mike Johnson - Camera Operator</span>
-                    <span className="text-muted-foreground">1 week ago</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Lisa Wang - Content Producer</span>
-                    <span className="text-muted-foreground">2 weeks ago</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="attendance" className="space-y-6">
@@ -458,116 +409,47 @@ const Analytics = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Weekly Attendance Pattern</CardTitle>
-                  <CardDescription>Attendance trends throughout the week</CardDescription>
+                  <CardDescription>Counts of attendance records by weekday</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => exportReport('attendance')}>
-                  Export
-                </Button>
+                <Button variant="outline" size="sm" onClick={() => exportReport('attendance')}>Export</Button>
               </div>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={attendanceData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="present" fill="#22c55e" name="Present" />
-                  <Bar dataKey="late" fill="#f59e0b" name="Late" />
-                  <Bar dataKey="absent" fill="#ef4444" name="Absent" />
-                </BarChart>
-              </ResponsiveContainer>
+              {attendance.length ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={weeklyAttendance}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="day" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="present" fill="#22c55e" name="Present" />
+                    <Bar dataKey="late" fill="#f59e0b" name="Late" />
+                    <Bar dataKey="absent" fill="#ef4444" name="Absent" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : <EmptyState loading={loading} message="No attendance records yet." />}
             </CardContent>
           </Card>
+        </TabsContent>
 
-          <div className="grid gap-4 md:grid-cols-4">
+        <TabsContent value="work" className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2">
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Average Check-in</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">8:47 AM</div>
-                <p className="text-xs text-muted-foreground">7 min earlier than last week</p>
+              <CardHeader><CardTitle>Projects</CardTitle></CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <Row label="Total" value={projectStats.total} />
+                <Row label="In progress" value={projectStats.inProgress} />
+                <Row label="Completed" value={projectStats.completed} />
+                <Row label="Average progress" value={`${projectStats.avgProgress}%`} />
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Weekly Hours</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">38.2h</div>
-                <p className="text-xs text-muted-foreground">Average per employee</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Overtime Hours</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">127h</div>
-                <p className="text-xs text-muted-foreground">Total this week</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Perfect Attendance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">89</div>
-                <p className="text-xs text-muted-foreground">Employees this month</p>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Additional Attendance Insights */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Attendance Trends</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">This Month vs Last Month</span>
-                    <span className="text-sm font-medium text-green-600">+2.3%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Remote Work Adoption</span>
-                    <span className="text-sm font-medium">23%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Sick Leave Usage</span>
-                    <span className="text-sm font-medium">4.2 days avg</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Vacation Days Taken</span>
-                    <span className="text-sm font-medium">12.8 days avg</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Department Attendance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { dept: 'Production', rate: 96 },
-                    { dept: 'Technical', rate: 94 },
-                    { dept: 'Creative', rate: 91 },
-                    { dept: 'Admin', rate: 98 }
-                  ].map((item) => (
-                    <div key={item.dept} className="flex justify-between items-center">
-                      <span className="text-sm">{item.dept}</span>
-                      <div className="flex items-center space-x-2">
-                        <Progress value={item.rate} className="w-16 h-2" />
-                        <span className="text-sm font-medium w-8">{item.rate}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <CardHeader><CardTitle>Tasks</CardTitle></CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <Row label="Total" value={taskStats.total} />
+                <Row label="Open" value={taskStats.open} />
+                <Row label="Done" value={taskStats.done} />
+                <Row label="Critical priority" value={taskStats.critical} />
               </CardContent>
             </Card>
           </div>
@@ -576,5 +458,18 @@ const Analytics = () => {
     </div>
   )
 }
+
+const Row = ({ label, value }: { label: string; value: number | string }) => (
+  <div className="flex justify-between">
+    <span className="text-muted-foreground">{label}</span>
+    <span className="font-medium">{value}</span>
+  </div>
+)
+
+const EmptyState = ({ loading, message }: { loading: boolean; message: string }) => (
+  <div className="text-center py-8 text-sm text-muted-foreground">
+    {loading ? 'Loading…' : message}
+  </div>
+)
 
 export default Analytics
