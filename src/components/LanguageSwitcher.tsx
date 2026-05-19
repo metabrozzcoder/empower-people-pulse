@@ -41,7 +41,7 @@ export function LanguageSwitcher() {
         {LANGS.map(lang => (
           <DropdownMenuItem
             key={lang.code}
-            onClick={() => i18n.changeLanguage(lang.code)}
+            onClick={() => changeLanguage(lang.code)}
             className={i18n.language === lang.code ? 'font-semibold' : ''}
           >
             {lang.label}
