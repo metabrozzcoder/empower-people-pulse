@@ -10,7 +10,8 @@ import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ArrowLeft, Fingerprint, Eye, Shield, UserPlus, Camera, Settings, Save, CheckCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { mockEmployees } from '@/data/mockEmployees'
+import { supabase } from '@/integrations/supabase/client'
+import { useEffect } from 'react'
 
 type Section =
   | 'fingerprint'
