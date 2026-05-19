@@ -389,39 +389,96 @@ export type Database = {
       }
       projects: {
         Row: {
+          checklist: Json | null
           created_at: string
+          department: string | null
           description: string | null
           due_date: string | null
           id: string
           name: string
           owner_id: string | null
+          priority: string | null
           progress: number | null
           status: string | null
+          tags: string[] | null
           team: Json | null
           updated_at: string
         }
         Insert: {
+          checklist?: Json | null
           created_at?: string
+          department?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
           name: string
           owner_id?: string | null
+          priority?: string | null
           progress?: number | null
           status?: string | null
+          tags?: string[] | null
           team?: Json | null
           updated_at?: string
         }
         Update: {
+          checklist?: Json | null
           created_at?: string
+          department?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
           name?: string
           owner_id?: string | null
+          priority?: string | null
           progress?: number | null
           status?: string | null
+          tags?: string[] | null
           team?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shifts: {
+        Row: {
+          created_at: string
+          date: string
+          employee_id: string | null
+          employee_name: string | null
+          end_time: string
+          id: string
+          location: string | null
+          notes: string | null
+          role: string | null
+          start_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          employee_id?: string | null
+          employee_name?: string | null
+          end_time: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          role?: string | null
+          start_time: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          employee_id?: string | null
+          employee_name?: string | null
+          end_time?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          role?: string | null
+          start_time?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -470,44 +527,53 @@ export type Database = {
       }
       tasks: {
         Row: {
+          actual_hours: number | null
           assignee_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
           due_date: string | null
+          estimated_hours: number | null
           id: string
           order_index: number | null
           priority: string | null
           project_id: string | null
           status: string | null
+          tags: string[] | null
           title: string
           updated_at: string
         }
         Insert: {
+          actual_hours?: number | null
           assignee_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          estimated_hours?: number | null
           id?: string
           order_index?: number | null
           priority?: string | null
           project_id?: string | null
           status?: string | null
+          tags?: string[] | null
           title: string
           updated_at?: string
         }
         Update: {
+          actual_hours?: number | null
           assignee_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          estimated_hours?: number | null
           id?: string
           order_index?: number | null
           priority?: string | null
           project_id?: string | null
           status?: string | null
+          tags?: string[] | null
           title?: string
           updated_at?: string
         }
