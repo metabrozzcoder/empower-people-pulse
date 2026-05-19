@@ -319,6 +319,22 @@ export const uz: Record<string, string> = {
   "Access Control": "Kirish nazorati", "Role Management": "Rollarni boshqarish",
   "Attendance": "Davomat", "Shooting Requests": "Suratga olish so'rovlari",
   "Account Settings": "Hisob sozlamalari",
+
+  // Extra common UI
+  "Yes": "Ha", "No": "Yo'q", "OK": "OK", "Done": "Tayyor", "Continue": "Davom etish",
+  "Apply": "Qo'llash", "Reset": "Tiklash", "Clear": "Tozalash", "Refresh": "Yangilash",
+  "Upload": "Yuklash", "Download": "Yuklab olish", "Open": "Ochish", "View": "Ko'rish",
+  "View All": "Hammasini ko'rish", "Show More": "Ko'proq", "Show Less": "Kamroq",
+  "Details": "Tafsilotlar", "Information": "Ma'lumot", "Summary": "Xulosa",
+  "Username": "Foydalanuvchi nomi", "Sign In": "Kirish", "Sign Out": "Chiqish", "Sign Up": "Ro'yxatdan o'tish",
+  "Forgot Password": "Parolni unutdingizmi", "Remember Me": "Meni eslab qol",
+  "Notifications": "Bildirishnomalar", "No notifications": "Bildirishnomalar yo'q",
+  "Yesterday": "Kecha", "Tomorrow": "Ertaga", "Now": "Hozir",
+  "Pending": "Kutilmoqda", "Approved": "Tasdiqlangan", "Completed": "Tugatilgan",
+  "In Progress": "Jarayonda", "To Do": "Bajarish kerak",
+  "Type a message": "Xabar yozing", "Send": "Yuborish", "Reply": "Javob",
+  "Online": "Onlayn", "Offline": "Oflayn", "Away": "Yo'q", "Busy": "Band",
+  "Today": "Bugun", "Week": "Hafta", "Month": "Oy", "Year": "Yil",
 }
 
 export function getDict(lang: string): Record<string, string> | null {
