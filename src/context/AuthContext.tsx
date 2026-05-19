@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import type { Session } from '@supabase/supabase-js'
 import type { User } from '@/context/UserContext'
+import i18n from '@/i18n'
 
 interface AuthContextType {
   currentUser: User | null
@@ -31,6 +32,12 @@ async function loadUserProfile(userId: string, email: string): Promise<User | nu
   // Pick highest role: admin > hr > guest
   const roleSet = new Set((roles ?? []).map((r) => r.role))
   const dbRole = roleSet.has('admin') ? 'admin' : roleSet.has('hr') ? 'hr' : 'guest'
+
+  const pref = (profile as { preferred_language?: string }).preferred_language
+  if (pref && ['en', 'ru', 'uz'].includes(pref) && i18n.language !== pref) {
+    i18n.changeLanguage(pref)
+  }
+
 
   return {
     id: profile.id,

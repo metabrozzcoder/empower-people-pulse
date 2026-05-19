@@ -356,6 +356,7 @@ export type Database = {
           organization: string | null
           phone: string | null
           position: string | null
+          preferred_language: string
           status: string
           updated_at: string
         }
@@ -369,6 +370,7 @@ export type Database = {
           organization?: string | null
           phone?: string | null
           position?: string | null
+          preferred_language?: string
           status?: string
           updated_at?: string
         }
@@ -382,6 +384,7 @@ export type Database = {
           organization?: string | null
           phone?: string | null
           position?: string | null
+          preferred_language?: string
           status?: string
           updated_at?: string
         }

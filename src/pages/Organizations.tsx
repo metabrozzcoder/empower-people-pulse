@@ -36,6 +36,7 @@ const emptyOrg = { name: '', description: '', address: '', phone: '', email: '',
 const emptyDept = { name: '', description: '', manager_name: '', budget: 0, status: 'Active' }
 
 export default function Organizations() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
@@ -66,7 +67,6 @@ export default function Organizations() {
   useEffect(() => { load() }, [])
 
   const openCreateOrg = () => {
-  const { t } = useTranslation()
     setEditingOrg(null)
     setOrgForm({ ...emptyOrg })
     setIsOrgDialogOpen(true)

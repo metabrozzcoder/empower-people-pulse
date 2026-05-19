@@ -45,7 +45,6 @@ const generateOtp = (secret: string, step?: number) => {
 }
 
 const randomSecret = () => {
-  const { t } = useTranslation()
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
   let s = ""
   for (let i = 0; i < 16; i++) s += chars[Math.floor(Math.random() * chars.length)]
@@ -60,6 +59,7 @@ const randomBackupCodes = () =>
   )
 
 const AccountSettings = () => {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
   const { currentUser } = useAuth()

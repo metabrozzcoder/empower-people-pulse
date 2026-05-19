@@ -7,6 +7,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/context/AuthContext'
 
 const LANGS = [
   { code: 'en', label: 'English' },
@@ -16,7 +18,15 @@ const LANGS = [
 
 export function LanguageSwitcher() {
   const { i18n } = useTranslation()
+  const { session } = useAuth()
   const current = LANGS.find(l => l.code === i18n.language) ?? LANGS[0]
+
+  const changeLanguage = async (code: string) => {
+    await i18n.changeLanguage(code)
+    if (session?.user) {
+      await supabase.from('profiles').update({ preferred_language: code }).eq('id', session.user.id)
+    }
+  }
 
   return (
     <DropdownMenu>
@@ -31,7 +41,7 @@ export function LanguageSwitcher() {
         {LANGS.map(lang => (
           <DropdownMenuItem
             key={lang.code}
-            onClick={() => i18n.changeLanguage(lang.code)}
+            onClick={() => changeLanguage(lang.code)}
             className={i18n.language === lang.code ? 'font-semibold' : ''}
           >
             {lang.label}

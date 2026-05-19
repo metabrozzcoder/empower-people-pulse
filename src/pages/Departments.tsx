@@ -44,6 +44,7 @@ const mockMembers: DepartmentMember[] = []
 const mockDepartments: Department[] = []
 
 export default function Departments() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [departments, setDepartments] = useState<Department[]>(mockDepartments)
   const [searchTerm, setSearchTerm] = useState('')
@@ -58,7 +59,6 @@ export default function Departments() {
   )
 
   const handleAddDepartment = () => {
-  const { t } = useTranslation()
     setSelectedDept(null)
     setIsDialogOpen(true)
   }

@@ -57,6 +57,7 @@ const mockPermissions: Permission[] = [
 const mockRoles: Role[] = []
 
 export default function RoleManagement() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [roles, setRoles] = useState<Role[]>(mockRoles)
   const [searchTerm, setSearchTerm] = useState('')
@@ -70,7 +71,6 @@ export default function RoleManagement() {
   )
 
   const handleAddRole = () => {
-  const { t } = useTranslation()
     setSelectedRole(null)
     setSelectedPermissions([])
     setIsDialogOpen(true)

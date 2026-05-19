@@ -106,6 +106,7 @@ const ROLE_DEFAULT_SECTIONS = {
 }
 
 export default function UserManagement() {
+  const { t } = useTranslation()
   const { users, addUser, updateUser, deleteUser } = useUsers()
   const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState('')
@@ -169,7 +170,6 @@ export default function UserManagement() {
   }
 
   const handleAddUser = () => {
-  const { t } = useTranslation()
     setSelectedUser(null)
     setFormData({
       name: '',

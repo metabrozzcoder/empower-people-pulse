@@ -100,6 +100,7 @@ const mockEquipment: Equipment[] = []
 const mockRequests: ShootingRequest[] = []
 
 export default function ShootingRequests() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const { currentUser } = useAuth()
   const [requests, setRequests] = useState<ShootingRequest[]>(mockRequests)
@@ -139,7 +140,6 @@ export default function ShootingRequests() {
   
   // Filter requests based on job position and tab
   const getFilteredRequests = () => {
-  const { t } = useTranslation()
     let filtered = [...requests]
     
     // Filter by status if selected
