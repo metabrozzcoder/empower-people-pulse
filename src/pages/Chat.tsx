@@ -75,17 +75,20 @@ const STORAGE_KEY = 'chat:v3'
 const META_KEY = 'chat:meta:v3'
 const USERS_KEY = 'chat:users:v3'
 
-// Build initial user list from registered employees
-const buildInitialUsers = (): ChatUser[] => {
-  const statuses: ChatUser['status'][] = ['online', 'offline', 'busy']
-  return mockEmployees.map((e, i) => ({
-    id: `emp-${e.id}`,
-    name: e.name,
-    avatar: e.avatar,
-    role: e.position,
-    status: statuses[i % statuses.length],
-    lastSeen: i % 3 === 0 ? 'now' : `${(i + 1) * 5} min ago`,
-    unreadCount: i === 0 ? 2 : 0,
+// Load users from registered profiles (production data only)
+const fetchUsersFromDb = async (): Promise<ChatUser[]> => {
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, name, avatar_url, position')
+    .order('name')
+  return (data ?? []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    avatar: p.avatar_url ?? undefined,
+    role: p.position ?? undefined,
+    status: 'offline' as const,
+    lastSeen: '—',
+    unreadCount: 0,
   }))
 }
 
