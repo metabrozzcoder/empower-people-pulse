@@ -71,6 +71,11 @@ function EnrollPanel({ kind, toast }: { kind: 'fingerprint' | 'facial'; toast: a
   const [scanning, setScanning] = useState(false)
   const [progress, setProgress] = useState(0)
   const [done, setDone] = useState(false)
+  const [employees, setEmployees] = useState<{ id: string; name: string; department: string | null }[]>([])
+
+  useEffect(() => {
+    supabase.from('employees').select('id, name, department').then(({ data }) => setEmployees(data ?? []))
+  }, [])
 
   const start = () => {
     if (!employeeId) { toast({ title: 'Select an employee first' }); return }
