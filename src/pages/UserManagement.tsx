@@ -220,9 +220,9 @@ export default function UserManagement() {
     const newFormData = { ...formData, [field]: value }
     setFormData(newFormData)
     
-    // Auto-generate credentials when name, surname, or role are filled
+    // Auto-generate credentials as soon as name (or surname) is entered
     if (field === 'name' || field === 'surname' || field === 'role') {
-      if (newFormData.name && newFormData.surname) {
+      if (newFormData.name || newFormData.surname) {
         const credentials = generateCredentials(newFormData.name, newFormData.surname, newFormData.role || formData.role)
         setGeneratedCredentials(credentials)
         // Auto-fill email if user hasn't entered one
