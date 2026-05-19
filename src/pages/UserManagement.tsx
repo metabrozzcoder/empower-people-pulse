@@ -136,6 +136,7 @@ export default function UserManagement() {
   const [selectedAccessRules, setSelectedAccessRules] = useState<string[]>([])
   const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(true)
 
   const copyToClipboard = (value: string, field: string) => {
     if (!value) return
