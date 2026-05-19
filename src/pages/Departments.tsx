@@ -38,64 +38,9 @@ interface Department {
   createdDate: string
 }
 
-const mockMembers: DepartmentMember[] = [
-  { id: '1', name: 'John Smith', position: 'Engineering Manager', email: 'john@company.com', isManager: true },
-  { id: '2', name: 'Sarah Connor', position: 'Senior Developer', email: 'sarah@company.com', isManager: false },
-  { id: '3', name: 'Mike Johnson', position: 'Frontend Developer', email: 'mike@company.com', isManager: false },
-  { id: '4', name: 'Emily Davis', position: 'UX Designer', email: 'emily@company.com', isManager: false },
-  { id: '5', name: 'Alex Wilson', position: 'Backend Developer', email: 'alex@company.com', isManager: false },
-]
+const mockMembers: DepartmentMember[] = []
 
-const mockDepartments: Department[] = [
-  {
-    id: '1',
-    name: 'Engineering',
-    description: 'Software development and technical operations',
-    organizationId: '1',
-    organizationName: 'MediaTech Solutions',
-    managerId: '1',
-    managerName: 'John Smith',
-    memberCount: 5,
-    members: mockMembers,
-    budget: 500000,
-    status: 'Active',
-    createdDate: '2023-01-15'
-  },
-  {
-    id: '2',
-    name: 'Design',
-    description: 'User experience and visual design',
-    organizationId: '1',
-    organizationName: 'MediaTech Solutions',
-    managerId: '2',
-    managerName: 'Emily Davis',
-    memberCount: 12,
-    members: [
-      { id: '4', name: 'Emily Davis', position: 'Design Manager', email: 'emily@company.com', isManager: true },
-      { id: '5', name: 'Alex Wilson', position: 'UX Designer', email: 'alex.design@company.com', isManager: false },
-    ],
-    budget: 200000,
-    status: 'Active',
-    createdDate: '2023-02-01'
-  },
-  {
-    id: '3',
-    name: 'Marketing',
-    description: 'Brand marketing and customer acquisition',
-    organizationId: '1',
-    organizationName: 'MediaTech Solutions',
-    managerId: '3',
-    managerName: 'David Brown',
-    memberCount: 18,
-    members: [
-      { id: '6', name: 'David Brown', position: 'Marketing Manager', email: 'david@company.com', isManager: true },
-      { id: '7', name: 'Lisa Zhang', position: 'Content Strategist', email: 'lisa@company.com', isManager: false },
-    ],
-    budget: 300000,
-    status: 'Active',
-    createdDate: '2023-02-15'
-  }
-]
+const mockDepartments: Department[] = []
 
 export default function Departments() {
   const { toast } = useToast()
