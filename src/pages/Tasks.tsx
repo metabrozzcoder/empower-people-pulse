@@ -68,33 +68,7 @@ const Tasks = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [formData, setFormData] = useState<TaskFormData>({}) 
 
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: "1",
-      title: "Edit Morning Show Intro",
-      description: "Create new animated intro sequence for morning show rebrand",
-      projectId: "1",
-      assignedTo: "sarah",
-      status: "In Progress",
-      priority: "High",
-      dueDate: "2024-01-20",
-      estimatedHours: 8,
-      actualHours: 5,
-      tags: ["video-editing", "animation"]
-    },
-    {
-      id: "2",
-      title: "Setup Studio Lighting",
-      description: "Install and configure new LED lighting system for news studio",
-      projectId: "2",
-      assignedTo: "john",
-      status: "Todo",
-      priority: "Critical",
-      dueDate: "2024-01-18",
-      estimatedHours: 12,
-      tags: ["technical", "studio-setup"]
-    },
-  ])
+  const [tasks, setTasks] = useState<Task[]>([])
 
   // Dynamic computed values
   const statusStats = useMemo(() => {

@@ -53,44 +53,7 @@ const mockPermissions: Permission[] = [
   { id: 'system_settings', name: 'System Settings', description: 'Can modify system settings', category: 'System' }
 ]
 
-const mockRoles: Role[] = [
-  {
-    id: '1',
-    name: 'Administrator',
-    description: 'Full system access with all permissions',
-    permissions: mockPermissions.map(p => p.id),
-    userCount: 2,
-    isSystem: true,
-    createdDate: '2023-01-01'
-  },
-  {
-    id: '2',
-    name: 'HR Manager',
-    description: 'HR department management with employee and recruitment access',
-    permissions: ['employee_read', 'employee_write', 'recruitment_read', 'recruitment_write', 'performance_read', 'performance_write', 'analytics_read'],
-    userCount: 5,
-    isSystem: false,
-    createdDate: '2023-01-15'
-  },
-  {
-    id: '3',
-    name: 'HR Assistant',
-    description: 'Limited HR access for daily operations',
-    permissions: ['employee_read', 'recruitment_read', 'performance_read'],
-    userCount: 8,
-    isSystem: false,
-    createdDate: '2023-02-01'
-  },
-  {
-    id: '4',
-    name: 'Guest',
-    description: 'Limited access for external users',
-    permissions: ['employee_read'],
-    userCount: 3,
-    isSystem: true,
-    createdDate: '2023-01-01'
-  }
-]
+const mockRoles: Role[] = []
 
 export default function RoleManagement() {
   const { toast } = useToast()
