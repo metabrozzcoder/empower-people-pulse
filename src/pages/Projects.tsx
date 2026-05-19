@@ -52,8 +52,7 @@ const statusColor = (s: string | null) =>
   : 'bg-blue-500/15 text-blue-700'
 
 const Projects = () => {
-  const { toast } = useToast()
-  const { user } = useAuth()
+  const { session } = useAuth()
   const [projects, setProjects] = useState<ProjectRow[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
