@@ -213,9 +213,11 @@ export default function Chat() {
   }, [selectedUser])
 
   const messages = selectedUser ? (conversations[selectedUser.id] || []) : []
+  const archivedCount = messages.filter(m => m.archived).length
+  const baseMessages = showArchivedMsgs ? messages : messages.filter(m => !m.archived)
   const visibleMessages = inChatSearch
-    ? messages.filter(m => m.content.toLowerCase().includes(inChatSearch.toLowerCase()))
-    : messages
+    ? baseMessages.filter(m => m.content.toLowerCase().includes(inChatSearch.toLowerCase()))
+    : baseMessages
 
   // Auto-scroll on new messages
   useEffect(() => {
