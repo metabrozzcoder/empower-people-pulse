@@ -121,6 +121,7 @@ export default function Chat() {
   const [isChatSettingsOpen, setIsChatSettingsOpen] = useState(false)
   const [isStarredOpen, setIsStarredOpen] = useState(false)
   const [isNewChatOpen, setIsNewChatOpen] = useState(false)
+  const [forwardMsg, setForwardMsg] = useState<Message | null>(null)
   const [callState, setCallState] = useState<null | { type: 'voice' | 'video'; seconds: number }>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
