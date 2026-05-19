@@ -64,8 +64,8 @@ export default function AccessControl() {
   const handleDeleteRule = (id: string) => {
     setAccessRules(accessRules.filter(rule => rule.id !== id))
     toast({
-      title: "Access Rule Deleted",
-      description: "Access control rule has been successfully deleted.",
+      title: t('pages.accessControl.deletedTitle'),
+      description: t('pages.accessControl.deletedDesc'),
     })
   }
 
@@ -74,8 +74,8 @@ export default function AccessControl() {
       rule.id === id ? { ...rule, isActive: !rule.isActive } : rule
     ))
     toast({
-      title: "Rule Status Updated",
-      description: "Access control rule status has been updated.",
+      title: t('pages.accessControl.statusUpdatedTitle'),
+      description: t('pages.accessControl.statusUpdatedDesc'),
     })
   }
 
@@ -111,16 +111,15 @@ export default function AccessControl() {
         </div>
         <Button onClick={handleAddRule} className="flex items-center space-x-2">
           <Plus className="w-4 h-4" />
-          <span>Add Rule</span>
+          <span>{t('pages.accessControl.addRule')}</span>
         </Button>
       </div>
 
       {/* Info Notice */}
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h4 className="font-medium text-blue-800 mb-2">Access Control Information</h4>
+        <h4 className="font-medium text-blue-800 mb-2">{t('pages.accessControl.noticeTitle')}</h4>
         <p className="text-sm text-blue-700">
-          This section is for managing system-wide access restrictions like IP filtering, time-based access, and device restrictions. 
-          For user section permissions, please use the <strong>User Management</strong> page where you can grant or modify section access during user creation or editing.
+          {t('pages.accessControl.noticeBody')}
         </p>
       </div>
 
@@ -132,7 +131,7 @@ export default function AccessControl() {
               <Shield className="w-8 h-8 text-blue-500" />
               <div>
                 <p className="text-2xl font-bold">{accessRules.length}</p>
-                <p className="text-sm text-muted-foreground">Total Rules</p>
+                <p className="text-sm text-muted-foreground">{t('pages.accessControl.totalRules')}</p>
               </div>
             </div>
           </CardContent>
@@ -143,7 +142,7 @@ export default function AccessControl() {
               <Lock className="w-8 h-8 text-green-500" />
               <div>
                 <p className="text-2xl font-bold">{activeRules}</p>
-                <p className="text-sm text-muted-foreground">Active Rules</p>
+                <p className="text-sm text-muted-foreground">{t('pages.accessControl.activeRules')}</p>
               </div>
             </div>
           </CardContent>
@@ -154,7 +153,7 @@ export default function AccessControl() {
               <Users className="w-8 h-8 text-purple-500" />
               <div>
                 <p className="text-2xl font-bold">{totalUsers}</p>
-                <p className="text-sm text-muted-foreground">Affected Users</p>
+                <p className="text-sm text-muted-foreground">{t('pages.accessControl.affectedUsers')}</p>
               </div>
             </div>
           </CardContent>
@@ -165,7 +164,7 @@ export default function AccessControl() {
               <Unlock className="w-8 h-8 text-red-500" />
               <div>
                 <p className="text-2xl font-bold">{accessRules.length - activeRules}</p>
-                <p className="text-sm text-muted-foreground">Inactive Rules</p>
+                <p className="text-sm text-muted-foreground">{t('pages.accessControl.inactiveRules')}</p>
               </div>
             </div>
           </CardContent>
@@ -177,7 +176,7 @@ export default function AccessControl() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
-            placeholder="Search access rules..."
+            placeholder={t('pages.accessControl.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -188,13 +187,17 @@ export default function AccessControl() {
       {/* Access Rules */}
       <Card>
         <CardHeader>
-          <CardTitle>Access Control Rules</CardTitle>
-          <CardDescription>Configure and manage system-wide access restrictions</CardDescription>
+          <CardTitle>{t('pages.accessControl.rulesTitle')}</CardTitle>
+          <CardDescription>{t('pages.accessControl.rulesDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {filteredRules.map((rule) => {
               const TypeIcon = getTypeIcon(rule.type)
+              const typeLabelKey =
+                rule.type === 'IP_RESTRICTION' ? 'typeIp' :
+                rule.type === 'TIME_RESTRICTION' ? 'typeTime' :
+                rule.type === 'LOCATION_RESTRICTION' ? 'typeLocation' : 'typeDevice'
               return (
                 <div key={rule.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                   <div className="flex items-center space-x-4">
@@ -205,16 +208,16 @@ export default function AccessControl() {
                       <div className="flex items-center space-x-2">
                         <h3 className="font-medium">{rule.name}</h3>
                         <Badge className={getTypeColor(rule.type)}>
-                          {rule.type.replace('_', ' ')}
+                          {t(`pages.accessControl.${typeLabelKey}`)}
                         </Badge>
                         <Badge variant={rule.isActive ? 'default' : 'secondary'}>
-                          {rule.isActive ? 'Active' : 'Inactive'}
+                          {rule.isActive ? t('pages.accessControl.active') : t('pages.accessControl.inactive')}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">{rule.description}</p>
                       <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                        <span>Users: {rule.users.length}</span>
-                        <span>Created: {new Date(rule.createdDate).toLocaleDateString()}</span>
+                        <span>{t('pages.accessControl.users')}: {rule.users.length}</span>
+                        <span>{t('pages.accessControl.created')}: {new Date(rule.createdDate).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
@@ -223,18 +226,10 @@ export default function AccessControl() {
                       checked={rule.isActive}
                       onCheckedChange={() => toggleRuleStatus(rule.id)}
                     />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditRule(rule)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => handleEditRule(rule)}>
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteRule(rule.id)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteRule(rule.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -250,78 +245,78 @@ export default function AccessControl() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              {selectedRule ? 'Edit Access Rule' : 'Create New Access Rule'}
+              {selectedRule ? t('pages.accessControl.editRule') : t('pages.accessControl.createRule')}
             </DialogTitle>
             <DialogDescription>
-              {selectedRule ? 'Modify access control rule settings and restrictions' : 'Create a new access control rule with specific restrictions'}
+              {selectedRule ? t('pages.accessControl.editDesc') : t('pages.accessControl.createDesc')}
             </DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="general" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="general">General</TabsTrigger>
-              <TabsTrigger value="rules">Rules</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="general">{t('pages.accessControl.tabGeneral')}</TabsTrigger>
+              <TabsTrigger value="rules">{t('pages.accessControl.tabRules')}</TabsTrigger>
+              <TabsTrigger value="users">{t('pages.accessControl.tabUsers')}</TabsTrigger>
             </TabsList>
             <TabsContent value="general" className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Rule Name</Label>
-                  <Input 
-                    id="name" 
-                    placeholder="Enter rule name" 
+                  <Label htmlFor="name">{t('pages.accessControl.ruleName')}</Label>
+                  <Input
+                    id="name"
+                    placeholder={t('pages.accessControl.ruleNamePlaceholder')}
                     defaultValue={selectedRule?.name}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="type">Rule Type</Label>
+                  <Label htmlFor="type">{t('pages.accessControl.ruleType')}</Label>
                   <Select defaultValue={selectedRule?.type}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select rule type" />
+                      <SelectValue placeholder={t('pages.accessControl.selectRuleType')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="IP_RESTRICTION">IP Restriction</SelectItem>
-                      <SelectItem value="TIME_RESTRICTION">Time Restriction</SelectItem>
-                      <SelectItem value="LOCATION_RESTRICTION">Location Restriction</SelectItem>
-                      <SelectItem value="DEVICE_RESTRICTION">Device Restriction</SelectItem>
+                      <SelectItem value="IP_RESTRICTION">{t('pages.accessControl.typeIp')}</SelectItem>
+                      <SelectItem value="TIME_RESTRICTION">{t('pages.accessControl.typeTime')}</SelectItem>
+                      <SelectItem value="LOCATION_RESTRICTION">{t('pages.accessControl.typeLocation')}</SelectItem>
+                      <SelectItem value="DEVICE_RESTRICTION">{t('pages.accessControl.typeDevice')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Input 
-                    id="description" 
-                    placeholder="Enter rule description" 
+                  <Label htmlFor="description">{t('pages.accessControl.description')}</Label>
+                  <Input
+                    id="description"
+                    placeholder={t('pages.accessControl.descriptionPlaceholder')}
                     defaultValue={selectedRule?.description}
                   />
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch defaultChecked={selectedRule?.isActive ?? true} />
-                  <Label>Enable this rule</Label>
+                  <Label>{t('pages.accessControl.enableRule')}</Label>
                 </div>
               </div>
             </TabsContent>
             <TabsContent value="rules" className="space-y-4">
               <div className="space-y-4">
-                <h4 className="font-medium">Rule Configuration</h4>
+                <h4 className="font-medium">{t('pages.accessControl.ruleConfig')}</h4>
                 <p className="text-sm text-muted-foreground">
-                  Configure the specific restrictions for this access control rule.
+                  {t('pages.accessControl.ruleConfigDesc')}
                 </p>
                 <div className="p-4 border rounded-lg bg-muted/50">
                   <p className="text-sm text-muted-foreground">
-                    Rule configuration options will be displayed here based on the selected rule type.
+                    {t('pages.accessControl.ruleConfigPlaceholder')}
                   </p>
                 </div>
               </div>
             </TabsContent>
             <TabsContent value="users" className="space-y-4">
               <div className="space-y-4">
-                <h4 className="font-medium">Affected Users</h4>
+                <h4 className="font-medium">{t('pages.accessControl.affectedUsersTitle')}</h4>
                 <p className="text-sm text-muted-foreground">
-                  Select which users this access control rule applies to.
+                  {t('pages.accessControl.affectedUsersDesc')}
                 </p>
                 <div className="p-4 border rounded-lg bg-muted/50">
                   <p className="text-sm text-muted-foreground">
-                    User selection interface will be displayed here.
+                    {t('pages.accessControl.userSelectorPlaceholder')}
                   </p>
                 </div>
               </div>
@@ -329,10 +324,10 @@ export default function AccessControl() {
           </Tabs>
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+              {t('pages.accessControl.cancel')}
             </Button>
             <Button onClick={() => setIsDialogOpen(false)}>
-              {selectedRule ? 'Update' : 'Create'} Rule
+              {selectedRule ? t('pages.accessControl.update') : t('pages.accessControl.create')}
             </Button>
           </div>
         </DialogContent>
