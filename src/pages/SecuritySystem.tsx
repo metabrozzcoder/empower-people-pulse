@@ -43,73 +43,9 @@ interface AccessLog {
   success: boolean
 }
 
-const mockDevices: SecurityDevice[] = [
-  {
-    id: '1',
-    name: 'Main Entrance Camera',
-    type: 'camera',
-    status: 'online',
-    location: 'Main Entrance',
-    lastActivity: '2 minutes ago'
-  },
-  {
-    id: '2',
-    name: 'Biometric Scanner - HR',
-    type: 'biometric',
-    status: 'online',
-    location: 'HR Department',
-    lastActivity: '5 minutes ago'
-  },
-  {
-    id: '3',
-    name: 'Emergency Exit Alarm',
-    type: 'alarm',
-    status: 'online',
-    location: 'Emergency Exit',
-    lastActivity: '1 hour ago'
-  },
-  {
-    id: '4',
-    name: 'Server Room Access',
-    type: 'access_control',
-    status: 'maintenance',
-    location: 'Server Room',
-    lastActivity: '3 hours ago'
-  }
-]
+const mockDevices: SecurityDevice[] = []
 
-const mockAccessLogs: AccessLog[] = [
-  {
-    id: '1',
-    userId: 'emp001',
-    userName: 'Sarah Wilson',
-    action: 'entry',
-    method: 'biometric',
-    location: 'Main Entrance',
-    timestamp: '2024-01-15T08:30:00Z',
-    success: true
-  },
-  {
-    id: '2',
-    userId: 'emp002',
-    userName: 'John Smith',
-    action: 'entry',
-    method: 'card',
-    location: 'HR Department',
-    timestamp: '2024-01-15T08:25:00Z',
-    success: true
-  },
-  {
-    id: '3',
-    userId: 'unknown',
-    userName: 'Unknown User',
-    action: 'denied',
-    method: 'biometric',
-    location: 'Server Room',
-    timestamp: '2024-01-15T08:20:00Z',
-    success: false
-  }
-]
+const mockAccessLogs: AccessLog[] = []
 
 export default function SecuritySystem() {
   const { toast } = useToast()

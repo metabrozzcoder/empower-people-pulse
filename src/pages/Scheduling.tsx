@@ -24,46 +24,9 @@ const Scheduling = () => {
   const [isViewScheduleDialogOpen, setIsViewScheduleDialogOpen] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null)
 
-  const [shifts, setShifts] = useState<Shift[]>([
-    {
-      id: "1",
-      employeeId: "sarah",
-      date: "2024-01-15",
-      startTime: "06:00",
-      endTime: "14:00",
-      role: "Morning Show Producer",
-      location: "Studio A",
-      status: "Scheduled",
-      notes: "Lead producer for morning show"
-    },
-    {
-      id: "2",
-      employeeId: "john",
-      date: "2024-01-15",
-      startTime: "14:00",
-      endTime: "22:00",
-      role: "Camera Operator",
-      location: "Studio B",
-      status: "In Progress",
-      notes: "Evening news coverage"
-    },
-    {
-      id: "3",
-      employeeId: "lisa",
-      date: "2024-01-16",
-      startTime: "08:00",
-      endTime: "16:00",
-      role: "Content Editor",
-      location: "Edit Suite 1",
-      status: "Scheduled"
-    }
-  ])
+  const [shifts, setShifts] = useState<Shift[]>([])
 
-  const employees = [
-    { id: "sarah", name: "Sarah Chen", role: "Producer", avatar: "https://images.unsplash.com/photo-1494790108755-2616b25d0a63?w=80&h=80&fit=crop&crop=face" },
-    { id: "john", name: "John Smith", role: "Camera Operator", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" },
-    { id: "lisa", name: "Lisa Wang", role: "Editor", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face" }
-  ]
+  const employees: { id: string; name: string; role: string; avatar: string }[] = []
 
   const getStatusColor = (status: Shift['status']) => {
     switch (status) {
@@ -102,7 +65,7 @@ const Scheduling = () => {
       }
     })
     
-    const csvContent = [
+    const csvContent = scheduleData.length === 0 ? '' : [
       Object.keys(scheduleData[0]).join(','),
       ...scheduleData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
     ].join('\n')

@@ -59,75 +59,9 @@ interface JobPosting {
   requirements: string[]
 }
 
-const mockCandidates: Candidate[] = [
-  {
-    id: '1',
-    name: 'Sarah Chen',
-    email: 'sarah.chen@email.com',
-    phone: '+1 (555) 123-4567',
-    position: 'Senior Video Editor',
-    aiScore: 95,
-    status: 'Interview Scheduled',
-    skills: ['Adobe Premiere', 'After Effects', 'Color Grading', 'Motion Graphics'],
-    experience: '5 years',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b25d0a63?w=80&h=80&fit=crop&crop=face',
-    appliedDate: '2024-01-10',
-    notes: 'Excellent portfolio, strong technical skills'
-  },
-  {
-    id: '2',
-    name: 'Michael Rodriguez',
-    email: 'm.rodriguez@email.com',
-    phone: '+1 (555) 987-6543',
-    position: 'News Anchor',
-    aiScore: 88,
-    status: 'Shortlisted',
-    skills: ['Live Broadcasting', 'Teleprompter', 'Journalism', 'Public Speaking'],
-    experience: '8 years',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face',
-    appliedDate: '2024-01-08',
-    notes: 'Great on-camera presence'
-  },
-  {
-    id: '3',
-    name: 'Emily Johnson',
-    email: 'emily.j@email.com',
-    phone: '+1 (555) 456-7890',
-    position: 'Content Producer',
-    aiScore: 92,
-    status: 'Interview Completed',
-    skills: ['Content Strategy', 'Production Planning', 'Team Leadership', 'Budget Management'],
-    experience: '6 years',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face',
-    appliedDate: '2024-01-05',
-    notes: 'Strong leadership experience, good cultural fit'
-  }
-]
+const mockCandidates: Candidate[] = []
 
-const mockJobPostings: JobPosting[] = [
-  {
-    id: '1',
-    title: 'Senior Camera Operator',
-    department: 'Production',
-    type: 'Full-time',
-    applicants: 24,
-    status: 'Active',
-    posted: '2024-01-10',
-    salary: '$65,000 - $75,000',
-    requirements: ['5+ years experience', 'Live TV experience', 'Equipment maintenance']
-  },
-  {
-    id: '2',
-    title: 'Graphics Designer',
-    department: 'Creative',
-    type: 'Contract',
-    applicants: 18,
-    status: 'Active',
-    posted: '2024-01-08',
-    salary: '$50 - $75/hour',
-    requirements: ['Adobe Creative Suite', 'Motion Graphics', 'Broadcast graphics']
-  }
-]
+const mockJobPostings: JobPosting[] = []
 
 interface RecruitmentEnhancedProps {
   onCandidateAction?: (action: string, candidateId: string) => void

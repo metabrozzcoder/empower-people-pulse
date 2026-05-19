@@ -49,81 +49,9 @@ interface DepartmentMember {
   isManager: boolean
 }
 
-const mockMembers: DepartmentMember[] = [
-  { id: '1', name: 'John Smith', position: 'Engineering Manager', email: 'john@company.com', isManager: true },
-  { id: '2', name: 'Sarah Connor', position: 'Senior Developer', email: 'sarah@company.com', isManager: false },
-  { id: '3', name: 'Mike Johnson', position: 'Frontend Developer', email: 'mike@company.com', isManager: false },
-  { id: '4', name: 'Emily Davis', position: 'UX Designer', email: 'emily@company.com', isManager: false },
-  { id: '5', name: 'Alex Wilson', position: 'Backend Developer', email: 'alex@company.com', isManager: false },
-]
+const mockMembers: DepartmentMember[] = []
 
-const mockOrganizations: Organization[] = [
-  {
-    id: '1',
-    name: 'MediaTech Solutions',
-    description: 'Digital media and technology solutions company',
-    address: '123 Tech Street, San Francisco, CA 94105',
-    phone: '+1 (555) 123-4567',
-    email: 'contact@mediatech.com',
-    employeeCount: 150,
-    status: 'Active',
-    createdDate: '2023-01-15',
-    departments: [
-      {
-        id: '1',
-        name: 'Engineering',
-        description: 'Software development and technical operations',
-        organizationId: '1',
-        managerId: '1',
-        managerName: 'John Smith',
-        memberCount: 25,
-        members: mockMembers,
-        budget: 500000,
-        status: 'Active',
-        createdDate: '2023-01-15'
-      },
-      {
-        id: '2',
-        name: 'Design',
-        description: 'User experience and visual design',
-        organizationId: '1',
-        managerId: '4',
-        managerName: 'Emily Davis',
-        memberCount: 12,
-        members: mockMembers.slice(0, 2),
-        budget: 200000,
-        status: 'Active',
-        createdDate: '2023-02-01'
-      }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Creative Studios',
-    description: 'Creative design and content production studio',
-    address: '456 Creative Ave, Los Angeles, CA 90210',
-    phone: '+1 (555) 987-6543',
-    email: 'hello@creativestudios.com',
-    employeeCount: 75,
-    status: 'Active',
-    createdDate: '2023-03-20',
-    departments: [
-      {
-        id: '3',
-        name: 'Creative',
-        description: 'Creative content production',
-        organizationId: '2',
-        managerId: '3',
-        managerName: 'Mike Johnson',
-        memberCount: 18,
-        members: mockMembers.slice(0, 3),
-        budget: 300000,
-        status: 'Active',
-        createdDate: '2023-03-20'
-      }
-    ]
-  }
-]
+const mockOrganizations: Organization[] = []
 
 export default function Organizations() {
   const { toast } = useToast()

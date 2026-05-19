@@ -35,63 +35,7 @@ interface AccessRule {
   createdDate: string
 }
 
-const mockAccessRules: AccessRule[] = [
-  {
-    id: '1',
-    name: 'Office IP Only',
-    type: 'IP_RESTRICTION',
-    description: 'Allow access only from office IP addresses',
-    isActive: true,
-    users: ['admin', 'hr_manager'],
-    rules: {
-      allowedIPs: ['192.168.1.0/24', '10.0.0.0/8'],
-      blockedIPs: []
-    },
-    createdDate: '2023-01-15'
-  },
-  {
-    id: '2',
-    name: 'Business Hours Only',
-    type: 'TIME_RESTRICTION',
-    description: 'Restrict access to business hours only',
-    isActive: true,
-    users: ['hr_assistant', 'guest'],
-    rules: {
-      allowedHours: { start: '09:00', end: '18:00' },
-      allowedDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-      timezone: 'UTC'
-    },
-    createdDate: '2023-02-01'
-  },
-  {
-    id: '3',
-    name: 'Secure Location Access',
-    type: 'LOCATION_RESTRICTION',
-    description: 'Allow access only from specific geographic locations',
-    isActive: false,
-    users: ['admin'],
-    rules: {
-      allowedCountries: ['US', 'CA'],
-      blockedCountries: [],
-      allowedRegions: ['New York', 'California']
-    },
-    createdDate: '2023-02-15'
-  },
-  {
-    id: '4',
-    name: 'Trusted Devices Only',
-    type: 'DEVICE_RESTRICTION',
-    description: 'Allow access only from registered devices',
-    isActive: true,
-    users: ['admin', 'hr_manager'],
-    rules: {
-      requireDeviceRegistration: true,
-      maxDevicesPerUser: 3,
-      deviceTypes: ['desktop', 'mobile']
-    },
-    createdDate: '2023-03-01'
-  }
-]
+const mockAccessRules: AccessRule[] = []
 
 export default function AccessControl() {
   const { toast } = useToast()
