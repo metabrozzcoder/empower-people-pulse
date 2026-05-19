@@ -741,6 +741,9 @@ export default function Chat() {
                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setReplyTo(msg)} title="Reply">
                               <Reply className="h-3 w-3" />
                             </Button>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setForwardMsg(msg)} title="Forward">
+                              <Forward className="h-3 w-3" />
+                            </Button>
                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleStarMessage(msg)} title="Star">
                               <Star className={cn('h-3 w-3', msg.starred && 'fill-current text-yellow-500')} />
                             </Button>
