@@ -305,9 +305,16 @@ export default function UserManagement() {
       return
     }
 
-    // Ensure email is set (auto-fill from username if empty)
-    if (!formData.email && generatedCredentials.username) {
-      formData.email = `${generatedCredentials.username}@ark.local`
+    // Ensure we always have a username + password before saving
+    const username = generatedCredentials.username || buildUsername(formData.name, formData.surname)
+    const password = generatedCredentials.password || generateStrongPassword()
+    if (!generatedCredentials.username || !generatedCredentials.password) {
+      setGeneratedCredentials(prev => ({ ...prev, username, password }))
+    }
+
+    // Email is optional in the UI — derive a stable login email from the username if blank
+    if (!formData.email) {
+      formData.email = `${username}@ark.local`
     }
 
     const fullName = `${formData.name} ${formData.surname}`
