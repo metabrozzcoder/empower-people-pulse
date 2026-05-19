@@ -17,7 +17,13 @@ import {
   Phone,
   Calendar,
   Building2,
-  Download
+  Download,
+  Copy,
+  RefreshCw,
+  KeyRound,
+  AtSign,
+  IdCard,
+  Check
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
