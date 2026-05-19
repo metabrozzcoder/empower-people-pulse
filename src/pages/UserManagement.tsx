@@ -161,10 +161,22 @@ export default function UserManagement() {
     }
   }
 
+  const generateStrongPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+    const specials = '!@#$%&*'
+    let pwd = ''
+    const arr = new Uint32Array(10)
+    crypto.getRandomValues(arr)
+    for (let i = 0; i < 10; i++) pwd += chars[arr[i] % chars.length]
+    pwd += specials[Math.floor(Math.random() * specials.length)]
+    pwd += Math.floor(Math.random() * 10).toString()
+    return pwd
+  }
+
   const generateCredentials = (name: string, surname: string, role: string) => {
     if (!name || !surname) return { username: '', password: '', guestId: '' }
     const username = `${name.toLowerCase()}.${surname.toLowerCase()}`.replace(/\s+/g, '')
-    const password = `${name.toLowerCase()}123`
+    const password = generateStrongPassword()
     const guestId = role === 'Guest' ? `GUEST${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}` : ''
     return { username, password, guestId }
   }
@@ -210,6 +222,11 @@ export default function UserManagement() {
       if (newFormData.name && newFormData.surname) {
         const credentials = generateCredentials(newFormData.name, newFormData.surname, newFormData.role || formData.role)
         setGeneratedCredentials(credentials)
+        // Auto-fill email if user hasn't entered one
+        if (!newFormData.email && credentials.username) {
+          newFormData.email = `${credentials.username}@ark.local`
+          setFormData(newFormData)
+        }
       }
     }
 
@@ -246,7 +263,7 @@ export default function UserManagement() {
     })
   }
 
-  const handleSaveUser = () => {
+  const handleSaveUser = async () => {
     if (!formData.name || !formData.surname || !formData.email || !formData.role) {
       toast({
         title: "Validation Error",
@@ -319,12 +336,17 @@ export default function UserManagement() {
         allowedSections: selectedSections // Granted sections
       }
 
-      addUser(newUser)
-      
-      toast({
-        title: "User Created Successfully",
-        description: `User created successfully! Username: ${generatedCredentials.username}, Password: ${generatedCredentials.password}${generatedCredentials.guestId ? `, Guest ID: ${generatedCredentials.guestId}` : ''}. This user is now stored as an initial user.`,
-      })
+      try {
+        await addUser(newUser)
+        toast({
+          title: "User Created Successfully",
+          description: `Login: ${formData.email} / Password: ${generatedCredentials.password}${generatedCredentials.guestId ? ` / Guest ID: ${generatedCredentials.guestId}` : ''}. Share these credentials with the user — no email verification required.`,
+        })
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to create user'
+        toast({ title: 'Failed to create user', description: msg, variant: 'destructive' })
+        return
+      }
     }
 
     setIsDialogOpen(false)
