@@ -263,7 +263,7 @@ export default function UserManagement() {
     })
   }
 
-  const handleSaveUser = () => {
+  const handleSaveUser = async () => {
     if (!formData.name || !formData.surname || !formData.email || !formData.role) {
       toast({
         title: "Validation Error",
