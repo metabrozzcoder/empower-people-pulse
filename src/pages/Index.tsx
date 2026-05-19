@@ -151,7 +151,7 @@ const Index = () => {
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <Gift className="mx-auto h-12 w-12 mb-4 opacity-30" />
-                <p>No birthdays today or tomorrow</p>
+                <p>{t('pages.dashboard.noBirthdays')}</p>
               </div>
             )}
           </CardContent>
