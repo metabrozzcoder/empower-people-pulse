@@ -206,7 +206,7 @@ export function AppSidebar() {
         <Collapsible open={openSections.includes(section.title)} onOpenChange={() => toggleSection(section.title)}>
           <CollapsibleTrigger asChild>
             <SidebarGroupLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 px-3 cursor-pointer flex items-center justify-between hover:text-foreground transition-colors">
-              {t((section as any).titleKey, section.title)}
+              {t((section as any).titleKey) as string}
               <ChevronDown className={`h-4 w-4 transition-transform ${openSections.includes(section.title) ? 'rotate-180' : ''}`} />
             </SidebarGroupLabel>
           </CollapsibleTrigger>
@@ -222,7 +222,7 @@ export function AppSidebar() {
                         className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
                       >
                         <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                        <span>{t((item as any).titleKey, item.title)}</span>
+                        <span>{t((item as any).titleKey) as string}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -234,7 +234,7 @@ export function AppSidebar() {
       ) : (
         <>
           <SidebarGroupLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 px-3">
-            {t((section as any).titleKey, section.title)}
+            {t((section as any).titleKey) as string}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
@@ -247,7 +247,7 @@ export function AppSidebar() {
                       className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
                     >
                       <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                      <span>{t((item as any).titleKey, item.title)}</span>
+                      <span>{t((item as any).titleKey) as string}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
