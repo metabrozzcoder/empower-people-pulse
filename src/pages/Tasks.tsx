@@ -1,586 +1,289 @@
-import { useState, useMemo } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CheckSquare, Clock, Plus, Filter, Calendar, User, Edit, Trash2, List, AlertCircle } from "lucide-react"
-import { Task } from "@/types/hrms"
-import { useToast } from "@/hooks/use-toast"
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { TaskBoard } from "@/components/TaskBoard"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useEffect, useMemo, useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Plus, Edit, Trash2, Calendar } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/context/AuthContext'
 
-interface TaskFormData extends Omit<Partial<Task>, 'tags' | 'estimatedHours' | 'actualHours'> {
-  tags?: string; 
-  estimatedHours?: number | string; 
-  actualHours?: number | string;   
+interface TaskRow {
+  id: string
+  title: string
+  description: string | null
+  status: string | null
+  priority: string | null
+  due_date: string | null
+  project_id: string | null
+  assignee_id: string | null
+  tags: string[] | null
+  estimated_hours: number | null
+  actual_hours: number | null
+  created_by: string | null
+  created_at: string
 }
 
-// Dynamic configuration for priorities, statuses, and team members
-const TASK_CONFIG = {
-  priorities: [
-    { value: 'Critical', label: 'Critical', color: 'border-red-500', bgColor: 'bg-red-100 text-red-800' },
-    { value: 'High', label: 'High', color: 'border-orange-500', bgColor: 'bg-orange-100 text-orange-800' },
-    { value: 'Medium', label: 'Medium', color: 'border-yellow-500', bgColor: 'bg-yellow-100 text-yellow-800' },
-    { value: 'Low', label: 'Low', color: 'border-green-500', bgColor: 'bg-green-100 text-green-800' },
-  ],
-  statuses: [
-    { value: 'Todo', label: 'Todo', color: 'bg-gray-100 text-gray-800', icon: Clock },
-    { value: 'In Progress', label: 'In Progress', color: 'bg-blue-100 text-blue-800', icon: CheckSquare },
-    { value: 'Review', label: 'Review', color: 'bg-yellow-100 text-yellow-800', icon: AlertCircle },
-    { value: 'Done', label: 'Done', color: 'bg-green-100 text-green-800', icon: CheckSquare },
-  ],
-  teamMembers: [
-    { value: 'sarah', label: 'Sarah Chen', initials: 'SC' },
-    { value: 'john', label: 'John Smith', initials: 'JS' },
-    { value: 'lisa', label: 'Lisa Wang', initials: 'LW' },
-    { value: 'mike', label: 'Mike Johnson', initials: 'MJ' },
-    { value: 'emma', label: 'Emma Martinez', initials: 'EM' },
-    { value: 'alex', label: 'Alex Thompson', initials: 'AT' },
-  ],
-  projects: [
-    { value: '1', label: 'Morning Show Rebrand' },
-    { value: '2', label: 'News Studio Setup' },
-    { value: '3', label: 'Documentary Project' },
-    { value: '4', label: 'Social Media Campaign' },
-  ]
+interface ProjectOption { id: string; name: string }
+interface ProfileOption { id: string; name: string }
+
+const STATUSES = ['todo', 'in_progress', 'review', 'done']
+const PRIORITIES = ['low', 'medium', 'high', 'critical']
+
+const labelize = (s: string) => s.split('_').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')
+
+const statusColor = (s: string | null) =>
+  s === 'done' ? 'bg-green-500/15 text-green-700'
+  : s === 'in_progress' ? 'bg-blue-500/15 text-blue-700'
+  : s === 'review' ? 'bg-yellow-500/15 text-yellow-700'
+  : 'bg-gray-500/15 text-gray-700'
+
+const priorityColor = (p: string | null) =>
+  p === 'critical' ? 'border-red-500'
+  : p === 'high' ? 'border-orange-500'
+  : p === 'medium' ? 'border-yellow-500'
+  : 'border-green-500'
+
+const emptyForm = {
+  title: '',
+  description: '',
+  status: 'todo',
+  priority: 'medium',
+  due_date: '',
+  project_id: '',
+  assignee_id: '',
+  tags: '',
+  estimated_hours: 0,
 }
 
 const Tasks = () => {
   const { toast } = useToast()
-  const [filterStatus, setFilterStatus] = useState("all")
-  const [filterPriority, setFilterPriority] = useState("all")
-  const [filterAssignee, setFilterAssignee] = useState("all")
-  const [searchTerm, setSearchTerm] = useState("")
-  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false)
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-  const [formData, setFormData] = useState<TaskFormData>({}) 
+  const { session } = useAuth()
+  const [tasks, setTasks] = useState<TaskRow[]>([])
+  const [projects, setProjects] = useState<ProjectOption[]>([])
+  const [profiles, setProfiles] = useState<ProfileOption[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [filterPriority, setFilterPriority] = useState('all')
+  const [search, setSearch] = useState('')
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState<TaskRow | null>(null)
+  const [form, setForm] = useState({ ...emptyForm })
 
-  const [tasks, setTasks] = useState<Task[]>([])
+  const load = async () => {
+    setLoading(true)
+    const [{ data: t }, { data: p }, { data: prof }] = await Promise.all([
+      supabase.from('tasks').select('*').order('created_at', { ascending: false }),
+      supabase.from('projects').select('id, name'),
+      supabase.from('profiles').select('id, name'),
+    ])
+    setTasks((t as TaskRow[]) ?? [])
+    setProjects((p as ProjectOption[]) ?? [])
+    setProfiles((prof as ProfileOption[]) ?? [])
+    setLoading(false)
+  }
+  useEffect(() => { load() }, [])
 
-  // Dynamic computed values
-  const statusStats = useMemo(() => {
-    return TASK_CONFIG.statuses.reduce((acc, status) => {
-      acc[status.value] = tasks.filter(t => t.status === status.value).length
-      return acc
-    }, {} as Record<string, number>)
-  }, [tasks])
+  const filtered = useMemo(() => tasks.filter(t => {
+    if (filterStatus !== 'all' && t.status !== filterStatus) return false
+    if (filterPriority !== 'all' && t.priority !== filterPriority) return false
+    if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false
+    return true
+  }), [tasks, filterStatus, filterPriority, search])
 
-  const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
-      const matchesStatus = filterStatus === "all" || task.status === filterStatus
-      const matchesPriority = filterPriority === "all" || task.priority === filterPriority
-      const matchesAssignee = filterAssignee === "all" || task.assignedTo === filterAssignee
-      const matchesSearch = searchTerm === "" || 
-        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-      
-      return matchesStatus && matchesPriority && matchesAssignee && matchesSearch
+  const openCreate = () => {
+    setEditing(null)
+    setForm({ ...emptyForm })
+    setDialogOpen(true)
+  }
+  const openEdit = (t: TaskRow) => {
+    setEditing(t)
+    setForm({
+      title: t.title,
+      description: t.description ?? '',
+      status: t.status ?? 'todo',
+      priority: t.priority ?? 'medium',
+      due_date: t.due_date ?? '',
+      project_id: t.project_id ?? '',
+      assignee_id: t.assignee_id ?? '',
+      tags: (t.tags ?? []).join(', '),
+      estimated_hours: Number(t.estimated_hours ?? 0),
     })
-  }, [tasks, filterStatus, filterPriority, filterAssignee, searchTerm])
-
-  // Dynamic helper functions
-  const getStatusConfig = (status: Task['status']) => {
-    return TASK_CONFIG.statuses.find(s => s.value === status) || TASK_CONFIG.statuses[0]
+    setDialogOpen(true)
   }
 
-  const getPriorityConfig = (priority: Task['priority']) => {
-    return TASK_CONFIG.priorities.find(p => p.value === priority) || TASK_CONFIG.priorities[2]
-  }
-
-  const getTeamMemberConfig = (assignedTo: string) => {
-    return TASK_CONFIG.teamMembers.find(t => t.value === assignedTo) || { 
-      value: assignedTo, 
-      label: assignedTo, 
-      initials: assignedTo.substring(0, 2).toUpperCase() 
-    }
-  }
-
-  const getProjectConfig = (projectId: string) => {
-    return TASK_CONFIG.projects.find(p => p.value === projectId) || { 
-      value: projectId, 
-      label: `Project ${projectId}` 
-    }
-  }
-
-  const handleTaskUpdate = (updatedTask: Task) => {
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === updatedTask.id ? updatedTask : task
-      )
-    )
-  }
-  
-  const handleTasksReorder = (reorderedTasks: Task[]) => {
-    setTasks(reorderedTasks)
-  }
-
-  const handleCreateTask = (status: Task['status'] = 'Todo') => {
-    const newTask = {
-      id: `new-${Date.now().toString()}`,
-      title: 'New Task',
-      description: 'Please fill out the details for this task.',
-      projectId: '1',
-      assignedTo: '',
-      status,
-      priority: 'Medium',
-      dueDate: new Date().toISOString().split('T')[0],
-      estimatedHours: 0,
-      actualHours: 0,
-      tags: [],
-    } as Task
-
-    setSelectedTask(newTask)
-    setFormData({ ...newTask, tags: '' })
-    setIsTaskDialogOpen(true)
-  }
-
-  const handleEditTask = (task: Task) => {
-    setSelectedTask(task)
-    setFormData({
-      ...task,
-      estimatedHours: task.estimatedHours || 0,
-      actualHours: task.actualHours || 0,
-      tags: Array.isArray(task.tags) ? task.tags.join(', ') : '' 
-    })
-    setIsTaskDialogOpen(true)
-  }
-
-  const handleDeleteTask = (taskId: string) => {
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId))
-    toast({
-      title: "Task Deleted",
-      description: "Task has been successfully deleted.",
-    })
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [id]: id === 'estimatedHours' || id === 'actualHours' ? Number(value) : value
-    }))
-  }
-
-  const handleSelectChange = (value: string, field: keyof TaskFormData) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
-  const handleSaveTask = () => {
-    if (!formData.title || !formData.description) {
-      toast({
-        title: "Error",
-        description: "Please fill in task title and description.",
-        variant: "destructive"
-      })
+  const save = async () => {
+    if (!form.title.trim()) {
+      toast({ title: 'Title required', variant: 'destructive' })
       return
     }
-
-    const isEditing = selectedTask && !selectedTask.id.startsWith('new-')
-
-    const parsedTags = typeof formData.tags === 'string' 
-      ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '') 
-      : []
-
-    const taskToSave: Task = {
-      id: isEditing ? selectedTask.id : Date.now().toString(),
-      title: formData.title || "",
-      description: formData.description || "",
-      projectId: formData.projectId || "1",
-      assignedTo: formData.assignedTo || "",
-      status: formData.status || "Todo",
-      priority: formData.priority || "Medium",
-      dueDate: formData.dueDate || new Date().toISOString().split('T')[0],
-      estimatedHours: Number(formData.estimatedHours) || 0,
-      actualHours: Number(formData.actualHours) || 0,
-      tags: parsedTags,
+    const payload = {
+      title: form.title,
+      description: form.description || null,
+      status: form.status,
+      priority: form.priority,
+      due_date: form.due_date || null,
+      project_id: form.project_id || null,
+      assignee_id: form.assignee_id || null,
+      tags: form.tags ? form.tags.split(',').map(s => s.trim()).filter(Boolean) : [],
+      estimated_hours: Number(form.estimated_hours) || 0,
     }
-
-    if (isEditing) {
-      handleTaskUpdate(taskToSave)
-      toast({
-        title: "Task Updated",
-        description: `Task "${taskToSave.title}" has been updated.`,
-      })
+    if (editing) {
+      const { error } = await supabase.from('tasks').update(payload).eq('id', editing.id)
+      if (error) return toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
+      toast({ title: 'Task updated' })
     } else {
-      setTasks(prevTasks => [...prevTasks, taskToSave])
-      toast({
-        title: "Task Created",
-        description: `Task "${taskToSave.title}" has been successfully created.`,
-      })
+      const { error } = await supabase.from('tasks').insert({ ...payload, created_by: session?.user?.id })
+      if (error) return toast({ title: 'Create failed', description: error.message, variant: 'destructive' })
+      toast({ title: 'Task created' })
     }
-
-    setIsTaskDialogOpen(false)
-    setFormData({}) 
-    setSelectedTask(null) 
+    setDialogOpen(false)
+    await load()
   }
 
-  const clearAllFilters = () => {
-    setFilterStatus("all")
-    setFilterPriority("all")
-    setFilterAssignee("all")
-    setSearchTerm("")
+  const remove = async (id: string) => {
+    const { error } = await supabase.from('tasks').delete().eq('id', id)
+    if (error) return toast({ title: 'Delete failed', description: error.message, variant: 'destructive' })
+    toast({ title: 'Task deleted' })
+    await load()
   }
+
+  const projectName = (id: string | null) => projects.find(p => p.id === id)?.name
+  const profileName = (id: string | null) => profiles.find(p => p.id === id)?.name
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Task Management</h1>
-        <p className="text-muted-foreground">
-          Track and manage tasks across all your projects and teams.
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Tasks</h1>
+          <p className="text-muted-foreground">Manage individual tasks across projects.</p>
+        </div>
+        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />New Task</Button>
       </div>
 
-      {/* Dynamic Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        {TASK_CONFIG.statuses.map((status) => {
-          const Icon = status.icon
-          return (
-            <Card key={status.value}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{status.label}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
+      <Card>
+        <CardContent className="p-4 flex gap-3 flex-wrap">
+          <Input placeholder="Search tasks…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {STATUSES.map(s => <SelectItem key={s} value={s}>{labelize(s)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={filterPriority} onValueChange={setFilterPriority}>
+            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Priorities</SelectItem>
+              {PRIORITIES.map(p => <SelectItem key={p} value={p}>{labelize(p)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {loading ? (
+        <p className="text-muted-foreground">Loading…</p>
+      ) : filtered.length === 0 ? (
+        <Card><CardContent className="p-8 text-center text-muted-foreground">No tasks yet.</CardContent></Card>
+      ) : (
+        <div className="grid gap-3">
+          {filtered.map(t => (
+            <Card key={t.id} className={`border-l-4 ${priorityColor(t.priority)}`}>
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-base">{t.title}</CardTitle>
+                    {t.description && <CardDescription className="line-clamp-2">{t.description}</CardDescription>}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(t)}><Edit className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => remove(t.id)}><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{statusStats[status.value] || 0}</div>
+              <CardContent className="flex flex-wrap gap-2 items-center text-xs">
+                <Badge className={statusColor(t.status)}>{labelize(t.status ?? 'todo')}</Badge>
+                <Badge variant="outline">{labelize(t.priority ?? 'medium')}</Badge>
+                {projectName(t.project_id) && <Badge variant="secondary">{projectName(t.project_id)}</Badge>}
+                {profileName(t.assignee_id) && <span className="text-muted-foreground">@{profileName(t.assignee_id)}</span>}
+                {t.due_date && <span className="flex items-center gap-1 text-muted-foreground"><Calendar className="w-3 h-3" />{new Date(t.due_date).toLocaleDateString()}</span>}
+                {t.tags?.map((tag, i) => <span key={i} className="px-2 py-0.5 bg-muted rounded">{tag}</span>)}
               </CardContent>
             </Card>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
 
-      <Tabs defaultValue="kanban" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
-          <TabsTrigger value="list">List View</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="kanban" className="space-y-6">
-          {/* Enhanced Filters */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap gap-4">
-              <Input
-                placeholder="Search tasks..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-[200px]"
-              />
-              <Select value={filterPriority} onValueChange={setFilterPriority}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter by priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priority</SelectItem>
-                  {TASK_CONFIG.priorities.map(priority => (
-                    <SelectItem key={priority.value} value={priority.value}>
-                      {priority.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-                <SelectTrigger className="w-[180px]">
-                  <User className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter by assignee" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Assignees</SelectItem>
-                  {TASK_CONFIG.teamMembers.map(member => (
-                    <SelectItem key={member.value} value={member.value}>
-                      {member.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {(filterPriority !== "all" || filterAssignee !== "all" || searchTerm) && (
-                <Button variant="outline" onClick={clearAllFilters}>
-                  Clear Filters
-                </Button>
-              )}
-            </div>
-            <Button onClick={() => handleCreateTask()}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Task
-            </Button>
-          </div>
-
-          <TaskBoard 
-            tasks={filteredTasks}
-            onTaskUpdate={handleTaskUpdate}
-            onTaskDelete={handleDeleteTask}
-            onTaskCreate={handleCreateTask}
-            onTaskEdit={handleEditTask}
-            onTasksReorder={handleTasksReorder}
-          />
-        </TabsContent>
-
-        <TabsContent value="list" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>All Tasks ({filteredTasks.length})</CardTitle>
-                  <CardDescription>View and manage all tasks in a list format.</CardDescription>
-                </div>
-                <Button onClick={() => handleCreateTask()}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Task
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Enhanced List Filters */}
-              <div className="flex flex-wrap gap-4 mb-6">
-                <Input
-                  placeholder="Search tasks..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-[200px]"
-                />
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-[150px]">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    {TASK_CONFIG.statuses.map(status => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={filterPriority} onValueChange={setFilterPriority}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Priority</SelectItem>
-                    {TASK_CONFIG.priorities.map(priority => (
-                      <SelectItem key={priority.value} value={priority.value}>
-                        {priority.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Assignees</SelectItem>
-                    {TASK_CONFIG.teamMembers.map(member => (
-                      <SelectItem key={member.value} value={member.value}>
-                        {member.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {(filterStatus !== "all" || filterPriority !== "all" || filterAssignee !== "all" || searchTerm) && (
-                  <Button variant="outline" onClick={clearAllFilters}>
-                    Clear All
-                  </Button>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                {filteredTasks.length > 0 ? filteredTasks.map(task => {
-                  const statusConfig = getStatusConfig(task.status)
-                  const priorityConfig = getPriorityConfig(task.priority)
-                  const memberConfig = getTeamMemberConfig(task.assignedTo)
-                  const projectConfig = getProjectConfig(task.projectId)
-                  
-                  return (
-                    <Card key={task.id} className={`border-l-4 ${priorityConfig.color}`}>
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <Avatar>
-                            <AvatarFallback>{memberConfig.initials}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-semibold">{task.title}</p>
-                              <Badge className={statusConfig.color}>{task.status}</Badge>
-                              <Badge variant="outline">{priorityConfig.label}</Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
-                                {memberConfig.label}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(task.dueDate).toLocaleDateString()}
-                              </span>
-                              <span>{projectConfig.label}</span>
-                            </div>
-                            {task.tags.length > 0 && (
-                              <div className="flex gap-1 mt-2">
-                                {task.tags.map((tag, index) => (
-                                  <Badge key={index} variant="secondary" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="w-24">
-                            <Progress 
-                              value={(task.actualHours && task.estimatedHours) ? (task.actualHours / task.estimatedHours) * 100 : 0} 
-                            />
-                          </div>
-                          <Button variant="outline" size="sm" onClick={() => handleEditTask(task)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDeleteTask(task.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                }) : (
-                  <div className="text-center py-10">
-                    <List className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No tasks found</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {searchTerm || filterStatus !== "all" || filterPriority !== "all" || filterAssignee !== "all" 
-                        ? "Try adjusting your filters or search term."
-                        : "Get started by creating a new task."
-                      }
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Enhanced Task Creation and Editing Dialog */}
-      <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {selectedTask && !selectedTask.id.startsWith('new-') ? 'Edit Task' : 'Create New Task'}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedTask && !selectedTask.id.startsWith('new-') ? 'Update task details and assignments' : 'Create a new task with details and assignments'}
-            </DialogDescription>
+            <DialogTitle>{editing ? 'Edit Task' : 'New Task'}</DialogTitle>
+            <DialogDescription>{editing ? 'Update task details' : 'Create a new task'}</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Task Title *</Label>
-              <Input id="title" placeholder="Enter task title" value={formData.title || ''} onChange={handleChange} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select value={formData.priority || "Medium"} onValueChange={(value) => handleSelectChange(value, 'priority')}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TASK_CONFIG.priorities.map(priority => (
-                    <SelectItem key={priority.value} value={priority.value}>
-                      {priority.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="col-span-2 space-y-2">
+              <Label>Title</Label>
+              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             </div>
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              <Textarea id="description" placeholder="Enter task description" value={formData.description || ''} onChange={handleChange} />
+              <Label>Description</Label>
+              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="projectId">Project</Label>
-              <Select value={formData.projectId || "1"} onValueChange={(value) => handleSelectChange(value, 'projectId')}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Label>Status</Label>
+              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{labelize(s)}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Priority</Label>
+              <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PRIORITIES.map(p => <SelectItem key={p} value={p}>{labelize(p)}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Project</Label>
+              <Select value={form.project_id || 'none'} onValueChange={(v) => setForm({ ...form, project_id: v === 'none' ? '' : v })}>
+                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                 <SelectContent>
-                  {TASK_CONFIG.projects.map(project => (
-                    <SelectItem key={project.value} value={project.value}>
-                      {project.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="none">None</SelectItem>
+                  {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="assignedTo">Assigned To</Label>
-              <Select value={formData.assignedTo || ''} onValueChange={(value) => handleSelectChange(value, 'assignedTo')}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select assignee" />
-                </SelectTrigger>
+              <Label>Assignee</Label>
+              <Select value={form.assignee_id || 'none'} onValueChange={(v) => setForm({ ...form, assignee_id: v === 'none' ? '' : v })}>
+                <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
                 <SelectContent>
-                  {TASK_CONFIG.teamMembers.map(member => (
-                    <SelectItem key={member.value} value={member.value}>
-                      {member.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="none">Unassigned</SelectItem>
+                  {profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status || "Todo"} onValueChange={(value) => handleSelectChange(value, 'status')}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TASK_CONFIG.statuses.map(status => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Due Date</Label>
+              <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dueDate">Due Date</Label>
-              <Input id="dueDate" type="date" value={formData.dueDate || ''} onChange={handleChange} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="estimatedHours">Estimated Hours</Label>
-              <Input id="estimatedHours" type="number" placeholder="0" value={formData.estimatedHours || ''} onChange={handleChange} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="actualHours">Actual Hours</Label>
-              <Input id="actualHours" type="number" placeholder="0" value={formData.actualHours || ''} onChange={handleChange} />
+              <Label>Estimated Hours</Label>
+              <Input type="number" value={form.estimated_hours} onChange={(e) => setForm({ ...form, estimated_hours: Number(e.target.value) })} />
             </div>
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="tags">Tags (comma separated)</Label>
-              <Input id="tags" placeholder="tag1, tag2, tag3" value={formData.tags || ''} onChange={handleChange} />
+              <Label>Tags (comma separated)</Label>
+              <Input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveTask}>
-              {selectedTask && !selectedTask.id.startsWith('new-') ? 'Update' : 'Create'} Task
-            </Button>
-          </DialogFooter>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button onClick={save}>{editing ? 'Update' : 'Create'} Task</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
