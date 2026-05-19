@@ -42,6 +42,8 @@ interface ChatUser {
   lastSeen: string
   unreadCount: number
   role?: string
+  isGroup?: boolean
+  members?: { id: string; name: string; avatar?: string }[]
 }
 
 interface Message {
@@ -59,6 +61,7 @@ interface Message {
   starred?: boolean
   status?: 'sent' | 'delivered' | 'read'
   edited?: boolean
+  forwarded?: boolean
 }
 
 interface ConvMeta {
@@ -67,15 +70,23 @@ interface ConvMeta {
   archived?: boolean
 }
 
-const STORAGE_KEY = 'chat:v2'
-const META_KEY = 'chat:meta:v2'
+const STORAGE_KEY = 'chat:v3'
+const META_KEY = 'chat:meta:v3'
+const USERS_KEY = 'chat:users:v3'
 
-const mockUsers: ChatUser[] = [
-  { id: '1', name: 'John Smith', status: 'online', lastSeen: 'now', unreadCount: 3, role: 'Project Manager', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face' },
-  { id: '2', name: 'Sarah Connor', status: 'online', lastSeen: '2 min ago', unreadCount: 0, role: 'HR Lead', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face' },
-  { id: '3', name: 'Mike Johnson', status: 'busy', lastSeen: '1 hour ago', unreadCount: 1, role: 'Developer', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face' },
-  { id: '4', name: 'Emily Davis', status: 'offline', lastSeen: '3 hours ago', unreadCount: 0, role: 'Designer', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face' },
-]
+// Build initial user list from registered employees
+const buildInitialUsers = (): ChatUser[] => {
+  const statuses: ChatUser['status'][] = ['online', 'offline', 'busy']
+  return mockEmployees.map((e, i) => ({
+    id: `emp-${e.id}`,
+    name: e.name,
+    avatar: e.avatar,
+    role: e.position,
+    status: statuses[i % statuses.length],
+    lastSeen: i % 3 === 0 ? 'now' : `${(i + 1) * 5} min ago`,
+    unreadCount: i === 0 ? 2 : 0,
+  }))
+}
 
 const seedMessages = (userId: string): Message[] => [
   { id: `${userId}-1`, senderId: userId, senderName: '', content: 'Hey! How is the project coming along?', type: 'text', timestamp: '10:30 AM', status: 'read' },
