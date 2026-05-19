@@ -150,7 +150,7 @@ const Index = () => {
                 {birthdayEmployees.map((employee) => (
                   <div key={employee.id} className="flex items-center space-x-3 p-3 rounded-lg border">
                     <Avatar className="w-10 h-10">
-                      <AvatarImage src={employee.avatar} />
+                      <AvatarImage src={employee.avatar ?? undefined} />
                       <AvatarFallback>{employee.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
