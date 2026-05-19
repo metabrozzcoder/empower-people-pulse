@@ -429,11 +429,48 @@ export default function Chat() {
     return all
   }, [conversations, users])
 
-  const addNewContact = (name: string, role: string) => {
-    const id = `u-${Date.now()}`
-    setUsers(prev => [...prev, { id, name, role, status: 'offline', lastSeen: 'just added', unreadCount: 0 }])
+  const startConversation = (selected: ChatUser[], groupName?: string) => {
+    if (selected.length === 0) return
+    if (selected.length === 1) {
+      setSelectedUser(selected[0])
+      setIsNewChatOpen(false)
+      return
+    }
+    // Create a group
+    const id = `grp-${Date.now()}`
+    const group: ChatUser = {
+      id,
+      name: groupName?.trim() || selected.map(s => s.name.split(' ')[0]).join(', '),
+      status: 'online',
+      lastSeen: 'just now',
+      unreadCount: 0,
+      role: `Group · ${selected.length} members`,
+      isGroup: true,
+      members: selected.map(s => ({ id: s.id, name: s.name, avatar: s.avatar })),
+    }
+    setUsers(prev => [group, ...prev])
+    setSelectedUser(group)
     setIsNewChatOpen(false)
-    toast({ title: 'Contact added', description: name })
+    toast({ title: 'Group created', description: `${group.name} (${selected.length} members)` })
+  }
+
+  const handleForward = (targetIds: string[]) => {
+    if (!forwardMsg) return
+    targetIds.forEach(uid => {
+      appendMessage(uid, {
+        ...forwardMsg,
+        id: `${Date.now()}-${uid}`,
+        senderId: 'me',
+        senderName: 'You',
+        timestamp: now(),
+        status: 'sent',
+        forwarded: true,
+        replyTo: undefined,
+        starred: false,
+      })
+    })
+    toast({ title: 'Forwarded', description: `Sent to ${targetIds.length} chat${targetIds.length > 1 ? 's' : ''}` })
+    setForwardMsg(null)
   }
 
   const StatusIcon = ({ status }: { status?: Message['status'] }) => {
