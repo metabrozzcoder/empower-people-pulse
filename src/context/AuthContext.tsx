@@ -33,6 +33,12 @@ async function loadUserProfile(userId: string, email: string): Promise<User | nu
   const roleSet = new Set((roles ?? []).map((r) => r.role))
   const dbRole = roleSet.has('admin') ? 'admin' : roleSet.has('hr') ? 'hr' : 'guest'
 
+  const pref = (profile as { preferred_language?: string }).preferred_language
+  if (pref && ['en', 'ru', 'uz'].includes(pref) && i18n.language !== pref) {
+    i18n.changeLanguage(pref)
+  }
+
+
   return {
     id: profile.id,
     name: profile.name,
