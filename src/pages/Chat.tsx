@@ -1043,35 +1043,176 @@ export default function Chat() {
   )
 }
 
-function NewChatDialog({ open, onOpenChange, onCreate }: {
+function NewChatDialog({ open, onOpenChange, employees, onStart }: {
   open: boolean
   onOpenChange: (v: boolean) => void
-  onCreate: (name: string, role: string) => void
+  employees: ChatUser[]
+  onStart: (selected: ChatUser[], groupName?: string) => void
 }) {
-  const [name, setName] = useState('')
-  const [role, setRole] = useState('')
-  useEffect(() => { if (!open) { setName(''); setRole('') } }, [open])
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [search, setSearch] = useState('')
+  const [groupName, setGroupName] = useState('')
+
+  useEffect(() => { if (!open) { setSelectedIds([]); setSearch(''); setGroupName('') } }, [open])
+
+  const toggle = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const filtered = employees.filter(e =>
+    e.name.toLowerCase().includes(search.toLowerCase()) ||
+    (e.role || '').toLowerCase().includes(search.toLowerCase())
+  )
+  const selected = employees.filter(e => selectedIds.includes(e.id))
+  const isGroup = selectedIds.length >= 2
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>New Conversation</DialogTitle>
-          <DialogDescription>Add a contact and start chatting</DialogDescription>
+          <DialogDescription>
+            Select one employee for a direct chat, or two or more to create a group
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="cname">Name</Label>
-            <Input id="cname" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Alex Morgan" />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Search employees..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="crole">Role</Label>
-            <Input id="crole" value={role} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Marketing Lead" />
-          </div>
+
+          {selected.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {selected.map(s => (
+                <Badge key={s.id} variant="secondary" className="gap-1 pr-1">
+                  {s.name}
+                  <button onClick={() => toggle(s.id)} className="hover:bg-background/50 rounded-full p-0.5">
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {isGroup && (
+            <div className="space-y-1.5">
+              <Label htmlFor="gname">Group name (optional)</Label>
+              <Input id="gname" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Design Crew" />
+            </div>
+          )}
+
+          <ScrollArea className="h-72 border rounded-md">
+            <div className="p-1">
+              {filtered.length === 0 && (
+                <p className="text-center text-sm text-muted-foreground py-8">No employees found</p>
+              )}
+              {filtered.map(emp => {
+                const checked = selectedIds.includes(emp.id)
+                return (
+                  <div
+                    key={emp.id}
+                    onClick={() => toggle(emp.id)}
+                    className={cn(
+                      'flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors',
+                      checked ? 'bg-accent' : 'hover:bg-accent/50'
+                    )}
+                  >
+                    <Checkbox checked={checked} onCheckedChange={() => toggle(emp.id)} onClick={(e) => e.stopPropagation()} />
+                    <Avatar className="w-9 h-9">
+                      <AvatarImage src={emp.avatar} />
+                      <AvatarFallback className="text-xs">{emp.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{emp.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{emp.role || 'Team member'}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </ScrollArea>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button disabled={!name.trim()} onClick={() => onCreate(name.trim(), role.trim() || 'Team member')}>
-            Add Contact
+          <Button disabled={selectedIds.length === 0} onClick={() => onStart(selected, groupName)}>
+            {isGroup ? <><Users className="w-4 h-4 mr-2" />Create Group</> : <><MessageSquare className="w-4 h-4 mr-2" />Start Chat</>}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function ForwardDialog({ message, onOpenChange, targets, onForward }: {
+  message: Message | null
+  onOpenChange: (v: boolean) => void
+  targets: ChatUser[]
+  onForward: (targetIds: string[]) => void
+}) {
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [search, setSearch] = useState('')
+  useEffect(() => { if (!message) { setSelectedIds([]); setSearch('') } }, [message])
+  const toggle = (id: string) => setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  const filtered = targets.filter(t => t.name.toLowerCase().includes(search.toLowerCase()))
+  const preview = message
+    ? (message.type === 'text' ? message.content : `[${message.type}] ${message.fileName || ''}`)
+    : ''
+
+  return (
+    <Dialog open={!!message} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Forward Message</DialogTitle>
+          <DialogDescription>Select one or more chats to forward to</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="p-2 border rounded-md bg-muted/30 text-sm">
+            <p className="text-xs text-muted-foreground mb-1">Forwarding:</p>
+            <p className="truncate">{preview}</p>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input placeholder="Search chats..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          </div>
+          <ScrollArea className="h-64 border rounded-md">
+            <div className="p-1">
+              {filtered.length === 0 && (
+                <p className="text-center text-sm text-muted-foreground py-8">No chats</p>
+              )}
+              {filtered.map(t => {
+                const checked = selectedIds.includes(t.id)
+                return (
+                  <div
+                    key={t.id}
+                    onClick={() => toggle(t.id)}
+                    className={cn('flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors', checked ? 'bg-accent' : 'hover:bg-accent/50')}
+                  >
+                    <Checkbox checked={checked} onCheckedChange={() => toggle(t.id)} onClick={(e) => e.stopPropagation()} />
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={t.avatar} />
+                      <AvatarFallback className="text-xs">
+                        {t.isGroup ? <Users className="w-4 h-4" /> : t.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{t.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{t.role || (t.isGroup ? 'Group' : '')}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </ScrollArea>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button disabled={selectedIds.length === 0} onClick={() => onForward(selectedIds)}>
+            <Forward className="w-4 h-4 mr-2" />Forward{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
           </Button>
         </DialogFooter>
       </DialogContent>
