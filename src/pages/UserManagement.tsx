@@ -363,8 +363,8 @@ export default function UserManagement() {
         organization: formData.organization,
         linkedEmployee: formData.linkedEmployee,
         permissions: userPermissions,
-        username: generatedCredentials.username,
-        password: generatedCredentials.password,
+        username,
+        password,
         accessRules: selectedAccessRules,
         guestId: generatedCredentials.guestId,
         sectionAccess: [], // No restrictions by default
