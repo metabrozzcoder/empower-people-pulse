@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import type { Session } from '@supabase/supabase-js'
 import type { User } from '@/context/UserContext'
+import i18n from '@/i18n'
 
 interface AuthContextType {
   currentUser: User | null
