@@ -774,11 +774,11 @@ export default function UserManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email <span className="text-xs text-muted-foreground">(optional — auto-filled)</span></Label>
+                  <Label htmlFor="email">Email <span className="text-xs text-muted-foreground">(optional)</span></Label>
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="Auto-generated from name" 
+                    placeholder="Enter email address" 
                     value={formData.email}
                     onChange={(e) => handleFormChange('email', e.target.value)}
                   />
