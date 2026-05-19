@@ -23,7 +23,14 @@ interface BirthdayEmp {
 
 const Index = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [birthdayEmployees, setBirthdayEmployees] = useState<BirthdayEmp[]>([])
+
+  const quickActions = [
+    { title: t('pages.dashboard.quickActions.chat'), description: t('pages.dashboard.quickActions.chatDesc'), icon: MessageCircle, href: '/chat', color: 'bg-blue-50 text-blue-600 border-blue-200' },
+    { title: t('pages.dashboard.quickActions.calendar'), description: t('pages.dashboard.quickActions.calendarDesc'), icon: Calendar, href: '/scheduling', color: 'bg-green-50 text-green-600 border-green-200' },
+    { title: t('pages.dashboard.quickActions.tasks'), description: t('pages.dashboard.quickActions.tasksDesc'), icon: CheckSquare, href: '/tasks', color: 'bg-purple-50 text-purple-600 border-purple-200' },
+  ]
 
   useEffect(() => {
     supabase.from('employees').select('id, name, position, avatar, birthday').then(({ data }) => {
@@ -49,10 +56,8 @@ const Index = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back! Here's your workspace overview.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('pages.dashboard.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.dashboard.subtitle')}</p>
         </div>
       </div>
 
@@ -84,9 +89,9 @@ const Index = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Calendar className="mr-2 h-5 w-5" />
-              Upcoming Events
+              {t('pages.dashboard.upcomingEvents')}
             </CardTitle>
-            <CardDescription>Important dates and deadlines</CardDescription>
+            <CardDescription>{t('pages.dashboard.upcomingEventsDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -107,7 +112,7 @@ const Index = () => {
               className="w-full mt-4"
               onClick={() => navigate('/scheduling')}
             >
-              View All Events
+              {t('pages.dashboard.viewAllEvents')}
             </Button>
           </CardContent>
         </Card>
