@@ -122,9 +122,9 @@ const Index = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Gift className="mr-2 h-5 w-5" />
-              Employee Birthdays
+              {t('pages.dashboard.birthdays')}
             </CardTitle>
-            <CardDescription>Today and tomorrow celebrations</CardDescription>
+            <CardDescription>{t('pages.dashboard.birthdaysDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {birthdayEmployees.length > 0 ? (
@@ -142,7 +142,7 @@ const Index = () => {
                     <div className="text-right">
                       <p className="text-sm font-medium">{employee.formattedDate}</p>
                       <Badge variant={employee.isToday ? "default" : "secondary"} className="text-xs">
-                        {employee.isToday ? "Today" : "Tomorrow"}
+                        {employee.isToday ? t('common.today') : t('common.tomorrow')}
                       </Badge>
                     </div>
                   </div>
