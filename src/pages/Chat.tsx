@@ -647,13 +647,19 @@ export default function Chat() {
                         <Settings className="w-4 h-4 mr-2" /> Chat Settings
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setShowArchivedMsgs(s => !s)}>
+                        {showArchivedMsgs ? <ArchiveRestore className="w-4 h-4 mr-2" /> : <Archive className="w-4 h-4 mr-2" />}
+                        {showArchivedMsgs ? 'Hide archived messages' : `Show archived messages${archivedCount ? ` (${archivedCount})` : ''}`}
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => toggleMeta(selectedUser.id, 'archived')}>
                         {meta[selectedUser.id]?.archived ? <ArchiveRestore className="w-4 h-4 mr-2" /> : <Archive className="w-4 h-4 mr-2" />}
                         {meta[selectedUser.id]?.archived ? 'Unarchive' : 'Archive'} Chat
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleDeleteChat} className="text-destructive">
-                        <Trash2 className="w-4 h-4 mr-2" /> Delete Chat
-                      </DropdownMenuItem>
+                      {isAdmin && (
+                        <DropdownMenuItem onClick={handleDeleteChat} className="text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" /> Delete Chat
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
