@@ -315,17 +315,14 @@ export default function UserManagement() {
       return
     }
 
-    // Ensure we always have a username + password before saving
-    const username = generatedCredentials.username || buildUsername(formData.name, formData.surname)
+    // Login email and password are auto-generated; user has no manual control
+    const loginEmail = generatedCredentials.username || buildLoginEmail(formData.name, formData.surname)
     const password = generatedCredentials.password || generateStrongPassword()
     if (!generatedCredentials.username || !generatedCredentials.password) {
-      setGeneratedCredentials(prev => ({ ...prev, username, password }))
+      setGeneratedCredentials(prev => ({ ...prev, username: loginEmail, password }))
     }
-
-    // Email is optional in the UI — derive a stable login email from the username if blank
-    if (!formData.email) {
-      formData.email = `${username}@ark.local`
-    }
+    // The generated email IS the Supabase login email
+    formData.email = loginEmail
 
     const fullName = `${formData.name} ${formData.surname}`
     const userPermissions = formData.role === 'Admin' 
