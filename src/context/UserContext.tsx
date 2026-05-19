@@ -82,8 +82,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     refresh()
   }, [refresh])
 
-  const addUser = async () => {
-    throw new Error('Creating users requires admin signup flow — not yet implemented in this phase.')
+  const addUser = async (user: Omit<User, 'id' | 'createdDate' | 'lastLogin'>) => {
+    const role = user.role === 'Admin' ? 'admin' : user.role === 'HR' ? 'hr' : 'guest'
+    const password = user.password && user.password.length >= 6 ? user.password : Math.random().toString(36).slice(2, 10) + 'A1'
+    const { error } = await supabase.functions.invoke('admin-create-user', {
+      body: {
+        email: user.email,
+        password,
+        name: user.name,
+        role,
+        phone: user.phone,
+        department: user.department,
+        position: user.position,
+      },
+    })
+    if (error) throw error
+    await refresh()
   }
 
   const updateUser = async (id: string, updates: Partial<User>) => {
