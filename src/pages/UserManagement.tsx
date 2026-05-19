@@ -904,13 +904,13 @@ export default function UserManagement() {
                   <div>
                     <Label>Username</Label>
                     <div className="font-mono bg-background p-2 rounded border">
-                      {generatedCredentials.username || 'Enter name and surname to generate'}
+                      {generatedCredentials.username || 'Enter a name to generate'}
                     </div>
                   </div>
                   <div>
                     <Label>Password</Label>
                     <div className="font-mono bg-background p-2 rounded border">
-                      {generatedCredentials.password || 'Enter name and surname to generate'}
+                      {generatedCredentials.password || 'Auto-generated when name is entered'}
                     </div>
                   </div>
                   {formData.role === 'Guest' && (
