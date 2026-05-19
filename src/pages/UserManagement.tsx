@@ -336,12 +336,17 @@ export default function UserManagement() {
         allowedSections: selectedSections // Granted sections
       }
 
-      addUser(newUser)
-      
-      toast({
-        title: "User Created Successfully",
-        description: `User created successfully! Username: ${generatedCredentials.username}, Password: ${generatedCredentials.password}${generatedCredentials.guestId ? `, Guest ID: ${generatedCredentials.guestId}` : ''}. This user is now stored as an initial user.`,
-      })
+      try {
+        await addUser(newUser)
+        toast({
+          title: "User Created Successfully",
+          description: `Login: ${formData.email} / Password: ${generatedCredentials.password}${generatedCredentials.guestId ? ` / Guest ID: ${generatedCredentials.guestId}` : ''}. Share these credentials with the user — no email verification required.`,
+        })
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to create user'
+        toast({ title: 'Failed to create user', description: msg, variant: 'destructive' })
+        return
+      }
     }
 
     setIsDialogOpen(false)
