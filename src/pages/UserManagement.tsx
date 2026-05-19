@@ -751,11 +751,11 @@ export default function UserManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email">Email <span className="text-xs text-muted-foreground">(optional — auto-filled)</span></Label>
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="Enter email address" 
+                    placeholder="Auto-generated from name" 
                     value={formData.email}
                     onChange={(e) => handleFormChange('email', e.target.value)}
                   />
