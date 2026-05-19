@@ -1,19 +1,54 @@
 
-import { useState, useMemo } from "react"
-import { Search, Filter, Plus, Clock } from "lucide-react"
+import { useState, useMemo, useEffect } from "react"
+import { Search, Filter, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmployeeCard } from "@/components/EmployeeCard"
-import { mockEmployees } from "@/data/mockEmployees" 
+import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import type { Employee } from "@/types/employee"
+
+interface DbEmployee {
+  id: string
+  name: string
+  email: string | null
+  position: string | null
+  department: string | null
+  hire_date: string | null
+  birthday: string | null
+  salary: number | null
+  status: string | null
+  avatar: string | null
+  phone: string | null
+  location: string | null
+  manager: string | null
+  performance_score: number | null
+}
+
+const toViewEmployee = (e: DbEmployee, idx: number): Employee => ({
+  id: idx + 1,
+  name: e.name,
+  email: e.email ?? '',
+  position: e.position ?? '',
+  department: e.department ?? 'General',
+  hireDate: e.hire_date ?? '',
+  birthday: e.birthday ?? '',
+  salary: e.salary ?? 0,
+  status: ((e.status as Employee['status']) ?? 'Active'),
+  avatar: e.avatar ?? undefined,
+  phone: e.phone ?? '',
+  location: e.location ?? '',
+  manager: e.manager ?? undefined,
+  performanceScore: e.performance_score ?? 0,
+})
 
 export default function Employees() {
   const { toast } = useToast()
+  const [employees, setEmployees] = useState<Employee[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -30,81 +65,63 @@ export default function Employees() {
     manager: ''
   })
 
-  const departments = useMemo(() => {
-    const depts = Array.from(new Set(mockEmployees.map(emp => emp.department)))
-    return depts.sort()
-  }, [])
+  const loadEmployees = async () => {
+    const { data } = await supabase.from('employees').select('*').order('created_at', { ascending: false })
+    setEmployees(((data ?? []) as DbEmployee[]).map(toViewEmployee))
+  }
+
+  useEffect(() => { loadEmployees() }, [])
+
+  const departments = useMemo(
+    () => Array.from(new Set(employees.map(e => e.department).filter(Boolean))).sort(),
+    [employees]
+  )
 
   const filteredEmployees = useMemo(() => {
-    return mockEmployees.filter(employee => {
+    return employees.filter(employee => {
       const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           employee.position.toLowerCase().includes(searchTerm.toLowerCase())
-      
+        employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.position.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesDepartment = departmentFilter === "all" || employee.department === departmentFilter
       const matchesStatus = statusFilter === "all" || employee.status === statusFilter
-      
       return matchesSearch && matchesDepartment && matchesStatus
     })
-  }, [searchTerm, departmentFilter, statusFilter])
+  }, [employees, searchTerm, departmentFilter, statusFilter])
 
-  const handleAddEmployeeSubmit = () => {
+  const handleAddEmployeeSubmit = async () => {
     if (!employeeData.firstName || !employeeData.lastName || !employeeData.email || !employeeData.position) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      })
+      toast({ title: "Validation Error", description: "Please fill in all required fields.", variant: "destructive" })
       return
     }
-
-    // Create new employee
-    const newEmployee = {
-      id: mockEmployees.length + 1,
+    const { error } = await supabase.from('employees').insert({
       name: `${employeeData.firstName} ${employeeData.lastName}`,
       email: employeeData.email,
       position: employeeData.position,
       department: employeeData.department || 'General',
-      hireDate: new Date().toISOString().split('T')[0],
-      birthday: "2025-07-08", // Default placeholder
-      salary: parseInt(employeeData.salary) || 50000,
-      status: 'Active' as const,
-      phone: employeeData.phone || '+1 (555) 000-0000',
-      location: employeeData.location || 'Remote',
-      manager: employeeData.manager || undefined,
-      performanceScore: 85 // Default score for new employees
+      hire_date: new Date().toISOString().split('T')[0],
+      salary: parseInt(employeeData.salary) || null,
+      status: 'Active',
+      phone: employeeData.phone || null,
+      location: employeeData.location || null,
+      manager: employeeData.manager || null,
+    })
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" })
+      return
     }
-
-    // Add to employees
-    mockEmployees.push(newEmployee)
-    
-    toast({
-      title: "Employee Added",
-      description: `${newEmployee.name} has been added successfully.`,
-    })
-    
+    toast({ title: "Employee Added", description: `${employeeData.firstName} ${employeeData.lastName} has been added.` })
     setIsAddDialogOpen(false)
-    setEmployeeData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      position: '',
-      department: '',
-      salary: '',
-      location: '',
-      manager: ''
-    })
+    setEmployeeData({ firstName: '', lastName: '', email: '', phone: '', position: '', department: '', salary: '', location: '', manager: '' })
+    loadEmployees()
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Employees</h1>
           <p className="text-muted-foreground">
-            Manage your team of {mockEmployees.length} employees
+            Manage your team of {employees.length} employees
           </p>
         </div>
         <Button className="mt-4 sm:mt-0" onClick={() => setIsAddDialogOpen(true)}>
@@ -113,7 +130,6 @@ export default function Employees() {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/50 rounded-lg">
         <div className="flex-1">
           <div className="relative">
@@ -126,7 +142,7 @@ export default function Employees() {
             />
           </div>
         </div>
-        
+
         <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <Filter className="mr-2 h-4 w-4" />
@@ -153,14 +169,12 @@ export default function Employees() {
         </Select>
       </div>
 
-      {/* Results */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Showing {filteredEmployees.length} of {mockEmployees.length} employees
+          Showing {filteredEmployees.length} of {employees.length} employees
         </p>
       </div>
 
-      {/* Employee Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredEmployees.map(employee => (
           <EmployeeCard key={employee.id} employee={employee} />
@@ -169,11 +183,10 @@ export default function Employees() {
 
       {filteredEmployees.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">No employees found matching your criteria.</p>
+          <p className="text-muted-foreground">No employees found.</p>
         </div>
       )}
 
-      {/* Add Employee Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -185,104 +198,39 @@ export default function Employees() {
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
-              <Input 
-                id="firstName" 
-                placeholder="Enter first name" 
-                value={employeeData.firstName}
-                onChange={(e) => setEmployeeData({...employeeData, firstName: e.target.value})}
-              />
+              <Input id="firstName" placeholder="Enter first name" value={employeeData.firstName} onChange={(e) => setEmployeeData({...employeeData, firstName: e.target.value})} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last Name</Label>
-              <Input 
-                id="lastName" 
-                placeholder="Enter last name" 
-                value={employeeData.lastName}
-                onChange={(e) => setEmployeeData({...employeeData, lastName: e.target.value})}
-              />
+              <Input id="lastName" placeholder="Enter last name" value={employeeData.lastName} onChange={(e) => setEmployeeData({...employeeData, lastName: e.target.value})} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="Enter email address" 
-                value={employeeData.email}
-                onChange={(e) => setEmployeeData({...employeeData, email: e.target.value})}
-              />
+              <Input id="email" type="email" placeholder="Enter email address" value={employeeData.email} onChange={(e) => setEmployeeData({...employeeData, email: e.target.value})} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
-              <Input 
-                id="phone" 
-                placeholder="Enter phone number" 
-                value={employeeData.phone}
-                onChange={(e) => setEmployeeData({...employeeData, phone: e.target.value})}
-              />
+              <Input id="phone" placeholder="Enter phone number" value={employeeData.phone} onChange={(e) => setEmployeeData({...employeeData, phone: e.target.value})} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="position">Position</Label>
-              <Input 
-                id="position" 
-                placeholder="Enter job position" 
-                value={employeeData.position}
-                onChange={(e) => setEmployeeData({...employeeData, position: e.target.value})}
-              />
+              <Input id="position" placeholder="Enter job position" value={employeeData.position} onChange={(e) => setEmployeeData({...employeeData, position: e.target.value})} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              <Select
-                value={employeeData.department}
-                onValueChange={(value) => setEmployeeData({...employeeData, department: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map(dept => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input id="department" placeholder="Enter department" value={employeeData.department} onChange={(e) => setEmployeeData({...employeeData, department: e.target.value})} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="salary">Salary</Label>
-              <Input 
-                id="salary" 
-                type="number" 
-                placeholder="Enter salary" 
-                value={employeeData.salary}
-                onChange={(e) => setEmployeeData({...employeeData, salary: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date</Label>
-              <Input id="startDate" type="date" />
+              <Input id="salary" type="number" placeholder="Enter salary" value={employeeData.salary} onChange={(e) => setEmployeeData({...employeeData, salary: e.target.value})} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
-              <Input 
-                id="location" 
-                placeholder="Enter work location" 
-                value={employeeData.location}
-                onChange={(e) => setEmployeeData({...employeeData, location: e.target.value})}
-              />
+              <Input id="location" placeholder="Enter work location" value={employeeData.location} onChange={(e) => setEmployeeData({...employeeData, location: e.target.value})} />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 col-span-2">
               <Label htmlFor="manager">Manager</Label>
-              <Select
-                value={employeeData.manager}
-                onValueChange={(value) => setEmployeeData({...employeeData, manager: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select manager" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="john-doe">John Doe</SelectItem>
-                  <SelectItem value="jane-smith">Jane Smith</SelectItem>
-                  <SelectItem value="mike-johnson">Mike Johnson</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input id="manager" placeholder="Manager name" value={employeeData.manager} onChange={(e) => setEmployeeData({...employeeData, manager: e.target.value})} />
             </div>
             <div className="col-span-2 space-y-2">
               <Label htmlFor="notes">Notes</Label>
@@ -290,12 +238,8 @@ export default function Employees() {
             </div>
           </div>
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddEmployeeSubmit}>
-              Create Employee
-            </Button>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddEmployeeSubmit}>Create Employee</Button>
           </div>
         </DialogContent>
       </Dialog>

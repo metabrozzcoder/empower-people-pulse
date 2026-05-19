@@ -16,7 +16,7 @@ import {
   CornerUpLeft, PlusCircle, ArchiveRestore, Square, Users, Forward,
 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
-import { mockEmployees } from '@/data/mockEmployees'
+import { supabase } from '@/integrations/supabase/client'
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
   DialogFooter,
@@ -75,17 +75,20 @@ const STORAGE_KEY = 'chat:v3'
 const META_KEY = 'chat:meta:v3'
 const USERS_KEY = 'chat:users:v3'
 
-// Build initial user list from registered employees
-const buildInitialUsers = (): ChatUser[] => {
-  const statuses: ChatUser['status'][] = ['online', 'offline', 'busy']
-  return mockEmployees.map((e, i) => ({
-    id: `emp-${e.id}`,
-    name: e.name,
-    avatar: e.avatar,
-    role: e.position,
-    status: statuses[i % statuses.length],
-    lastSeen: i % 3 === 0 ? 'now' : `${(i + 1) * 5} min ago`,
-    unreadCount: i === 0 ? 2 : 0,
+// Load users from registered profiles (production data only)
+const fetchUsersFromDb = async (): Promise<ChatUser[]> => {
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, name, avatar_url, position')
+    .order('name')
+  return (data ?? []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    avatar: p.avatar_url ?? undefined,
+    role: p.position ?? undefined,
+    status: 'offline' as const,
+    lastSeen: '—',
+    unreadCount: 0,
   }))
 }
 
@@ -109,7 +112,7 @@ export default function Chat() {
   const [filter, setFilter] = useState<'all' | 'unread' | 'archived'>('all')
   const [conversations, setConversations] = useState<Record<string, Message[]>>({})
   const [meta, setMeta] = useState<Record<string, ConvMeta>>({})
-  const [users, setUsers] = useState<ChatUser[]>(() => buildInitialUsers())
+  const [users, setUsers] = useState<ChatUser[]>([])
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [typing, setTyping] = useState(false)
@@ -135,22 +138,24 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
-  // Load persisted state
+  // Load persisted state + real users from DB
   useEffect(() => {
     try {
       const c = localStorage.getItem(STORAGE_KEY)
       const m = localStorage.getItem(META_KEY)
-      const u = localStorage.getItem(USERS_KEY)
       if (c) setConversations(JSON.parse(c))
       if (m) setMeta(JSON.parse(m))
-      if (u) {
-        const stored: ChatUser[] = JSON.parse(u)
-        // Merge: keep stored groups + added; refresh employee list from source
-        const base = buildInitialUsers()
+    } catch {}
+    fetchUsersFromDb().then((base) => {
+      try {
+        const u = localStorage.getItem(USERS_KEY)
+        const stored: ChatUser[] = u ? JSON.parse(u) : []
         const extras = stored.filter(s => !base.find(b => b.id === s.id))
         setUsers([...base, ...extras])
+      } catch {
+        setUsers(base)
       }
-    } catch {}
+    })
   }, [])
 
   useEffect(() => {

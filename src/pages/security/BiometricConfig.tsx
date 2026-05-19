@@ -10,7 +10,8 @@ import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ArrowLeft, Fingerprint, Eye, Shield, UserPlus, Camera, Settings, Save, CheckCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { mockEmployees } from '@/data/mockEmployees'
+import { supabase } from '@/integrations/supabase/client'
+import { useEffect } from 'react'
 
 type Section =
   | 'fingerprint'
@@ -70,6 +71,11 @@ function EnrollPanel({ kind, toast }: { kind: 'fingerprint' | 'facial'; toast: a
   const [scanning, setScanning] = useState(false)
   const [progress, setProgress] = useState(0)
   const [done, setDone] = useState(false)
+  const [employees, setEmployees] = useState<{ id: string; name: string; department: string | null }[]>([])
+
+  useEffect(() => {
+    supabase.from('employees').select('id, name, department').then(({ data }) => setEmployees(data ?? []))
+  }, [])
 
   const start = () => {
     if (!employeeId) { toast({ title: 'Select an employee first' }); return }
@@ -92,7 +98,7 @@ function EnrollPanel({ kind, toast }: { kind: 'fingerprint' | 'facial'; toast: a
           <Select value={employeeId} onValueChange={setEmployeeId}>
             <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
             <SelectContent>
-              {mockEmployees.map(e => <SelectItem key={e.id} value={String(e.id)}>{e.name} — {e.department}</SelectItem>)}
+              {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}{e.department ? ` — ${e.department}` : ''}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
