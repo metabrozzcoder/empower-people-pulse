@@ -13,8 +13,10 @@ import {
   MoreVertical, Image as ImageIcon, File as FileIcon, Smile, Info,
   UserPlus, Play, Pause, Settings, Archive, Trash2, Reply, Copy,
   Star, Pin, BellOff, Bell, Check, CheckCheck, Download, X,
-  CornerUpLeft, PlusCircle, ArchiveRestore, Square,
+  CornerUpLeft, PlusCircle, ArchiveRestore, Square, Users, Forward,
 } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { mockEmployees } from '@/data/mockEmployees'
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
   DialogFooter,
