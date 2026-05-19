@@ -21,6 +21,7 @@ import { User, Bell, Shield, Palette, Key, Eye, EyeOff, Copy, Check, Smartphone 
 import { useToast } from "@/hooks/use-toast"
 import { useTheme } from "next-themes"
 import { useAuth } from "@/context/AuthContext"
+import { supabase } from "@/integrations/supabase/client"
 
 // Simple deterministic "hash" so we don't store raw passwords in localStorage.
 // Not cryptographically secure — adequate for the local-demo password feature.
@@ -126,17 +127,15 @@ const AccountSettings = () => {
     localStorage.setItem("security", JSON.stringify(next))
   }
 
-  const handleProfileSave = () => {
+  const handleProfileSave = async () => {
     localStorage.setItem("userProfile", JSON.stringify(profile))
     if (currentUser) {
-      login({
-        ...currentUser,
+      await supabase.from("profiles").update({
         name: profile.name,
-        email: profile.email,
         phone: profile.phone,
         department: profile.department,
-        avatar: profile.avatar,
-      } as any)
+        avatar_url: profile.avatar,
+      } as never).eq("id", currentUser.id)
     }
     toast({ title: "Profile Updated", description: "Your profile has been successfully updated." })
   }
@@ -170,7 +169,9 @@ const AccountSettings = () => {
       const updated = { ...profile, avatar: newAvatar }
       setProfile(updated)
       localStorage.setItem("userProfile", JSON.stringify(updated))
-      if (currentUser) login({ ...currentUser, avatar: newAvatar } as any)
+      if (currentUser) {
+        supabase.from("profiles").update({ avatar_url: newAvatar } as never).eq("id", currentUser.id)
+      }
       toast({ title: "Photo Updated", description: "Your profile photo has been updated successfully." })
     }
     reader.readAsDataURL(file)

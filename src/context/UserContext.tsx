@@ -87,7 +87,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }
 
   const updateUser = async (id: string, updates: Partial<User>) => {
-    const patch: Record<string, unknown> = {}
+    const patch: Record<string, string | undefined> = {}
     if (updates.name !== undefined) patch.name = updates.name
     if (updates.phone !== undefined) patch.phone = updates.phone
     if (updates.avatar !== undefined) patch.avatar_url = updates.avatar
@@ -96,7 +96,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (updates.organization !== undefined) patch.organization = updates.organization
     if (updates.status !== undefined) patch.status = updates.status
     if (Object.keys(patch).length) {
-      await supabase.from('profiles').update(patch).eq('id', id)
+      await supabase.from('profiles').update(patch as never).eq('id', id)
     }
     await refresh()
   }
