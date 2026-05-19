@@ -81,7 +81,7 @@ const Tasks = () => {
     const [{ data: t }, { data: p }, { data: prof }] = await Promise.all([
       supabase.from('tasks').select('*').order('created_at', { ascending: false }),
       supabase.from('projects').select('id, name'),
-      supabase.from('profiles').select('id, name'),
+      supabase.from('profiles_public' as never).select('id, name'),
     ])
     setTasks((t as TaskRow[]) ?? [])
     setProjects((p as ProjectOption[]) ?? [])

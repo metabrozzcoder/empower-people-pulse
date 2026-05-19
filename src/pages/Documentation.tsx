@@ -112,7 +112,7 @@ export default function Documentation() {
     const ids = Array.from(new Set((roles ?? []).map((r) => r.user_id)))
     if (ids.length === 0) { setAssigners([]); setAssignersLoading(false); return }
     const { data: profs } = await supabase
-      .from('profiles')
+      .from('profiles_public' as never)
       .select('id, name, position, department')
       .in('id', ids)
     const roleByUser = new Map<string, string>()
@@ -145,7 +145,7 @@ export default function Documentation() {
     rows.forEach((r) => { idsNeeded.add(r.owner_id); if (r.approver_id) idsNeeded.add(r.approver_id) })
     const missing = Array.from(idsNeeded).filter((id) => !profileNames[id])
     if (missing.length) {
-      const { data: profs } = await supabase.from('profiles').select('id, name').in('id', missing)
+      const { data: profs } = await supabase.from('profiles_public' as never).select('id, name').in('id', missing)
       const next = { ...profileNames }
       ;(profs ?? []).forEach((p: { id: string; name: string }) => { next[p.id] = p.name })
       setProfileNames(next)

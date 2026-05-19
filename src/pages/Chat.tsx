@@ -79,7 +79,7 @@ const USERS_KEY = 'chat:users:v3'
 // Load users from registered profiles (production data only)
 const fetchUsersFromDb = async (): Promise<ChatUser[]> => {
   const { data } = await supabase
-    .from('profiles')
+    .from('profiles_public' as never)
     .select('id, name, avatar_url, position')
     .order('name')
   return (data ?? []).map((p) => ({
