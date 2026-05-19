@@ -143,7 +143,15 @@ export default function UserManagement() {
   }
 
   const regeneratePassword = () => {
-    setGeneratedCredentials(prev => ({ ...prev, password: prev.password ? generateStrongPasswordFn() : generateStrongPasswordFn() }))
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+    const specials = '!@#$%&*'
+    let pwd = ''
+    const arr = new Uint32Array(10)
+    crypto.getRandomValues(arr)
+    for (let i = 0; i < 10; i++) pwd += chars[arr[i] % chars.length]
+    pwd += specials[Math.floor(Math.random() * specials.length)]
+    pwd += Math.floor(Math.random() * 10).toString()
+    setGeneratedCredentials(prev => ({ ...prev, password: pwd }))
   }
   const [isBulkActionsDialogOpen, setBulkActionsDialogOpen] = useState(false)
   const [isImportDialogOpen, setImportDialogOpen] = useState(false)
