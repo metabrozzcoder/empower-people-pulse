@@ -174,8 +174,11 @@ export default function UserManagement() {
   }
 
   const generateCredentials = (name: string, surname: string, role: string) => {
-    if (!name || !surname) return { username: '', password: '', guestId: '' }
-    const username = `${name.toLowerCase()}.${surname.toLowerCase()}`.replace(/\s+/g, '')
+    if (!name && !surname) return { username: '', password: '', guestId: '' }
+    const base = `${(name || '').toLowerCase()}${surname ? '.' + surname.toLowerCase() : ''}`
+      .replace(/\s+/g, '')
+      .replace(/[^a-z0-9.]/g, '')
+    const username = base || `user${Math.floor(Math.random() * 10000)}`
     const password = generateStrongPassword()
     const guestId = role === 'Guest' ? `GUEST${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}` : ''
     return { username, password, guestId }
@@ -195,7 +198,7 @@ export default function UserManagement() {
       linkedEmployee: ''
     })
     setSelectedSections([])
-    setGeneratedCredentials({ username: '', password: '', guestId: '' })
+    setGeneratedCredentials({ username: '', password: generateStrongPassword(), guestId: '' })
     setIsDialogOpen(true)
   }
 
@@ -217,9 +220,9 @@ export default function UserManagement() {
     const newFormData = { ...formData, [field]: value }
     setFormData(newFormData)
     
-    // Auto-generate credentials when name, surname, or role are filled
+    // Auto-generate credentials as soon as name (or surname) is entered
     if (field === 'name' || field === 'surname' || field === 'role') {
-      if (newFormData.name && newFormData.surname) {
+      if (newFormData.name || newFormData.surname) {
         const credentials = generateCredentials(newFormData.name, newFormData.surname, newFormData.role || formData.role)
         setGeneratedCredentials(credentials)
         // Auto-fill email if user hasn't entered one
@@ -901,13 +904,13 @@ export default function UserManagement() {
                   <div>
                     <Label>Username</Label>
                     <div className="font-mono bg-background p-2 rounded border">
-                      {generatedCredentials.username || 'Enter name and surname to generate'}
+                      {generatedCredentials.username || 'Enter a name to generate'}
                     </div>
                   </div>
                   <div>
                     <Label>Password</Label>
                     <div className="font-mono bg-background p-2 rounded border">
-                      {generatedCredentials.password || 'Enter name and surname to generate'}
+                      {generatedCredentials.password || 'Auto-generated when name is entered'}
                     </div>
                   </div>
                   {formData.role === 'Guest' && (
