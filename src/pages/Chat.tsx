@@ -13,8 +13,10 @@ import {
   MoreVertical, Image as ImageIcon, File as FileIcon, Smile, Info,
   UserPlus, Play, Pause, Settings, Archive, Trash2, Reply, Copy,
   Star, Pin, BellOff, Bell, Check, CheckCheck, Download, X,
-  CornerUpLeft, PlusCircle, ArchiveRestore, Square,
+  CornerUpLeft, PlusCircle, ArchiveRestore, Square, Users, Forward,
 } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { mockEmployees } from '@/data/mockEmployees'
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
   DialogFooter,
@@ -40,6 +42,8 @@ interface ChatUser {
   lastSeen: string
   unreadCount: number
   role?: string
+  isGroup?: boolean
+  members?: { id: string; name: string; avatar?: string }[]
 }
 
 interface Message {
@@ -57,6 +61,7 @@ interface Message {
   starred?: boolean
   status?: 'sent' | 'delivered' | 'read'
   edited?: boolean
+  forwarded?: boolean
 }
 
 interface ConvMeta {
@@ -65,15 +70,23 @@ interface ConvMeta {
   archived?: boolean
 }
 
-const STORAGE_KEY = 'chat:v2'
-const META_KEY = 'chat:meta:v2'
+const STORAGE_KEY = 'chat:v3'
+const META_KEY = 'chat:meta:v3'
+const USERS_KEY = 'chat:users:v3'
 
-const mockUsers: ChatUser[] = [
-  { id: '1', name: 'John Smith', status: 'online', lastSeen: 'now', unreadCount: 3, role: 'Project Manager', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face' },
-  { id: '2', name: 'Sarah Connor', status: 'online', lastSeen: '2 min ago', unreadCount: 0, role: 'HR Lead', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face' },
-  { id: '3', name: 'Mike Johnson', status: 'busy', lastSeen: '1 hour ago', unreadCount: 1, role: 'Developer', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face' },
-  { id: '4', name: 'Emily Davis', status: 'offline', lastSeen: '3 hours ago', unreadCount: 0, role: 'Designer', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face' },
-]
+// Build initial user list from registered employees
+const buildInitialUsers = (): ChatUser[] => {
+  const statuses: ChatUser['status'][] = ['online', 'offline', 'busy']
+  return mockEmployees.map((e, i) => ({
+    id: `emp-${e.id}`,
+    name: e.name,
+    avatar: e.avatar,
+    role: e.position,
+    status: statuses[i % statuses.length],
+    lastSeen: i % 3 === 0 ? 'now' : `${(i + 1) * 5} min ago`,
+    unreadCount: i === 0 ? 2 : 0,
+  }))
+}
 
 const seedMessages = (userId: string): Message[] => [
   { id: `${userId}-1`, senderId: userId, senderName: '', content: 'Hey! How is the project coming along?', type: 'text', timestamp: '10:30 AM', status: 'read' },
@@ -95,7 +108,7 @@ export default function Chat() {
   const [filter, setFilter] = useState<'all' | 'unread' | 'archived'>('all')
   const [conversations, setConversations] = useState<Record<string, Message[]>>({})
   const [meta, setMeta] = useState<Record<string, ConvMeta>>({})
-  const [users, setUsers] = useState<ChatUser[]>(mockUsers)
+  const [users, setUsers] = useState<ChatUser[]>(() => buildInitialUsers())
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [typing, setTyping] = useState(false)
@@ -108,6 +121,7 @@ export default function Chat() {
   const [isChatSettingsOpen, setIsChatSettingsOpen] = useState(false)
   const [isStarredOpen, setIsStarredOpen] = useState(false)
   const [isNewChatOpen, setIsNewChatOpen] = useState(false)
+  const [forwardMsg, setForwardMsg] = useState<Message | null>(null)
   const [callState, setCallState] = useState<null | { type: 'voice' | 'video'; seconds: number }>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
@@ -123,8 +137,16 @@ export default function Chat() {
     try {
       const c = localStorage.getItem(STORAGE_KEY)
       const m = localStorage.getItem(META_KEY)
+      const u = localStorage.getItem(USERS_KEY)
       if (c) setConversations(JSON.parse(c))
       if (m) setMeta(JSON.parse(m))
+      if (u) {
+        const stored: ChatUser[] = JSON.parse(u)
+        // Merge: keep stored groups + added; refresh employee list from source
+        const base = buildInitialUsers()
+        const extras = stored.filter(s => !base.find(b => b.id === s.id))
+        setUsers([...base, ...extras])
+      }
     } catch {}
   }, [])
 
@@ -135,6 +157,10 @@ export default function Chat() {
   useEffect(() => {
     try { localStorage.setItem(META_KEY, JSON.stringify(meta)) } catch {}
   }, [meta])
+
+  useEffect(() => {
+    try { localStorage.setItem(USERS_KEY, JSON.stringify(users)) } catch {}
+  }, [users])
 
   // Available users (role-aware)
   const availableUsers = useMemo(() => {
@@ -403,11 +429,48 @@ export default function Chat() {
     return all
   }, [conversations, users])
 
-  const addNewContact = (name: string, role: string) => {
-    const id = `u-${Date.now()}`
-    setUsers(prev => [...prev, { id, name, role, status: 'offline', lastSeen: 'just added', unreadCount: 0 }])
+  const startConversation = (selected: ChatUser[], groupName?: string) => {
+    if (selected.length === 0) return
+    if (selected.length === 1) {
+      setSelectedUser(selected[0])
+      setIsNewChatOpen(false)
+      return
+    }
+    // Create a group
+    const id = `grp-${Date.now()}`
+    const group: ChatUser = {
+      id,
+      name: groupName?.trim() || selected.map(s => s.name.split(' ')[0]).join(', '),
+      status: 'online',
+      lastSeen: 'just now',
+      unreadCount: 0,
+      role: `Group · ${selected.length} members`,
+      isGroup: true,
+      members: selected.map(s => ({ id: s.id, name: s.name, avatar: s.avatar })),
+    }
+    setUsers(prev => [group, ...prev])
+    setSelectedUser(group)
     setIsNewChatOpen(false)
-    toast({ title: 'Contact added', description: name })
+    toast({ title: 'Group created', description: `${group.name} (${selected.length} members)` })
+  }
+
+  const handleForward = (targetIds: string[]) => {
+    if (!forwardMsg) return
+    targetIds.forEach(uid => {
+      appendMessage(uid, {
+        ...forwardMsg,
+        id: `${Date.now()}-${uid}`,
+        senderId: 'me',
+        senderName: 'You',
+        timestamp: now(),
+        status: 'sent',
+        forwarded: true,
+        replyTo: undefined,
+        starred: false,
+      })
+    })
+    toast({ title: 'Forwarded', description: `Sent to ${targetIds.length} chat${targetIds.length > 1 ? 's' : ''}` })
+    setForwardMsg(null)
   }
 
   const StatusIcon = ({ status }: { status?: Message['status'] }) => {
@@ -481,7 +544,9 @@ export default function Chat() {
                       <div className="relative">
                         <Avatar className="w-10 h-10">
                           <AvatarImage src={user.avatar} />
-                          <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          <AvatarFallback>
+                            {user.isGroup ? <Users className="w-5 h-5" /> : user.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
                         </Avatar>
                         <div className={cn('absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background', getStatusColor(user.status))} />
                       </div>
@@ -520,14 +585,18 @@ export default function Chat() {
                   <div className="relative">
                     <Avatar className="w-10 h-10">
                       <AvatarImage src={selectedUser.avatar} />
-                      <AvatarFallback>{selectedUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                      <AvatarFallback>
+                        {selectedUser.isGroup ? <Users className="w-5 h-5" /> : selectedUser.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
                     </Avatar>
                     <div className={cn('absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background', getStatusColor(selectedUser.status))} />
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-semibold truncate">{selectedUser.name}</h3>
                     <p className="text-sm text-muted-foreground truncate">
-                      {typing ? <span className="text-primary">typing…</span> : (selectedUser.status === 'online' ? 'Online' : `Last seen ${selectedUser.lastSeen}`)}
+                      {typing ? <span className="text-primary">typing…</span>
+                        : selectedUser.isGroup ? `${selectedUser.members?.length || 0} members`
+                        : (selectedUser.status === 'online' ? 'Online' : `Last seen ${selectedUser.lastSeen}`)}
                     </p>
                   </div>
                 </div>
@@ -609,6 +678,11 @@ export default function Chat() {
                           'relative max-w-xs lg:max-w-md px-3 py-2 rounded-2xl shadow-sm',
                           mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm'
                         )}>
+                          {msg.forwarded && (
+                            <div className={cn('text-xs mb-1 flex items-center gap-1 italic', mine ? 'opacity-80' : 'opacity-70')}>
+                              <Forward className="w-3 h-3" /> Forwarded
+                            </div>
+                          )}
                           {msg.replyTo && (
                             <div className={cn('text-xs mb-1 pl-2 border-l-2', mine ? 'border-primary-foreground/40 opacity-80' : 'border-primary/50 opacity-80')}>
                               <p className="font-semibold">{msg.replyTo.senderName}</p>
@@ -672,6 +746,9 @@ export default function Chat() {
                           )}>
                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setReplyTo(msg)} title="Reply">
                               <Reply className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setForwardMsg(msg)} title="Forward">
+                              <Forward className="h-3 w-3" />
                             </Button>
                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleStarMessage(msg)} title="Star">
                               <Star className={cn('h-3 w-3', msg.starred && 'fill-current text-yellow-500')} />
@@ -927,7 +1004,20 @@ export default function Chat() {
       </Dialog>
 
       {/* New Chat */}
-      <NewChatDialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen} onCreate={addNewContact} />
+      <NewChatDialog
+        open={isNewChatOpen}
+        onOpenChange={setIsNewChatOpen}
+        employees={users.filter(u => !u.isGroup)}
+        onStart={startConversation}
+      />
+
+      {/* Forward Dialog */}
+      <ForwardDialog
+        message={forwardMsg}
+        onOpenChange={(o) => !o && setForwardMsg(null)}
+        targets={users.filter(u => u.id !== selectedUser?.id)}
+        onForward={handleForward}
+      />
 
       {/* Call Overlay */}
       {callState && selectedUser && (
@@ -967,35 +1057,176 @@ export default function Chat() {
   )
 }
 
-function NewChatDialog({ open, onOpenChange, onCreate }: {
+function NewChatDialog({ open, onOpenChange, employees, onStart }: {
   open: boolean
   onOpenChange: (v: boolean) => void
-  onCreate: (name: string, role: string) => void
+  employees: ChatUser[]
+  onStart: (selected: ChatUser[], groupName?: string) => void
 }) {
-  const [name, setName] = useState('')
-  const [role, setRole] = useState('')
-  useEffect(() => { if (!open) { setName(''); setRole('') } }, [open])
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [search, setSearch] = useState('')
+  const [groupName, setGroupName] = useState('')
+
+  useEffect(() => { if (!open) { setSelectedIds([]); setSearch(''); setGroupName('') } }, [open])
+
+  const toggle = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const filtered = employees.filter(e =>
+    e.name.toLowerCase().includes(search.toLowerCase()) ||
+    (e.role || '').toLowerCase().includes(search.toLowerCase())
+  )
+  const selected = employees.filter(e => selectedIds.includes(e.id))
+  const isGroup = selectedIds.length >= 2
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>New Conversation</DialogTitle>
-          <DialogDescription>Add a contact and start chatting</DialogDescription>
+          <DialogDescription>
+            Select one employee for a direct chat, or two or more to create a group
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="cname">Name</Label>
-            <Input id="cname" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Alex Morgan" />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Search employees..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="crole">Role</Label>
-            <Input id="crole" value={role} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Marketing Lead" />
-          </div>
+
+          {selected.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {selected.map(s => (
+                <Badge key={s.id} variant="secondary" className="gap-1 pr-1">
+                  {s.name}
+                  <button onClick={() => toggle(s.id)} className="hover:bg-background/50 rounded-full p-0.5">
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {isGroup && (
+            <div className="space-y-1.5">
+              <Label htmlFor="gname">Group name (optional)</Label>
+              <Input id="gname" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Design Crew" />
+            </div>
+          )}
+
+          <ScrollArea className="h-72 border rounded-md">
+            <div className="p-1">
+              {filtered.length === 0 && (
+                <p className="text-center text-sm text-muted-foreground py-8">No employees found</p>
+              )}
+              {filtered.map(emp => {
+                const checked = selectedIds.includes(emp.id)
+                return (
+                  <div
+                    key={emp.id}
+                    onClick={() => toggle(emp.id)}
+                    className={cn(
+                      'flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors',
+                      checked ? 'bg-accent' : 'hover:bg-accent/50'
+                    )}
+                  >
+                    <Checkbox checked={checked} onCheckedChange={() => toggle(emp.id)} onClick={(e) => e.stopPropagation()} />
+                    <Avatar className="w-9 h-9">
+                      <AvatarImage src={emp.avatar} />
+                      <AvatarFallback className="text-xs">{emp.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{emp.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{emp.role || 'Team member'}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </ScrollArea>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button disabled={!name.trim()} onClick={() => onCreate(name.trim(), role.trim() || 'Team member')}>
-            Add Contact
+          <Button disabled={selectedIds.length === 0} onClick={() => onStart(selected, groupName)}>
+            {isGroup ? <><Users className="w-4 h-4 mr-2" />Create Group</> : <><MessageSquare className="w-4 h-4 mr-2" />Start Chat</>}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function ForwardDialog({ message, onOpenChange, targets, onForward }: {
+  message: Message | null
+  onOpenChange: (v: boolean) => void
+  targets: ChatUser[]
+  onForward: (targetIds: string[]) => void
+}) {
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [search, setSearch] = useState('')
+  useEffect(() => { if (!message) { setSelectedIds([]); setSearch('') } }, [message])
+  const toggle = (id: string) => setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  const filtered = targets.filter(t => t.name.toLowerCase().includes(search.toLowerCase()))
+  const preview = message
+    ? (message.type === 'text' ? message.content : `[${message.type}] ${message.fileName || ''}`)
+    : ''
+
+  return (
+    <Dialog open={!!message} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Forward Message</DialogTitle>
+          <DialogDescription>Select one or more chats to forward to</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="p-2 border rounded-md bg-muted/30 text-sm">
+            <p className="text-xs text-muted-foreground mb-1">Forwarding:</p>
+            <p className="truncate">{preview}</p>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input placeholder="Search chats..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          </div>
+          <ScrollArea className="h-64 border rounded-md">
+            <div className="p-1">
+              {filtered.length === 0 && (
+                <p className="text-center text-sm text-muted-foreground py-8">No chats</p>
+              )}
+              {filtered.map(t => {
+                const checked = selectedIds.includes(t.id)
+                return (
+                  <div
+                    key={t.id}
+                    onClick={() => toggle(t.id)}
+                    className={cn('flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors', checked ? 'bg-accent' : 'hover:bg-accent/50')}
+                  >
+                    <Checkbox checked={checked} onCheckedChange={() => toggle(t.id)} onClick={(e) => e.stopPropagation()} />
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={t.avatar} />
+                      <AvatarFallback className="text-xs">
+                        {t.isGroup ? <Users className="w-4 h-4" /> : t.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{t.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{t.role || (t.isGroup ? 'Group' : '')}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </ScrollArea>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button disabled={selectedIds.length === 0} onClick={() => onForward(selectedIds)}>
+            <Forward className="w-4 h-4 mr-2" />Forward{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
           </Button>
         </DialogFooter>
       </DialogContent>
