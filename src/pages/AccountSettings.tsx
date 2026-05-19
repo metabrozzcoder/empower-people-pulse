@@ -115,7 +115,21 @@ const AccountSettings = () => {
   const [disable2faOpen, setDisable2faOpen] = useState(false)
   const [disableCode, setDisableCode] = useState("")
 
-  // Load settings from Supabase (with localStorage fallback for offline)
+  // Sync profile state when currentUser loads/changes
+  useEffect(() => {
+    if (!currentUser) return
+    setProfile((p) => ({
+      ...p,
+      name: currentUser.name ?? p.name,
+      email: currentUser.email ?? p.email,
+      phone: currentUser.phone ?? p.phone,
+      department: currentUser.department ?? p.department,
+      role: currentUser.role ?? p.role,
+      avatar: currentUser.avatar ?? p.avatar,
+    }))
+  }, [currentUser?.id, currentUser?.name, currentUser?.email, currentUser?.phone, currentUser?.department, currentUser?.avatar, currentUser?.role])
+
+  // Load settings from Supabase
   useEffect(() => {
     if (!currentUser) return
     let cancelled = false
@@ -128,11 +142,10 @@ const AccountSettings = () => {
       if (cancelled) return
       if (data) {
         const d = data as { notifications: typeof notifications; preferences: typeof preferences; security: typeof security }
-        if (d.notifications && Object.keys(d.notifications).length) setNotifications({ ...notifications, ...d.notifications })
-        if (d.preferences && Object.keys(d.preferences).length) setPreferences({ ...preferences, ...d.preferences })
-        if (d.security && Object.keys(d.security).length) setSecurity({ ...security, ...d.security })
+        if (d.notifications && Object.keys(d.notifications).length) setNotifications((prev) => ({ ...prev, ...d.notifications }))
+        if (d.preferences && Object.keys(d.preferences).length) setPreferences((prev) => ({ ...prev, ...d.preferences }))
+        if (d.security && Object.keys(d.security).length) setSecurity((prev) => ({ ...prev, ...d.security }))
       } else {
-        // fallback: migrate any local data
         const savedNotifications = localStorage.getItem('notifications')
         const savedPreferences = localStorage.getItem('preferences')
         const savedSecurity = localStorage.getItem('security')
@@ -142,17 +155,17 @@ const AccountSettings = () => {
       }
     })()
     return () => { cancelled = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id])
 
   const upsertSettings = async (patch: Partial<{ notifications: typeof notifications; preferences: typeof preferences; security: typeof security }>) => {
-    if (!currentUser) return
-    await supabase.from('user_settings').upsert({
+    if (!currentUser) return { error: null as { message: string } | null }
+    const { error } = await supabase.from('user_settings').upsert({
       user_id: currentUser.id,
       notifications: patch.notifications ?? notifications,
       preferences: patch.preferences ?? preferences,
       security: patch.security ?? security,
     } as never, { onConflict: 'user_id' })
+    return { error }
   }
 
   const persistSecurity = (next: typeof security) => {
@@ -162,36 +175,57 @@ const AccountSettings = () => {
   }
 
   const handleProfileSave = async () => {
-    localStorage.setItem('userProfile', JSON.stringify(profile))
-    if (currentUser) {
-      await supabase.from('profiles').update({
-        name: profile.name,
-        phone: profile.phone,
-        department: profile.department,
-        avatar_url: profile.avatar,
-      } as never).eq('id', currentUser.id)
+    if (!currentUser) {
+      toast({ title: 'Not signed in', description: 'Please sign in again.', variant: 'destructive' })
+      return
     }
+    if (!profile.name.trim()) {
+      toast({ title: 'Name required', variant: 'destructive' })
+      return
+    }
+    const { error } = await supabase.from('profiles').update({
+      name: profile.name,
+      phone: profile.phone,
+      department: profile.department,
+      position: profile.role,
+      avatar_url: profile.avatar,
+    } as never).eq('id', currentUser.id)
+    if (error) {
+      toast({ title: 'Save failed', description: error.message, variant: 'destructive' })
+      return
+    }
+    localStorage.setItem('userProfile', JSON.stringify(profile))
     toast({ title: 'Profile Updated', description: 'Your profile has been successfully updated.' })
   }
 
   const handleNotificationSave = async () => {
     localStorage.setItem('notifications', JSON.stringify(notifications))
-    await upsertSettings({ notifications })
+    const { error } = await upsertSettings({ notifications })
+    if (error) { toast({ title: 'Save failed', description: error.message, variant: 'destructive' }); return }
     toast({ title: 'Notifications Updated', description: 'Your notification preferences have been saved.' })
   }
 
   const handleSecuritySave = async () => {
     localStorage.setItem('security', JSON.stringify(security))
-    await upsertSettings({ security })
+    const { error } = await upsertSettings({ security })
+    if (error) { toast({ title: 'Save failed', description: error.message, variant: 'destructive' }); return }
     toast({ title: 'Security Settings Updated', description: 'Your security settings have been updated.' })
   }
 
   const handlePreferencesSave = async () => {
     localStorage.setItem('preferences', JSON.stringify(preferences))
     document.documentElement.lang = preferences.language
-    await upsertSettings({ preferences })
+    if (['en', 'ru', 'uz'].includes(preferences.language) && i18n.language !== preferences.language) {
+      i18n.changeLanguage(preferences.language)
+      if (currentUser) {
+        await supabase.from('profiles').update({ preferred_language: preferences.language } as never).eq('id', currentUser.id)
+      }
+    }
+    const { error } = await upsertSettings({ preferences })
+    if (error) { toast({ title: 'Save failed', description: error.message, variant: 'destructive' }); return }
     toast({ title: 'Preferences Updated', description: 'Your preferences have been saved and applied.' })
   }
+
 
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
