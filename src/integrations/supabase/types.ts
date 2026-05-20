@@ -457,6 +457,48 @@ export type Database = {
         }
         Relationships: []
       }
+      reminders: {
+        Row: {
+          color: string | null
+          completed: boolean
+          created_at: string
+          date: string
+          description: string | null
+          id: string
+          time: string | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          completed?: boolean
+          created_at?: string
+          date: string
+          description?: string | null
+          id?: string
+          time?: string | null
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          completed?: boolean
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          time?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       shifts: {
         Row: {
           created_at: string
