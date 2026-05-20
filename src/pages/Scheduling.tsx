@@ -69,7 +69,7 @@ const Scheduling = () => {
     setUserId(uid)
     if (!uid) { setItems([]); setLoading(false); return }
     const { data, error } = await supabase
-      .from('reminders' as never)
+      (supabase as any).from('reminders')
       .select('*')
       .eq('user_id', uid)
       .order('date', { ascending: true })
@@ -109,11 +109,11 @@ const Scheduling = () => {
       color: typeMeta(form.type).color,
     }
     if (editing) {
-      const { error } = await supabase.from('reminders' as never).update(payload).eq('id', editing.id)
+      const { error } = await supabase(supabase as any).from('reminders').update(payload).eq('id', editing.id)
       if (error) return toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
       toast({ title: 'Updated' })
     } else {
-      const { error } = await supabase.from('reminders' as never).insert(payload)
+      const { error } = await supabase(supabase as any).from('reminders').insert(payload)
       if (error) return toast({ title: 'Create failed', description: error.message, variant: 'destructive' })
       toast({ title: 'Created' })
     }
@@ -122,14 +122,14 @@ const Scheduling = () => {
   }
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from('reminders' as never).delete().eq('id', id)
+    const { error } = await supabase(supabase as any).from('reminders').delete().eq('id', id)
     if (error) return toast({ title: 'Delete failed', description: error.message, variant: 'destructive' })
     toast({ title: 'Deleted' })
     await load()
   }
 
   const toggleDone = async (r: Reminder) => {
-    const { error } = await supabase.from('reminders' as never).update({ completed: !r.completed }).eq('id', r.id)
+    const { error } = await supabase(supabase as any).from('reminders').update({ completed: !r.completed }).eq('id', r.id)
     if (error) return toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
     await load()
   }
