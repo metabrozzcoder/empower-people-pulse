@@ -360,46 +360,61 @@ export type Database = {
       }
       profiles: {
         Row: {
+          allowed_sections: Json
           avatar_url: string | null
           created_at: string
           department: string | null
           email: string
+          guest_id: string | null
           id: string
+          linked_employee: string | null
           name: string
           organization: string | null
+          permissions: Json
           phone: string | null
           position: string | null
           preferred_language: string
+          section_access: Json
           status: string
           updated_at: string
           username: string | null
         }
         Insert: {
+          allowed_sections?: Json
           avatar_url?: string | null
           created_at?: string
           department?: string | null
           email: string
+          guest_id?: string | null
           id: string
+          linked_employee?: string | null
           name: string
           organization?: string | null
+          permissions?: Json
           phone?: string | null
           position?: string | null
           preferred_language?: string
+          section_access?: Json
           status?: string
           updated_at?: string
           username?: string | null
         }
         Update: {
+          allowed_sections?: Json
           avatar_url?: string | null
           created_at?: string
           department?: string | null
           email?: string
+          guest_id?: string | null
           id?: string
+          linked_employee?: string | null
           name?: string
           organization?: string | null
+          permissions?: Json
           phone?: string | null
           position?: string | null
           preferred_language?: string
+          section_access?: Json
           status?: string
           updated_at?: string
           username?: string | null

@@ -53,7 +53,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const roleMap = new Map<string, string>()
     ;(roles ?? []).forEach((r) => {
       const cur = roleMap.get(r.user_id)
-      // pick highest
       const rank = (x: string) => (x === 'admin' ? 3 : x === 'hr' ? 2 : 1)
       if (!cur || rank(r.role) > rank(cur)) roleMap.set(r.user_id, r.role)
     })
@@ -68,9 +67,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       status: (p.status as User['status']) ?? 'Active',
       department: p.department ?? undefined,
       organization: p.organization ?? undefined,
+      linkedEmployee: p.linked_employee ?? undefined,
       lastLogin: '—',
       createdDate: p.created_at?.split('T')[0] ?? '',
-      permissions: [],
+      permissions: Array.isArray(p.permissions) ? p.permissions : [],
+      allowedSections: Array.isArray(p.allowed_sections) ? p.allowed_sections : [],
+      sectionAccess: Array.isArray(p.section_access) ? p.section_access : [],
+      guestId: p.guest_id ?? undefined,
       username: p.username ?? p.email ?? '',
       password: '',
     }))
@@ -99,11 +102,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     })
     if (error) throw error
     if (data && (data as { error?: string }).error) throw new Error((data as { error: string }).error)
+    const newId = (data as { user?: { id?: string } } | null)?.user?.id
+    if (newId) {
+      await supabase.from('profiles').update({
+        permissions: (user.permissions ?? []) as never,
+        allowed_sections: (user.allowedSections ?? []) as never,
+        section_access: (user.sectionAccess ?? []) as never,
+        guest_id: user.guestId ?? null,
+        linked_employee: user.linkedEmployee ?? null,
+        organization: user.organization ?? null,
+      } as never).eq('id', newId)
+    }
     await refresh()
   }
 
   const updateUser = async (id: string, updates: Partial<User>) => {
-    const patch: Record<string, string | undefined> = {}
+    const patch: Record<string, unknown> = {}
     if (updates.name !== undefined) patch.name = updates.name
     if (updates.phone !== undefined) patch.phone = updates.phone
     if (updates.avatar !== undefined) patch.avatar_url = updates.avatar
@@ -111,8 +125,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (updates.department !== undefined) patch.department = updates.department
     if (updates.organization !== undefined) patch.organization = updates.organization
     if (updates.status !== undefined) patch.status = updates.status
+    if (updates.permissions !== undefined) patch.permissions = updates.permissions
+    if (updates.allowedSections !== undefined) patch.allowed_sections = updates.allowedSections
+    if (updates.sectionAccess !== undefined) patch.section_access = updates.sectionAccess
+    if (updates.guestId !== undefined) patch.guest_id = updates.guestId
+    if (updates.linkedEmployee !== undefined) patch.linked_employee = updates.linkedEmployee
     if (Object.keys(patch).length) {
       await supabase.from('profiles').update(patch as never).eq('id', id)
+    }
+    if (updates.role !== undefined) {
+      const newRole = updates.role === 'Admin' ? 'admin' : updates.role === 'HR' ? 'hr' : 'guest'
+      await supabase.from('user_roles').delete().eq('user_id', id)
+      await supabase.from('user_roles').insert({ user_id: id, role: newRole as 'admin' | 'hr' | 'guest' })
     }
     await refresh()
   }
