@@ -68,8 +68,8 @@ const Scheduling = () => {
     const uid = auth.user?.id ?? null
     setUserId(uid)
     if (!uid) { setItems([]); setLoading(false); return }
-    const { data, error } = await supabase
-      (supabase as any).from('reminders')
+    const { data, error } = await (supabase as any)
+      .from('reminders')
       .select('*')
       .eq('user_id', uid)
       .order('date', { ascending: true })
