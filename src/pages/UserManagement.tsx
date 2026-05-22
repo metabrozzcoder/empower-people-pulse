@@ -138,6 +138,22 @@ export default function UserManagement() {
   const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(true)
+  const [orgOptions, setOrgOptions] = useState<string[]>([])
+  const [deptOptions, setDeptOptions] = useState<string[]>([])
+  const [employeeOptions, setEmployeeOptions] = useState<string[]>([])
+
+  useEffect(() => {
+    (async () => {
+      const [{ data: orgs }, { data: depts }, { data: emps }] = await Promise.all([
+        supabase.from('organizations').select('name').order('name'),
+        supabase.from('departments').select('name').order('name'),
+        supabase.from('employees').select('name').order('name'),
+      ])
+      setOrgOptions((orgs ?? []).map((o: { name: string }) => o.name))
+      setDeptOptions(Array.from(new Set((depts ?? []).map((d: { name: string }) => d.name))))
+      setEmployeeOptions((emps ?? []).map((e: { name: string }) => e.name))
+    })()
+  }, [isDialogOpen])
 
   const copyToClipboard = (value: string, field: string) => {
     if (!value) return
