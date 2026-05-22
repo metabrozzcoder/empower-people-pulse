@@ -862,8 +862,11 @@ export default function UserManagement() {
                       <SelectValue placeholder="Select organization" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="MediaTech Solutions">MediaTech Solutions</SelectItem>
-                      <SelectItem value="Creative Studios">Creative Studios</SelectItem>
+                      {orgOptions.length === 0 ? (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No organizations yet</div>
+                      ) : orgOptions.map(o => (
+                        <SelectItem key={o} value={o}>{o}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
