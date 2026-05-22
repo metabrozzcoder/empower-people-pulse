@@ -170,7 +170,30 @@ export const ru: Record<string, string> = {
   "Type a message": "Введите сообщение", "Send": "Отправить", "Reply": "Ответить",
   "Online": "В сети", "Offline": "Не в сети", "Away": "Отошёл", "Busy": "Занят",
   "Today": "Сегодня", "Week": "Неделя", "Month": "Месяц", "Year": "Год",
+
+  // Documentation page
+  "My Submissions": "Мои заявки", "Approval Inbox": "Входящие на согласование",
+  "Drafts": "Черновики", "Pending Review": "Ожидают проверки",
+  "New Document Request": "Новый запрос документа", "Edit Document Request": "Изменить запрос документа",
+  "Upload a supporting document and assign a receiver for approval.": "Загрузите подтверждающий документ и назначьте получателя для согласования.",
+  "No documents in this view.": "Нет документов в этом разделе.",
+  "Create one": "Создать", "Loading documents…": "Загрузка документов…",
+  "Search documents…": "Поиск документов…", "Receiver:": "Получатель:",
+  "Reassign receiver:": "Переназначить получателя:", "Save Draft": "Сохранить черновик",
+  "Submit for Approval": "Отправить на согласование", "Assign to (Receiver) *": "Назначить (Получатель) *",
+  "Loading approvers…": "Загрузка согласующих…",
+  "No admin or HR users found. Ask an admin to assign roles.": "Не найдено администраторов или HR пользователей. Попросите администратора назначить роли.",
+  "Select an approver": "Выберите согласующего", "Select": "Выбрать",
+  "Provide context for the approver…": "Опишите контекст для согласующего…",
+  "Leave a note for the submitter…": "Оставьте заметку отправителю…",
+  "Reviewer comment": "Комментарий проверяющего", "Review comment (optional)": "Комментарий (необязательно)",
+  "Reject": "Отклонить", "Approve": "Одобрить", "Attachment": "Вложение",
+  "Replace file": "Заменить файл", "Upload file": "Загрузить файл",
+  "1 file": "1 файл", "View": "Просмотр", "Download": "Скачать",
+  "Document approved": "Документ одобрен", "Document rejected": "Документ отклонён",
+  "Urgent": "Срочно", "Normal": "Обычный",
 }
+
 
 export const uz: Record<string, string> = {
   "Active": "Faol", "Inactive": "Nofaol", "All": "Hammasi", "All Status": "Barcha holatlar", "All Statuses": "Barcha holatlar",
