@@ -13,6 +13,11 @@ import { Calendar as CalIcon, Clock, Plus, Trash2, Edit, ChevronLeft, ChevronRig
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { cn } from '@/lib/utils'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { format } from 'date-fns'
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
 interface Reminder {
   id: string
