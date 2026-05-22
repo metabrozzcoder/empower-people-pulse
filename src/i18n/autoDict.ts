@@ -184,14 +184,13 @@ export const ru: Record<string, string> = {
   "Loading approvers…": "Загрузка согласующих…",
   "No admin or HR users found. Ask an admin to assign roles.": "Не найдено администраторов или HR пользователей. Попросите администратора назначить роли.",
   "Select an approver": "Выберите согласующего", "Select": "Выбрать",
-  "Provide context for the approver…": "Опишите контекст для согласующего…",
-  "Leave a note for the submitter…": "Оставьте заметку отправителю…",
   "Reviewer comment": "Комментарий проверяющего", "Review comment (optional)": "Комментарий (необязательно)",
   "Reject": "Отклонить", "Approve": "Одобрить", "Attachment": "Вложение",
   "Replace file": "Заменить файл", "Upload file": "Загрузить файл",
-  "1 file": "1 файл", "View": "Просмотр", "Download": "Скачать",
+  "1 file": "1 файл",
   "Document approved": "Документ одобрен", "Document rejected": "Документ отклонён",
   "Urgent": "Срочно", "Normal": "Обычный",
+
 }
 
 
