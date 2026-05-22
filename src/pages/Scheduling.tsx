@@ -376,7 +376,26 @@ const Scheduling = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Date</Label>
-                <Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !form.date && 'text-muted-foreground')}>
+                      <CalIcon className="mr-2 h-4 w-4" />
+                      {form.date ? format(new Date(form.date + 'T00:00:00'), 'PPP') : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form.date ? new Date(form.date + 'T00:00:00') : undefined}
+                      onSelect={(d) => d && setForm({ ...form, date: toDateStr(d) })}
+                      captionLayout="dropdown-buttons"
+                      fromYear={new Date().getFullYear() - 5}
+                      toYear={new Date().getFullYear() + 10}
+                      defaultMonth={form.date ? new Date(form.date + 'T00:00:00') : new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <Label>Time (optional)</Label>
