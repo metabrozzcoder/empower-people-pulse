@@ -52,17 +52,24 @@ export function AutoTranslate() {
       if (parent.closest('[data-no-translate]')) return
       const raw = node.nodeValue
       if (!raw) return
-      const holder = node as Text & { __i18nOrig?: string }
-      const original = holder.__i18nOrig ?? raw.trim()
-      holder.__i18nOrig = original
+      const holder = node as Text & { __i18nOrig?: string; __i18nOut?: string }
+      const trimmed = raw.trim()
+      // If React replaced the text (current value matches neither last original nor last output),
+      // treat the new value as the new original so dynamic strings (dates, counts) re-translate correctly.
+      if (holder.__i18nOrig === undefined || (trimmed !== holder.__i18nOrig && trimmed !== holder.__i18nOut)) {
+        holder.__i18nOrig = trimmed
+      }
+      const original = holder.__i18nOrig
 
       if (!dict) {
-        if (raw.trim() !== original) node.nodeValue = raw.replace(raw.trim(), original)
+        holder.__i18nOut = original
+        if (trimmed !== original) node.nodeValue = raw.replace(trimmed, original)
         return
       }
       const target = dict.get(original) ?? original
-      if (target === raw.trim()) return
-      const next = raw.replace(raw.trim(), target)
+      holder.__i18nOut = target
+      if (target === trimmed) return
+      const next = raw.replace(trimmed, target)
       if (next !== raw) node.nodeValue = next
     }
 
