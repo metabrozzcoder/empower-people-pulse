@@ -170,7 +170,29 @@ export const ru: Record<string, string> = {
   "Type a message": "Введите сообщение", "Send": "Отправить", "Reply": "Ответить",
   "Online": "В сети", "Offline": "Не в сети", "Away": "Отошёл", "Busy": "Занят",
   "Today": "Сегодня", "Week": "Неделя", "Month": "Месяц", "Year": "Год",
+
+  // Documentation page
+  "My Submissions": "Мои заявки", "Approval Inbox": "Входящие на согласование",
+  "Drafts": "Черновики", "Pending Review": "Ожидают проверки",
+  "New Document Request": "Новый запрос документа", "Edit Document Request": "Изменить запрос документа",
+  "Upload a supporting document and assign a receiver for approval.": "Загрузите подтверждающий документ и назначьте получателя для согласования.",
+  "No documents in this view.": "Нет документов в этом разделе.",
+  "Create one": "Создать", "Loading documents…": "Загрузка документов…",
+  "Receiver:": "Получатель:",
+  "Reassign receiver:": "Переназначить получателя:", "Save Draft": "Сохранить черновик",
+  "Submit for Approval": "Отправить на согласование", "Assign to (Receiver) *": "Назначить (Получатель) *",
+  "Loading approvers…": "Загрузка согласующих…",
+  "No admin or HR users found. Ask an admin to assign roles.": "Не найдено администраторов или HR пользователей. Попросите администратора назначить роли.",
+  "Select an approver": "Выберите согласующего", "Select": "Выбрать",
+  "Reviewer comment": "Комментарий проверяющего", "Review comment (optional)": "Комментарий (необязательно)",
+  "Reject": "Отклонить", "Approve": "Одобрить", "Attachment": "Вложение",
+  "Replace file": "Заменить файл", "Upload file": "Загрузить файл",
+  "1 file": "1 файл",
+  "Document approved": "Документ одобрен", "Document rejected": "Документ отклонён",
+  "Urgent": "Срочно", "Normal": "Обычный",
+
 }
+
 
 export const uz: Record<string, string> = {
   "Active": "Faol", "Inactive": "Nofaol", "All": "Hammasi", "All Status": "Barcha holatlar", "All Statuses": "Barcha holatlar",
@@ -335,7 +357,28 @@ export const uz: Record<string, string> = {
   "Type a message": "Xabar yozing", "Send": "Yuborish", "Reply": "Javob",
   "Online": "Onlayn", "Offline": "Oflayn", "Away": "Yo'q", "Busy": "Band",
   "Today": "Bugun", "Week": "Hafta", "Month": "Oy", "Year": "Yil",
+
+  // Documentation page
+  "My Submissions": "Mening yuborganlarim", "Approval Inbox": "Tasdiqlash uchun kelganlar",
+  "Drafts": "Qoralamalar", "Pending Review": "Ko'rib chiqilmoqda",
+  "New Document Request": "Yangi hujjat so'rovi", "Edit Document Request": "Hujjat so'rovini tahrirlash",
+  "Upload a supporting document and assign a receiver for approval.": "Tasdiqlovchi hujjatni yuklang va tasdiqlash uchun qabul qiluvchini tayinlang.",
+  "No documents in this view.": "Bu bo'limda hujjatlar yo'q.",
+  "Create one": "Yaratish", "Loading documents…": "Hujjatlar yuklanmoqda…",
+  "Receiver:": "Qabul qiluvchi:",
+  "Reassign receiver:": "Qabul qiluvchini almashtirish:", "Save Draft": "Qoralamani saqlash",
+  "Submit for Approval": "Tasdiqlash uchun yuborish", "Assign to (Receiver) *": "Tayinlash (Qabul qiluvchi) *",
+  "Loading approvers…": "Tasdiqlovchilar yuklanmoqda…",
+  "No admin or HR users found. Ask an admin to assign roles.": "Admin yoki HR foydalanuvchilar topilmadi. Administratordan rol berishni so'rang.",
+  "Select an approver": "Tasdiqlovchini tanlang", "Select": "Tanlash",
+  "Reviewer comment": "Ko'rib chiquvchi izohi", "Review comment (optional)": "Izoh (ixtiyoriy)",
+  "Reject": "Rad etish", "Approve": "Tasdiqlash", "Attachment": "Ilova",
+  "Replace file": "Faylni almashtirish", "Upload file": "Fayl yuklash",
+  "1 file": "1 ta fayl",
+  "Document approved": "Hujjat tasdiqlandi", "Document rejected": "Hujjat rad etildi",
+  "Urgent": "Shoshilinch", "Normal": "Oddiy",
 }
+
 
 export function getDict(lang: string): Record<string, string> | null {
   if (lang === 'ru') return ru
