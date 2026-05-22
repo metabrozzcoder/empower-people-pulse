@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { supabase } from '@/integrations/supabase/client'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -137,6 +138,22 @@ export default function UserManagement() {
   const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(true)
+  const [orgOptions, setOrgOptions] = useState<string[]>([])
+  const [deptOptions, setDeptOptions] = useState<string[]>([])
+  const [employeeOptions, setEmployeeOptions] = useState<string[]>([])
+
+  useEffect(() => {
+    (async () => {
+      const [{ data: orgs }, { data: depts }, { data: emps }] = await Promise.all([
+        supabase.from('organizations').select('name').order('name'),
+        supabase.from('departments').select('name').order('name'),
+        supabase.from('employees').select('name').order('name'),
+      ])
+      setOrgOptions((orgs ?? []).map((o: { name: string }) => o.name))
+      setDeptOptions(Array.from(new Set((depts ?? []).map((d: { name: string }) => d.name))))
+      setEmployeeOptions((emps ?? []).map((e: { name: string }) => e.name))
+    })()
+  }, [isDialogOpen])
 
   const copyToClipboard = (value: string, field: string) => {
     if (!value) return
@@ -845,8 +862,11 @@ export default function UserManagement() {
                       <SelectValue placeholder="Select organization" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="MediaTech Solutions">MediaTech Solutions</SelectItem>
-                      <SelectItem value="Creative Studios">Creative Studios</SelectItem>
+                      {orgOptions.length === 0 ? (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No organizations yet</div>
+                      ) : orgOptions.map(o => (
+                        <SelectItem key={o} value={o}>{o}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -860,10 +880,11 @@ export default function UserManagement() {
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Engineering">Engineering</SelectItem>
-                      <SelectItem value="Design">Design</SelectItem>
-                      <SelectItem value="HR">HR</SelectItem>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
+                      {deptOptions.length === 0 ? (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No departments yet</div>
+                      ) : deptOptions.map(d => (
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -879,10 +900,11 @@ export default function UserManagement() {
                         <SelectValue placeholder="Select linked employee" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
-                        <SelectItem value="John Smith">John Smith</SelectItem>
-                        <SelectItem value="Emily Davis">Emily Davis</SelectItem>
-                        <SelectItem value="Michael Johnson">Michael Johnson</SelectItem>
+                        {employeeOptions.length === 0 ? (
+                          <div className="px-2 py-1.5 text-sm text-muted-foreground">No employees yet</div>
+                        ) : employeeOptions.map(e => (
+                          <SelectItem key={e} value={e}>{e}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
