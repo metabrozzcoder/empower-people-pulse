@@ -880,10 +880,11 @@ export default function UserManagement() {
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Engineering">Engineering</SelectItem>
-                      <SelectItem value="Design">Design</SelectItem>
-                      <SelectItem value="HR">HR</SelectItem>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
+                      {deptOptions.length === 0 ? (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No departments yet</div>
+                      ) : deptOptions.map(d => (
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
