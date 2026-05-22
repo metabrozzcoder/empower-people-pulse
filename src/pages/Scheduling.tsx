@@ -86,8 +86,7 @@ const Scheduling = () => {
   }
 
   // ---- Notifications ----
-  const timersRef = (Scheduling as any)._timersRef ?? { current: [] as number[] }
-  ;(Scheduling as any)._timersRef = timersRef
+  const timersRef = useRef<number[]>([])
 
   const notify = (r: Reminder) => {
     toast({ title: `🔔 ${r.title}`, description: r.description ?? (r.time ? `Scheduled for ${r.time}` : 'Reminder') })
