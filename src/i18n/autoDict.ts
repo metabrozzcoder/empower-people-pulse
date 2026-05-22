@@ -357,7 +357,28 @@ export const uz: Record<string, string> = {
   "Type a message": "Xabar yozing", "Send": "Yuborish", "Reply": "Javob",
   "Online": "Onlayn", "Offline": "Oflayn", "Away": "Yo'q", "Busy": "Band",
   "Today": "Bugun", "Week": "Hafta", "Month": "Oy", "Year": "Yil",
+
+  // Documentation page
+  "My Submissions": "Mening yuborganlarim", "Approval Inbox": "Tasdiqlash uchun kelganlar",
+  "Drafts": "Qoralamalar", "Pending Review": "Ko'rib chiqilmoqda",
+  "New Document Request": "Yangi hujjat so'rovi", "Edit Document Request": "Hujjat so'rovini tahrirlash",
+  "Upload a supporting document and assign a receiver for approval.": "Tasdiqlovchi hujjatni yuklang va tasdiqlash uchun qabul qiluvchini tayinlang.",
+  "No documents in this view.": "Bu bo'limda hujjatlar yo'q.",
+  "Create one": "Yaratish", "Loading documents…": "Hujjatlar yuklanmoqda…",
+  "Receiver:": "Qabul qiluvchi:",
+  "Reassign receiver:": "Qabul qiluvchini almashtirish:", "Save Draft": "Qoralamani saqlash",
+  "Submit for Approval": "Tasdiqlash uchun yuborish", "Assign to (Receiver) *": "Tayinlash (Qabul qiluvchi) *",
+  "Loading approvers…": "Tasdiqlovchilar yuklanmoqda…",
+  "No admin or HR users found. Ask an admin to assign roles.": "Admin yoki HR foydalanuvchilar topilmadi. Administratordan rol berishni so'rang.",
+  "Select an approver": "Tasdiqlovchini tanlang", "Select": "Tanlash",
+  "Reviewer comment": "Ko'rib chiquvchi izohi", "Review comment (optional)": "Izoh (ixtiyoriy)",
+  "Reject": "Rad etish", "Approve": "Tasdiqlash", "Attachment": "Ilova",
+  "Replace file": "Faylni almashtirish", "Upload file": "Fayl yuklash",
+  "1 file": "1 ta fayl",
+  "Document approved": "Hujjat tasdiqlandi", "Document rejected": "Hujjat rad etildi",
+  "Urgent": "Shoshilinch", "Normal": "Oddiy",
 }
+
 
 export function getDict(lang: string): Record<string, string> | null {
   if (lang === 'ru') return ru
