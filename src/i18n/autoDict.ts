@@ -178,7 +178,7 @@ export const ru: Record<string, string> = {
   "Upload a supporting document and assign a receiver for approval.": "Загрузите подтверждающий документ и назначьте получателя для согласования.",
   "No documents in this view.": "Нет документов в этом разделе.",
   "Create one": "Создать", "Loading documents…": "Загрузка документов…",
-  "Search documents…": "Поиск документов…", "Receiver:": "Получатель:",
+  "Receiver:": "Получатель:",
   "Reassign receiver:": "Переназначить получателя:", "Save Draft": "Сохранить черновик",
   "Submit for Approval": "Отправить на согласование", "Assign to (Receiver) *": "Назначить (Получатель) *",
   "Loading approvers…": "Загрузка согласующих…",
