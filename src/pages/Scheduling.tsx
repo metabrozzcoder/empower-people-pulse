@@ -79,10 +79,44 @@ const Scheduling = () => {
       .eq('user_id', uid)
       .order('date', { ascending: true })
     if (error) toast({ title: 'Load failed', description: error.message, variant: 'destructive' })
-    setItems(((data as unknown) as Reminder[]) ?? [])
+    const list = ((data as unknown) as Reminder[]) ?? []
+    setItems(list)
     setLoading(false)
+    scheduleNotifications(list)
   }
-  useEffect(() => { load() }, [])
+
+  // ---- Notifications ----
+  const timersRef = (Scheduling as any)._timersRef ?? { current: [] as number[] }
+  ;(Scheduling as any)._timersRef = timersRef
+
+  const notify = (r: Reminder) => {
+    toast({ title: `🔔 ${r.title}`, description: r.description ?? (r.time ? `Scheduled for ${r.time}` : 'Reminder') })
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try { new Notification(r.title, { body: r.description ?? (r.time ?? ''), tag: r.id }) } catch { /* ignore */ }
+    }
+  }
+
+  const scheduleNotifications = (list: Reminder[]) => {
+    timersRef.current.forEach((id) => clearTimeout(id))
+    timersRef.current = []
+    if (typeof window === 'undefined') return
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {})
+    }
+    const now = Date.now()
+    const horizon = now + 24 * 60 * 60 * 1000
+    list.forEach((r) => {
+      if (r.completed) return
+      const when = new Date(`${r.date}T${(r.time && r.time.length ? r.time : '09:00')}:00`).getTime()
+      if (isNaN(when)) return
+      if (when > now && when <= horizon) {
+        const tid = window.setTimeout(() => notify(r), when - now)
+        timersRef.current.push(tid)
+      }
+    })
+  }
+
+  useEffect(() => { load(); return () => { timersRef.current.forEach((id: number) => clearTimeout(id)) } }, [])
 
   const openCreate = (dateStr?: string) => {
     setEditing(null)
