@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,11 @@ import { Calendar as CalIcon, Clock, Plus, Trash2, Edit, ChevronLeft, ChevronRig
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { cn } from '@/lib/utils'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { format } from 'date-fns'
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
 interface Reminder {
   id: string
@@ -74,10 +79,43 @@ const Scheduling = () => {
       .eq('user_id', uid)
       .order('date', { ascending: true })
     if (error) toast({ title: 'Load failed', description: error.message, variant: 'destructive' })
-    setItems(((data as unknown) as Reminder[]) ?? [])
+    const list = ((data as unknown) as Reminder[]) ?? []
+    setItems(list)
     setLoading(false)
+    scheduleNotifications(list)
   }
-  useEffect(() => { load() }, [])
+
+  // ---- Notifications ----
+  const timersRef = useRef<number[]>([])
+
+  const notify = (r: Reminder) => {
+    toast({ title: `🔔 ${r.title}`, description: r.description ?? (r.time ? `Scheduled for ${r.time}` : 'Reminder') })
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try { new Notification(r.title, { body: r.description ?? (r.time ?? ''), tag: r.id }) } catch { /* ignore */ }
+    }
+  }
+
+  const scheduleNotifications = (list: Reminder[]) => {
+    timersRef.current.forEach((id) => clearTimeout(id))
+    timersRef.current = []
+    if (typeof window === 'undefined') return
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {})
+    }
+    const now = Date.now()
+    const horizon = now + 24 * 60 * 60 * 1000
+    list.forEach((r) => {
+      if (r.completed) return
+      const when = new Date(`${r.date}T${(r.time && r.time.length ? r.time : '09:00')}:00`).getTime()
+      if (isNaN(when)) return
+      if (when > now && when <= horizon) {
+        const tid = window.setTimeout(() => notify(r), when - now)
+        timersRef.current.push(tid)
+      }
+    })
+  }
+
+  useEffect(() => { load(); return () => { timersRef.current.forEach((id: number) => clearTimeout(id)) } }, [])
 
   const openCreate = (dateStr?: string) => {
     setEditing(null)
@@ -202,9 +240,23 @@ const Scheduling = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 flex-wrap gap-2">
             <CardTitle className="capitalize">{monthLabel}</CardTitle>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
+              <Select value={String(cursor.getMonth())} onValueChange={(v) => setCursor(new Date(cursor.getFullYear(), Number(v), 1))}>
+                <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((m, i) => <SelectItem key={m} value={String(i)}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={String(cursor.getFullYear())} onValueChange={(v) => setCursor(new Date(Number(v), cursor.getMonth(), 1))}>
+                <SelectTrigger className="h-8 w-24"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 21 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button variant="ghost" size="icon" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
@@ -323,7 +375,26 @@ const Scheduling = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Date</Label>
-                <Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !form.date && 'text-muted-foreground')}>
+                      <CalIcon className="mr-2 h-4 w-4" />
+                      {form.date ? format(new Date(form.date + 'T00:00:00'), 'PPP') : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form.date ? new Date(form.date + 'T00:00:00') : undefined}
+                      onSelect={(d) => d && setForm({ ...form, date: toDateStr(d) })}
+                      captionLayout="dropdown-buttons"
+                      fromYear={new Date().getFullYear() - 5}
+                      toYear={new Date().getFullYear() + 10}
+                      defaultMonth={form.date ? new Date(form.date + 'T00:00:00') : new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <Label>Time (optional)</Label>
