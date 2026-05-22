@@ -900,10 +900,11 @@ export default function UserManagement() {
                         <SelectValue placeholder="Select linked employee" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
-                        <SelectItem value="John Smith">John Smith</SelectItem>
-                        <SelectItem value="Emily Davis">Emily Davis</SelectItem>
-                        <SelectItem value="Michael Johnson">Michael Johnson</SelectItem>
+                        {employeeOptions.length === 0 ? (
+                          <div className="px-2 py-1.5 text-sm text-muted-foreground">No employees yet</div>
+                        ) : employeeOptions.map(e => (
+                          <SelectItem key={e} value={e}>{e}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
