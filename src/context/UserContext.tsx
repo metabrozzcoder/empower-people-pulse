@@ -42,6 +42,7 @@ function capitalize(role: string): 'Admin' | 'HR' | 'Guest' {
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
+  const { session } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
 
