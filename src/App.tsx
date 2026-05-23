@@ -60,6 +60,7 @@ function AppContent() {
             <div className="flex h-14 items-center px-4 lg:px-6 gap-2">
               <SidebarTrigger className="mr-2" />
               <div className="flex-1" />
+              <NotificationBell />
               <LanguageSwitcher />
               <Button
                 variant="outline"
