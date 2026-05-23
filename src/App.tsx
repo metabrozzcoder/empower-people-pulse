@@ -118,8 +118,8 @@ function AppContent() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <UserProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <UserProvider>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -134,8 +134,8 @@ const App = () => (
             </HashRouter>
           </TooltipProvider>
         </ThemeProvider>
-      </AuthProvider>
-    </UserProvider>
+      </UserProvider>
+    </AuthProvider>
   </QueryClientProvider>
 )
 
