@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
     await admin.from("user_roles").delete().eq("user_id", uid);
     await admin.from("user_roles").insert({ user_id: uid, role: validRole });
 
-    return new Response(JSON.stringify({ id: uid, email, name, role: validRole }), {
+    return new Response(JSON.stringify({ user: { id: uid }, id: uid, email, name, role: validRole }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
