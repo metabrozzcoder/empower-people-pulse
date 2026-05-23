@@ -84,8 +84,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    if (session) refresh()
+    else { setUsers([]); setLoading(false) }
+  }, [session, refresh])
 
   const addUser = async (user: Omit<User, 'id' | 'createdDate' | 'lastLogin'>) => {
     const role = user.role === 'Admin' ? 'admin' : user.role === 'HR' ? 'hr' : 'guest'
