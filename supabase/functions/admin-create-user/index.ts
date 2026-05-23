@@ -37,17 +37,38 @@ Deno.serve(async (req) => {
     const allowedRoles = ["admin", "hr", "guest", "shooting_moderator", "director", "tech_supply", "driver"];
     const validRole = allowedRoles.includes(role) ? role : "guest";
 
+    let uid: string | null = null;
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
       user_metadata: { name, username },
     });
-    if (createErr || !created.user) {
-      return new Response(JSON.stringify({ error: createErr?.message ?? "Failed to create user" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (createErr || !created?.user) {
+      const msg = createErr?.message ?? "";
+      const alreadyExists = /already|registered|exists/i.test(msg);
+      if (alreadyExists) {
+        // Find existing user by email and reuse
+        let page = 1;
+        while (page <= 20 && !uid) {
+          const { data: list, error: listErr } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+          if (listErr) break;
+          const match = list.users.find((u) => (u.email ?? "").toLowerCase() === String(email).toLowerCase());
+          if (match) { uid = match.id; break; }
+          if (list.users.length < 200) break;
+          page++;
+        }
+        if (!uid) {
+          return new Response(JSON.stringify({ error: "Email already registered but user not found" }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        // Update password to the provided one
+        await admin.auth.admin.updateUserById(uid, { password, user_metadata: { name, username } });
+      } else {
+        return new Response(JSON.stringify({ error: msg || "Failed to create user" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    } else {
+      uid = created.user.id;
     }
-
-    const uid = created.user.id;
     // Update profile (trigger created it with defaults)
     await admin.from("profiles").update({ name, phone, department, position, username }).eq("id", uid);
     // Replace default 'guest' role with chosen role
