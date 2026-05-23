@@ -154,9 +154,9 @@ export default function ShootingRequests() {
         if (r.driver_id) ids.add(r.driver_id)
       })
       if (ids.size > 0) {
-        const { data: ps } = await supabase.from('profiles').select('id,name,email').in('id', Array.from(ids))
+        const { data: ps } = await supabase.from('profiles_public' as never).select('id,name').in('id', Array.from(ids))
         const map: Record<string, { name: string; email: string }> = {}
-        ;(ps ?? []).forEach((p) => { map[p.id] = { name: p.name, email: p.email } })
+        ;(ps ?? []).forEach((p: any) => { map[p.id] = { name: p.name, email: '' } })
         setProfiles((prev) => ({ ...prev, ...map }))
       }
     }
