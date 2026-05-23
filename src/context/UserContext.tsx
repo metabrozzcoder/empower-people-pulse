@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/context/AuthContext'
 
 export interface User {
   id: string
@@ -41,6 +42,7 @@ function capitalize(role: string): 'Admin' | 'HR' | 'Guest' {
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
+  const { session } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -82,8 +84,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    if (session) refresh()
+    else { setUsers([]); setLoading(false) }
+  }, [session, refresh])
 
   const addUser = async (user: Omit<User, 'id' | 'createdDate' | 'lastLogin'>) => {
     const role = user.role === 'Admin' ? 'admin' : user.role === 'HR' ? 'hr' : 'guest'
