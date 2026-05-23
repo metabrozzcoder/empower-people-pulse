@@ -12,6 +12,7 @@ import { UserProvider } from "@/context/UserContext"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { AutoTranslate } from "@/components/AutoTranslate"
+import { NotificationBell } from "@/components/NotificationBell"
 import { useTranslation } from "react-i18next"
 import Index from "./pages/Index"
 import Employees from "./pages/Employees"
@@ -59,6 +60,7 @@ function AppContent() {
             <div className="flex h-14 items-center px-4 lg:px-6 gap-2">
               <SidebarTrigger className="mr-2" />
               <div className="flex-1" />
+              <NotificationBell />
               <LanguageSwitcher />
               <Button
                 variant="outline"
