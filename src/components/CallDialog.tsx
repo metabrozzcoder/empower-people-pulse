@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
+import { cn } from '@/lib/utils'
+
 import { useToast } from '@/hooks/use-toast'
 
 type Mode = 'audio' | 'video'
