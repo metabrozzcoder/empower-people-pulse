@@ -215,7 +215,7 @@ export default function Chat() {
     toast({ title: 'Group created', description: groupName })
     setGroupName(''); setGroupMembers(new Set()); setNewGroupOpen(false)
     await refreshGroups()
-    setListTab('groups'); setSelectedUser(null); setSelectedGroupId(conv.id)
+    setTimeout(() => { setListTab('groups'); setSelectedUser(null); setSelectedGroupId(conv.id) }, 50)
   }
 
 
