@@ -30,7 +30,6 @@ import Organizations from "./pages/Organizations"
 import Departments from "./pages/Departments"
 import Chat from "./pages/Chat"
 import UserManagement from "./pages/UserManagement"
-import RoleManagement from "./pages/RoleManagement"
 import AccessControl from "./pages/AccessControl"
 import SecuritySystem from "./pages/SecuritySystem"
 import DeviceDetail from "./pages/security/DeviceDetail"
@@ -97,7 +96,6 @@ function AppContent() {
               <Route path="/chat" element={<ProtectedRoute sectionName="Chat"><Chat /></ProtectedRoute>} />
               <Route path="/user-management" element={<ProtectedRoute sectionName="User Management" allowedRoles={['Admin']}><UserManagement /></ProtectedRoute>} />
               <Route path="/access-control" element={<ProtectedRoute sectionName="Access Control" allowedRoles={['Admin']}><AccessControl /></ProtectedRoute>} />
-              <Route path="/role-management" element={<ProtectedRoute sectionName="Role Management" allowedRoles={['Admin']}><RoleManagement /></ProtectedRoute>} />
               <Route path="/garage" element={<ProtectedRoute sectionName="Garage"><Garage /></ProtectedRoute>} />
               
               
