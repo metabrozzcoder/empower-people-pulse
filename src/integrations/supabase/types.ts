@@ -162,6 +162,42 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_roles: {
+        Row: {
+          allowed_sections: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          permissions: Json
+          updated_at: string
+          workflow_slot: string | null
+        }
+        Insert: {
+          allowed_sections?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          permissions?: Json
+          updated_at?: string
+          workflow_slot?: string | null
+        }
+        Update: {
+          allowed_sections?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          permissions?: Json
+          updated_at?: string
+          workflow_slot?: string | null
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           budget: number | null
@@ -853,6 +889,32 @@ export type Database = {
           },
         ]
       }
+      user_custom_roles: {
+        Row: {
+          assigned_at: string
+          custom_role_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          custom_role_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          custom_role_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_custom_roles_custom_role_id_fkey"
+            columns: ["custom_role_id"]
+            isOneToOne: false
+            referencedRelation: "custom_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -898,6 +960,123 @@ export type Database = {
           security?: Json
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      vehicle_trips: {
+        Row: {
+          created_at: string
+          driver_id: string
+          end_mileage: number | null
+          id: string
+          miles_driven: number | null
+          notes: string | null
+          odometer_end_photo_url: string | null
+          odometer_start_photo_url: string | null
+          plate_photo_url: string | null
+          shooting_request_id: string | null
+          start_mileage: number
+          status: string
+          trip_date: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          end_mileage?: number | null
+          id?: string
+          miles_driven?: number | null
+          notes?: string | null
+          odometer_end_photo_url?: string | null
+          odometer_start_photo_url?: string | null
+          plate_photo_url?: string | null
+          shooting_request_id?: string | null
+          start_mileage?: number
+          status?: string
+          trip_date?: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          end_mileage?: number | null
+          id?: string
+          miles_driven?: number | null
+          notes?: string | null
+          odometer_end_photo_url?: string | null
+          odometer_start_photo_url?: string | null
+          plate_photo_url?: string | null
+          shooting_request_id?: string | null
+          start_mileage?: number
+          status?: string
+          trip_date?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_trips_shooting_request_id_fkey"
+            columns: ["shooting_request_id"]
+            isOneToOne: false
+            referencedRelation: "shooting_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          assigned_driver_id: string | null
+          color: string | null
+          created_at: string
+          current_mileage: number
+          id: string
+          make: string | null
+          model: string | null
+          notes: string | null
+          photo_url: string | null
+          plate_number: string
+          status: string
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          assigned_driver_id?: string | null
+          color?: string | null
+          created_at?: string
+          current_mileage?: number
+          id?: string
+          make?: string | null
+          model?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          plate_number: string
+          status?: string
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          assigned_driver_id?: string | null
+          color?: string | null
+          created_at?: string
+          current_mileage?: number
+          id?: string
+          make?: string | null
+          model?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          plate_number?: string
+          status?: string
+          updated_at?: string
+          year?: number | null
         }
         Relationships: []
       }
