@@ -610,6 +610,78 @@ export default function Chat() {
           </Card>
         )}
       </div>
+
+      {/* New chat dialog */}
+      <Dialog open={newChatOpen} onOpenChange={setNewChatOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Start a new chat</DialogTitle></DialogHeader>
+          <Input placeholder="Search people..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <ScrollArea className="h-72">
+            <div className="space-y-1">
+              {filteredUsers.map(u => (
+                <div key={u.id}
+                  className="flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-accent"
+                  onClick={() => { setSelectedGroupId(null); setSelectedUser(u); setNewChatOpen(false); setListTab('people') }}>
+                  <Avatar className="w-9 h-9"><AvatarImage src={u.avatar} /><AvatarFallback>{u.name.slice(0,2)}</AvatarFallback></Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{u.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{u.role || '—'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* New group dialog */}
+      <Dialog open={newGroupOpen} onOpenChange={setNewGroupOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Create a group</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Group name</Label>
+              <Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Production Team" />
+            </div>
+            <div>
+              <Label className="text-xs">Add members</Label>
+              <ScrollArea className="h-60 mt-1 border rounded-md p-2">
+                <div className="space-y-1">
+                  {users.map(u => {
+                    const checked = groupMembers.has(u.id)
+                    return (
+                      <label key={u.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-accent cursor-pointer">
+                        <Checkbox checked={checked} onCheckedChange={(v) => {
+                          setGroupMembers(prev => { const next = new Set(prev); if (v) next.add(u.id); else next.delete(u.id); return next })
+                        }} />
+                        <Avatar className="w-8 h-8"><AvatarImage src={u.avatar} /><AvatarFallback>{u.name.slice(0,2)}</AvatarFallback></Avatar>
+                        <span className="text-sm">{u.name}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </ScrollArea>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewGroupOpen(false)}>Cancel</Button>
+            <Button onClick={createGroup} disabled={!groupName.trim() || groupMembers.size === 0}>Create group</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {call && myId && (
+        <CallDialog
+          open={!!call}
+          onClose={() => setCall(null)}
+          mode={call.mode}
+          role={call.role}
+          conversationId={call.conversationId}
+          myId={myId}
+          peer={call.peer}
+        />
+      )}
     </div>
   )
 }
+
