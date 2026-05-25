@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Car, Plus, Camera, Edit, Trash2, Gauge, MapPin, Upload } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 
 interface Vehicle {
   id: string
@@ -47,6 +48,7 @@ interface ShootingReq { id: string; title: string; workflow_status: string }
 export default function Garage() {
   const { currentUser } = useAuth()
   const { users } = useUsers()
+  const { t } = useTranslation()
   const isAdmin = currentUser?.role === 'Admin'
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [trips, setTrips] = useState<Trip[]>([])
@@ -104,7 +106,7 @@ export default function Garage() {
     setVOpen(true)
   }
   const saveVehicle = async () => {
-    if (!vForm.plate_number.trim()) { toast.error('Plate number required'); return }
+    if (!vForm.plate_number.trim()) { toast.error(t('pages.garage.plateRequired')); return }
     let photo_url = vEdit?.photo_url ?? null
     if (vPhotoFile) photo_url = await uploadPhoto(vPhotoFile, 'vehicle-photos')
     const payload: any = {
@@ -118,14 +120,14 @@ export default function Garage() {
       ? await supabase.from('vehicles').update(payload).eq('id', vEdit.id)
       : await supabase.from('vehicles').insert(payload)
     if (error) { toast.error(error.message); return }
-    toast.success(vEdit ? 'Vehicle updated' : 'Vehicle added')
+    toast.success(vEdit ? t('pages.garage.vehicleUpdated') : t('pages.garage.vehicleAdded'))
     setVOpen(false); await load()
   }
   const deleteVehicle = async (id: string) => {
-    if (!confirm('Delete vehicle?')) return
+    if (!confirm(t('pages.garage.deleteVehicleConfirm'))) return
     const { error } = await supabase.from('vehicles').delete().eq('id', id)
     if (error) { toast.error(error.message); return }
-    toast.success('Deleted'); await load()
+    toast.success(t('pages.garage.deleted')); await load()
   }
 
   /* ---------------- Trips ---------------- */
@@ -149,7 +151,7 @@ export default function Garage() {
     setTOpen(true)
   }
   const saveTrip = async () => {
-    if (!tForm.vehicle_id) { toast.error('Choose a vehicle'); return }
+    if (!tForm.vehicle_id) { toast.error(t('pages.garage.chooseVehicleError')); return }
     if (!currentUser) return
     const payload: any = {
       vehicle_id: tForm.vehicle_id,
@@ -168,14 +170,14 @@ export default function Garage() {
       ? await supabase.from('vehicle_trips').update(payload).eq('id', tEdit.id)
       : await supabase.from('vehicle_trips').insert(payload)
     if (error) { toast.error(error.message); return }
-    toast.success(tEdit ? 'Trip updated' : 'Trip logged')
+    toast.success(tEdit ? t('pages.garage.tripUpdated') : t('pages.garage.tripLogged'))
     setTOpen(false); await load()
   }
   const deleteTrip = async (id: string) => {
-    if (!confirm('Delete trip?')) return
+    if (!confirm(t('pages.garage.deleteTripConfirm'))) return
     const { error } = await supabase.from('vehicle_trips').delete().eq('id', id)
     if (error) { toast.error(error.message); return }
-    toast.success('Deleted'); await load()
+    toast.success(t('pages.garage.deleted')); await load()
   }
 
   const driverName = (id?: string | null) => users.find(u => u.id === id)?.name ?? '—'
@@ -188,26 +190,26 @@ export default function Garage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Drivers & Garage</h1>
-          <p className="text-muted-foreground">Manage vehicles, log trips and bind to shooting requests</p>
+          <h1 className="text-3xl font-bold">{t('pages.garage.title')}</h1>
+          <p className="text-muted-foreground">{t('pages.garage.subtitle')}</p>
         </div>
         <div className="flex gap-2">
-          {isAdmin && <Button onClick={openVehicleNew}><Plus className="w-4 h-4 mr-2" />Vehicle</Button>}
-          <Button variant="secondary" onClick={() => openTripNew()}><Plus className="w-4 h-4 mr-2" />Log Trip</Button>
+          {isAdmin && <Button onClick={openVehicleNew}><Plus className="w-4 h-4 mr-2" />{t('pages.garage.vehicle')}</Button>}
+          <Button variant="secondary" onClick={() => openTripNew()}><Plus className="w-4 h-4 mr-2" />{t('pages.garage.logTrip')}</Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card><CardContent className="p-6 flex items-center gap-3"><Car className="w-8 h-8 text-primary" /><div><p className="text-2xl font-bold">{vehicles.length}</p><p className="text-sm text-muted-foreground">Vehicles</p></div></CardContent></Card>
-        <Card><CardContent className="p-6 flex items-center gap-3"><MapPin className="w-8 h-8 text-primary" /><div><p className="text-2xl font-bold">{trips.length}</p><p className="text-sm text-muted-foreground">Trips</p></div></CardContent></Card>
-        <Card><CardContent className="p-6 flex items-center gap-3"><Gauge className="w-8 h-8 text-primary" /><div><p className="text-2xl font-bold">{totalMiles.toFixed(0)}</p><p className="text-sm text-muted-foreground">Miles Driven</p></div></CardContent></Card>
-        <Card><CardContent className="p-6 flex items-center gap-3"><Camera className="w-8 h-8 text-primary" /><div><p className="text-2xl font-bold">{activeTrips}</p><p className="text-sm text-muted-foreground">Active Trips</p></div></CardContent></Card>
+        <Card><CardContent className="p-6 flex items-center gap-3"><Car className="w-8 h-8 text-primary" /><div><p className="text-2xl font-bold">{vehicles.length}</p><p className="text-sm text-muted-foreground">{t('pages.garage.vehicles')}</p></div></CardContent></Card>
+        <Card><CardContent className="p-6 flex items-center gap-3"><MapPin className="w-8 h-8 text-primary" /><div><p className="text-2xl font-bold">{trips.length}</p><p className="text-sm text-muted-foreground">{t('pages.garage.trips')}</p></div></CardContent></Card>
+        <Card><CardContent className="p-6 flex items-center gap-3"><Gauge className="w-8 h-8 text-primary" /><div><p className="text-2xl font-bold">{totalMiles.toFixed(0)}</p><p className="text-sm text-muted-foreground">{t('pages.garage.milesDriven')}</p></div></CardContent></Card>
+        <Card><CardContent className="p-6 flex items-center gap-3"><Camera className="w-8 h-8 text-primary" /><div><p className="text-2xl font-bold">{activeTrips}</p><p className="text-sm text-muted-foreground">{t('pages.garage.activeTrips')}</p></div></CardContent></Card>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
-          <TabsTrigger value="trips">Trip Log</TabsTrigger>
+          <TabsTrigger value="vehicles">{t('pages.garage.vehicles')}</TabsTrigger>
+          <TabsTrigger value="trips">{t('pages.garage.tripLog')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="vehicles" className="space-y-4 pt-4">
