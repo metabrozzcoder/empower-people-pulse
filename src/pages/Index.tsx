@@ -54,7 +54,28 @@ const Index = () => {
         }))
       setBirthdayEmployees(list)
     })
-  }, [])
+
+    ;(async () => {
+      const { data: auth } = await supabase.auth.getUser()
+      const uid = auth.user?.id
+      if (!uid) return
+      const today = format(new Date(), 'yyyy-MM-dd')
+      const { data } = await (supabase as any)
+        .from('reminders')
+        .select('id, title, date, time, type')
+        .eq('user_id', uid)
+        .gte('date', today)
+        .order('date', { ascending: true })
+        .limit(10)
+      const list: UpcomingEvent[] = (data ?? []).map((r: any) => {
+        const d = new Date(r.date)
+        const label = isToday(d) ? t('common.today') : isTomorrow(d) ? t('common.tomorrow') : format(d, 'MMM dd, yyyy')
+        return { id: r.id, title: r.title, date: r.time ? `${label} • ${r.time}` : label, type: r.type || 'reminder' }
+      })
+      setUpcomingEvents(list)
+    })()
+  }, [t])
+
 
   
   return (
