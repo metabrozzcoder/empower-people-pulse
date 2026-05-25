@@ -30,6 +30,7 @@ const Index = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [birthdayEmployees, setBirthdayEmployees] = useState<BirthdayEmp[]>([])
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([])
 
   const quickActions = [
     { title: t('pages.dashboard.quickActions.chat'), description: t('pages.dashboard.quickActions.chatDesc'), icon: MessageCircle, href: '/chat', color: 'bg-blue-50 text-blue-600 border-blue-200' },
