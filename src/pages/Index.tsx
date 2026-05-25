@@ -10,7 +10,12 @@ import { useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-const upcomingEvents: { id: number; title: string; date: string; type: string }[] = []
+interface UpcomingEvent {
+  id: string
+  title: string
+  date: string
+  type: string
+}
 
 interface BirthdayEmp {
   id: string
