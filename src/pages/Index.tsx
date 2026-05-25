@@ -10,7 +10,12 @@ import { useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-const upcomingEvents: { id: number; title: string; date: string; type: string }[] = []
+interface UpcomingEvent {
+  id: string
+  title: string
+  date: string
+  type: string
+}
 
 interface BirthdayEmp {
   id: string
@@ -25,6 +30,7 @@ const Index = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [birthdayEmployees, setBirthdayEmployees] = useState<BirthdayEmp[]>([])
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([])
 
   const quickActions = [
     { title: t('pages.dashboard.quickActions.chat'), description: t('pages.dashboard.quickActions.chatDesc'), icon: MessageCircle, href: '/chat', color: 'bg-blue-50 text-blue-600 border-blue-200' },
@@ -48,7 +54,28 @@ const Index = () => {
         }))
       setBirthdayEmployees(list)
     })
-  }, [])
+
+    ;(async () => {
+      const { data: auth } = await supabase.auth.getUser()
+      const uid = auth.user?.id
+      if (!uid) return
+      const today = format(new Date(), 'yyyy-MM-dd')
+      const { data } = await (supabase as any)
+        .from('reminders')
+        .select('id, title, date, time, type')
+        .eq('user_id', uid)
+        .gte('date', today)
+        .order('date', { ascending: true })
+        .limit(10)
+      const list: UpcomingEvent[] = (data ?? []).map((r: any) => {
+        const d = new Date(r.date)
+        const label = isToday(d) ? t('common.today') : isTomorrow(d) ? t('common.tomorrow') : format(d, 'MMM dd, yyyy')
+        return { id: r.id, title: r.title, date: r.time ? `${label} • ${r.time}` : label, type: r.type || 'reminder' }
+      })
+      setUpcomingEvents(list)
+    })()
+  }, [t])
+
 
   
   return (
@@ -95,7 +122,7 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {upcomingEvents.map((event) => (
+              {upcomingEvents.length > 0 ? upcomingEvents.map((event) => (
                 <div key={event.id} className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
                     <p className="font-medium">{event.title}</p>
@@ -105,7 +132,12 @@ const Index = () => {
                     {event.type}
                   </Badge>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Calendar className="mx-auto h-12 w-12 mb-4 opacity-30" />
+                  <p>{t('pages.dashboard.noEvents', 'No upcoming events')}</p>
+                </div>
+              )}
             </div>
             <Button 
               variant="outline" 
