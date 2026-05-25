@@ -245,7 +245,7 @@ export default function Chat() {
   }, [selectedUser, myId, convByUser, getOrCreateDm])
 
   // Load messages whenever the active conversation id is known/changes
-  const activeConvId = selectedUser ? convByUser[selectedUser.id] : undefined
+  const activeConvId = selectedGroupId ?? (selectedUser ? convByUser[selectedUser.id] : undefined)
   useEffect(() => {
     if (!activeConvId || !myId) { setMessages([]); return }
     let cancelled = false
