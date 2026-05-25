@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { useUsers } from '@/context/UserContext'
+import { useTranslation } from 'react-i18next'
 
 const ALL_SECTIONS = [
   'Dashboard', 'Shooting Requests', 'Employees', 'Projects', 'Recruitment', 'Tasks',
@@ -34,11 +35,11 @@ const ALL_PERMISSIONS = [
 ]
 
 const WORKFLOW_SLOTS = [
-  { value: 'none', label: 'None' },
-  { value: 'shooting_moderator', label: 'Shooting Moderator' },
-  { value: 'director', label: 'Director' },
-  { value: 'tech_supply', label: 'Tech Supply' },
-  { value: 'driver', label: 'Driver' },
+  { value: 'none', key: 'slotNone' },
+  { value: 'shooting_moderator', key: 'slotShootingModerator' },
+  { value: 'director', key: 'slotDirector' },
+  { value: 'tech_supply', key: 'slotTechSupply' },
+  { value: 'driver', key: 'slotDriver' },
 ]
 
 interface CustomRole {
@@ -54,6 +55,7 @@ interface CustomRole {
 export default function CustomRolesBox() {
   const { users } = useUsers()
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [roles, setRoles] = useState<CustomRole[]>([])
   const [assignments, setAssignments] = useState<Map<string, string[]>>(new Map())
   const [search, setSearch] = useState('')
@@ -99,7 +101,7 @@ export default function CustomRolesBox() {
 
   const save = async () => {
     if (!name.trim()) {
-      toast({ title: 'Name required', description: 'Please enter a role name.', variant: 'destructive' })
+      toast({ title: t('pages.customRoles.nameRequired'), description: t('pages.customRoles.pleaseEnterName'), variant: 'destructive' })
       return
     }
     const { data: { user } } = await supabase.auth.getUser()
@@ -132,18 +134,18 @@ export default function CustomRolesBox() {
         )
       }
     }
-    toast({ title: editing ? 'Role updated' : 'Role created' })
+    toast({ title: editing ? t('pages.customRoles.roleUpdated') : t('pages.customRoles.roleCreated') })
     setOpen(false); await load()
   }
 
   const remove = async (id: string) => {
-    if (!confirm('Delete this role?')) return
+    if (!confirm(t('pages.customRoles.deleteConfirm'))) return
     const { error } = await supabase.from('custom_roles').delete().eq('id', id)
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' })
       return
     }
-    toast({ title: 'Deleted' })
+    toast({ title: t('pages.customRoles.deleted') })
     await load()
   }
 
@@ -160,25 +162,25 @@ export default function CustomRolesBox() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Custom Roles</CardTitle>
-            <CardDescription>Create custom roles with specific permissions and assign them to users</CardDescription>
+            <CardTitle>{t('pages.customRoles.title')}</CardTitle>
+            <CardDescription>{t('pages.customRoles.description')}</CardDescription>
           </div>
-          <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-2" />New Role</Button>
+          <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-2" />{t('pages.customRoles.newRole')}</Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card><CardContent className="p-4 flex items-center gap-3"><Shield className="w-6 h-6 text-primary" /><div><p className="text-xl font-bold">{roles.length}</p><p className="text-xs text-muted-foreground">Custom Roles</p></div></CardContent></Card>
-          <Card><CardContent className="p-4 flex items-center gap-3"><Users className="w-6 h-6 text-primary" /><div><p className="text-xl font-bold">{Array.from(assignments.values()).reduce((s, a) => s + a.length, 0)}</p><p className="text-xs text-muted-foreground">Assignments</p></div></CardContent></Card>
-          <Card><CardContent className="p-4 flex items-center gap-3"><Settings className="w-6 h-6 text-primary" /><div><p className="text-xl font-bold">{ALL_PERMISSIONS.length}</p><p className="text-xs text-muted-foreground">Permissions</p></div></CardContent></Card>
-          <Card><CardContent className="p-4 flex items-center gap-3"><Shield className="w-6 h-6 text-primary" /><div><p className="text-xl font-bold">{ALL_SECTIONS.length}</p><p className="text-xs text-muted-foreground">Sections</p></div></CardContent></Card>
+          <Card><CardContent className="p-4 flex items-center gap-3"><Shield className="w-6 h-6 text-primary" /><div><p className="text-xl font-bold">{roles.length}</p><p className="text-xs text-muted-foreground">{t('pages.customRoles.stats.roles')}</p></div></CardContent></Card>
+          <Card><CardContent className="p-4 flex items-center gap-3"><Users className="w-6 h-6 text-primary" /><div><p className="text-xl font-bold">{Array.from(assignments.values()).reduce((s, a) => s + a.length, 0)}</p><p className="text-xs text-muted-foreground">{t('pages.customRoles.stats.assignments')}</p></div></CardContent></Card>
+          <Card><CardContent className="p-4 flex items-center gap-3"><Settings className="w-6 h-6 text-primary" /><div><p className="text-xl font-bold">{ALL_PERMISSIONS.length}</p><p className="text-xs text-muted-foreground">{t('pages.customRoles.stats.permissions')}</p></div></CardContent></Card>
+          <Card><CardContent className="p-4 flex items-center gap-3"><Shield className="w-6 h-6 text-primary" /><div><p className="text-xl font-bold">{ALL_SECTIONS.length}</p><p className="text-xs text-muted-foreground">{t('pages.customRoles.stats.sections')}</p></div></CardContent></Card>
         </div>
 
         {/* Search */}
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search roles..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+          <Input placeholder={t('pages.customRoles.searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
         </div>
 
         {/* Roles Grid */}
@@ -221,26 +223,26 @@ export default function CustomRolesBox() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Role' : 'New Custom Role'}</DialogTitle>
-            <DialogDescription>Define permissions, sections and assign users.</DialogDescription>
+            <DialogTitle>{editing ? t('pages.customRoles.editRole') : t('pages.customRoles.newCustomRole')}</DialogTitle>
+            <DialogDescription>{t('pages.customRoles.dialogDesc')}</DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="general">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="general">General</TabsTrigger>
-              <TabsTrigger value="sections">Sections</TabsTrigger>
-              <TabsTrigger value="permissions">Permissions</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="general">{t('pages.customRoles.tabGeneral')}</TabsTrigger>
+              <TabsTrigger value="sections">{t('pages.customRoles.tabSections')}</TabsTrigger>
+              <TabsTrigger value="permissions">{t('pages.customRoles.tabPermissions')}</TabsTrigger>
+              <TabsTrigger value="users">{t('pages.customRoles.tabUsers')}</TabsTrigger>
             </TabsList>
             <TabsContent value="general" className="space-y-4 pt-4">
-              <div className="space-y-2"><Label>Role Name</Label><Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Camera Operator" /></div>
-              <div className="space-y-2"><Label>Description</Label><Textarea value={desc} onChange={e => setDesc(e.target.value)} /></div>
+              <div className="space-y-2"><Label>{t('pages.customRoles.roleName')}</Label><Input value={name} onChange={e => setName(e.target.value)} placeholder={t('pages.customRoles.roleNamePlaceholder')} /></div>
+              <div className="space-y-2"><Label>{t('pages.customRoles.description2')}</Label><Textarea value={desc} onChange={e => setDesc(e.target.value)} /></div>
               <div className="space-y-2">
-                <Label>Workflow Slot (optional)</Label>
+                <Label>{t('pages.customRoles.workflowSlot')}</Label>
                 <Select value={slot} onValueChange={setSlot}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{WORKFLOW_SLOTS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+                  <SelectContent>{WORKFLOW_SLOTS.map(s => <SelectItem key={s.value} value={s.value}>{t(`pages.customRoles.${s.key}`)}</SelectItem>)}</SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Maps this custom role to a shooting-request workflow stage.</p>
+                <p className="text-xs text-muted-foreground">{t('pages.customRoles.workflowSlotHint')}</p>
               </div>
             </TabsContent>
             <TabsContent value="sections" className="space-y-2 pt-4">
@@ -271,8 +273,8 @@ export default function CustomRolesBox() {
             </TabsContent>
           </Tabs>
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={save}>{editing ? 'Update' : 'Create'}</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t('pages.customRoles.cancel')}</Button>
+            <Button onClick={save}>{editing ? t('pages.customRoles.update') : t('pages.customRoles.create')}</Button>
           </div>
         </DialogContent>
       </Dialog>
