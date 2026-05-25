@@ -69,6 +69,9 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const selectedUserRef = useRef<ChatUser | null>(null)
   useEffect(() => { selectedUserRef.current = selectedUser }, [selectedUser])
+  const usersRef = useRef<ChatUser[]>([])
+  useEffect(() => { usersRef.current = users }, [users])
+  const callRef = useRef<any>(null)
 
   // Groups
   interface GroupConv { id: string; name: string; memberCount: number }
@@ -83,7 +86,8 @@ export default function Chat() {
   const [groupMembers, setGroupMembers] = useState<Set<string>>(new Set())
 
   // Calls
-  const [call, setCall] = useState<null | { mode: 'audio' | 'video'; role: 'caller' | 'callee'; conversationId: string; peer: { id: string; name: string; avatar?: string } }>(null)
+  const [call, _setCall] = useState<null | { mode: 'audio' | 'video'; role: 'caller' | 'callee'; conversationId: string; peer: { id: string; name: string; avatar?: string } }>(null)
+  const setCall = (v: any) => { callRef.current = v; _setCall(v) }
 
 
   // Request browser notification permission
@@ -94,6 +98,16 @@ export default function Chat() {
       Notification.requestPermission().then(p => setNotifEnabled(p === 'granted'))
     }
   }, [])
+
+  // Safety: ensure body interactions aren't left disabled by a stale Radix overlay
+  useEffect(() => {
+    if (!newChatOpen && !newGroupOpen) {
+      const t = setTimeout(() => {
+        if (document.body.style.pointerEvents === 'none') document.body.style.pointerEvents = ''
+      }, 200)
+      return () => clearTimeout(t)
+    }
+  }, [newChatOpen, newGroupOpen])
 
   // Load users (other profiles)
   useEffect(() => {
@@ -173,18 +187,21 @@ export default function Chat() {
     if (!myId) return
     const ch = supabase.channel(`ring-${myId}`, { config: { broadcast: { self: false } } })
       .on('broadcast', { event: 'ring' }, ({ payload }) => {
-        if (payload.from === myId || call) return
-        const peer = users.find(u => u.id === payload.from)
-        const accept = window.confirm(`${peer?.name || 'Someone'} is calling (${payload.mode}). Accept?`)
-        if (accept) {
-          setCall({ mode: payload.mode, role: 'callee', conversationId: payload.conversationId, peer: { id: payload.from, name: peer?.name || 'Caller', avatar: peer?.avatar } })
-        } else {
-          supabase.channel(`call-${payload.conversationId}`).send({ type: 'broadcast', event: 'call-end', payload: { from: myId } })
-        }
+        if (payload.from === myId || callRef.current) return
+        const peer = usersRef.current.find(u => u.id === payload.from)
+        // Defer to next tick so we don't block the realtime callback
+        setTimeout(() => {
+          const accept = window.confirm(`${peer?.name || 'Someone'} is calling (${payload.mode}). Accept?`)
+          if (accept) {
+            setCall({ mode: payload.mode, role: 'callee', conversationId: payload.conversationId, peer: { id: payload.from, name: peer?.name || 'Caller', avatar: peer?.avatar } })
+          } else {
+            supabase.channel(`call-${payload.conversationId}`).send({ type: 'broadcast', event: 'call-end', payload: { from: myId } })
+          }
+        }, 0)
       })
       .subscribe()
     return () => { supabase.removeChannel(ch) }
-  }, [myId, users, call])
+  }, [myId])
 
   const startCall = async (mode: 'audio' | 'video') => {
     if (!selectedUser || !myId) return
@@ -208,7 +225,7 @@ export default function Chat() {
     toast({ title: 'Group created', description: groupName })
     setGroupName(''); setGroupMembers(new Set()); setNewGroupOpen(false)
     await refreshGroups()
-    setListTab('groups'); setSelectedUser(null); setSelectedGroupId(conv.id)
+    setTimeout(() => { setListTab('groups'); setSelectedUser(null); setSelectedGroupId(conv.id) }, 50)
   }
 
 
@@ -622,7 +639,15 @@ export default function Chat() {
               {filteredUsers.map(u => (
                 <div key={u.id}
                   className="flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-accent"
-                  onClick={() => { setSelectedGroupId(null); setSelectedUser(u); setNewChatOpen(false); setListTab('people') }}>
+                  onClick={() => {
+                    setNewChatOpen(false)
+                    setTimeout(() => {
+                      setSelectedGroupId(null)
+                      setSelectedUser(u)
+                      setListTab('people')
+                    }, 50)
+                  }}>
+
                   <Avatar className="w-9 h-9"><AvatarImage src={u.avatar} /><AvatarFallback>{u.name.slice(0,2)}</AvatarFallback></Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{u.name}</p>
