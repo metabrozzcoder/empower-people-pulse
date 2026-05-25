@@ -69,6 +69,9 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const selectedUserRef = useRef<ChatUser | null>(null)
   useEffect(() => { selectedUserRef.current = selectedUser }, [selectedUser])
+  const usersRef = useRef<ChatUser[]>([])
+  useEffect(() => { usersRef.current = users }, [users])
+  const callRef = useRef<any>(null)
 
   // Groups
   interface GroupConv { id: string; name: string; memberCount: number }
