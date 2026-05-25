@@ -33,6 +33,7 @@
       "organization": "Tashkilot",
       "communication": "Aloqa",
       "analytics": "Boshqaruv va tahlil",
+      "garage": "Haydovchilar va garaj",
       "documentation": "Hujjatlar",
       "system": "Tizim"
     },
@@ -49,6 +50,7 @@
       "userManagement": "Foydalanuvchilarni boshqarish",
       "accessControl": "Kirish nazorati",
       "analytics": "Tahlil",
+      "garage": "Garaj",
       "documentation": "Hujjatlar",
       "securitySystem": "Xavfsizlik tizimi"
     }
