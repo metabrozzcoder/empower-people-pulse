@@ -36,6 +36,7 @@ import SecuritySystem from "./pages/SecuritySystem"
 import DeviceDetail from "./pages/security/DeviceDetail"
 import BiometricConfig from "./pages/security/BiometricConfig"
 import Documentation from "./pages/Documentation"
+import Garage from "./pages/Garage"
 import Settings from "./pages/Settings"
 import NotFound from "./pages/NotFound"
 import Login from "./pages/Login"
@@ -96,6 +97,9 @@ function AppContent() {
               <Route path="/chat" element={<ProtectedRoute sectionName="Chat"><Chat /></ProtectedRoute>} />
               <Route path="/user-management" element={<ProtectedRoute sectionName="User Management" allowedRoles={['Admin']}><UserManagement /></ProtectedRoute>} />
               <Route path="/access-control" element={<ProtectedRoute sectionName="Access Control" allowedRoles={['Admin']}><AccessControl /></ProtectedRoute>} />
+              <Route path="/role-management" element={<ProtectedRoute sectionName="Role Management" allowedRoles={['Admin']}><RoleManagement /></ProtectedRoute>} />
+              <Route path="/garage" element={<ProtectedRoute sectionName="Garage"><Garage /></ProtectedRoute>} />
+              
               
               {/* New pages */}
               <Route path="/security-system" element={<ProtectedRoute allowedRoles={['Admin']}><SecuritySystem /></ProtectedRoute>} />

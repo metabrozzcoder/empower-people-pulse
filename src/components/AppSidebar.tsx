@@ -27,7 +27,8 @@ import {
   LogOut,
   FileSearch,
   Scan,
-  Camera
+  Camera,
+  Car
 } from "lucide-react"
 import { NavLink, useNavigate } from "react-router-dom"
 import { useState } from "react"
@@ -104,7 +105,16 @@ const sidebarSections = [
     items: [
       { title: "User Management", titleKey: "sidebar.items.userManagement", url: "/user-management", icon: UserCheck, sectionName: "User Management", allowedRoles: ["Admin"] },
       { title: "Access Control", titleKey: "sidebar.items.accessControl", url: "/access-control", icon: Shield, sectionName: "Access Control", allowedRoles: ["Admin"] },
+      { title: "Custom Roles", titleKey: "sidebar.items.roleManagement", url: "/role-management", icon: Shield, sectionName: "Role Management", allowedRoles: ["Admin"] },
       { title: "Analytics", titleKey: "sidebar.items.analytics", url: "/analytics", icon: BarChart3, sectionName: "Analytics" },
+    ]
+  },
+  {
+    title: "Drivers & Garage",
+    titleKey: "sidebar.groups.garage",
+    collapsible: true,
+    items: [
+      { title: "Garage", titleKey: "sidebar.items.garage", url: "/garage", icon: Car, sectionName: "Garage" },
     ]
   },
   {
