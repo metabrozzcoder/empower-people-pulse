@@ -70,6 +70,22 @@ export default function Chat() {
   const selectedUserRef = useRef<ChatUser | null>(null)
   useEffect(() => { selectedUserRef.current = selectedUser }, [selectedUser])
 
+  // Groups
+  interface GroupConv { id: string; name: string; memberCount: number }
+  const [groups, setGroups] = useState<GroupConv[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
+  const [listTab, setListTab] = useState<'people' | 'groups'>('people')
+
+  // Dialogs
+  const [newChatOpen, setNewChatOpen] = useState(false)
+  const [newGroupOpen, setNewGroupOpen] = useState(false)
+  const [groupName, setGroupName] = useState('')
+  const [groupMembers, setGroupMembers] = useState<Set<string>>(new Set())
+
+  // Calls
+  const [call, setCall] = useState<null | { mode: 'audio' | 'video'; role: 'caller' | 'callee'; conversationId: string; peer: { id: string; name: string; avatar?: string } }>(null)
+
+
   // Request browser notification permission
   useEffect(() => {
     if (typeof Notification === 'undefined') return
