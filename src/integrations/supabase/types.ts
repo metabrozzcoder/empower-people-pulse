@@ -14,6 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_rule_users: {
+        Row: {
+          assigned_at: string
+          rule_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          rule_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          rule_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_rule_users_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "access_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      access_rules: {
+        Row: {
+          config: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           check_in: string | null
