@@ -349,8 +349,9 @@ export default function Chat() {
 
   // Auto-select first
   useEffect(() => {
-    if (!selectedUser && users.length > 0) setSelectedUser(users[0])
-  }, [users, selectedUser])
+    if (!selectedUser && !selectedGroupId && users.length > 0) setSelectedUser(users[0])
+  }, [users, selectedUser, selectedGroupId])
+
 
   const handleSend = async () => {
     if (!draft.trim() || !myId) return
