@@ -150,6 +150,68 @@ export default function Chat() {
 
   useEffect(() => { refreshConvMap() }, [refreshConvMap])
 
+  // Load groups
+  const refreshGroups = useCallback(async () => {
+    if (!myId) return
+    const { data: myMems } = await supabase.from('conversation_members').select('conversation_id')
+    const convIds = (myMems ?? []).map(m => m.conversation_id)
+    if (convIds.length === 0) { setGroups([]); return }
+    const { data: convs } = await supabase
+      .from('conversations').select('id, name, is_group').in('id', convIds).eq('is_group', true)
+    const gIds = (convs ?? []).map(c => c.id)
+    if (gIds.length === 0) { setGroups([]); return }
+    const { data: allMems } = await supabase
+      .from('conversation_members').select('conversation_id, user_id').in('conversation_id', gIds)
+    const counts: Record<string, number> = {}
+    ;(allMems ?? []).forEach(m => { counts[m.conversation_id] = (counts[m.conversation_id] || 0) + 1 })
+    setGroups((convs ?? []).map((c: any) => ({ id: c.id, name: c.name || 'Untitled group', memberCount: counts[c.id] || 0 })))
+  }, [myId])
+  useEffect(() => { refreshGroups() }, [refreshGroups])
+
+  // Incoming ring channel
+  useEffect(() => {
+    if (!myId) return
+    const ch = supabase.channel(`ring-${myId}`, { config: { broadcast: { self: false } } })
+      .on('broadcast', { event: 'ring' }, ({ payload }) => {
+        if (payload.from === myId || call) return
+        const peer = users.find(u => u.id === payload.from)
+        const accept = window.confirm(`${peer?.name || 'Someone'} is calling (${payload.mode}). Accept?`)
+        if (accept) {
+          setCall({ mode: payload.mode, role: 'callee', conversationId: payload.conversationId, peer: { id: payload.from, name: peer?.name || 'Caller', avatar: peer?.avatar } })
+        } else {
+          supabase.channel(`call-${payload.conversationId}`).send({ type: 'broadcast', event: 'call-end', payload: { from: myId } })
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [myId, users, call])
+
+  const startCall = async (mode: 'audio' | 'video') => {
+    if (!selectedUser || !myId) return
+    const convId = await getOrCreateDm(selectedUser.id)
+    if (!convId) return
+    const ringCh = supabase.channel(`ring-${selectedUser.id}`)
+    await new Promise<void>((resolve) => { ringCh.subscribe((st) => { if (st === 'SUBSCRIBED') resolve() }) })
+    await ringCh.send({ type: 'broadcast', event: 'ring', payload: { from: myId, conversationId: convId, mode } })
+    supabase.removeChannel(ringCh)
+    setCall({ mode, role: 'caller', conversationId: convId, peer: { id: selectedUser.id, name: selectedUser.name, avatar: selectedUser.avatar } })
+  }
+
+  const createGroup = async () => {
+    if (!myId || !groupName.trim() || groupMembers.size === 0) return
+    const { data: conv, error } = await supabase
+      .from('conversations').insert({ is_group: true, name: groupName.trim(), created_by: myId }).select('id').single()
+    if (error || !conv) { toast({ title: 'Failed to create group', description: error?.message, variant: 'destructive' }); return }
+    const members = [myId, ...Array.from(groupMembers)].map(uid => ({ conversation_id: conv.id, user_id: uid }))
+    const { error: mErr } = await supabase.from('conversation_members').insert(members)
+    if (mErr) { toast({ title: 'Failed to add members', description: mErr.message, variant: 'destructive' }); return }
+    toast({ title: 'Group created', description: groupName })
+    setGroupName(''); setGroupMembers(new Set()); setNewGroupOpen(false)
+    await refreshGroups()
+    setListTab('groups'); setSelectedUser(null); setSelectedGroupId(conv.id)
+  }
+
+
   const getOrCreateDm = useCallback(async (otherUserId: string): Promise<string | null> => {
     if (!myId) return null
     if (convByUser[otherUserId]) return convByUser[otherUserId]
