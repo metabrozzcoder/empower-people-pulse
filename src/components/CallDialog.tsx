@@ -151,20 +151,19 @@ export default function CallDialog({ open, onClose, mode, role, conversationId, 
         </DialogHeader>
 
         <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
-          {mode === 'video' ? (
-            <>
-              <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-              <video ref={localVideoRef} autoPlay playsInline muted className="absolute bottom-3 right-3 w-32 h-24 object-cover rounded-md border border-border" />
-            </>
-          ) : (
+          <video ref={remoteVideoRef} autoPlay playsInline className={cn('w-full h-full object-cover', mode === 'audio' && 'hidden')} />
+          {mode === 'video' && (
+            <video ref={localVideoRef} autoPlay playsInline muted className="absolute bottom-3 right-3 w-32 h-24 object-cover rounded-md border border-border" />
+          )}
+          {mode === 'audio' && (
             <div className="flex flex-col items-center justify-center h-full text-white gap-3">
               <Avatar className="w-24 h-24"><AvatarImage src={peer.avatar} /><AvatarFallback className="text-2xl">{peer.name.slice(0,2)}</AvatarFallback></Avatar>
               <p className="text-lg">{peer.name}</p>
               <p className="text-sm opacity-70 capitalize">{status}</p>
-              <audio ref={remoteVideoRef as any} autoPlay />
             </div>
           )}
         </div>
+
 
         <div className="flex items-center justify-center gap-3 pt-2">
           <Button variant={muted ? 'destructive' : 'secondary'} size="icon" onClick={toggleMute}>
