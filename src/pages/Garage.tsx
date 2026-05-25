@@ -279,69 +279,73 @@ export default function Garage() {
       {/* Vehicle dialog */}
       <Dialog open={vOpen} onOpenChange={setVOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{vEdit ? 'Edit Vehicle' : 'New Vehicle'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{vEdit ? t('pages.garage.editVehicle') : t('pages.garage.newVehicle')}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2"><Label>Plate Number *</Label><Input value={vForm.plate_number} onChange={e => setVForm({ ...vForm, plate_number: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Status</Label>
+            <div className="space-y-2"><Label>{t('pages.garage.plateNumber')} *</Label><Input value={vForm.plate_number} onChange={e => setVForm({ ...vForm, plate_number: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.garage.status')}</Label>
               <Select value={vForm.status} onValueChange={v => setVForm({ ...vForm, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Maintenance">Maintenance</SelectItem><SelectItem value="Retired">Retired</SelectItem></SelectContent>
+                <SelectContent>
+                  <SelectItem value="Active">{t('pages.garage.statusActive')}</SelectItem>
+                  <SelectItem value="Maintenance">{t('pages.garage.statusMaintenance')}</SelectItem>
+                  <SelectItem value="Retired">{t('pages.garage.statusRetired')}</SelectItem>
+                </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2"><Label>Make</Label><Input value={vForm.make} onChange={e => setVForm({ ...vForm, make: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Model</Label><Input value={vForm.model} onChange={e => setVForm({ ...vForm, model: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Year</Label><Input type="number" value={vForm.year} onChange={e => setVForm({ ...vForm, year: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Color</Label><Input value={vForm.color} onChange={e => setVForm({ ...vForm, color: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Current Mileage</Label><Input type="number" value={vForm.current_mileage} onChange={e => setVForm({ ...vForm, current_mileage: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Assigned Driver</Label>
+            <div className="space-y-2"><Label>{t('pages.garage.make')}</Label><Input value={vForm.make} onChange={e => setVForm({ ...vForm, make: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.garage.model')}</Label><Input value={vForm.model} onChange={e => setVForm({ ...vForm, model: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.garage.year')}</Label><Input type="number" value={vForm.year} onChange={e => setVForm({ ...vForm, year: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.garage.color')}</Label><Input value={vForm.color} onChange={e => setVForm({ ...vForm, color: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.garage.currentMileage')}</Label><Input type="number" value={vForm.current_mileage} onChange={e => setVForm({ ...vForm, current_mileage: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.garage.assignedDriver')}</Label>
               <Select value={vForm.assigned_driver_id || 'none'} onValueChange={v => setVForm({ ...vForm, assigned_driver_id: v === 'none' ? '' : v })}>
-                <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('pages.garage.selectDriver')} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="none">{t('pages.garage.none')}</SelectItem>
                   {users.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="col-span-2 space-y-2"><Label>Photo</Label>
+            <div className="col-span-2 space-y-2"><Label>{t('pages.garage.photo')}</Label>
               <Input type="file" accept="image/*" onChange={e => setVPhotoFile(e.target.files?.[0] ?? null)} />
               {vEdit?.photo_url && !vPhotoFile && <img src={vEdit.photo_url} alt="current" className="w-32 h-24 object-cover rounded" />}
             </div>
-            <div className="col-span-2 space-y-2"><Label>Notes</Label><Textarea value={vForm.notes} onChange={e => setVForm({ ...vForm, notes: e.target.value })} /></div>
+            <div className="col-span-2 space-y-2"><Label>{t('pages.garage.notes')}</Label><Textarea value={vForm.notes} onChange={e => setVForm({ ...vForm, notes: e.target.value })} /></div>
           </div>
-          <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setVOpen(false)}>Cancel</Button><Button onClick={saveVehicle}>{vEdit ? 'Update' : 'Create'}</Button></div>
+          <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setVOpen(false)}>{t('pages.garage.cancel')}</Button><Button onClick={saveVehicle}>{vEdit ? t('pages.garage.update') : t('pages.garage.create')}</Button></div>
         </DialogContent>
       </Dialog>
 
       {/* Trip dialog */}
       <Dialog open={tOpen} onOpenChange={setTOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{tEdit ? 'Edit Trip' : 'Log Trip'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{tEdit ? t('pages.garage.editTrip') : t('pages.garage.newTrip')}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2"><Label>Vehicle *</Label>
+            <div className="space-y-2"><Label>{t('pages.garage.vehicle')} *</Label>
               <Select value={tForm.vehicle_id} onValueChange={v => {
                 const veh = vehicles.find(x => x.id === v)
                 setTForm({ ...tForm, vehicle_id: v, start_mileage: tForm.start_mileage || veh?.current_mileage.toString() || '' })
               }}>
-                <SelectTrigger><SelectValue placeholder="Choose vehicle" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('pages.garage.chooseVehicle')} /></SelectTrigger>
                 <SelectContent>{vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.plate_number}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-2"><Label>Date</Label><Input type="date" value={tForm.trip_date} onChange={e => setTForm({ ...tForm, trip_date: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Start Mileage</Label><Input type="number" value={tForm.start_mileage} onChange={e => setTForm({ ...tForm, start_mileage: e.target.value })} /></div>
-            <div className="space-y-2"><Label>End Mileage</Label><Input type="number" value={tForm.end_mileage} onChange={e => setTForm({ ...tForm, end_mileage: e.target.value })} placeholder="Leave empty if in progress" /></div>
-            <div className="col-span-2 space-y-2"><Label>Linked Shooting Request</Label>
+            <div className="space-y-2"><Label>{t('pages.garage.date')}</Label><Input type="date" value={tForm.trip_date} onChange={e => setTForm({ ...tForm, trip_date: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.garage.startMileage')}</Label><Input type="number" value={tForm.start_mileage} onChange={e => setTForm({ ...tForm, start_mileage: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.garage.endMileage')}</Label><Input type="number" value={tForm.end_mileage} onChange={e => setTForm({ ...tForm, end_mileage: e.target.value })} placeholder={t('pages.garage.endMileagePlaceholder')} /></div>
+            <div className="col-span-2 space-y-2"><Label>{t('pages.garage.linkedRequest')}</Label>
               <Select value={tForm.shooting_request_id || 'none'} onValueChange={v => setTForm({ ...tForm, shooting_request_id: v === 'none' ? '' : v })}>
-                <SelectTrigger><SelectValue placeholder="No link" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('pages.garage.noLink')} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="none">{t('pages.garage.none')}</SelectItem>
                   {requests.map(r => <SelectItem key={r.id} value={r.id}>{r.title} <span className="text-muted-foreground">({r.workflow_status})</span></SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2"><Label className="flex items-center gap-1"><Upload className="w-3 h-3" />Plate Photo</Label><Input type="file" accept="image/*" capture="environment" onChange={e => setPlatePhoto(e.target.files?.[0] ?? null)} /></div>
-            <div className="space-y-2"><Label className="flex items-center gap-1"><Upload className="w-3 h-3" />Odometer Start</Label><Input type="file" accept="image/*" capture="environment" onChange={e => setOdomStart(e.target.files?.[0] ?? null)} /></div>
-            <div className="space-y-2"><Label className="flex items-center gap-1"><Upload className="w-3 h-3" />Odometer End</Label><Input type="file" accept="image/*" capture="environment" onChange={e => setOdomEnd(e.target.files?.[0] ?? null)} /></div>
-            <div className="col-span-2 space-y-2"><Label>Notes</Label><Textarea value={tForm.notes} onChange={e => setTForm({ ...tForm, notes: e.target.value })} /></div>
+            <div className="space-y-2"><Label className="flex items-center gap-1"><Upload className="w-3 h-3" />{t('pages.garage.platePhoto')}</Label><Input type="file" accept="image/*" capture="environment" onChange={e => setPlatePhoto(e.target.files?.[0] ?? null)} /></div>
+            <div className="space-y-2"><Label className="flex items-center gap-1"><Upload className="w-3 h-3" />{t('pages.garage.odoStart')}</Label><Input type="file" accept="image/*" capture="environment" onChange={e => setOdomStart(e.target.files?.[0] ?? null)} /></div>
+            <div className="space-y-2"><Label className="flex items-center gap-1"><Upload className="w-3 h-3" />{t('pages.garage.odoEnd')}</Label><Input type="file" accept="image/*" capture="environment" onChange={e => setOdomEnd(e.target.files?.[0] ?? null)} /></div>
+            <div className="col-span-2 space-y-2"><Label>{t('pages.garage.notes')}</Label><Textarea value={tForm.notes} onChange={e => setTForm({ ...tForm, notes: e.target.value })} /></div>
             {tEdit && (
               <div className="col-span-2 grid grid-cols-3 gap-2">
                 {tEdit.plate_photo_url && <a href={tEdit.plate_photo_url} target="_blank" rel="noreferrer"><img src={tEdit.plate_photo_url} className="rounded w-full h-24 object-cover" alt="plate" /></a>}
@@ -350,7 +354,7 @@ export default function Garage() {
               </div>
             )}
           </div>
-          <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setTOpen(false)}>Cancel</Button><Button onClick={saveTrip}>{tEdit ? 'Update' : 'Log Trip'}</Button></div>
+          <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setTOpen(false)}>{t('pages.garage.cancel')}</Button><Button onClick={saveTrip}>{tEdit ? t('pages.garage.update') : t('pages.garage.logTrip')}</Button></div>
         </DialogContent>
       </Dialog>
     </div>
