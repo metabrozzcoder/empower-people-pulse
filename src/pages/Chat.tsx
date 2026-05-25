@@ -99,6 +99,16 @@ export default function Chat() {
     }
   }, [])
 
+  // Safety: ensure body interactions aren't left disabled by a stale Radix overlay
+  useEffect(() => {
+    if (!newChatOpen && !newGroupOpen) {
+      const t = setTimeout(() => {
+        if (document.body.style.pointerEvents === 'none') document.body.style.pointerEvents = ''
+      }, 200)
+      return () => clearTimeout(t)
+    }
+  }, [newChatOpen, newGroupOpen])
+
   // Load users (other profiles)
   useEffect(() => {
     if (!myId) return
