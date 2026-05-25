@@ -183,7 +183,6 @@ export default function Chat() {
   }, [activeConvId, myId])
 
   // Active conversation realtime subscription
-  const activeConvId = selectedUser ? convByUser[selectedUser.id] : undefined
   useEffect(() => {
     if (!activeConvId || !myId) return
     const channel = supabase
