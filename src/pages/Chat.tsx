@@ -177,18 +177,21 @@ export default function Chat() {
     if (!myId) return
     const ch = supabase.channel(`ring-${myId}`, { config: { broadcast: { self: false } } })
       .on('broadcast', { event: 'ring' }, ({ payload }) => {
-        if (payload.from === myId || call) return
-        const peer = users.find(u => u.id === payload.from)
-        const accept = window.confirm(`${peer?.name || 'Someone'} is calling (${payload.mode}). Accept?`)
-        if (accept) {
-          setCall({ mode: payload.mode, role: 'callee', conversationId: payload.conversationId, peer: { id: payload.from, name: peer?.name || 'Caller', avatar: peer?.avatar } })
-        } else {
-          supabase.channel(`call-${payload.conversationId}`).send({ type: 'broadcast', event: 'call-end', payload: { from: myId } })
-        }
+        if (payload.from === myId || callRef.current) return
+        const peer = usersRef.current.find(u => u.id === payload.from)
+        // Defer to next tick so we don't block the realtime callback
+        setTimeout(() => {
+          const accept = window.confirm(`${peer?.name || 'Someone'} is calling (${payload.mode}). Accept?`)
+          if (accept) {
+            setCall({ mode: payload.mode, role: 'callee', conversationId: payload.conversationId, peer: { id: payload.from, name: peer?.name || 'Caller', avatar: peer?.avatar } })
+          } else {
+            supabase.channel(`call-${payload.conversationId}`).send({ type: 'broadcast', event: 'call-end', payload: { from: myId } })
+          }
+        }, 0)
       })
       .subscribe()
     return () => { supabase.removeChannel(ch) }
-  }, [myId, users, call])
+  }, [myId])
 
   const startCall = async (mode: 'audio' | 'video') => {
     if (!selectedUser || !myId) return
