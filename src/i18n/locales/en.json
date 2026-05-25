@@ -33,6 +33,7 @@
       "organization": "Organization",
       "communication": "Communication",
       "analytics": "Management & Analytics",
+      "garage": "Drivers & Garage",
       "documentation": "Documentation",
       "system": "System"
     },
@@ -49,6 +50,7 @@
       "userManagement": "User Management",
       "accessControl": "Access Control",
       "analytics": "Analytics",
+      "garage": "Garage",
       "documentation": "Documentation",
       "securitySystem": "Security System"
     }
