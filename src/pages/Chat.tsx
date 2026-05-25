@@ -86,7 +86,8 @@ export default function Chat() {
   const [groupMembers, setGroupMembers] = useState<Set<string>>(new Set())
 
   // Calls
-  const [call, setCall] = useState<null | { mode: 'audio' | 'video'; role: 'caller' | 'callee'; conversationId: string; peer: { id: string; name: string; avatar?: string } }>(null)
+  const [call, _setCall] = useState<null | { mode: 'audio' | 'video'; role: 'caller' | 'callee'; conversationId: string; peer: { id: string; name: string; avatar?: string } }>(null)
+  const setCall = (v: any) => { callRef.current = v; _setCall(v) }
 
 
   // Request browser notification permission
