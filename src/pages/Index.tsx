@@ -122,7 +122,7 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {upcomingEvents.map((event) => (
+              {upcomingEvents.length > 0 ? upcomingEvents.map((event) => (
                 <div key={event.id} className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
                     <p className="font-medium">{event.title}</p>
@@ -132,7 +132,12 @@ const Index = () => {
                     {event.type}
                   </Badge>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Calendar className="mx-auto h-12 w-12 mb-4 opacity-30" />
+                  <p>{t('pages.dashboard.noEvents', 'No upcoming events')}</p>
+                </div>
+              )}
             </div>
             <Button 
               variant="outline" 
