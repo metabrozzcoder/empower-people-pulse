@@ -246,33 +246,33 @@ export default function Garage() {
         </TabsContent>
 
         <TabsContent value="trips" className="space-y-2 pt-4">
-          {trips.map(t => {
-            const v = vehicles.find(x => x.id === t.vehicle_id)
+          {trips.map(trip => {
+            const v = vehicles.find(x => x.id === trip.vehicle_id)
             return (
-              <Card key={t.id}>
+              <Card key={trip.id}>
                 <CardContent className="p-4 flex items-center gap-4">
-                  {t.plate_photo_url ? (
-                    <img src={t.plate_photo_url} alt="plate" className="w-20 h-20 object-cover rounded" />
+                  {trip.plate_photo_url ? (
+                    <img src={trip.plate_photo_url} alt="plate" className="w-20 h-20 object-cover rounded" />
                   ) : (
                     <div className="w-20 h-20 bg-muted flex items-center justify-center rounded"><Camera className="w-6 h-6 text-muted-foreground" /></div>
                   )}
                   <div className="flex-1 grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-                    <div><p className="text-muted-foreground text-xs">Vehicle</p><p className="font-medium">{v?.plate_number ?? '—'}</p></div>
-                    <div><p className="text-muted-foreground text-xs">Driver</p><p className="font-medium">{driverName(t.driver_id)}</p></div>
-                    <div><p className="text-muted-foreground text-xs">Date</p><p className="font-medium">{t.trip_date}</p></div>
-                    <div><p className="text-muted-foreground text-xs">Miles</p><p className="font-medium">{(t.miles_driven ?? 0).toFixed(0)}</p></div>
-                    <div><p className="text-muted-foreground text-xs">Request</p><p className="font-medium truncate">{reqTitle(t.shooting_request_id) ?? '—'}</p></div>
+                    <div><p className="text-muted-foreground text-xs">{t('pages.garage.vehicle')}</p><p className="font-medium">{v?.plate_number ?? '—'}</p></div>
+                    <div><p className="text-muted-foreground text-xs">{t('pages.garage.driver')}</p><p className="font-medium">{driverName(trip.driver_id)}</p></div>
+                    <div><p className="text-muted-foreground text-xs">{t('pages.garage.date')}</p><p className="font-medium">{trip.trip_date}</p></div>
+                    <div><p className="text-muted-foreground text-xs">{t('pages.garage.miles')}</p><p className="font-medium">{(trip.miles_driven ?? 0).toFixed(0)}</p></div>
+                    <div><p className="text-muted-foreground text-xs">{t('pages.garage.request')}</p><p className="font-medium truncate">{reqTitle(trip.shooting_request_id) ?? '—'}</p></div>
                   </div>
-                  <Badge variant={t.status === 'completed' ? 'default' : 'secondary'}>{t.status}</Badge>
+                  <Badge variant={trip.status === 'completed' ? 'default' : 'secondary'}>{trip.status}</Badge>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => openTripEdit(t)}><Edit className="w-4 h-4" /></Button>
-                    {isAdmin && <Button size="sm" variant="ghost" onClick={() => deleteTrip(t.id)}><Trash2 className="w-4 h-4" /></Button>}
+                    <Button size="sm" variant="ghost" onClick={() => openTripEdit(trip)}><Edit className="w-4 h-4" /></Button>
+                    {isAdmin && <Button size="sm" variant="ghost" onClick={() => deleteTrip(trip.id)}><Trash2 className="w-4 h-4" /></Button>}
                   </div>
                 </CardContent>
               </Card>
             )
           })}
-          {trips.length === 0 && <p className="text-muted-foreground text-center py-12">No trips logged yet.</p>}
+          {trips.length === 0 && <p className="text-muted-foreground text-center py-12">{t('pages.garage.noTrips')}</p>}
         </TabsContent>
       </Tabs>
 
