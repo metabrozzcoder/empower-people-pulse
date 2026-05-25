@@ -148,25 +148,39 @@ export default function Chat() {
     return conv.id
   }, [myId, convByUser, toast])
 
-  // Load messages when selecting a user
+  // Ensure DM exists when selecting a user (does not load messages)
   useEffect(() => {
-    if (!selectedUser || !myId) { setMessages([]); return }
+    if (!selectedUser || !myId) return
+    if (convByUser[selectedUser.id]) return
+    getOrCreateDm(selectedUser.id)
+  }, [selectedUser, myId, convByUser, getOrCreateDm])
+
+  // Load messages whenever the active conversation id is known/changes
+  const activeConvId = selectedUser ? convByUser[selectedUser.id] : undefined
+  useEffect(() => {
+    if (!activeConvId || !myId) { setMessages([]); return }
     let cancelled = false
     ;(async () => {
-      const convId = await getOrCreateDm(selectedUser.id)
-      if (!convId || cancelled) return
       const { data } = await supabase
         .from('messages')
         .select('id, conversation_id, sender_id, content, created_at, edited')
-        .eq('conversation_id', convId)
+        .eq('conversation_id', activeConvId)
         .order('created_at', { ascending: true })
         .limit(500)
-      if (!cancelled) setMessages((data as Message[]) ?? [])
-      // Clear unread for this user
-      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, unreadCount: 0 } : u))
+      if (cancelled) return
+      // Merge: keep any optimistic/realtime messages not yet in DB result
+      setMessages(prev => {
+        const fetched = (data as Message[]) ?? []
+        const ids = new Set(fetched.map(m => m.id))
+        const extras = prev.filter(m => m.conversation_id === activeConvId && !ids.has(m.id))
+        return [...fetched, ...extras]
+      })
+      if (selectedUser) {
+        setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, unreadCount: 0 } : u))
+      }
     })()
     return () => { cancelled = true }
-  }, [selectedUser, myId, getOrCreateDm])
+  }, [activeConvId, myId])
 
   // Active conversation realtime subscription
   const activeConvId = selectedUser ? convByUser[selectedUser.id] : undefined
