@@ -171,9 +171,9 @@ export default function Chat() {
   // Active conversation realtime subscription
   const activeConvId = selectedUser ? convByUser[selectedUser.id] : undefined
   useEffect(() => {
-    if (!activeConvId) return
+    if (!activeConvId || !myId) return
     const channel = supabase
-      .channel(`messages:${activeConvId}`)
+      .channel(`messages-active-${activeConvId}-${myId}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'messages',
         filter: `conversation_id=eq.${activeConvId}`,
@@ -183,24 +183,44 @@ export default function Chat() {
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [activeConvId])
+  }, [activeConvId, myId])
+
+  // Refresh conv map when I'm added to a new conversation
+  useEffect(() => {
+    if (!myId) return
+    const channel = supabase
+      .channel(`cm-watch-${myId}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'conversation_members',
+        filter: `user_id=eq.${myId}`,
+      }, () => { refreshConvMap() })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [myId, refreshConvMap])
 
   // Global notification subscription: listen for all inserts and check if in our convs
   useEffect(() => {
     if (!myId) return
     const channel = supabase
-      .channel(`messages:notify:${myId}`)
+      .channel(`messages-notify-${myId}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'messages',
-      }, (payload) => {
+      }, async (payload) => {
         const m = payload.new as Message
         if (m.sender_id === myId) return
-        // Find which user this conv belongs to
-        const userId = Object.entries(convByUser).find(([, cid]) => cid === m.conversation_id)?.[0]
-        if (!userId) return
+        let userId = Object.entries(convByUser).find(([, cid]) => cid === m.conversation_id)?.[0]
+        if (!userId) {
+          await refreshConvMap()
+          if (selectedUserRef.current?.id && m.sender_id === selectedUserRef.current.id) {
+            setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m])
+          }
+          return
+        }
         const sender = users.find(u => u.id === userId)
         const isActive = selectedUserRef.current?.id === userId
-        if (!isActive) {
+        if (isActive) {
+          setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m])
+        } else {
           setUsers(prev => prev.map(u => u.id === userId ? { ...u, unreadCount: u.unreadCount + 1 } : u))
           toast({ title: sender?.name ?? 'New message', description: m.content.slice(0, 120) })
           if (notifEnabled && typeof Notification !== 'undefined' && document.visibilityState !== 'visible') {
@@ -212,7 +232,7 @@ export default function Chat() {
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [myId, convByUser, users, notifEnabled, toast])
+  }, [myId, convByUser, users, notifEnabled, toast, refreshConvMap])
 
   // Auto-scroll
   useEffect(() => {
