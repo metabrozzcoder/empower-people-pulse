@@ -629,7 +629,15 @@ export default function Chat() {
               {filteredUsers.map(u => (
                 <div key={u.id}
                   className="flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-accent"
-                  onClick={() => { setSelectedGroupId(null); setSelectedUser(u); setNewChatOpen(false); setListTab('people') }}>
+                  onClick={() => {
+                    setNewChatOpen(false)
+                    setTimeout(() => {
+                      setSelectedGroupId(null)
+                      setSelectedUser(u)
+                      setListTab('people')
+                    }, 50)
+                  }}>
+
                   <Avatar className="w-9 h-9"><AvatarImage src={u.avatar} /><AvatarFallback>{u.name.slice(0,2)}</AvatarFallback></Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{u.name}</p>
