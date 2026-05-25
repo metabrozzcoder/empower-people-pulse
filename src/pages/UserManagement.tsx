@@ -36,6 +36,7 @@ import { Separator } from '@/components/ui/separator'
 import { useUsers } from '@/context/UserContext'
 import { User } from '@/context/UserContext'
 import { useToast } from '@/hooks/use-toast'
+import CustomRolesBox from '@/components/CustomRolesBox'
 
 // Define job positions for the system
 const JOB_POSITIONS = [
@@ -764,6 +765,9 @@ export default function UserManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Custom Roles Box */}
+      <CustomRolesBox />
 
       {/* User Dialog - Combined Basic Info and Permissions */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
