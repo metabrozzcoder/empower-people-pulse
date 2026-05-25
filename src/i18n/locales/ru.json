@@ -33,6 +33,7 @@
       "organization": "Организация",
       "communication": "Коммуникации",
       "analytics": "Управление и аналитика",
+      "garage": "Водители и гараж",
       "documentation": "Документация",
       "system": "Система"
     },
@@ -49,6 +50,7 @@
       "userManagement": "Управление пользователями",
       "accessControl": "Контроль доступа",
       "analytics": "Аналитика",
+      "garage": "Гараж",
       "documentation": "Документация",
       "securitySystem": "Система безопасности"
     }
