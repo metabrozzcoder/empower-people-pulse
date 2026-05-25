@@ -353,8 +353,10 @@ export default function Chat() {
   }, [users, selectedUser])
 
   const handleSend = async () => {
-    if (!draft.trim() || !selectedUser || !myId) return
-    const convId = await getOrCreateDm(selectedUser.id)
+    if (!draft.trim() || !myId) return
+    let convId: string | null = null
+    if (selectedGroupId) convId = selectedGroupId
+    else if (selectedUser) convId = await getOrCreateDm(selectedUser.id)
     if (!convId) return
     const content = draft.trim()
     setDraft('')
@@ -372,6 +374,9 @@ export default function Chat() {
       setMessages(prev => prev.some(x => x.id === (data as any).id) ? prev : [...prev, data as Message])
     }
   }
+
+  const activeGroup = groups.find(g => g.id === selectedGroupId) || null
+
 
   const insertEmoji = (e: string) => setDraft(prev => prev + e)
 
