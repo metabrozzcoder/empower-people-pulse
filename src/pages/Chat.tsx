@@ -9,14 +9,25 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   MessageSquare, Send, Search, Smile, Check, CheckCheck, Bell, BellOff,
+  Phone, Video, Plus, Users, UserPlus,
 } from 'lucide-react'
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from '@/components/ui/popover'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
+import CallDialog from '@/components/CallDialog'
+
 
 interface ChatUser {
   id: string
