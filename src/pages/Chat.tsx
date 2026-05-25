@@ -9,14 +9,25 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   MessageSquare, Send, Search, Smile, Check, CheckCheck, Bell, BellOff,
+  Phone, Video, Plus, Users, UserPlus,
 } from 'lucide-react'
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from '@/components/ui/popover'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
+import CallDialog from '@/components/CallDialog'
+
 
 interface ChatUser {
   id: string
@@ -58,6 +69,22 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const selectedUserRef = useRef<ChatUser | null>(null)
   useEffect(() => { selectedUserRef.current = selectedUser }, [selectedUser])
+
+  // Groups
+  interface GroupConv { id: string; name: string; memberCount: number }
+  const [groups, setGroups] = useState<GroupConv[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
+  const [listTab, setListTab] = useState<'people' | 'groups'>('people')
+
+  // Dialogs
+  const [newChatOpen, setNewChatOpen] = useState(false)
+  const [newGroupOpen, setNewGroupOpen] = useState(false)
+  const [groupName, setGroupName] = useState('')
+  const [groupMembers, setGroupMembers] = useState<Set<string>>(new Set())
+
+  // Calls
+  const [call, setCall] = useState<null | { mode: 'audio' | 'video'; role: 'caller' | 'callee'; conversationId: string; peer: { id: string; name: string; avatar?: string } }>(null)
+
 
   // Request browser notification permission
   useEffect(() => {
@@ -123,6 +150,68 @@ export default function Chat() {
 
   useEffect(() => { refreshConvMap() }, [refreshConvMap])
 
+  // Load groups
+  const refreshGroups = useCallback(async () => {
+    if (!myId) return
+    const { data: myMems } = await supabase.from('conversation_members').select('conversation_id')
+    const convIds = (myMems ?? []).map(m => m.conversation_id)
+    if (convIds.length === 0) { setGroups([]); return }
+    const { data: convs } = await supabase
+      .from('conversations').select('id, name, is_group').in('id', convIds).eq('is_group', true)
+    const gIds = (convs ?? []).map(c => c.id)
+    if (gIds.length === 0) { setGroups([]); return }
+    const { data: allMems } = await supabase
+      .from('conversation_members').select('conversation_id, user_id').in('conversation_id', gIds)
+    const counts: Record<string, number> = {}
+    ;(allMems ?? []).forEach(m => { counts[m.conversation_id] = (counts[m.conversation_id] || 0) + 1 })
+    setGroups((convs ?? []).map((c: any) => ({ id: c.id, name: c.name || 'Untitled group', memberCount: counts[c.id] || 0 })))
+  }, [myId])
+  useEffect(() => { refreshGroups() }, [refreshGroups])
+
+  // Incoming ring channel
+  useEffect(() => {
+    if (!myId) return
+    const ch = supabase.channel(`ring-${myId}`, { config: { broadcast: { self: false } } })
+      .on('broadcast', { event: 'ring' }, ({ payload }) => {
+        if (payload.from === myId || call) return
+        const peer = users.find(u => u.id === payload.from)
+        const accept = window.confirm(`${peer?.name || 'Someone'} is calling (${payload.mode}). Accept?`)
+        if (accept) {
+          setCall({ mode: payload.mode, role: 'callee', conversationId: payload.conversationId, peer: { id: payload.from, name: peer?.name || 'Caller', avatar: peer?.avatar } })
+        } else {
+          supabase.channel(`call-${payload.conversationId}`).send({ type: 'broadcast', event: 'call-end', payload: { from: myId } })
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [myId, users, call])
+
+  const startCall = async (mode: 'audio' | 'video') => {
+    if (!selectedUser || !myId) return
+    const convId = await getOrCreateDm(selectedUser.id)
+    if (!convId) return
+    const ringCh = supabase.channel(`ring-${selectedUser.id}`)
+    await new Promise<void>((resolve) => { ringCh.subscribe((st) => { if (st === 'SUBSCRIBED') resolve() }) })
+    await ringCh.send({ type: 'broadcast', event: 'ring', payload: { from: myId, conversationId: convId, mode } })
+    supabase.removeChannel(ringCh)
+    setCall({ mode, role: 'caller', conversationId: convId, peer: { id: selectedUser.id, name: selectedUser.name, avatar: selectedUser.avatar } })
+  }
+
+  const createGroup = async () => {
+    if (!myId || !groupName.trim() || groupMembers.size === 0) return
+    const { data: conv, error } = await supabase
+      .from('conversations').insert({ is_group: true, name: groupName.trim(), created_by: myId }).select('id').single()
+    if (error || !conv) { toast({ title: 'Failed to create group', description: error?.message, variant: 'destructive' }); return }
+    const members = [myId, ...Array.from(groupMembers)].map(uid => ({ conversation_id: conv.id, user_id: uid }))
+    const { error: mErr } = await supabase.from('conversation_members').insert(members)
+    if (mErr) { toast({ title: 'Failed to add members', description: mErr.message, variant: 'destructive' }); return }
+    toast({ title: 'Group created', description: groupName })
+    setGroupName(''); setGroupMembers(new Set()); setNewGroupOpen(false)
+    await refreshGroups()
+    setListTab('groups'); setSelectedUser(null); setSelectedGroupId(conv.id)
+  }
+
+
   const getOrCreateDm = useCallback(async (otherUserId: string): Promise<string | null> => {
     if (!myId) return null
     if (convByUser[otherUserId]) return convByUser[otherUserId]
@@ -156,7 +245,7 @@ export default function Chat() {
   }, [selectedUser, myId, convByUser, getOrCreateDm])
 
   // Load messages whenever the active conversation id is known/changes
-  const activeConvId = selectedUser ? convByUser[selectedUser.id] : undefined
+  const activeConvId = selectedGroupId ?? (selectedUser ? convByUser[selectedUser.id] : undefined)
   useEffect(() => {
     if (!activeConvId || !myId) { setMessages([]); return }
     let cancelled = false
@@ -260,12 +349,15 @@ export default function Chat() {
 
   // Auto-select first
   useEffect(() => {
-    if (!selectedUser && users.length > 0) setSelectedUser(users[0])
-  }, [users, selectedUser])
+    if (!selectedUser && !selectedGroupId && users.length > 0) setSelectedUser(users[0])
+  }, [users, selectedUser, selectedGroupId])
+
 
   const handleSend = async () => {
-    if (!draft.trim() || !selectedUser || !myId) return
-    const convId = await getOrCreateDm(selectedUser.id)
+    if (!draft.trim() || !myId) return
+    let convId: string | null = null
+    if (selectedGroupId) convId = selectedGroupId
+    else if (selectedUser) convId = await getOrCreateDm(selectedUser.id)
     if (!convId) return
     const content = draft.trim()
     setDraft('')
@@ -283,6 +375,9 @@ export default function Chat() {
       setMessages(prev => prev.some(x => x.id === (data as any).id) ? prev : [...prev, data as Message])
     }
   }
+
+  const activeGroup = groups.find(g => g.id === selectedGroupId) || null
+
 
   const insertEmoji = (e: string) => setDraft(prev => prev + e)
 
@@ -312,76 +407,136 @@ export default function Chat() {
         {/* List */}
         <Card className="w-80 flex flex-col">
           <CardHeader className="pb-3 space-y-3">
-            <CardTitle className="flex items-center space-x-2">
-              <MessageSquare className="w-5 h-5" />
-              <span>Messages</span>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <MessageSquare className="w-5 h-5" />
+                <span>Messages</span>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost"><Plus className="w-4 h-4" /></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setNewChatOpen(true)}>
+                    <UserPlus className="w-4 h-4 mr-2" /> New chat
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setNewGroupOpen(true)}>
+                    <Users className="w-4 h-4 mr-2" /> New group
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </CardTitle>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
-                placeholder="Search people..."
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
+            <Tabs value={listTab} onValueChange={(v) => setListTab(v as any)}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="unread">Unread</TabsTrigger>
+                <TabsTrigger value="people">People</TabsTrigger>
+                <TabsTrigger value="groups">Groups</TabsTrigger>
               </TabsList>
             </Tabs>
           </CardHeader>
           <CardContent className="flex-1 p-0">
             <ScrollArea className="h-full">
               <div className="space-y-1 p-2">
-                {filteredUsers.length === 0 && (
-                  <p className="text-center text-sm text-muted-foreground py-8">No users</p>
-                )}
-                {filteredUsers.map((u) => (
-                  <div
-                    key={u.id}
-                    className={cn(
-                      'flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors',
-                      selectedUser?.id === u.id ? 'bg-accent' : 'hover:bg-accent/50'
+                {listTab === 'people' ? (
+                  <>
+                    {filteredUsers.length === 0 && (
+                      <p className="text-center text-sm text-muted-foreground py-8">No users</p>
                     )}
-                    onClick={() => setSelectedUser(u)}
-                  >
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={u.avatar} />
-                      <AvatarFallback>{u.name.split(' ').map(n => n[0]).join('').slice(0,2)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-medium truncate">{u.name}</p>
-                        {u.unreadCount > 0 && (
-                          <Badge variant="destructive" className="text-xs">{u.unreadCount}</Badge>
+                    {filteredUsers.map((u) => (
+                      <div
+                        key={u.id}
+                        className={cn(
+                          'flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors',
+                          selectedUser?.id === u.id && !selectedGroupId ? 'bg-accent' : 'hover:bg-accent/50'
                         )}
+                        onClick={() => { setSelectedGroupId(null); setSelectedUser(u) }}
+                      >
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={u.avatar} />
+                          <AvatarFallback>{u.name.split(' ').map(n => n[0]).join('').slice(0,2)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium truncate">{u.name}</p>
+                            {u.unreadCount > 0 && (
+                              <Badge variant="destructive" className="text-xs">{u.unreadCount}</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">{u.role || '—'}</p>
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">{u.role || '—'}</p>
-                    </div>
-                  </div>
-                ))}
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {groups.filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+                      <p className="text-center text-sm text-muted-foreground py-8">No groups yet</p>
+                    )}
+                    {groups.filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase())).map(g => (
+                      <div
+                        key={g.id}
+                        className={cn(
+                          'flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors',
+                          selectedGroupId === g.id ? 'bg-accent' : 'hover:bg-accent/50'
+                        )}
+                        onClick={() => { setSelectedUser(null); setSelectedGroupId(g.id) }}
+                      >
+                        <Avatar className="w-10 h-10"><AvatarFallback><Users className="w-4 h-4" /></AvatarFallback></Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{g.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{g.memberCount} members</p>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </ScrollArea>
           </CardContent>
         </Card>
 
         {/* Chat Window */}
-        {selectedUser ? (
+        {(selectedUser || activeGroup) ? (
           <Card className="flex-1 flex flex-col min-w-0">
             <CardHeader className="pb-3 border-b">
               <div className="flex items-center space-x-3">
-                <Avatar className="w-10 h-10">
-                  <AvatarImage src={selectedUser.avatar} />
-                  <AvatarFallback>{selectedUser.name.split(' ').map(n => n[0]).join('').slice(0,2)}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <h3 className="font-semibold truncate">{selectedUser.name}</h3>
-                  <p className="text-sm text-muted-foreground truncate">{selectedUser.role || ''}</p>
-                </div>
+                {activeGroup ? (
+                  <>
+                    <Avatar className="w-10 h-10"><AvatarFallback><Users className="w-4 h-4" /></AvatarFallback></Avatar>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold truncate">{activeGroup.name}</h3>
+                      <p className="text-sm text-muted-foreground truncate">{activeGroup.memberCount} members</p>
+                    </div>
+                  </>
+                ) : selectedUser ? (
+                  <>
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={selectedUser.avatar} />
+                      <AvatarFallback>{selectedUser.name.split(' ').map(n => n[0]).join('').slice(0,2)}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold truncate">{selectedUser.name}</h3>
+                      <p className="text-sm text-muted-foreground truncate">{selectedUser.role || ''}</p>
+                    </div>
+                    <Button size="icon" variant="ghost" title="Voice call" onClick={() => startCall('audio')}>
+                      <Phone className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" title="Video call" onClick={() => startCall('video')}>
+                      <Video className="w-4 h-4" />
+                    </Button>
+                  </>
+                ) : null}
               </div>
             </CardHeader>
+
 
             <CardContent className="flex-1 p-0 min-h-0">
               <ScrollArea className="h-full p-4">
@@ -393,12 +548,18 @@ export default function Chat() {
                     const mine = m.sender_id === myId
                     return (
                       <div key={m.id} className={cn('flex items-end gap-2', mine ? 'justify-end' : 'justify-start')}>
-                        {!mine && (
+                        {!mine && selectedUser && (
                           <Avatar className="w-7 h-7">
                             <AvatarImage src={selectedUser.avatar} />
                             <AvatarFallback className="text-xs">{selectedUser.name.split(' ').map(n => n[0]).join('').slice(0,2)}</AvatarFallback>
                           </Avatar>
                         )}
+                        {!mine && activeGroup && (
+                          <Avatar className="w-7 h-7">
+                            <AvatarFallback className="text-xs">{(users.find(u => u.id === m.sender_id)?.name || '?').slice(0,2)}</AvatarFallback>
+                          </Avatar>
+                        )}
+
                         <div className={cn(
                           'max-w-xs lg:max-w-md px-3 py-2 rounded-2xl shadow-sm',
                           mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm'
@@ -450,6 +611,78 @@ export default function Chat() {
           </Card>
         )}
       </div>
+
+      {/* New chat dialog */}
+      <Dialog open={newChatOpen} onOpenChange={setNewChatOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Start a new chat</DialogTitle></DialogHeader>
+          <Input placeholder="Search people..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <ScrollArea className="h-72">
+            <div className="space-y-1">
+              {filteredUsers.map(u => (
+                <div key={u.id}
+                  className="flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-accent"
+                  onClick={() => { setSelectedGroupId(null); setSelectedUser(u); setNewChatOpen(false); setListTab('people') }}>
+                  <Avatar className="w-9 h-9"><AvatarImage src={u.avatar} /><AvatarFallback>{u.name.slice(0,2)}</AvatarFallback></Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{u.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{u.role || '—'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* New group dialog */}
+      <Dialog open={newGroupOpen} onOpenChange={setNewGroupOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Create a group</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Group name</Label>
+              <Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Production Team" />
+            </div>
+            <div>
+              <Label className="text-xs">Add members</Label>
+              <ScrollArea className="h-60 mt-1 border rounded-md p-2">
+                <div className="space-y-1">
+                  {users.map(u => {
+                    const checked = groupMembers.has(u.id)
+                    return (
+                      <label key={u.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-accent cursor-pointer">
+                        <Checkbox checked={checked} onCheckedChange={(v) => {
+                          setGroupMembers(prev => { const next = new Set(prev); if (v) next.add(u.id); else next.delete(u.id); return next })
+                        }} />
+                        <Avatar className="w-8 h-8"><AvatarImage src={u.avatar} /><AvatarFallback>{u.name.slice(0,2)}</AvatarFallback></Avatar>
+                        <span className="text-sm">{u.name}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </ScrollArea>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewGroupOpen(false)}>Cancel</Button>
+            <Button onClick={createGroup} disabled={!groupName.trim() || groupMembers.size === 0}>Create group</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {call && myId && (
+        <CallDialog
+          open={!!call}
+          onClose={() => setCall(null)}
+          mode={call.mode}
+          role={call.role}
+          conversationId={call.conversationId}
+          myId={myId}
+          peer={call.peer}
+        />
+      )}
     </div>
   )
 }
+
