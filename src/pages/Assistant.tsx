@@ -62,6 +62,7 @@ export default function Assistant() {
   };
 
   const deleteThread = async (id: string) => {
+    if (!confirm(t("assistant.confirmDelete", "Delete this conversation?"))) return;
     await supabase.from("assistant_messages").delete().eq("thread_id", id);
     await supabase.from("assistant_threads").delete().eq("id", id);
     setThreads((p) => p.filter((x) => x.id !== id));
