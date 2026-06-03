@@ -53,8 +53,37 @@
       "analytics": "Analytics",
       "garage": "Garage",
       "documentation": "Documentation",
-      "securitySystem": "Security System"
+      "securitySystem": "Security System",
+      "assistant": "AI Assistant"
     }
+  },
+  "assistant": {
+    "title": "AI Assistant",
+    "subtitle": "Save bookmarks, notes, documents and photos — then ask the AI anything about them.",
+    "capture": "Capture",
+    "pasteUrl": "Paste a URL to save as bookmark…",
+    "save": "Save",
+    "noteTitle": "Note title",
+    "noteContent": "Write a quick note…",
+    "saveNote": "Save note",
+    "uploadDoc": "Upload document",
+    "uploadPhoto": "Upload photo",
+    "searchLibrary": "Search your library…",
+    "all": "All",
+    "bookmarks": "Bookmarks",
+    "notes": "Notes",
+    "documents": "Documents",
+    "photos": "Photos",
+    "empty": "Nothing here yet. Capture something above to get started.",
+    "chatTitle": "Ask your assistant",
+    "newChat": "New chat",
+    "newConversation": "New conversation",
+    "chatEmpty": "Ask me anything about your saved items.",
+    "thinking": "Thinking…",
+    "askAnything": "Ask anything about your library…",
+    "savedBookmark": "Bookmark saved",
+    "savedNote": "Note saved",
+    "uploaded": "File uploaded"
   },
   "pages": {
     "dashboard": {
