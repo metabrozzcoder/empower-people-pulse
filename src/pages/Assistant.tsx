@@ -62,6 +62,7 @@ export default function Assistant() {
   };
 
   const deleteThread = async (id: string) => {
+    if (!confirm(t("assistant.confirmDelete", "Delete this conversation?"))) return;
     await supabase.from("assistant_messages").delete().eq("thread_id", id);
     await supabase.from("assistant_threads").delete().eq("id", id);
     setThreads((p) => p.filter((x) => x.id !== id));
@@ -225,11 +226,11 @@ export default function Assistant() {
                   <>
                     <span className="truncate flex-1">{th.title}</span>
                     <Pencil
-                      className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 hover:text-primary"
+                      className="h-3.5 w-3.5 opacity-60 hover:opacity-100 hover:text-primary"
                       onClick={(e) => startRename(th, e)}
                     />
                     <Trash2
-                      className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 hover:text-destructive"
+                      className="h-3.5 w-3.5 opacity-60 hover:opacity-100 hover:text-destructive"
                       onClick={(e) => { e.stopPropagation(); deleteThread(th.id); }}
                     />
                   </>
