@@ -35,7 +35,8 @@
       "analytics": "Management & Analytics",
       "garage": "Drivers & Garage",
       "documentation": "Documentation",
-      "system": "System"
+      "system": "System",
+      "assistant": "Assistant"
     },
     "items": {
       "dashboard": "Dashboard",
