@@ -7,3 +7,6 @@ enable_signup = true
 enable_signup = true
 enable_confirmations = false
 double_confirm_changes = false
+
+[functions.assistant-chat]
+verify_jwt = true
