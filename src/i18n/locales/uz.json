@@ -35,7 +35,8 @@
       "analytics": "Boshqaruv va tahlil",
       "garage": "Haydovchilar va garaj",
       "documentation": "Hujjatlar",
-      "system": "Tizim"
+      "system": "Tizim",
+      "assistant": "Yordamchi"
     },
     "items": {
       "dashboard": "Boshqaruv paneli",
