@@ -4,8 +4,9 @@ const supabase = supabaseClient as any;
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Send, Loader2, MessageSquarePlus, Trash2, Sparkles } from "lucide-react";
+import { Brain, Send, Loader2, MessageSquarePlus, Trash2, Sparkles, Pencil, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
@@ -22,6 +23,10 @@ export default function Assistant() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [typingId, setTypingId] = useState<string | null>(null);
+  const [typingText, setTypingText] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
   const userId = currentUser?.id;
@@ -49,7 +54,7 @@ export default function Assistant() {
     if (activeThread) loadMessages(activeThread);
     else setMessages([]);
   }, [activeThread]);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, chatLoading]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, chatLoading, typingText]);
 
   const newThread = () => {
     setActiveThread(null);
@@ -57,9 +62,53 @@ export default function Assistant() {
   };
 
   const deleteThread = async (id: string) => {
+    await supabase.from("assistant_messages").delete().eq("thread_id", id);
     await supabase.from("assistant_threads").delete().eq("id", id);
     setThreads((p) => p.filter((x) => x.id !== id));
     if (activeThread === id) { setActiveThread(null); setMessages([]); }
+  };
+
+  const clearAll = async () => {
+    if (!userId) return;
+    if (!confirm(t("assistant.confirmClearAll", "Delete all conversations?"))) return;
+    const ids = threads.map((t) => t.id);
+    if (ids.length) {
+      await supabase.from("assistant_messages").delete().in("thread_id", ids);
+      await supabase.from("assistant_threads").delete().in("id", ids);
+    }
+    setThreads([]);
+    setActiveThread(null);
+    setMessages([]);
+  };
+
+  const startRename = (th: Thread, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(th.id);
+    setEditingTitle(th.title);
+  };
+
+  const saveRename = async (id: string) => {
+    const title = editingTitle.trim() || "Untitled";
+    await supabase.from("assistant_threads").update({ title }).eq("id", id);
+    setThreads((p) => p.map((x) => (x.id === id ? { ...x, title } : x)));
+    setEditingId(null);
+  };
+
+  const animateTyping = (id: string, fullText: string) => {
+    setTypingId(id);
+    setTypingText("");
+    let i = 0;
+    const step = Math.max(1, Math.floor(fullText.length / 400));
+    const interval = setInterval(() => {
+      i += step;
+      if (i >= fullText.length) {
+        setTypingText(fullText);
+        clearInterval(interval);
+        setTimeout(() => { setTypingId(null); setTypingText(""); }, 50);
+      } else {
+        setTypingText(fullText.slice(0, i));
+      }
+    }, 15);
   };
 
   const sendMessage = async () => {
@@ -104,6 +153,7 @@ export default function Assistant() {
         content: { type: "text", text: reply }, created_at: new Date().toISOString(),
       };
       setMessages((p) => [...p, aMsg]);
+      animateTyping(aMsg.id, reply);
     } catch (e: any) {
       toast({ title: "Error", description: e.message ?? String(e), variant: "destructive" });
     } finally {
@@ -122,11 +172,17 @@ export default function Assistant() {
     <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-0 h-[calc(100vh-7rem)] border rounded-lg overflow-hidden bg-card">
       {/* Sidebar */}
       <div className="border-r flex flex-col bg-muted/30 min-h-0">
-        <div className="p-3 border-b">
+        <div className="p-3 border-b space-y-2">
           <Button className="w-full" onClick={newThread}>
             <MessageSquarePlus className="h-4 w-4 mr-2" />
             {t("assistant.newChat", "New chat")}
           </Button>
+          {threads.length > 0 && (
+            <Button variant="outline" size="sm" className="w-full" onClick={clearAll}>
+              <Trash2 className="h-3.5 w-3.5 mr-2" />
+              {t("assistant.clearAll", "Clear all")}
+            </Button>
+          )}
         </div>
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
@@ -138,16 +194,46 @@ export default function Assistant() {
             {threads.map((th) => (
               <div
                 key={th.id}
-                onClick={() => setActiveThread(th.id)}
-                className={`group flex items-center gap-2 rounded-md px-2 py-2 text-sm cursor-pointer transition ${
+                onClick={() => editingId !== th.id && setActiveThread(th.id)}
+                className={`group flex items-center gap-1 rounded-md px-2 py-2 text-sm cursor-pointer transition ${
                   activeThread === th.id ? "bg-primary/10 text-primary" : "hover:bg-accent"
                 }`}
               >
-                <span className="truncate flex-1">{th.title}</span>
-                <Trash2
-                  className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 hover:text-destructive"
-                  onClick={(e) => { e.stopPropagation(); deleteThread(th.id); }}
-                />
+                {editingId === th.id ? (
+                  <>
+                    <Input
+                      autoFocus
+                      value={editingTitle}
+                      onChange={(e) => setEditingTitle(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveRename(th.id);
+                        if (e.key === "Escape") setEditingId(null);
+                      }}
+                      className="h-7 text-sm flex-1"
+                    />
+                    <Check
+                      className="h-3.5 w-3.5 hover:text-primary"
+                      onClick={(e) => { e.stopPropagation(); saveRename(th.id); }}
+                    />
+                    <X
+                      className="h-3.5 w-3.5 hover:text-destructive"
+                      onClick={(e) => { e.stopPropagation(); setEditingId(null); }}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <span className="truncate flex-1">{th.title}</span>
+                    <Pencil
+                      className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 hover:text-primary"
+                      onClick={(e) => startRename(th, e)}
+                    />
+                    <Trash2
+                      className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 hover:text-destructive"
+                      onClick={(e) => { e.stopPropagation(); deleteThread(th.id); }}
+                    />
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -190,24 +276,31 @@ export default function Assistant() {
               </div>
             ) : (
               <div className="space-y-6">
-                {messages.map((m) => (
-                  <div key={m.id} className={`flex gap-3 ${m.role === "user" ? "justify-end" : ""}`}>
-                    {m.role === "assistant" && (
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Brain className="h-4 w-4 text-primary" />
+                {messages.map((m) => {
+                  const isTyping = m.id === typingId;
+                  const display = isTyping ? typingText : (m.content?.text ?? "");
+                  return (
+                    <div key={m.id} className={`flex gap-3 ${m.role === "user" ? "justify-end" : ""}`}>
+                      {m.role === "assistant" && (
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Brain className="h-4 w-4 text-primary" />
+                        </div>
+                      )}
+                      <div
+                        className={
+                          m.role === "user"
+                            ? "bg-primary text-primary-foreground rounded-2xl px-4 py-2.5 max-w-[80%] whitespace-pre-wrap text-sm"
+                            : "text-sm whitespace-pre-wrap leading-relaxed max-w-[85%]"
+                        }
+                      >
+                        {display}
+                        {isTyping && (
+                          <span className="inline-block w-1.5 h-4 ml-0.5 bg-primary align-middle animate-pulse" />
+                        )}
                       </div>
-                    )}
-                    <div
-                      className={
-                        m.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-2xl px-4 py-2.5 max-w-[80%] whitespace-pre-wrap text-sm"
-                          : "text-sm whitespace-pre-wrap leading-relaxed max-w-[85%]"
-                      }
-                    >
-                      {m.content?.text}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {chatLoading && (
                   <div className="flex gap-3">
                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
