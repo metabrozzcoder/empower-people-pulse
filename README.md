@@ -71,3 +71,8 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+
+## Credits
+
+The AI Assistant section is inspired by [Eclaire](https://github.com/eclaire-labs/eclaire) (MIT-licensed). No source code was copied; the implementation is a clean-room native rebuild on this app's Vite/React + Lovable Cloud stack.

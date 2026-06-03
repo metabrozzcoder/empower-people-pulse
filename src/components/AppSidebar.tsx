@@ -125,6 +125,14 @@ const sidebarSections = [
     ]
   },
   {
+    title: "AI Assistant",
+    titleKey: "sidebar.groups.assistant",
+    collapsible: true,
+    items: [
+      { title: "Assistant", titleKey: "sidebar.items.assistant", url: "/assistant", icon: Brain, sectionName: "Assistant" },
+    ]
+  },
+  {
     title: "System",
     titleKey: "sidebar.groups.system",
     collapsible: true,

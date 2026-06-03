@@ -35,7 +35,8 @@
       "analytics": "Boshqaruv va tahlil",
       "garage": "Haydovchilar va garaj",
       "documentation": "Hujjatlar",
-      "system": "Tizim"
+      "system": "Tizim",
+      "assistant": "Yordamchi"
     },
     "items": {
       "dashboard": "Boshqaruv paneli",
@@ -52,8 +53,37 @@
       "analytics": "Tahlil",
       "garage": "Garaj",
       "documentation": "Hujjatlar",
-      "securitySystem": "Xavfsizlik tizimi"
+      "securitySystem": "Xavfsizlik tizimi",
+      "assistant": "AI Yordamchi"
     }
+  },
+  "assistant": {
+    "title": "AI Yordamchi",
+    "subtitle": "Xatcho'plar, eslatmalar, hujjatlar va rasmlarni saqlang — AI dan ular haqida so'rang.",
+    "capture": "Qo'shish",
+    "pasteUrl": "Xatcho'p sifatida saqlash uchun URL kiriting…",
+    "save": "Saqlash",
+    "noteTitle": "Eslatma sarlavhasi",
+    "noteContent": "Qisqa eslatma yozing…",
+    "saveNote": "Eslatmani saqlash",
+    "uploadDoc": "Hujjat yuklash",
+    "uploadPhoto": "Rasm yuklash",
+    "searchLibrary": "Kutubxonadan qidiring…",
+    "all": "Hammasi",
+    "bookmarks": "Xatcho'plar",
+    "notes": "Eslatmalar",
+    "documents": "Hujjatlar",
+    "photos": "Rasmlar",
+    "empty": "Hozircha bo'sh. Yuqorida biror narsa qo'shing.",
+    "chatTitle": "Yordamchidan so'rang",
+    "newChat": "Yangi suhbat",
+    "newConversation": "Yangi suhbat",
+    "chatEmpty": "Saqlangan elementlaringiz haqida so'rang.",
+    "thinking": "O'ylayapman…",
+    "askAnything": "Kutubxona haqida so'rang…",
+    "savedBookmark": "Xatcho'p saqlandi",
+    "savedNote": "Eslatma saqlandi",
+    "uploaded": "Fayl yuklandi"
   },
   "pages": {
     "dashboard": {
