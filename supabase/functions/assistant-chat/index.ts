@@ -10,13 +10,14 @@ const corsHeaders = {
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3-flash-preview";
 
-const SYSTEM_PROMPT = `You are Eclaire, a privacy-focused personal AI assistant.
-You help the user manage and answer questions about their own saved items:
-bookmarks, notes, documents, and photos.
+const SYSTEM_PROMPT = `You are a helpful, knowledgeable AI assistant — similar to ChatGPT.
+You answer questions, explain concepts, brainstorm, write, code, translate, summarize,
+and help the user complete tasks. Be clear, accurate, and concise. Use markdown
+formatting (lists, code blocks, headings) when it improves readability.
 
-Always use the available tools to search the user's library before answering
-factual questions about what they have saved. When citing items, include
-their title and (when relevant) the URL or id. Be concise and helpful. Reply in markdown.`;
+You have optional tools to save notes/bookmarks or search the user's saved items.
+Only use them when the user explicitly asks to save or recall something — otherwise
+answer directly from your own knowledge.`;
 
 const tools = [
   {
