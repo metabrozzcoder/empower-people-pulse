@@ -1,78 +1,54 @@
-## Shooting Requests Workflow
 
-Build a multi-stage approval workflow for shooting requests with role-based handoffs.
+# Plan: AI Personal Assistant (Eclaire-inspired) module
 
-### Workflow stages
+Eclaire is MIT-licensed but built on a completely different stack (Next.js + Python workers). We will not port its code. Instead, we'll build a **native equivalent** in your Vite/React + Lovable Cloud stack that captures the spirit: one assistant that can chat over the user's own bookmarks, notes, documents, photos, and tasks.
 
-```text
-Employee creates request
-        ↓
-[pending_moderator] → Shooting Moderator reviews
-        ↓
-   ┌────┼────┬─────────────────┐
-   ↓    ↓    ↓                 ↓
- Approve Decline  Escalate to Director (sensitive)
-   ↓              ↓
-   │         [pending_director] → approve/decline
-   ↓              ↓
-[pending_equipment] → Technical Supply assigns equipment
-        ↓
-[pending_driver] → Driver/Dispatcher assigned
-        ↓
-[scheduled] → shoot happens
-        ↓
-[completed]   (or [declined] at any approval stage)
-```
+## What you get
 
-### Roles (new)
+A new sidebar section **"Assistant"** at `/assistant` with:
 
-Extend `app_role` enum with:
-- `shooting_moderator`
-- `director`
-- `tech_supply`
-- `driver`
+1. **Capture inbox** — drop a link, note, photo, or document; it's stored and auto-tagged.
+2. **Library views** — tabs for Bookmarks, Notes, Documents, Photos (Tasks already exist in the app and will be reused, not duplicated).
+3. **AI chat panel** — ask questions like "what did I save about budgeting last week?" — the assistant retrieves your items via tools and answers with citations.
 
-Existing `admin` can act on any stage. Existing `employee`/`guest` can create requests.
+## Backend (Lovable Cloud)
 
-### Database changes
+New tables, all RLS-scoped to `auth.uid()`:
+- `assistant_items` — unified table: `id, user_id, kind (bookmark|note|document|photo), title, content, url, storage_path, tags[], metadata jsonb, created_at`
+- `assistant_threads` — chat threads: `id, user_id, title, created_at`
+- `assistant_messages` — `id, thread_id, role, content (UIMessage parts as jsonb), created_at`
 
-Add columns to `shooting_requests`:
-- `workflow_status` text — one of: `pending_moderator`, `pending_director`, `pending_equipment`, `pending_driver`, `scheduled`, `completed`, `declined`
-- `sensitive` boolean default false
-- `moderator_id`, `moderator_note`, `moderator_decided_at`
-- `director_id`, `director_note`, `director_decided_at`
-- `tech_supply_id`, `equipment_note`, `equipment_assigned_at`
-- `driver_id`, `vehicle_info`, `driver_assigned_at`
-- `decline_reason` text
+Storage: reuse existing `documents` bucket for files; reuse `avatars`-style public bucket pattern for a new `assistant-photos` bucket.
 
-New table `shooting_request_history` (audit trail):
-- `request_id`, `actor_id`, `action`, `from_status`, `to_status`, `note`, `created_at`
+Edge function `assistant-chat`:
+- Uses AI SDK + Lovable AI Gateway (`google/gemini-3-flash-preview`).
+- Tools the model can call:
+  - `search_items({ query, kind? })` — text search over the user's `assistant_items`.
+  - `get_item({ id })` — fetch full content of one item.
+  - `save_bookmark({ url, note? })`, `save_note({ title, content })` — let the assistant capture on the user's behalf.
+- Streams responses; persists final assistant message in `onFinish`.
 
-### RLS
+Edge function `enrich-item` (optional v2): on insert, fetches URL metadata / extracts text from uploaded files for better search.
 
-- INSERT: any authenticated user (sets `requester_id = auth.uid()`)
-- SELECT: requester, moderator, director, tech_supply, driver assigned, or anyone holding the relevant role for the current stage, plus admin
-- UPDATE: only the role responsible for the current `workflow_status` (e.g. only `shooting_moderator` or admin can update when status is `pending_moderator`)
+## Frontend
 
-### UI changes (`src/pages/ShootingRequests.tsx`)
+- `src/pages/Assistant.tsx` — split layout: left = library + capture inbox; right = chat panel.
+- `src/components/assistant/CaptureBar.tsx` — paste URL / drop file / quick note.
+- `src/components/assistant/ItemsLibrary.tsx` — tabs (All / Bookmarks / Notes / Docs / Photos), search, card grid.
+- `src/components/assistant/AssistantChat.tsx` — uses `useChat` against the edge function; renders `message.parts` with markdown; shows tool calls compactly; thread list + new-thread button.
+- Sidebar entry in `AppSidebar.tsx` with Sparkles-free domain icon (Brain).
+- Route `/assistant` added to `App.tsx`, gated by `ProtectedRoute` (sectionName "Assistant").
+- i18n keys added in `en/ru/uz.json`.
 
-- Tabs: **My requests** / **Inbox** (stage-specific queue based on user role) / **All** (admin)
-- Create dialog: title, description, location, scheduled_date, sensitive checkbox
-- Request detail dialog with stage-specific action panel:
-  - Moderator: Approve → equipment / Escalate → director / Decline
-  - Director: Approve → equipment / Decline
-  - Tech Supply: equipment list + Mark provided → driver
-  - Driver: vehicle info + Accept → scheduled / Mark completed
-- Status badges + workflow progress indicator
-- History timeline at bottom of detail
+## Out of scope (for this first pass)
 
-### Role management
+- Eclaire's full self-hosted infrastructure (Postgres+pgvector workers, image embedding pipelines, OCR services, browser-extension capture). We can add semantic search via embeddings in a follow-up.
+- Mobile/iOS client.
+- Multi-user sharing of items.
 
-Add the four new roles to `src/pages/RoleManagement.tsx` role options so admins can assign them.
+## File changes
+- New: `supabase/migrations/*_assistant.sql`, `supabase/functions/assistant-chat/index.ts`, `src/pages/Assistant.tsx`, `src/components/assistant/*.tsx`
+- Edited: `src/App.tsx`, `src/components/AppSidebar.tsx`, three i18n JSON files, `src/integrations/supabase/types.ts` (auto)
+- Attribution: add a note in README crediting Eclaire (MIT) as inspiration.
 
-### Out of scope (for this iteration)
-
-- Notifications/emails on handoff
-- Real-time updates (can be added later via Supabase realtime)
-
-Want me to proceed?
+Confirm and I'll implement starting with the migration.
