@@ -259,6 +259,81 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     if (error) return { error: error.message };
     return { ok: true, id: data.id };
   }
+  if (name === "search_people") {
+    const q = String(args.query || "").trim();
+    const limit = Math.min(args.limit ?? 10, 25);
+    let query = supabase
+      .from("profiles")
+      .select("id,name,email,phone,position,department,organization")
+      .limit(limit);
+    if (q) query = query.or(`name.ilike.%${q}%,email.ilike.%${q}%,position.ilike.%${q}%,department.ilike.%${q}%`);
+    const { data, error } = await query;
+    if (error) return { error: error.message };
+    return { people: data ?? [] };
+  }
+  if (name === "create_task") {
+    const payload: any = {
+      title: args.title,
+      description: args.description ?? null,
+      created_by: userId,
+      assignee_id: args.assignee_id ?? null,
+      due_date: args.due_date ?? null,
+      priority: args.priority ?? "medium",
+      status: args.status ?? "todo",
+    };
+    const { data, error } = await supabase.from("tasks").insert(payload).select("id,title,assignee_id,due_date,status,priority").single();
+    if (error) return { error: error.message };
+    return { ok: true, task: data };
+  }
+  if (name === "list_tasks") {
+    const scope = args.scope ?? "mine";
+    let query = supabase
+      .from("tasks")
+      .select("id,title,status,priority,due_date,assignee_id,created_by,created_at")
+      .order("created_at", { ascending: false })
+      .limit(Math.min(args.limit ?? 20, 50));
+    if (scope === "assigned_to_me") query = query.eq("assignee_id", userId);
+    else if (scope === "created_by_me") query = query.eq("created_by", userId);
+    else if (scope === "mine") query = query.or(`assignee_id.eq.${userId},created_by.eq.${userId}`);
+    if (args.status) query = query.eq("status", args.status);
+    const { data, error } = await query;
+    if (error) return { error: error.message };
+    return { tasks: data ?? [] };
+  }
+  if (name === "update_task") {
+    const patch: any = {};
+    for (const k of ["status", "assignee_id", "due_date", "priority", "title", "description"]) {
+      if (args[k] !== undefined) patch[k] = args[k];
+    }
+    const { data, error } = await supabase.from("tasks").update(patch).eq("id", args.task_id).select("id,title,status,assignee_id,due_date,priority").single();
+    if (error) return { error: error.message };
+    return { ok: true, task: data };
+  }
+  if (name === "create_reminder") {
+    const { data, error } = await supabase.from("reminders").insert({
+      user_id: userId,
+      title: args.title,
+      description: args.description ?? null,
+      date: args.date,
+      time: args.time ?? null,
+    }).select("id,title,date,time").single();
+    if (error) return { error: error.message };
+    return { ok: true, reminder: data };
+  }
+  if (name === "get_my_profile") {
+    const { data, error } = await supabase.from("profiles").select("id,name,email,phone,position,department,organization,preferred_language").eq("id", userId).single();
+    if (error) return { error: error.message };
+    return { profile: data };
+  }
+  if (name === "update_my_profile") {
+    const patch: any = {};
+    for (const k of ["name", "phone", "position", "department", "organization", "preferred_language"]) {
+      if (args[k] !== undefined) patch[k] = args[k];
+    }
+    const { data, error } = await supabase.from("profiles").update(patch).eq("id", userId).select("id,name,phone,position,department,organization,preferred_language").single();
+    if (error) return { error: error.message };
+    return { ok: true, profile: data };
+  }
   return { error: `Unknown tool ${name}` };
 }
 
