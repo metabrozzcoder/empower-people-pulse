@@ -94,6 +94,118 @@ const tools = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "search_people",
+      description: "Search for people in the workspace by name, email, position, or department. Returns user_id values you can use as assignee_id.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Name, email, position, or department keyword" },
+          limit: { type: "number" },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_task",
+      description: "Create a new task, optionally assigned to a specific person (use search_people first to get assignee_id).",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          description: { type: "string" },
+          assignee_id: { type: "string", description: "UUID of the assignee user" },
+          due_date: { type: "string", description: "YYYY-MM-DD" },
+          priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
+          status: { type: "string", enum: ["todo", "in_progress", "done"] },
+        },
+        required: ["title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_tasks",
+      description: "List tasks. By default, tasks assigned to or created by the current user.",
+      parameters: {
+        type: "object",
+        properties: {
+          scope: { type: "string", enum: ["mine", "assigned_to_me", "created_by_me", "all"], description: "Default 'mine'" },
+          status: { type: "string", enum: ["todo", "in_progress", "done"] },
+          limit: { type: "number" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_task",
+      description: "Update an existing task's status, assignee, due date, or priority.",
+      parameters: {
+        type: "object",
+        properties: {
+          task_id: { type: "string" },
+          status: { type: "string", enum: ["todo", "in_progress", "done"] },
+          assignee_id: { type: "string" },
+          due_date: { type: "string" },
+          priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
+          title: { type: "string" },
+          description: { type: "string" },
+        },
+        required: ["task_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_reminder",
+      description: "Create a reminder for the current user.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          description: { type: "string" },
+          date: { type: "string", description: "YYYY-MM-DD" },
+          time: { type: "string", description: "HH:MM" },
+        },
+        required: ["title", "date"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_my_profile",
+      description: "Get the current user's profile.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_my_profile",
+      description: "Update fields on the current user's own profile.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          phone: { type: "string" },
+          position: { type: "string" },
+          department: { type: "string" },
+          organization: { type: "string" },
+          preferred_language: { type: "string", enum: ["en", "ru", "uz"] },
+        },
+      },
+    },
+  },
 ];
 
 async function runTool(name: string, args: any, supabase: any, userId: string) {
