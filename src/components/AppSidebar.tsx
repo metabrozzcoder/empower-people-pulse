@@ -285,7 +285,7 @@ export function AppSidebar() {
           </div>
           <div>
             <h2 className="text-xl font-bold text-primary-foreground">
-              MediaHR Pro
+              ARK
             </h2>
             <p className="text-primary-foreground/80 text-sm">AI-Enhanced HRM</p>
           </div>
