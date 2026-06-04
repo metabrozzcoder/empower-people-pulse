@@ -377,7 +377,7 @@ Deno.serve(async (req) => {
     ];
 
     // Tool-calling loop (non-streaming for simplicity)
-    for (let step = 0; step < 6; step++) {
+    for (let step = 0; step < 10; step++) {
       const r = await fetch(LOVABLE_AI_URL, {
         method: "POST",
         headers: {
