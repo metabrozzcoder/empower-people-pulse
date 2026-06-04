@@ -10,14 +10,27 @@ const corsHeaders = {
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3-flash-preview";
 
-const SYSTEM_PROMPT = `You are a helpful, knowledgeable AI assistant — similar to ChatGPT.
-You answer questions, explain concepts, brainstorm, write, code, translate, summarize,
-and help the user complete tasks. Be clear, accurate, and concise. Use markdown
-formatting (lists, code blocks, headings) when it improves readability.
+const SYSTEM_PROMPT = `You are a helpful, knowledgeable AI assistant for an HRMS app — similar to ChatGPT,
+but you can also take actions inside this workspace on behalf of the signed-in user.
 
-You have optional tools to save notes/bookmarks or search the user's saved items.
-Only use them when the user explicitly asks to save or recall something — otherwise
-answer directly from your own knowledge.`;
+You can:
+- Answer questions, explain, brainstorm, write, code, translate, summarize.
+- Search people (employees / app users) by name, email, position, or department.
+- Create and list tasks, assign tasks to specific people, update task status.
+- Create reminders for the current user.
+- Save quick notes or bookmarks, and search the user's saved items.
+- Read and update the current user's profile (name, phone, position, department, language).
+
+Rules for actions:
+- When the user asks to do something actionable (assign a task, remind me, update my profile, etc.),
+  use the appropriate tool — don't just describe how to do it.
+- To assign a task to a person by name, first call search_people to resolve their user id,
+  then call create_task with assignee_id set.
+- Always confirm what you did in a short reply (who was assigned, due date, etc.).
+- If a person can't be found or info is ambiguous, ask a brief clarifying question.
+- Never invent user ids. Never claim an action succeeded unless the tool returned ok.
+
+Use markdown formatting (lists, code blocks) when it improves readability.`;
 
 const tools = [
   {
@@ -81,6 +94,118 @@ const tools = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "search_people",
+      description: "Search for people in the workspace by name, email, position, or department. Returns user_id values you can use as assignee_id.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Name, email, position, or department keyword" },
+          limit: { type: "number" },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_task",
+      description: "Create a new task, optionally assigned to a specific person (use search_people first to get assignee_id).",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          description: { type: "string" },
+          assignee_id: { type: "string", description: "UUID of the assignee user" },
+          due_date: { type: "string", description: "YYYY-MM-DD" },
+          priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
+          status: { type: "string", enum: ["todo", "in_progress", "done"] },
+        },
+        required: ["title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_tasks",
+      description: "List tasks. By default, tasks assigned to or created by the current user.",
+      parameters: {
+        type: "object",
+        properties: {
+          scope: { type: "string", enum: ["mine", "assigned_to_me", "created_by_me", "all"], description: "Default 'mine'" },
+          status: { type: "string", enum: ["todo", "in_progress", "done"] },
+          limit: { type: "number" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_task",
+      description: "Update an existing task's status, assignee, due date, or priority.",
+      parameters: {
+        type: "object",
+        properties: {
+          task_id: { type: "string" },
+          status: { type: "string", enum: ["todo", "in_progress", "done"] },
+          assignee_id: { type: "string" },
+          due_date: { type: "string" },
+          priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
+          title: { type: "string" },
+          description: { type: "string" },
+        },
+        required: ["task_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_reminder",
+      description: "Create a reminder for the current user.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          description: { type: "string" },
+          date: { type: "string", description: "YYYY-MM-DD" },
+          time: { type: "string", description: "HH:MM" },
+        },
+        required: ["title", "date"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_my_profile",
+      description: "Get the current user's profile.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_my_profile",
+      description: "Update fields on the current user's own profile.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          phone: { type: "string" },
+          position: { type: "string" },
+          department: { type: "string" },
+          organization: { type: "string" },
+          preferred_language: { type: "string", enum: ["en", "ru", "uz"] },
+        },
+      },
+    },
+  },
 ];
 
 async function runTool(name: string, args: any, supabase: any, userId: string) {
@@ -134,6 +259,81 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     if (error) return { error: error.message };
     return { ok: true, id: data.id };
   }
+  if (name === "search_people") {
+    const q = String(args.query || "").trim();
+    const limit = Math.min(args.limit ?? 10, 25);
+    let query = supabase
+      .from("profiles")
+      .select("id,name,email,phone,position,department,organization")
+      .limit(limit);
+    if (q) query = query.or(`name.ilike.%${q}%,email.ilike.%${q}%,position.ilike.%${q}%,department.ilike.%${q}%`);
+    const { data, error } = await query;
+    if (error) return { error: error.message };
+    return { people: data ?? [] };
+  }
+  if (name === "create_task") {
+    const payload: any = {
+      title: args.title,
+      description: args.description ?? null,
+      created_by: userId,
+      assignee_id: args.assignee_id ?? null,
+      due_date: args.due_date ?? null,
+      priority: args.priority ?? "medium",
+      status: args.status ?? "todo",
+    };
+    const { data, error } = await supabase.from("tasks").insert(payload).select("id,title,assignee_id,due_date,status,priority").single();
+    if (error) return { error: error.message };
+    return { ok: true, task: data };
+  }
+  if (name === "list_tasks") {
+    const scope = args.scope ?? "mine";
+    let query = supabase
+      .from("tasks")
+      .select("id,title,status,priority,due_date,assignee_id,created_by,created_at")
+      .order("created_at", { ascending: false })
+      .limit(Math.min(args.limit ?? 20, 50));
+    if (scope === "assigned_to_me") query = query.eq("assignee_id", userId);
+    else if (scope === "created_by_me") query = query.eq("created_by", userId);
+    else if (scope === "mine") query = query.or(`assignee_id.eq.${userId},created_by.eq.${userId}`);
+    if (args.status) query = query.eq("status", args.status);
+    const { data, error } = await query;
+    if (error) return { error: error.message };
+    return { tasks: data ?? [] };
+  }
+  if (name === "update_task") {
+    const patch: any = {};
+    for (const k of ["status", "assignee_id", "due_date", "priority", "title", "description"]) {
+      if (args[k] !== undefined) patch[k] = args[k];
+    }
+    const { data, error } = await supabase.from("tasks").update(patch).eq("id", args.task_id).select("id,title,status,assignee_id,due_date,priority").single();
+    if (error) return { error: error.message };
+    return { ok: true, task: data };
+  }
+  if (name === "create_reminder") {
+    const { data, error } = await supabase.from("reminders").insert({
+      user_id: userId,
+      title: args.title,
+      description: args.description ?? null,
+      date: args.date,
+      time: args.time ?? null,
+    }).select("id,title,date,time").single();
+    if (error) return { error: error.message };
+    return { ok: true, reminder: data };
+  }
+  if (name === "get_my_profile") {
+    const { data, error } = await supabase.from("profiles").select("id,name,email,phone,position,department,organization,preferred_language").eq("id", userId).single();
+    if (error) return { error: error.message };
+    return { profile: data };
+  }
+  if (name === "update_my_profile") {
+    const patch: any = {};
+    for (const k of ["name", "phone", "position", "department", "organization", "preferred_language"]) {
+      if (args[k] !== undefined) patch[k] = args[k];
+    }
+    const { data, error } = await supabase.from("profiles").update(patch).eq("id", userId).select("id,name,phone,position,department,organization,preferred_language").single();
+    if (error) return { error: error.message };
+    return { ok: true, profile: data };
+  }
   return { error: `Unknown tool ${name}` };
 }
 
@@ -177,7 +377,7 @@ Deno.serve(async (req) => {
     ];
 
     // Tool-calling loop (non-streaming for simplicity)
-    for (let step = 0; step < 6; step++) {
+    for (let step = 0; step < 10; step++) {
       const r = await fetch(LOVABLE_AI_URL, {
         method: "POST",
         headers: {
