@@ -30,9 +30,20 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { email, password, name, username, role, phone, department, position } = body ?? {};
-    if (!email || !password || !name) {
-      return new Response(JSON.stringify({ error: "email, password and name are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let { email, password, name, username, role, phone, department, position } = body ?? {};
+    if (!name) {
+      return new Response(JSON.stringify({ error: "name is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    // Password is optional — generate a random one if missing
+    if (!password) {
+      password = crypto.randomUUID().replace(/-/g, "") + "Aa1!";
+    }
+    // Email is optional — synthesize a placeholder so Supabase Auth accepts the user
+    let syntheticEmail = false;
+    if (!email) {
+      const slug = (username || name || "user").toString().toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "user";
+      email = `${slug}.${crypto.randomUUID().slice(0, 8)}@noemail.local`;
+      syntheticEmail = true;
     }
     const allowedRoles = ["admin", "hr", "guest", "shooting_moderator", "director", "tech_supply", "driver"];
     const validRole = allowedRoles.includes(role) ? role : "guest";
@@ -42,8 +53,9 @@ Deno.serve(async (req) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: { name, username },
+      user_metadata: { name, username, synthetic_email: syntheticEmail },
     });
+
     if (createErr || !created?.user) {
       const msg = createErr?.message ?? "";
       const alreadyExists = /already|registered|exists/i.test(msg);

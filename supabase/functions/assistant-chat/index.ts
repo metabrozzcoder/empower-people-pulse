@@ -272,16 +272,17 @@ const tools = [
     type: "function",
     function: {
       name: "create_user",
-      description: "Create a new workspace user (admin only).",
+      description: "Create a new workspace user (admin only). Only 'name' is required. Email and password are optional — if email is omitted, a placeholder is generated; if password is omitted, a random one is generated.",
       parameters: {
         type: "object",
         properties: {
-          email: { type: "string" }, name: { type: "string" }, username: { type: "string" },
-          password: { type: "string" },
+          email: { type: "string", description: "Optional. Omit if the user has no email." },
+          name: { type: "string" }, username: { type: "string" },
+          password: { type: "string", description: "Optional. Auto-generated if omitted." },
           role: { type: "string", enum: ["admin", "hr", "guest"] },
           phone: { type: "string" }, department: { type: "string" }, position: { type: "string" },
         },
-        required: ["email", "name"],
+        required: ["name"],
       },
     },
   },
