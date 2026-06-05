@@ -685,7 +685,6 @@ export const uz: Record<string, string> = {
   "No messages yet. Say hi 👋": "Hali xabarlar yo'q. Salom ayting 👋",
   "No notifications yet": "Hali bildirishnomalar yoʻq",
   "No organizations yet": "Hali tashkilotlar yoʻq",
-  "No organizations yet. Click \"Add Organization\" to create one.": "Hali tashkilotlar yoʻq. Yaratish uchun \"Tashkilot qoʻshish\" tugmasini bosing.",
   "No projects yet. Click \"New Project\" to create one.": "Hali loyihalar yoʻq. Yaratish uchun \"Yangi loyiha\" tugmasini bosing.",
   "No sections selected - user will have no access": "Boʻlimlar tanlanmagan – foydalanuvchi hech qanday kirish huquqiga ega boʻlmaydi",
   "No upcoming reminders.": "Yaquinlashayotgan eslatmalar yoʻq.",
