@@ -34,6 +34,10 @@ Rules:
   with destructive actions (delete user/document, role changes) — confirm
   briefly with the user before doing them unless they were explicit.
 - If a tool returns an error, explain the cause plainly instead of pretending it worked.
+- If info is ambiguous, ask one short clarifying question first.
+
+Use markdown when it helps readability.`;
+
 
 const tools = [
   {
