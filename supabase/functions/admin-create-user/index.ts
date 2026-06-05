@@ -38,10 +38,25 @@ Deno.serve(async (req) => {
     if (!password) {
       password = crypto.randomUUID().replace(/-/g, "") + "Aa1!";
     }
+    // Transliterate Cyrillic → Latin so generated usernames/emails are readable
+    const translit = (s: string) => {
+      const map: Record<string, string> = {
+        а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ё:"yo",ж:"zh",з:"z",и:"i",й:"y",к:"k",л:"l",м:"m",н:"n",о:"o",п:"p",р:"r",с:"s",т:"t",у:"u",ф:"f",х:"kh",ц:"ts",ч:"ch",ш:"sh",щ:"sch",ъ:"",ы:"y",ь:"",э:"e",ю:"yu",я:"ya",
+        ў:"u",қ:"q",ғ:"g",ҳ:"h",
+      };
+      return s.toLowerCase().split("").map((ch) => map[ch] ?? ch).join("");
+    };
+    const slugify = (s: string) => translit(String(s || "")).replace(/[^a-z0-9]+/g, "").slice(0, 24);
+
+    // Auto-generate username from name if not provided
+    if (!username) {
+      const base = slugify(name) || "user";
+      username = `${base}${Math.floor(1000 + Math.random() * 9000)}`;
+    }
     // Email is optional — synthesize a placeholder so Supabase Auth accepts the user
     let syntheticEmail = false;
     if (!email) {
-      const slug = (username || name || "user").toString().toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "user";
+      const slug = slugify(username) || slugify(name) || "user";
       email = `${slug}.${crypto.randomUUID().slice(0, 8)}@noemail.local`;
       syntheticEmail = true;
     }
