@@ -564,11 +564,25 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     const password = args.password && args.password.length >= 6
       ? args.password
       : crypto.randomUUID().replace(/-/g, "") + "Aa1!";
+    // Transliterate Cyrillic → Latin so generated usernames/emails are readable
+    const translit = (s: string) => {
+      const map: Record<string, string> = {
+        а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ё:"yo",ж:"zh",з:"z",и:"i",й:"y",к:"k",л:"l",м:"m",н:"n",о:"o",п:"p",р:"r",с:"s",т:"t",у:"u",ф:"f",х:"kh",ц:"ts",ч:"ch",ш:"sh",щ:"sch",ъ:"",ы:"y",ь:"",э:"e",ю:"yu",я:"ya",
+        ў:"u",қ:"q",ғ:"g",ҳ:"h",
+      };
+      return String(s || "").toLowerCase().split("").map((ch) => map[ch] ?? ch).join("");
+    };
+    const slugify = (s: string) => translit(s).replace(/[^a-z0-9]+/g, "").slice(0, 24);
+
+    let username: string | undefined = args.username;
+    if (!username) {
+      const base = slugify(args.name) || "user";
+      username = `${base}${Math.floor(1000 + Math.random() * 9000)}`;
+    }
     let email = args.email as string | undefined;
     let syntheticEmail = false;
     if (!email) {
-      const slug = ((args.username || args.name || "user") as string)
-        .toString().toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "user";
+      const slug = slugify(username) || slugify(args.name) || "user";
       email = `${slug}.${crypto.randomUUID().slice(0, 8)}@noemail.local`;
       syntheticEmail = true;
     }
@@ -578,7 +592,7 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     let uid: string | null = null;
     const { data: created, error: createErr } = await supabase.auth.admin.createUser({
       email, password, email_confirm: true,
-      user_metadata: { name: args.name, username: args.username, synthetic_email: syntheticEmail },
+      user_metadata: { name: args.name, username, synthetic_email: syntheticEmail },
     });
     if (createErr || !created?.user) {
       const msg = createErr?.message ?? "";
@@ -601,7 +615,7 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     }
     await supabase.from("profiles").update({
       name: args.name, phone: args.phone, department: args.department,
-      position: args.position, username: args.username,
+      position: args.position, username,
     }).eq("id", uid);
     await supabase.from("user_roles").delete().eq("user_id", uid);
     await supabase.from("user_roles").insert({ user_id: uid, role: validRole });
