@@ -516,6 +516,150 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     if (error) return { error: error.message };
     return { ok: true, profile: data };
   }
+  if (name === "delete_task") {
+    const { error } = await supabase.from("tasks").delete().eq("id", args.task_id);
+    if (error) return { error: error.message };
+    return { ok: true };
+  }
+  if (name === "list_people_all") {
+    const limit = Math.min(args.limit ?? 25, 100);
+    const offset = args.offset ?? 0;
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id,name,email,phone,position,department,status")
+      .order("name", { ascending: true })
+      .range(offset, offset + limit - 1);
+    if (error) return { error: error.message };
+    return { people: data ?? [] };
+  }
+  if (name === "list_roles") {
+    const target = args.user_id ?? userId;
+    const { data, error } = await supabase.from("user_roles").select("user_id,role").eq("user_id", target);
+    if (error) return { error: error.message };
+    return { roles: data ?? [] };
+  }
+  if (name === "assign_role") {
+    if (args.replace_all) {
+      const { error: delErr } = await supabase.from("user_roles").delete().eq("user_id", args.user_id);
+      if (delErr) return { error: delErr.message };
+    } else {
+      await supabase.from("user_roles").delete().eq("user_id", args.user_id).eq("role", args.role);
+    }
+    const { error } = await supabase.from("user_roles").insert({ user_id: args.user_id, role: args.role });
+    if (error) return { error: error.message };
+    return { ok: true };
+  }
+  if (name === "remove_role") {
+    const { error } = await supabase.from("user_roles").delete().eq("user_id", args.user_id).eq("role", args.role);
+    if (error) return { error: error.message };
+    return { ok: true };
+  }
+  if (name === "create_user") {
+    const password = args.password && args.password.length >= 6
+      ? args.password
+      : Math.random().toString(36).slice(2, 10) + "A1!";
+    const { data, error } = await supabase.functions.invoke("admin-create-user", {
+      body: {
+        email: args.email, password, name: args.name,
+        username: args.username ?? args.email,
+        role: args.role ?? "guest",
+        phone: args.phone, department: args.department, position: args.position,
+      },
+    });
+    if (error) return { error: error.message };
+    if (data && (data as any).error) return { error: (data as any).error };
+    return { ok: true, user: (data as any)?.user, generated_password: args.password ? undefined : password };
+  }
+  if (name === "update_person") {
+    const patch: any = {};
+    for (const k of ["name", "phone", "position", "department", "organization", "status"]) {
+      if (args[k] !== undefined) patch[k] = args[k];
+    }
+    const { data, error } = await supabase.from("profiles").update(patch).eq("id", args.user_id).select("id,name,phone,position,department,organization,status").single();
+    if (error) return { error: error.message };
+    return { ok: true, profile: data };
+  }
+  if (name === "delete_person") {
+    const { error } = await supabase.from("profiles").delete().eq("id", args.user_id);
+    if (error) return { error: error.message };
+    return { ok: true };
+  }
+  if (name === "list_documents") {
+    const scope = args.scope ?? "mine";
+    let query = supabase
+      .from("documents")
+      .select("id,title,status,priority,owner_id,approver_id,file_path,created_at")
+      .order("created_at", { ascending: false })
+      .limit(Math.min(args.limit ?? 20, 50));
+    if (scope === "mine") query = query.eq("owner_id", userId);
+    else if (scope === "to_review") query = query.eq("approver_id", userId);
+    if (args.status) query = query.eq("status", args.status);
+    const { data, error } = await query;
+    if (error) return { error: error.message };
+    return { documents: data ?? [] };
+  }
+  if (name === "create_document") {
+    const payload: any = {
+      owner_id: userId,
+      title: args.title,
+      description: args.description ?? null,
+      approver_id: args.approver_id ?? null,
+      receiver_name: args.receiver_name ?? null,
+      category: args.category ?? null,
+      priority: args.priority ?? "Normal",
+      file_path: args.file_path ?? null,
+      file_type: args.file_type ?? null,
+      file_size: args.file_size ?? null,
+      status: "pending",
+    };
+    const { data, error } = await supabase.from("documents").insert(payload).select("id,title,status,approver_id").single();
+    if (error) return { error: error.message };
+    return { ok: true, document: data };
+  }
+  if (name === "send_uploaded_document") {
+    const { data: item, error: itemErr } = await supabase
+      .from("assistant_items")
+      .select("id,kind,title,content,url,storage_path,metadata")
+      .eq("id", args.assistant_item_id)
+      .eq("user_id", userId)
+      .single();
+    if (itemErr || !item) return { error: itemErr?.message ?? "Item not found" };
+    const meta = (item.metadata ?? {}) as any;
+    const payload: any = {
+      owner_id: userId,
+      title: args.title ?? item.title ?? "Document",
+      description: args.description ?? item.content ?? null,
+      approver_id: args.approver_id,
+      priority: args.priority ?? "Normal",
+      file_path: item.storage_path ?? meta.file_path ?? null,
+      file_type: meta.file_type ?? null,
+      file_size: meta.file_size ?? null,
+      status: "pending",
+    };
+    const { data, error } = await supabase.from("documents").insert(payload).select("id,title,status,approver_id").single();
+    if (error) return { error: error.message };
+    return { ok: true, document: data };
+  }
+  if (name === "update_document") {
+    const patch: any = {};
+    for (const k of ["status", "approver_id", "approver_comment", "title", "description", "priority"]) {
+      if (args[k] !== undefined) patch[k] = args[k];
+    }
+    if (args.status && args.status !== "pending") patch.reviewed_at = new Date().toISOString();
+    const { data, error } = await supabase.from("documents").update(patch).eq("id", args.document_id).select("id,title,status,approver_id,priority").single();
+    if (error) return { error: error.message };
+    return { ok: true, document: data };
+  }
+  if (name === "delete_document") {
+    const { error } = await supabase.from("documents").delete().eq("id", args.document_id);
+    if (error) return { error: error.message };
+    return { ok: true };
+  }
+  if (name === "delete_item") {
+    const { error } = await supabase.from("assistant_items").delete().eq("id", args.item_id).eq("user_id", userId);
+    if (error) return { error: error.message };
+    return { ok: true };
+  }
   return { error: `Unknown tool ${name}` };
 }
 
