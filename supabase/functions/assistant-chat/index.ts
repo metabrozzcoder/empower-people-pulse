@@ -560,20 +560,56 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     return { ok: true };
   }
   if (name === "create_user") {
+    if (!args.name) return { error: "name is required" };
     const password = args.password && args.password.length >= 6
       ? args.password
-      : Math.random().toString(36).slice(2, 10) + "A1!";
-    const { data, error } = await supabase.functions.invoke("admin-create-user", {
-      body: {
-        email: args.email, password, name: args.name,
-        username: args.username ?? args.email,
-        role: args.role ?? "guest",
-        phone: args.phone, department: args.department, position: args.position,
-      },
+      : crypto.randomUUID().replace(/-/g, "") + "Aa1!";
+    let email = args.email as string | undefined;
+    let syntheticEmail = false;
+    if (!email) {
+      const slug = ((args.username || args.name || "user") as string)
+        .toString().toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24) || "user";
+      email = `${slug}.${crypto.randomUUID().slice(0, 8)}@noemail.local`;
+      syntheticEmail = true;
+    }
+    const allowedRoles = ["admin", "hr", "guest", "shooting_moderator", "director", "tech_supply", "driver"];
+    const validRole = allowedRoles.includes(args.role) ? args.role : "guest";
+
+    let uid: string | null = null;
+    const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+      email, password, email_confirm: true,
+      user_metadata: { name: args.name, username: args.username, synthetic_email: syntheticEmail },
     });
-    if (error) return { error: error.message };
-    if (data && (data as any).error) return { error: (data as any).error };
-    return { ok: true, user: (data as any)?.user, generated_password: args.password ? undefined : password };
+    if (createErr || !created?.user) {
+      const msg = createErr?.message ?? "";
+      if (/already|registered|exists/i.test(msg)) {
+        let page = 1;
+        while (page <= 20 && !uid) {
+          const { data: list, error: listErr } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+          if (listErr) break;
+          const match = list.users.find((u) => (u.email ?? "").toLowerCase() === String(email).toLowerCase());
+          if (match) { uid = match.id; break; }
+          if (list.users.length < 200) break;
+          page++;
+        }
+        if (!uid) return { error: "Email already registered but user not found" };
+      } else {
+        return { error: msg || "Failed to create user" };
+      }
+    } else {
+      uid = created.user.id;
+    }
+    await supabase.from("profiles").update({
+      name: args.name, phone: args.phone, department: args.department,
+      position: args.position, username: args.username,
+    }).eq("id", uid);
+    await supabase.from("user_roles").delete().eq("user_id", uid);
+    await supabase.from("user_roles").insert({ user_id: uid, role: validRole });
+    return {
+      ok: true,
+      user: { id: uid, email, name: args.name, role: validRole, synthetic_email: syntheticEmail },
+      generated_password: args.password ? undefined : password,
+    };
   }
   if (name === "update_person") {
     const patch: any = {};
