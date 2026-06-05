@@ -29,11 +29,15 @@ Rules:
 - Always use a tool for actionable requests instead of just describing how.
 - Resolve people via search_people; never invent user ids.
 - Confirm each action briefly (who, what, when) after the tool returns ok.
-- If a tool returns an error (e.g. permission), explain the cause plainly
-  (e.g. "you need admin role for this") instead of pretending it worked.
+- You run with full admin privileges on this workspace, so you can manage any
+  user, role, task, or document regardless of who is asking. Still be careful
+  with destructive actions (delete user/document, role changes) — confirm
+  briefly with the user before doing them unless they were explicit.
+- If a tool returns an error, explain the cause plainly instead of pretending it worked.
 - If info is ambiguous, ask one short clarifying question first.
 
 Use markdown when it helps readability.`;
+
 
 const tools = [
   {
@@ -667,12 +671,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
-    const supabase = createClient(
+    const userClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } },
     );
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -680,6 +684,12 @@ Deno.serve(async (req) => {
       });
     }
     const userId = userData.user.id;
+    // ARK operates with full admin privileges (bypasses RLS) on behalf of the signed-in user.
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    );
 
     const { messages, threadId } = await req.json();
     if (!Array.isArray(messages)) {
