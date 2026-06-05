@@ -10,27 +10,30 @@ const corsHeaders = {
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3-flash-preview";
 
-const SYSTEM_PROMPT = `You are a helpful, knowledgeable AI assistant for an HRMS app — similar to ChatGPT,
-but you can also take actions inside this workspace on behalf of the signed-in user.
+const SYSTEM_PROMPT = `You are ARK, the in-app AI assistant for an HRMS workspace.
+You answer questions like ChatGPT AND take real actions for the signed-in user via tools.
 
-You can:
-- Answer questions, explain, brainstorm, write, code, translate, summarize.
-- Search people (employees / app users) by name, email, position, or department.
-- Create and list tasks, assign tasks to specific people, update task status.
-- Create reminders for the current user.
-- Save quick notes or bookmarks, and search the user's saved items.
-- Read and update the current user's profile (name, phone, position, department, language).
+Capabilities:
+- People: search_people, list_people_all, create_user (admin), update_person (admin),
+  delete_person (admin), assign_role (admin), list_roles.
+- Tasks: create_task, list_tasks, update_task, delete_task. To assign by name,
+  call search_people first to get the user id, then create_task with assignee_id.
+- Reminders: create_reminder for the current user.
+- Documents: list_documents, create_document (send to an approver),
+  send_uploaded_document (forward a document previously saved to the assistant
+  library to a specific person as approver), update_document, delete_document.
+- Library: search_items, list_recent, save_note, save_bookmark.
+- Profile: get_my_profile, update_my_profile.
 
-Rules for actions:
-- When the user asks to do something actionable (assign a task, remind me, update my profile, etc.),
-  use the appropriate tool — don't just describe how to do it.
-- To assign a task to a person by name, first call search_people to resolve their user id,
-  then call create_task with assignee_id set.
-- Always confirm what you did in a short reply (who was assigned, due date, etc.).
-- If a person can't be found or info is ambiguous, ask a brief clarifying question.
-- Never invent user ids. Never claim an action succeeded unless the tool returned ok.
+Rules:
+- Always use a tool for actionable requests instead of just describing how.
+- Resolve people via search_people; never invent user ids.
+- Confirm each action briefly (who, what, when) after the tool returns ok.
+- If a tool returns an error (e.g. permission), explain the cause plainly
+  (e.g. "you need admin role for this") instead of pretending it worked.
+- If info is ambiguous, ask one short clarifying question first.
 
-Use markdown formatting (lists, code blocks) when it improves readability.`;
+Use markdown when it helps readability.`;
 
 const tools = [
   {
@@ -206,6 +209,185 @@ const tools = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "delete_task",
+      description: "Delete a task by id (only allowed if you created it or you are admin).",
+      parameters: { type: "object", properties: { task_id: { type: "string" } }, required: ["task_id"] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_people_all",
+      description: "List all people in the workspace (paginated).",
+      parameters: { type: "object", properties: { limit: { type: "number" }, offset: { type: "number" } } },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_roles",
+      description: "List role assignments for a given user (or current user if omitted).",
+      parameters: { type: "object", properties: { user_id: { type: "string" } } },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "assign_role",
+      description: "Assign a system role to a user (admin only).",
+      parameters: {
+        type: "object",
+        properties: {
+          user_id: { type: "string" },
+          role: { type: "string", enum: ["admin", "hr", "guest", "shooting_moderator", "director", "tech_supply", "driver"] },
+          replace_all: { type: "boolean", description: "If true, removes all current roles before assigning." },
+        },
+        required: ["user_id", "role"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "remove_role",
+      description: "Remove a specific role from a user (admin only).",
+      parameters: {
+        type: "object",
+        properties: {
+          user_id: { type: "string" },
+          role: { type: "string", enum: ["admin", "hr", "guest", "shooting_moderator", "director", "tech_supply", "driver"] },
+        },
+        required: ["user_id", "role"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_user",
+      description: "Create a new workspace user (admin only).",
+      parameters: {
+        type: "object",
+        properties: {
+          email: { type: "string" }, name: { type: "string" }, username: { type: "string" },
+          password: { type: "string" },
+          role: { type: "string", enum: ["admin", "hr", "guest"] },
+          phone: { type: "string" }, department: { type: "string" }, position: { type: "string" },
+        },
+        required: ["email", "name"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_person",
+      description: "Update another user's profile (admin only).",
+      parameters: {
+        type: "object",
+        properties: {
+          user_id: { type: "string" }, name: { type: "string" }, phone: { type: "string" },
+          position: { type: "string" }, department: { type: "string" }, organization: { type: "string" },
+          status: { type: "string", enum: ["Active", "Inactive", "Pending"] },
+        },
+        required: ["user_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_person",
+      description: "Delete a user profile (admin only).",
+      parameters: { type: "object", properties: { user_id: { type: "string" } }, required: ["user_id"] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_documents",
+      description: "List documents owned by or addressed to the current user.",
+      parameters: {
+        type: "object",
+        properties: {
+          scope: { type: "string", enum: ["mine", "to_review", "all"] },
+          status: { type: "string", enum: ["pending", "approved", "rejected"] },
+          limit: { type: "number" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_document",
+      description: "Create a document record and optionally send it to someone for review (approver_id).",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string" }, description: { type: "string" },
+          approver_id: { type: "string" }, receiver_name: { type: "string" },
+          category: { type: "string" },
+          priority: { type: "string", enum: ["Low", "Normal", "High", "Urgent"] },
+          file_path: { type: "string" }, file_type: { type: "string" }, file_size: { type: "number" },
+        },
+        required: ["title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "send_uploaded_document",
+      description: "Forward a document saved in the assistant library (kind=document) to a person as approver.",
+      parameters: {
+        type: "object",
+        properties: {
+          assistant_item_id: { type: "string" }, approver_id: { type: "string" },
+          title: { type: "string" }, description: { type: "string" },
+          priority: { type: "string", enum: ["Low", "Normal", "High", "Urgent"] },
+        },
+        required: ["assistant_item_id", "approver_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_document",
+      description: "Update a document's status, approver, title, description or priority.",
+      parameters: {
+        type: "object",
+        properties: {
+          document_id: { type: "string" },
+          status: { type: "string", enum: ["pending", "approved", "rejected"] },
+          approver_id: { type: "string" }, approver_comment: { type: "string" },
+          title: { type: "string" }, description: { type: "string" },
+          priority: { type: "string", enum: ["Low", "Normal", "High", "Urgent"] },
+        },
+        required: ["document_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_document",
+      description: "Delete a document (owner or admin only).",
+      parameters: { type: "object", properties: { document_id: { type: "string" } }, required: ["document_id"] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_item",
+      description: "Delete an item from the assistant library by id.",
+      parameters: { type: "object", properties: { item_id: { type: "string" } }, required: ["item_id"] },
+    },
+  },
 ];
 
 async function runTool(name: string, args: any, supabase: any, userId: string) {
@@ -333,6 +515,150 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     const { data, error } = await supabase.from("profiles").update(patch).eq("id", userId).select("id,name,phone,position,department,organization,preferred_language").single();
     if (error) return { error: error.message };
     return { ok: true, profile: data };
+  }
+  if (name === "delete_task") {
+    const { error } = await supabase.from("tasks").delete().eq("id", args.task_id);
+    if (error) return { error: error.message };
+    return { ok: true };
+  }
+  if (name === "list_people_all") {
+    const limit = Math.min(args.limit ?? 25, 100);
+    const offset = args.offset ?? 0;
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id,name,email,phone,position,department,status")
+      .order("name", { ascending: true })
+      .range(offset, offset + limit - 1);
+    if (error) return { error: error.message };
+    return { people: data ?? [] };
+  }
+  if (name === "list_roles") {
+    const target = args.user_id ?? userId;
+    const { data, error } = await supabase.from("user_roles").select("user_id,role").eq("user_id", target);
+    if (error) return { error: error.message };
+    return { roles: data ?? [] };
+  }
+  if (name === "assign_role") {
+    if (args.replace_all) {
+      const { error: delErr } = await supabase.from("user_roles").delete().eq("user_id", args.user_id);
+      if (delErr) return { error: delErr.message };
+    } else {
+      await supabase.from("user_roles").delete().eq("user_id", args.user_id).eq("role", args.role);
+    }
+    const { error } = await supabase.from("user_roles").insert({ user_id: args.user_id, role: args.role });
+    if (error) return { error: error.message };
+    return { ok: true };
+  }
+  if (name === "remove_role") {
+    const { error } = await supabase.from("user_roles").delete().eq("user_id", args.user_id).eq("role", args.role);
+    if (error) return { error: error.message };
+    return { ok: true };
+  }
+  if (name === "create_user") {
+    const password = args.password && args.password.length >= 6
+      ? args.password
+      : Math.random().toString(36).slice(2, 10) + "A1!";
+    const { data, error } = await supabase.functions.invoke("admin-create-user", {
+      body: {
+        email: args.email, password, name: args.name,
+        username: args.username ?? args.email,
+        role: args.role ?? "guest",
+        phone: args.phone, department: args.department, position: args.position,
+      },
+    });
+    if (error) return { error: error.message };
+    if (data && (data as any).error) return { error: (data as any).error };
+    return { ok: true, user: (data as any)?.user, generated_password: args.password ? undefined : password };
+  }
+  if (name === "update_person") {
+    const patch: any = {};
+    for (const k of ["name", "phone", "position", "department", "organization", "status"]) {
+      if (args[k] !== undefined) patch[k] = args[k];
+    }
+    const { data, error } = await supabase.from("profiles").update(patch).eq("id", args.user_id).select("id,name,phone,position,department,organization,status").single();
+    if (error) return { error: error.message };
+    return { ok: true, profile: data };
+  }
+  if (name === "delete_person") {
+    const { error } = await supabase.from("profiles").delete().eq("id", args.user_id);
+    if (error) return { error: error.message };
+    return { ok: true };
+  }
+  if (name === "list_documents") {
+    const scope = args.scope ?? "mine";
+    let query = supabase
+      .from("documents")
+      .select("id,title,status,priority,owner_id,approver_id,file_path,created_at")
+      .order("created_at", { ascending: false })
+      .limit(Math.min(args.limit ?? 20, 50));
+    if (scope === "mine") query = query.eq("owner_id", userId);
+    else if (scope === "to_review") query = query.eq("approver_id", userId);
+    if (args.status) query = query.eq("status", args.status);
+    const { data, error } = await query;
+    if (error) return { error: error.message };
+    return { documents: data ?? [] };
+  }
+  if (name === "create_document") {
+    const payload: any = {
+      owner_id: userId,
+      title: args.title,
+      description: args.description ?? null,
+      approver_id: args.approver_id ?? null,
+      receiver_name: args.receiver_name ?? null,
+      category: args.category ?? null,
+      priority: args.priority ?? "Normal",
+      file_path: args.file_path ?? null,
+      file_type: args.file_type ?? null,
+      file_size: args.file_size ?? null,
+      status: "pending",
+    };
+    const { data, error } = await supabase.from("documents").insert(payload).select("id,title,status,approver_id").single();
+    if (error) return { error: error.message };
+    return { ok: true, document: data };
+  }
+  if (name === "send_uploaded_document") {
+    const { data: item, error: itemErr } = await supabase
+      .from("assistant_items")
+      .select("id,kind,title,content,url,storage_path,metadata")
+      .eq("id", args.assistant_item_id)
+      .eq("user_id", userId)
+      .single();
+    if (itemErr || !item) return { error: itemErr?.message ?? "Item not found" };
+    const meta = (item.metadata ?? {}) as any;
+    const payload: any = {
+      owner_id: userId,
+      title: args.title ?? item.title ?? "Document",
+      description: args.description ?? item.content ?? null,
+      approver_id: args.approver_id,
+      priority: args.priority ?? "Normal",
+      file_path: item.storage_path ?? meta.file_path ?? null,
+      file_type: meta.file_type ?? null,
+      file_size: meta.file_size ?? null,
+      status: "pending",
+    };
+    const { data, error } = await supabase.from("documents").insert(payload).select("id,title,status,approver_id").single();
+    if (error) return { error: error.message };
+    return { ok: true, document: data };
+  }
+  if (name === "update_document") {
+    const patch: any = {};
+    for (const k of ["status", "approver_id", "approver_comment", "title", "description", "priority"]) {
+      if (args[k] !== undefined) patch[k] = args[k];
+    }
+    if (args.status && args.status !== "pending") patch.reviewed_at = new Date().toISOString();
+    const { data, error } = await supabase.from("documents").update(patch).eq("id", args.document_id).select("id,title,status,approver_id,priority").single();
+    if (error) return { error: error.message };
+    return { ok: true, document: data };
+  }
+  if (name === "delete_document") {
+    const { error } = await supabase.from("documents").delete().eq("id", args.document_id);
+    if (error) return { error: error.message };
+    return { ok: true };
+  }
+  if (name === "delete_item") {
+    const { error } = await supabase.from("assistant_items").delete().eq("id", args.item_id).eq("user_id", userId);
+    if (error) return { error: error.message };
+    return { ok: true };
   }
   return { error: `Unknown tool ${name}` };
 }
