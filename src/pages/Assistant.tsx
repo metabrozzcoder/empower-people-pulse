@@ -165,7 +165,7 @@ export default function Assistant() {
     }
   };
 
-  const { i18n } = useTranslation();
+  
 
   const toggleVoice = () => {
     const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
