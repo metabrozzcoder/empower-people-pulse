@@ -377,6 +377,16 @@ export default function Assistant() {
               }}
               className="resize-none min-h-[44px] max-h-40 rounded-2xl"
             />
+            <Button
+              type="button"
+              onClick={toggleVoice}
+              variant={isListening ? "destructive" : "outline"}
+              size="icon"
+              className="h-11 w-11 rounded-full"
+              title={isListening ? t("assistant.stopVoice", "Stop recording") : t("assistant.startVoice", "Voice input")}
+            >
+              {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </Button>
             <Button onClick={sendMessage} disabled={chatLoading || !input.trim()} size="icon" className="h-11 w-11 rounded-full">
               <Send className="h-4 w-4" />
             </Button>
