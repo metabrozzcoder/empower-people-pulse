@@ -1314,6 +1314,15 @@ export type Database = {
         Args: { _conv: string; _user: string }
         Returns: boolean
       }
+      profile_privilege_fields_unchanged: {
+        Args: {
+          _allowed_sections: Json
+          _id: string
+          _permissions: Json
+          _section_access: Json
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:
