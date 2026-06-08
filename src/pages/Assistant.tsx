@@ -27,6 +27,9 @@ export default function Assistant() {
   const [editingTitle, setEditingTitle] = useState("");
   const [typingId, setTypingId] = useState<string | null>(null);
   const [typingText, setTypingText] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const inputBeforeVoiceRef = useRef<string>("");
   const endRef = useRef<HTMLDivElement>(null);
 
   const userId = currentUser?.id;
