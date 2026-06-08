@@ -165,6 +165,49 @@ export default function Assistant() {
     }
   };
 
+  const { i18n } = useTranslation();
+
+  const toggleVoice = () => {
+    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      toast({
+        title: t("assistant.voiceUnsupported", "Voice input not supported"),
+        description: t("assistant.voiceUnsupportedDesc", "Your browser doesn't support speech recognition. Try Chrome or Edge."),
+        variant: "destructive",
+      });
+      return;
+    }
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      return;
+    }
+    const rec = new SR();
+    const langMap: Record<string, string> = { ru: "ru-RU", uz: "uz-UZ", en: "en-US" };
+    rec.lang = langMap[i18n.language] || "en-US";
+    rec.continuous = true;
+    rec.interimResults = true;
+    inputBeforeVoiceRef.current = input ? input + " " : "";
+    rec.onresult = (e: any) => {
+      let finalText = "";
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const tr = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += tr;
+        else interim += tr;
+      }
+      if (finalText) inputBeforeVoiceRef.current += finalText + " ";
+      setInput(inputBeforeVoiceRef.current + interim);
+    };
+    rec.onerror = (e: any) => {
+      toast({ title: "Voice error", description: e.error || "Recognition failed", variant: "destructive" });
+      setIsListening(false);
+    };
+    rec.onend = () => setIsListening(false);
+    recognitionRef.current = rec;
+    setIsListening(true);
+    rec.start();
+  };
+
   const suggestions = [
     t("assistant.suggest1", "Write a professional email to a client"),
     t("assistant.suggest2", "Summarize a long article I'll paste"),
