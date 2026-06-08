@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Send, Loader2, MessageSquarePlus, Trash2, Sparkles, Pencil, Check, X } from "lucide-react";
+import { Brain, Send, Loader2, MessageSquarePlus, Trash2, Sparkles, Pencil, Check, X, Mic, MicOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
