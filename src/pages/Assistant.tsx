@@ -16,7 +16,7 @@ type Msg = { id: string; role: "user" | "assistant"; content: any; created_at: s
 export default function Assistant() {
   const { currentUser } = useAuth();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<string | null>(null);
