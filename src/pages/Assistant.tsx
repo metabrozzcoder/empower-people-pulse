@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Send, Loader2, MessageSquarePlus, Trash2, Sparkles, Pencil, Check, X } from "lucide-react";
+import { Brain, Send, Loader2, MessageSquarePlus, Trash2, Sparkles, Pencil, Check, X, Mic, MicOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
@@ -16,7 +16,7 @@ type Msg = { id: string; role: "user" | "assistant"; content: any; created_at: s
 export default function Assistant() {
   const { currentUser } = useAuth();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<string | null>(null);
@@ -27,6 +27,9 @@ export default function Assistant() {
   const [editingTitle, setEditingTitle] = useState("");
   const [typingId, setTypingId] = useState<string | null>(null);
   const [typingText, setTypingText] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const inputBeforeVoiceRef = useRef<string>("");
   const endRef = useRef<HTMLDivElement>(null);
 
   const userId = currentUser?.id;
@@ -160,6 +163,49 @@ export default function Assistant() {
     } finally {
       setChatLoading(false);
     }
+  };
+
+  
+
+  const toggleVoice = () => {
+    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      toast({
+        title: t("assistant.voiceUnsupported", "Voice input not supported"),
+        description: t("assistant.voiceUnsupportedDesc", "Your browser doesn't support speech recognition. Try Chrome or Edge."),
+        variant: "destructive",
+      });
+      return;
+    }
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      return;
+    }
+    const rec = new SR();
+    const langMap: Record<string, string> = { ru: "ru-RU", uz: "uz-UZ", en: "en-US" };
+    rec.lang = langMap[i18n.language] || "en-US";
+    rec.continuous = true;
+    rec.interimResults = true;
+    inputBeforeVoiceRef.current = input ? input + " " : "";
+    rec.onresult = (e: any) => {
+      let finalText = "";
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const tr = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += tr;
+        else interim += tr;
+      }
+      if (finalText) inputBeforeVoiceRef.current += finalText + " ";
+      setInput(inputBeforeVoiceRef.current + interim);
+    };
+    rec.onerror = (e: any) => {
+      toast({ title: "Voice error", description: e.error || "Recognition failed", variant: "destructive" });
+      setIsListening(false);
+    };
+    rec.onend = () => setIsListening(false);
+    recognitionRef.current = rec;
+    setIsListening(true);
+    rec.start();
   };
 
   const suggestions = [
@@ -331,6 +377,16 @@ export default function Assistant() {
               }}
               className="resize-none min-h-[44px] max-h-40 rounded-2xl"
             />
+            <Button
+              type="button"
+              onClick={toggleVoice}
+              variant={isListening ? "destructive" : "outline"}
+              size="icon"
+              className="h-11 w-11 rounded-full"
+              title={isListening ? t("assistant.stopVoice", "Stop recording") : t("assistant.startVoice", "Voice input")}
+            >
+              {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </Button>
             <Button onClick={sendMessage} disabled={chatLoading || !input.trim()} size="icon" className="h-11 w-11 rounded-full">
               <Send className="h-4 w-4" />
             </Button>
