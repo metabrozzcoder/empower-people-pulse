@@ -502,10 +502,10 @@ export default function Documentation() {
 
       {/* Compose / Edit Dialog */}
       <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? 'Edit Document Request' : 'New Document Request'}</DialogTitle>
-            <DialogDescription>Upload a supporting document and assign a receiver for approval.</DialogDescription>
+            <DialogDescription>Write your document, preview it live, then submit it for approval.</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-2">
@@ -514,10 +514,45 @@ export default function Documentation() {
               <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Annual Leave Request" />
             </div>
             <div className="grid gap-2">
-              <Label>Description</Label>
-              <Textarea rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Provide context for the approver…" />
+              <Label>Short summary</Label>
+              <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="One-line context for the approver…" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            <Tabs defaultValue="split">
+              <div className="flex items-center justify-between">
+                <Label>Document body</Label>
+                <TabsList>
+                  <TabsTrigger value="edit">Edit</TabsTrigger>
+                  <TabsTrigger value="split">Edit + Preview</TabsTrigger>
+                  <TabsTrigger value="preview">Preview</TabsTrigger>
+                </TabsList>
+              </div>
+              <TabsContent value="edit" className="mt-2">
+                <DocEditor value={form.bodyHtml} onChange={(html) => setForm({ ...form, bodyHtml: html })} />
+              </TabsContent>
+              <TabsContent value="split" className="mt-2">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <DocEditor value={form.bodyHtml} onChange={(html) => setForm({ ...form, bodyHtml: html })} />
+                  <div className="rounded-md border bg-muted/20">
+                    <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">Live preview</div>
+                    <div
+                      className="prose prose-sm dark:prose-invert max-w-none min-h-[280px] p-4"
+                      dangerouslySetInnerHTML={{ __html: form.bodyHtml || '<p class="text-muted-foreground italic">Nothing to preview yet…</p>' }}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+              <TabsContent value="preview" className="mt-2">
+                <div className="rounded-md border bg-muted/20 p-4">
+                  <div
+                    className="prose prose-sm dark:prose-invert max-w-none min-h-[280px]"
+                    dangerouslySetInnerHTML={{ __html: form.bodyHtml || '<p class="text-muted-foreground italic">Nothing to preview yet…</p>' }}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="grid gap-2">
                 <Label>Category</Label>
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
@@ -532,7 +567,22 @@ export default function Documentation() {
                   <SelectContent>{priorities.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
+              <div className="grid gap-2">
+                <Label>Visibility</Label>
+                <Select value={form.visibility} onValueChange={(v) => setForm({ ...form, visibility: v as 'private' | 'public' })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="private"><span className="flex items-center gap-2"><Lock className="h-3 w-3" /> Private</span></SelectItem>
+                    <SelectItem value="public"><span className="flex items-center gap-2"><Globe className="h-3 w-3" /> Public (QR verifiable)</span></SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+            {form.visibility === 'public' && (
+              <p className="text-xs text-muted-foreground">
+                Once approved, anyone scanning the QR can verify this document and see who assigned and approved it.
+              </p>
+            )}
 
             <div className="grid gap-2">
               <Label>Assign to (Receiver) *</Label>
@@ -561,7 +611,7 @@ export default function Documentation() {
             </div>
 
             <div className="grid gap-2">
-              <Label>Attachment</Label>
+              <Label>Attachment (optional)</Label>
               <input ref={fileInputRef} type="file" className="hidden" onChange={handleFile} />
               <Button variant="outline" onClick={handleFilePick} className="justify-start">
                 <Upload className="mr-2 h-4 w-4" />
