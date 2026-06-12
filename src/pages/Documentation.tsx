@@ -518,39 +518,29 @@ export default function Documentation() {
               <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="One-line context for the approver…" />
             </div>
 
-            <Tabs defaultValue="split">
-              <div className="flex items-center justify-between">
-                <Label>Document body</Label>
-                <TabsList>
-                  <TabsTrigger value="edit">Edit</TabsTrigger>
-                  <TabsTrigger value="split">Edit + Preview</TabsTrigger>
-                  <TabsTrigger value="preview">Preview</TabsTrigger>
-                </TabsList>
+            {form.file ? (
+              <div className="space-y-2">
+                <Label>Edit document (live preview)</Label>
+                <DocumentEditor
+                  file={form.file}
+                  onSave={(edited) => {
+                    setForm((p) => ({ ...p, file: edited }))
+                    toast({ title: 'Edits applied', description: 'Your changes are baked into the file.' })
+                  }}
+                  onCancel={() => {
+                    // no-op: just collapses inline editing if user wants
+                  }}
+                />
               </div>
-              <TabsContent value="edit" className="mt-2">
-                <DocEditor value={form.bodyHtml} onChange={(html) => setForm({ ...form, bodyHtml: html })} />
-              </TabsContent>
-              <TabsContent value="split" className="mt-2">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <DocEditor value={form.bodyHtml} onChange={(html) => setForm({ ...form, bodyHtml: html })} />
-                  <div className="rounded-md border bg-muted/20">
-                    <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">Live preview</div>
-                    <div
-                      className="prose prose-sm dark:prose-invert max-w-none min-h-[280px] p-4"
-                      dangerouslySetInnerHTML={{ __html: form.bodyHtml || '<p class="text-muted-foreground italic">Nothing to preview yet…</p>' }}
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="preview" className="mt-2">
-                <div className="rounded-md border bg-muted/20 p-4">
-                  <div
-                    className="prose prose-sm dark:prose-invert max-w-none min-h-[280px]"
-                    dangerouslySetInnerHTML={{ __html: form.bodyHtml || '<p class="text-muted-foreground italic">Nothing to preview yet…</p>' }}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
+            ) : form.existingFilePath ? (
+              <div className="rounded-md border bg-muted/20 p-4 text-sm text-muted-foreground">
+                Replace the existing file to open the editor.
+              </div>
+            ) : (
+              <div className="rounded-md border border-dashed bg-muted/10 p-6 text-center text-sm text-muted-foreground">
+                Upload a PDF or image below to open the live editor (add text, draw, highlight, signatures, rotate / delete pages).
+              </div>
+            )}
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="grid gap-2">
