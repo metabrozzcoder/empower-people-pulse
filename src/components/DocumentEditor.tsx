@@ -29,6 +29,7 @@ export function DocumentEditor({ file, onSave, onCancel }: DocEditorProps) {
   const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
   const previewRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<HTMLCanvasElement>(null)
+  const wrapperDivRef = useRef<HTMLDivElement>(null)
   const fabricRef = useRef<fabric.Canvas | null>(null)
   const pdfBytesRef = useRef<Uint8Array | null>(null)
   const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null)
@@ -113,10 +114,20 @@ export function DocumentEditor({ file, onSave, onCancel }: DocEditorProps) {
     })
     fabricRef.current = fc
 
+    // Keep fabric's hidden typing textarea INSIDE the dialog, otherwise the
+    // modal focus trap steals focus from it and typing never registers.
+    const setTextareaContainer = (obj: fabric.FabricObject) => {
+      if (obj instanceof fabric.IText && wrapperDivRef.current) {
+        ;(obj as fabric.IText).hiddenTextareaContainer = wrapperDivRef.current
+      }
+    }
+    fc.on('object:added', (e) => setTextareaContainer(e.target as fabric.FabricObject))
+
     // Restore overlay for this page
     const saved = overlaysRef.current[currentOriginalPage]
     if (saved) {
       await fc.loadFromJSON(saved)
+      fc.getObjects().forEach(setTextareaContainer)
       fc.renderAll()
     }
 
@@ -165,6 +176,7 @@ export function DocumentEditor({ file, onSave, onCancel }: DocEditorProps) {
       backgroundColor: 'rgba(255,255,255,0.85)',
       padding: 4, borderColor: '#3b82f6', editable: true,
     })
+    if (wrapperDivRef.current) text.hiddenTextareaContainer = wrapperDivRef.current
     fc.add(text)
     fc.setActiveObject(text)
     // Enter editing on next tick so fabric finishes mounting the hidden textarea
@@ -353,7 +365,7 @@ export function DocumentEditor({ file, onSave, onCancel }: DocEditorProps) {
 
       {/* Canvas */}
       <div className="relative max-h-[70vh] overflow-auto rounded-md border bg-neutral-200 dark:bg-neutral-900 p-4 flex justify-center">
-        <div className="relative inline-block shadow-lg">
+        <div ref={wrapperDivRef} className="relative inline-block shadow-lg">
           <canvas ref={previewRef} className="block bg-white" />
           <div className="absolute inset-0">
             <canvas ref={overlayRef} />
