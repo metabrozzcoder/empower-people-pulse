@@ -357,6 +357,7 @@ export type Database = {
         Row: {
           approver_comment: string | null
           approver_id: string | null
+          body_html: string | null
           category: string | null
           created_at: string
           description: string | null
@@ -371,10 +372,12 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          visibility: string
         }
         Insert: {
           approver_comment?: string | null
           approver_id?: string | null
+          body_html?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
@@ -389,10 +392,12 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
+          visibility?: string
         }
         Update: {
           approver_comment?: string | null
           approver_id?: string | null
+          body_html?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
@@ -407,6 +412,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          visibility?: string
         }
         Relationships: []
       }
