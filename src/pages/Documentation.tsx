@@ -216,6 +216,8 @@ export default function Documentation() {
     setForm({
       title: d.title,
       description: d.description ?? '',
+      bodyHtml: d.body_html ?? '',
+      visibility: (d.visibility as 'private' | 'public') ?? 'private',
       category: d.category ?? 'HR Request',
       priority: (d.priority as Priority) ?? 'Normal',
       approverId: d.approver_id ?? '',
