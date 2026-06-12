@@ -652,10 +652,13 @@ export default function Documentation() {
             return (
               <>
                 <DialogHeader>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {statusBadge(status)}
                     {priorityBadge((viewing.priority as Priority) ?? 'Normal')}
                     {viewing.category && <Badge variant="outline">{viewing.category}</Badge>}
+                    <Badge variant="outline" className="gap-1">
+                      {viewing.visibility === 'public' ? <><Globe className="h-3 w-3" /> Public</> : <><Lock className="h-3 w-3" /> Private</>}
+                    </Badge>
                   </div>
                   <DialogTitle className="mt-2">{viewing.title}</DialogTitle>
                   <DialogDescription>
@@ -665,6 +668,14 @@ export default function Documentation() {
 
                 <div className="space-y-4">
                   {viewing.description && <p className="text-sm">{viewing.description}</p>}
+                  {viewing.body_html && (
+                    <div className="rounded-md border bg-muted/20 p-4">
+                      <div
+                        className="prose prose-sm dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ __html: viewing.body_html }}
+                      />
+                    </div>
+                  )}
                   {viewing.file_path && (
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Attachment</Label>
@@ -688,6 +699,25 @@ export default function Documentation() {
                       <p className="mt-1 text-sm">{viewing.approver_comment}</p>
                     </div>
                   )}
+                  {status === 'Approved' && viewing.visibility === 'public' && (() => {
+                    const url = `${window.location.origin}${window.location.pathname}#/verify/${viewing.id}`
+                    return (
+                      <div className="flex flex-col items-center gap-2 rounded-md border bg-background p-4">
+                        <Label className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <QrCode className="h-3 w-3" /> Verification QR
+                        </Label>
+                        <div className="rounded-md bg-white p-3">
+                          <QRCodeSVG value={url} size={160} level="M" />
+                        </div>
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline break-all text-center">
+                          {url}
+                        </a>
+                        <p className="text-xs text-muted-foreground text-center max-w-md">
+                          Scan to verify this document is approved and see who assigned and approved it.
+                        </p>
+                      </div>
+                    )
+                  })()}
                   {status === 'Pending' && viewing.approver_id === currentUser?.id && (
                     <div className="space-y-2 border-t pt-3">
                       <Label>Review comment (optional)</Label>
