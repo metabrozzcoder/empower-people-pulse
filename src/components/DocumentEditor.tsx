@@ -343,7 +343,9 @@ export function DocumentEditor({ file, onSave, onCancel }: DocEditorProps) {
       <div className="relative max-h-[70vh] overflow-auto rounded-md border bg-neutral-200 dark:bg-neutral-900 p-4 flex justify-center">
         <div className="relative inline-block shadow-lg">
           <canvas ref={previewRef} className="block bg-white" />
-          <canvas ref={overlayRef} className="absolute inset-0" />
+          <div className="absolute inset-0">
+            <canvas ref={overlayRef} />
+          </div>
         </div>
       </div>
 
