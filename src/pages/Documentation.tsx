@@ -73,6 +73,8 @@ const STATUS_UI_TO_DB: Record<ApprovalStatus, string> = {
 const emptyForm = {
   title: '',
   description: '',
+  bodyHtml: '',
+  visibility: 'private' as 'private' | 'public',
   category: 'HR Request',
   priority: 'Normal' as Priority,
   approverId: '',
