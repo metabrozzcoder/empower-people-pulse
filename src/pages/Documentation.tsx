@@ -262,6 +262,8 @@ export default function Documentation() {
       const payload = {
         title: form.title.trim(),
         description: form.description.trim() || null,
+        body_html: form.bodyHtml || null,
+        visibility: form.visibility,
         category: form.category,
         priority: form.priority,
         status: STATUS_UI_TO_DB[uiStatus],
