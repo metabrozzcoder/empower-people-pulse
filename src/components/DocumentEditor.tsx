@@ -158,11 +158,23 @@ export function DocumentEditor({ file, onSave, onCancel }: DocEditorProps) {
   // ---------- Toolbar actions ----------
   const addTextBox = () => {
     const fc = fabricRef.current; if (!fc) return
+    fc.isDrawingMode = false
+    fc.selection = true
     const text = new fabric.Textbox('Type here…', {
-      left: 60, top: 60, width: 200, fontSize: 18, fill: '#111', backgroundColor: 'rgba(255,255,255,0.8)',
-      padding: 4, borderColor: '#3b82f6',
+      left: 60, top: 60, width: 220, fontSize: 18, fill: '#111',
+      backgroundColor: 'rgba(255,255,255,0.85)',
+      padding: 4, borderColor: '#3b82f6', editable: true,
     })
-    fc.add(text); fc.setActiveObject(text); fc.requestRenderAll()
+    fc.add(text)
+    fc.setActiveObject(text)
+    // Enter editing on next tick so fabric finishes mounting the hidden textarea
+    setTimeout(() => {
+      try {
+        text.enterEditing()
+        text.selectAll()
+      } catch {}
+      fc.requestRenderAll()
+    }, 0)
     setTool('select')
   }
 
