@@ -41,12 +41,23 @@ import Assistant from "./pages/Assistant"
 import Settings from "./pages/Settings"
 import NotFound from "./pages/NotFound"
 import Login from "./pages/Login"
+import VerifyDocument from "./pages/VerifyDocument"
 
 const queryClient = new QueryClient()
 
 function AppContent() {
   const { logout, isAuthenticated, currentUser } = useAuth()
   const { t } = useTranslation()
+
+  // Public routes that bypass authentication
+  const hash = typeof window !== 'undefined' ? window.location.hash : ''
+  if (hash.startsWith('#/verify/')) {
+    return (
+      <Routes>
+        <Route path="/verify/:id" element={<VerifyDocument />} />
+      </Routes>
+    )
+  }
 
   if (!isAuthenticated) {
     return <Login />
