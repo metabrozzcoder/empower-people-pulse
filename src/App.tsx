@@ -41,6 +41,7 @@ import Assistant from "./pages/Assistant"
 import Settings from "./pages/Settings"
 import NotFound from "./pages/NotFound"
 import Login from "./pages/Login"
+import VerifyDocument from "./pages/VerifyDocument"
 
 const queryClient = new QueryClient()
 
