@@ -43,6 +43,8 @@ interface DocRow {
   id: string
   title: string
   description: string | null
+  body_html: string | null
+  visibility: string
   category: string | null
   priority: string
   status: string
