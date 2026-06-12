@@ -31,7 +31,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import { DocEditor } from '@/components/DocEditor'
+import { DocumentEditor } from '@/components/DocumentEditor'
 import { QRCodeSVG } from 'qrcode.react'
 
 type ApprovalStatus = 'Draft' | 'Pending' | 'Approved' | 'Rejected'
