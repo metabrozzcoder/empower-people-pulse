@@ -26,10 +26,13 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   FileText, Upload, Plus, Edit, Trash2, Search, CheckCircle2, XCircle, Clock,
   Paperclip, Send, Download, Eye, UserCheck, Inbox, FileUp, RefreshCw, MessageSquare, Loader2,
+  Globe, Lock, QrCode,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
+import { DocEditor } from '@/components/DocEditor'
+import { QRCodeSVG } from 'qrcode.react'
 
 type ApprovalStatus = 'Draft' | 'Pending' | 'Approved' | 'Rejected'
 type Priority = 'Low' | 'Normal' | 'High' | 'Urgent'
