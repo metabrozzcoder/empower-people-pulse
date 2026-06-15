@@ -108,6 +108,18 @@ export default function Documentation() {
 
   const [viewing, setViewing] = useState<DocRow | null>(null)
   const [reviewComment, setReviewComment] = useState('')
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setPreviewUrl(null)
+    if (viewing?.file_path) {
+      supabase.storage.from('documents').createSignedUrl(viewing.file_path, 300).then(({ data }) => {
+        if (!cancelled && data?.signedUrl) setPreviewUrl(data.signedUrl)
+      })
+    }
+    return () => { cancelled = true }
+  }, [viewing?.id, viewing?.file_path])
 
   // ---------- Load assigners (admin + hr users) ----------
   const loadAssigners = useCallback(async () => {
@@ -636,7 +648,7 @@ export default function Documentation() {
 
       {/* View / Review Dialog */}
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           {viewing && (() => {
             const status = STATUS_DB_TO_UI[viewing.status] ?? 'Draft'
             return (
@@ -667,8 +679,9 @@ export default function Documentation() {
                     </div>
                   )}
                   {viewing.file_path && (
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Attachment</Label>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Attachment preview</Label>
+                      <FilePreview url={previewUrl} fileType={viewing.file_type} fileName={viewing.file_path.split('/').pop() || 'file'} />
                       <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
                         <div className="flex items-center gap-2">
                           <Paperclip className="h-3 w-3 text-muted-foreground" />
@@ -732,6 +745,49 @@ export default function Documentation() {
           })()}
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
+
+function FilePreview({ url, fileType, fileName }: { url: string | null; fileType: string | null; fileName: string }) {
+  if (!url) {
+    return (
+      <div className="flex h-40 items-center justify-center rounded-md border bg-muted/30 text-sm text-muted-foreground">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading preview…
+      </div>
+    )
+  }
+  const ft = (fileType || '').toLowerCase()
+  const name = fileName.toLowerCase()
+  const isImage = ft.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(name)
+  const isPdf = ft === 'application/pdf' || name.endsWith('.pdf')
+  const isOffice = /(word|excel|powerpoint|officedocument|msword|ms-excel|ms-powerpoint)/.test(ft) || /\.(docx?|xlsx?|pptx?)$/i.test(name)
+
+  if (isImage) {
+    return (
+      <div className="overflow-hidden rounded-md border bg-muted/30">
+        <img src={url} alt={fileName} className="mx-auto max-h-[500px] w-auto object-contain" />
+      </div>
+    )
+  }
+  if (isPdf) {
+    return (
+      <div className="overflow-hidden rounded-md border bg-muted/30">
+        <iframe src={url} title={fileName} className="h-[500px] w-full" />
+      </div>
+    )
+  }
+  if (isOffice) {
+    const viewer = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`
+    return (
+      <div className="overflow-hidden rounded-md border bg-muted/30">
+        <iframe src={viewer} title={fileName} className="h-[500px] w-full" />
+      </div>
+    )
+  }
+  return (
+    <div className="rounded-md border bg-muted/30 p-4 text-center text-xs text-muted-foreground">
+      Inline preview is not available for this file type. Use Download below.
     </div>
   )
 }
