@@ -33,8 +33,8 @@ interface Department {
   status: string
 }
 
-interface ProfileLite { id: string; name: string | null; email: string | null }
-interface EmployeeLite { id: string; name: string; position: string | null; department: string | null; organization_id: string | null }
+interface ProfileLite { id: string; name: string | null; email: string | null; department?: string | null; organization?: string | null; position?: string | null }
+interface EmployeeLite { id: string; name: string; position: string | null; department: string | null; organization_id: string | null; email?: string | null }
 
 const emptyOrg = { name: '', description: '', address: '', phone: '', email: '', status: 'Active' }
 const emptyDept = { name: '', description: '', manager_id: '', manager_name: '', budget: 0, status: 'Active', organization_id: '' }
