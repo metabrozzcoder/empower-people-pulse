@@ -284,6 +284,24 @@ export default function UserManagement() {
   }
 
   const handleFormChange = (field: string, value: string) => {
+    // Custom role chosen from the same Role dropdown
+    if (field === 'role' && value.startsWith('custom:')) {
+      const id = value.slice('custom:'.length)
+      const cr = customRoles.find(c => c.id === id)
+      setCustomRoleId(id)
+      const newFormData = { ...formData, role: 'Employee' }
+      setFormData(newFormData)
+      setSelectedSections(cr?.allowed_sections?.length ? cr.allowed_sections : ROLE_DEFAULT_SECTIONS.Employee)
+      setGeneratedCredentials(prev => ({
+        username: prev.username || buildLoginEmail(newFormData.name, newFormData.surname),
+        password: prev.password || generateStrongPassword(),
+        guestId: '',
+      }))
+      return
+    }
+
+    if (field === 'role') setCustomRoleId('')
+
     const newFormData = { ...formData, [field]: value }
     setFormData(newFormData)
 
