@@ -125,6 +125,7 @@ export default function Organizations() {
     setDeptForm({
       name: dept.name,
       description: dept.description ?? '',
+      manager_id: dept.manager_id ?? '',
       manager_name: dept.manager_name ?? '',
       budget: Number(dept.budget ?? 0),
       status: dept.status,
