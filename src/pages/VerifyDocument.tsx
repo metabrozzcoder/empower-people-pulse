@@ -117,10 +117,13 @@ export default function VerifyDocument() {
             </div>
 
             {fileUrl && (
-              <div className="mt-6 flex justify-center">
-                <a href={fileUrl} target="_blank" rel="noopener noreferrer">
-                  <Button><Download className="mr-2 h-4 w-4" /> Download attached file</Button>
-                </a>
+              <div className="mt-6 space-y-4">
+                <DocumentPreview url={fileUrl} fileType={doc.file_type} title={doc.title} />
+                <div className="flex justify-center">
+                  <a href={fileUrl} target="_blank" rel="noopener noreferrer" download>
+                    <Button><Download className="mr-2 h-4 w-4" /> Download attached file</Button>
+                  </a>
+                </div>
               </div>
             )}
           </CardContent>
