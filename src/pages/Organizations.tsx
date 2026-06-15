@@ -226,7 +226,12 @@ export default function Organizations() {
         <div className="space-y-8">
           {filteredOrganizations.map((org) => {
             const orgDepts = departments.filter(d => d.organization_id === org.id)
-            const orgEmployees = employees.filter(e => e.organization_id === org.id)
+            const empEmails = new Set(employees.filter(e => e.email).map(e => (e.email as string).toLowerCase()))
+            const profileMembers: EmployeeLite[] = profiles
+              .filter(p => (p.organization ?? '').toLowerCase() === org.name.toLowerCase())
+              .filter(p => !p.email || !empEmails.has(p.email.toLowerCase()))
+              .map(p => ({ id: `profile-${p.id}`, name: p.name ?? p.email ?? 'User', position: p.position ?? null, department: p.department ?? null, organization_id: org.id, email: p.email }))
+            const orgEmployees = [...employees.filter(e => e.organization_id === org.id), ...profileMembers]
             return (
               <Card key={org.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
