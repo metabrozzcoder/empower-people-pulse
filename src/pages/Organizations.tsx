@@ -122,7 +122,7 @@ export default function Organizations() {
   const openCreateDept = (orgId: string) => {
     setActiveOrgId(orgId)
     setEditingDept(null)
-    setDeptForm({ ...emptyDept })
+    setDeptForm({ ...emptyDept, organization_id: orgId })
     setIsDeptDialogOpen(true)
   }
   const openEditDept = (dept: Department) => {
@@ -135,23 +135,29 @@ export default function Organizations() {
       manager_name: dept.manager_name ?? '',
       budget: Number(dept.budget ?? 0),
       status: dept.status,
+      organization_id: dept.organization_id,
     })
     setIsDeptDialogOpen(true)
   }
 
   const saveDepartment = async () => {
-    if (!activeOrgId) return
+    const orgId = deptForm.organization_id || activeOrgId
+    if (!orgId) {
+      toast({ title: 'Organization required', description: 'Please select an organization.', variant: 'destructive' })
+      return
+    }
     if (!deptForm.name.trim()) {
       toast({ title: 'Name required', description: 'Please enter a department name.', variant: 'destructive' })
       return
     }
-    const payload = { ...deptForm, manager_id: deptForm.manager_id || null }
+    const { organization_id, ...rest } = deptForm
+    const payload = { ...rest, manager_id: rest.manager_id || null, organization_id: orgId }
     if (editingDept) {
       const { error } = await supabase.from('departments').update(payload).eq('id', editingDept.id)
       if (error) return toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
       toast({ title: 'Department updated' })
     } else {
-      const { error } = await supabase.from('departments').insert({ ...payload, organization_id: activeOrgId })
+      const { error } = await supabase.from('departments').insert(payload)
       if (error) return toast({ title: 'Create failed', description: error.message, variant: 'destructive' })
       toast({ title: 'Department created' })
     }
