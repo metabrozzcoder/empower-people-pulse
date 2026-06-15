@@ -264,6 +264,17 @@ export default function Employees() {
               <Label htmlFor="manager">Manager</Label>
               <Input id="manager" placeholder="Manager name" value={employeeData.manager} onChange={(e) => setEmployeeData({...employeeData, manager: e.target.value})} />
             </div>
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="organization">Organization</Label>
+              <Select value={employeeData.organizationId} onValueChange={(v) => setEmployeeData({...employeeData, organizationId: v})}>
+                <SelectTrigger><SelectValue placeholder="Select organization" /></SelectTrigger>
+                <SelectContent>
+                  {organizations.map(o => (
+                    <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="col-span-2 space-y-2">
               <Label htmlFor="notes">Notes</Label>
               <Textarea id="notes" placeholder="Additional notes about the employee" />
