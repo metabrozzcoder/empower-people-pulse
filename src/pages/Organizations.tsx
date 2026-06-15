@@ -316,25 +316,6 @@ export default function Organizations() {
                     )}
                   </div>
 
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Employees ({orgEmployees.length})</h3>
-                    {orgEmployees.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No employees linked to this organization yet.</p>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {orgEmployees.map((emp) => (
-                          <div key={emp.id} className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">{emp.name}</p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {[emp.position, emp.department].filter(Boolean).join(' • ') || '—'}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </CardContent>
               </Card>
             )
