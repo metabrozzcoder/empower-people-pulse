@@ -332,8 +332,26 @@ export default function Organizations() {
               <Input value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Manager Name</Label>
-              <Input value={deptForm.manager_name} onChange={(e) => setDeptForm({ ...deptForm, manager_name: e.target.value })} />
+              <Label>Manager</Label>
+              <Select
+                value={deptForm.manager_id || 'none'}
+                onValueChange={(v) => {
+                  if (v === 'none') {
+                    setDeptForm({ ...deptForm, manager_id: '', manager_name: '' })
+                  } else {
+                    const p = profiles.find(x => x.id === v)
+                    setDeptForm({ ...deptForm, manager_id: v, manager_name: p?.name || p?.email || '' })
+                  }
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Select manager from users" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— No manager —</SelectItem>
+                  {profiles.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name || p.email || p.id}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="col-span-2 space-y-2">
               <Label>Description</Label>
