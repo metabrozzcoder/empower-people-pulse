@@ -142,6 +142,25 @@ export default function UserManagement() {
   const [orgOptions, setOrgOptions] = useState<string[]>([])
   const [deptOptions, setDeptOptions] = useState<string[]>([])
   const [employeeOptions, setEmployeeOptions] = useState<string[]>([])
+  const [customRoles, setCustomRoles] = useState<Array<{ id: string; name: string; allowed_sections: string[] }>>([])
+  const [customRoleId, setCustomRoleId] = useState<string>('')
+
+  const loadCustomRoles = async () => {
+    const { data } = await supabase.from('custom_roles').select('id, name, allowed_sections').order('name')
+    setCustomRoles(((data ?? []) as any[]).map(r => ({
+      id: r.id, name: r.name,
+      allowed_sections: Array.isArray(r.allowed_sections) ? r.allowed_sections : [],
+    })))
+  }
+
+  useEffect(() => {
+    loadCustomRoles()
+    const ch = supabase
+      .channel('custom_roles_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_roles' }, () => loadCustomRoles())
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [])
 
   useEffect(() => {
     (async () => {
