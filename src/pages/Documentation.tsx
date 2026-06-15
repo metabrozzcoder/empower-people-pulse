@@ -108,6 +108,18 @@ export default function Documentation() {
 
   const [viewing, setViewing] = useState<DocRow | null>(null)
   const [reviewComment, setReviewComment] = useState('')
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setPreviewUrl(null)
+    if (viewing?.file_path) {
+      supabase.storage.from('documents').createSignedUrl(viewing.file_path, 300).then(({ data }) => {
+        if (!cancelled && data?.signedUrl) setPreviewUrl(data.signedUrl)
+      })
+    }
+    return () => { cancelled = true }
+  }, [viewing?.id, viewing?.file_path])
 
   // ---------- Load assigners (admin + hr users) ----------
   const loadAssigners = useCallback(async () => {
