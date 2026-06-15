@@ -184,10 +184,26 @@ export default function Organizations() {
           <h1 className="text-3xl font-bold">{t('pages.organizations.title')}</h1>
           <p className="text-muted-foreground">{t('pages.organizations.subtitle')}</p>
         </div>
-        <Button onClick={openCreateOrg} className="flex items-center space-x-2">
-          <Plus className="w-4 h-4" />
-          <span>Add Organization</span>
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setActiveOrgId(null)
+              setEditingDept(null)
+              setDeptForm({ ...emptyDept })
+              setIsDeptDialogOpen(true)
+            }}
+            className="flex items-center space-x-2"
+            disabled={organizations.length === 0}
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Department</span>
+          </Button>
+          <Button onClick={openCreateOrg} className="flex items-center space-x-2">
+            <Plus className="w-4 h-4" />
+            <span>Add Organization</span>
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center space-x-4">
