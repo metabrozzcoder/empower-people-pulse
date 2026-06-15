@@ -183,67 +183,6 @@ export function EmployeeCard({ employee }: EmployeeCardProps) {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Detailed Attendance */}
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center space-x-2">
-                  <Clock className="w-5 h-5" />
-                  <span>Attendance Details</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-4 gap-4 mb-6">
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">95%</div>
-                    <div className="text-sm text-muted-foreground">Attendance Rate</div>
-                  </div>
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">8:47 AM</div>
-                    <div className="text-sm text-muted-foreground">Avg Check-in</div>
-                  </div>
-                  <div className="text-center p-4 bg-orange-50 rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600">2</div>
-                    <div className="text-sm text-muted-foreground">Late Days</div>
-                  </div>
-                  <div className="text-center p-4 bg-red-50 rounded-lg">
-                    <div className="text-2xl font-bold text-red-600">1</div>
-                    <div className="text-sm text-muted-foreground">Absent Days</div>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">This Week Progress</span>
-                      <span className="text-sm font-medium">38.5 / 40 hours</span>
-                    </div>
-                    <div className="bg-gray-200 rounded-full h-3">
-                      <div className="bg-blue-500 h-3 rounded-full" style={{ width: '96%' }}></div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex justify-between">
-                      <span>Today:</span>
-                      <span className="text-green-600 font-medium">Present (8:30 AM)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Yesterday:</span>
-                      <span className="text-green-600 font-medium">Present (8:45 AM)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>This Month:</span>
-                      <span className="font-medium">22/23 days</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Total Hours:</span>
-                      <span className="font-medium">176 hours</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </DialogContent>
       </Dialog>
