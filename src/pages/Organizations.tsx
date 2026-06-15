@@ -389,6 +389,20 @@ export default function Organizations() {
             <DialogDescription>{editingDept ? 'Update department information' : 'Create a new department'}</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="col-span-2 space-y-2">
+              <Label>Organization</Label>
+              <Select
+                value={deptForm.organization_id}
+                onValueChange={(v) => { setDeptForm({ ...deptForm, organization_id: v }); setActiveOrgId(v) }}
+              >
+                <SelectTrigger><SelectValue placeholder="Select organization" /></SelectTrigger>
+                <SelectContent>
+                  {organizations.map(o => (
+                    <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label>Department Name</Label>
               <Input value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} />
