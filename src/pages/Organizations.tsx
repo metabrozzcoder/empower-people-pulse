@@ -282,7 +282,13 @@ export default function Organizations() {
                                   </div>
                                   <div>
                                     <CardTitle className="text-base">{dept.name}</CardTitle>
-                                    <Badge variant="secondary" className="text-[10px] mt-1">{deptMembers.length} {deptMembers.length === 1 ? 'member' : 'members'}</Badge>
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-[10px] mt-1 cursor-pointer hover:bg-primary/20 transition-colors"
+                                      onClick={() => setViewDeptMembers({ dept, members: deptMembers })}
+                                    >
+                                      {deptMembers.length} {deptMembers.length === 1 ? 'member' : 'members'}
+                                    </Badge>
                                   </div>
                                 </div>
                                 <div className="flex space-x-1">
