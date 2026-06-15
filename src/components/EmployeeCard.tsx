@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Mail, Phone, MapPin, TrendingUp, Clock, Calendar } from "lucide-react"
+import { Mail, Phone, MapPin, TrendingUp, Calendar } from "lucide-react"
 import { useState } from "react"
 
 interface EmployeeCardProps {
