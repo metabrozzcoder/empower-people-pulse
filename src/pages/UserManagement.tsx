@@ -863,17 +863,31 @@ export default function UserManagement() {
                 <div className="space-y-2">
                   <Label htmlFor="role">Role *</Label>
                   <Select 
-                    value={formData.role}
+                    value={customRoleId ? `custom:${customRoleId}` : formData.role}
                     onValueChange={(value) => handleFormChange('role', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Admin">Admin</SelectItem>
-                      <SelectItem value="HR">HR</SelectItem>
-                      <SelectItem value="Guest">Guest</SelectItem>
-                      <SelectItem value="Employee">Employee</SelectItem>
+                      <SelectGroup>
+                        <SelectLabel>System Roles</SelectLabel>
+                        <SelectItem value="Admin">Admin</SelectItem>
+                        <SelectItem value="HR">HR</SelectItem>
+                        <SelectItem value="Guest">Guest</SelectItem>
+                        <SelectItem value="Employee">Employee</SelectItem>
+                      </SelectGroup>
+                      {customRoles.length > 0 && (
+                        <>
+                          <SelectSeparator />
+                          <SelectGroup>
+                            <SelectLabel>Custom Roles</SelectLabel>
+                            {customRoles.map(cr => (
+                              <SelectItem key={cr.id} value={`custom:${cr.id}`}>{cr.name}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
