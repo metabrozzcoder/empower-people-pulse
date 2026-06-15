@@ -306,7 +306,6 @@ export default function Organizations() {
                           </Card>
                         )})}
                       </div>
-                      </div>
                     )}
                   </div>
 
