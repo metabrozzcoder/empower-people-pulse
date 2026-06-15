@@ -263,7 +263,9 @@ export default function Organizations() {
                       <p className="text-sm text-muted-foreground">No departments yet.</p>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {orgDepts.map((dept) => (
+                        {orgDepts.map((dept) => {
+                          const deptMembers = orgEmployees.filter(e => (e.department ?? '').toLowerCase() === dept.name.toLowerCase())
+                          return (
                           <Card key={dept.id} className="bg-muted/30">
                             <CardHeader className="pb-2">
                               <div className="flex items-start justify-between">
@@ -271,7 +273,10 @@ export default function Organizations() {
                                   <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                                     <UsersIcon className="w-4 h-4 text-primary" />
                                   </div>
-                                  <CardTitle className="text-base">{dept.name}</CardTitle>
+                                  <div>
+                                    <CardTitle className="text-base">{dept.name}</CardTitle>
+                                    <Badge variant="secondary" className="text-[10px] mt-1">{deptMembers.length} {deptMembers.length === 1 ? 'member' : 'members'}</Badge>
+                                  </div>
                                 </div>
                                 <div className="flex space-x-1">
                                   <Button variant="ghost" size="sm" onClick={() => openEditDept(dept)}><Edit className="w-3 h-3" /></Button>
@@ -283,10 +288,24 @@ export default function Organizations() {
                               {dept.description && <p className="text-xs text-muted-foreground">{dept.description}</p>}
                               {dept.manager_name && <p className="text-xs text-muted-foreground">Manager: {dept.manager_name}</p>}
                               <p className="text-xs text-muted-foreground">Budget: ${Number(dept.budget ?? 0).toLocaleString()}</p>
-                              <Badge variant="outline" className="text-xs">{dept.status}</Badge>
+                              {deptMembers.length > 0 && (
+                                <div className="pt-2 space-y-1">
+                                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Members</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {deptMembers.slice(0, 6).map(m => (
+                                      <Badge key={m.id} variant="outline" className="text-[10px] font-normal">{m.name}</Badge>
+                                    ))}
+                                    {deptMembers.length > 6 && (
+                                      <Badge variant="outline" className="text-[10px]">+{deptMembers.length - 6}</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              <Badge variant="outline" className="text-xs mt-2">{dept.status}</Badge>
                             </CardContent>
                           </Card>
-                        ))}
+                        )})}
+                      </div>
                       </div>
                     )}
                   </div>
