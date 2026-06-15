@@ -480,6 +480,7 @@ export default function UserManagement() {
     })
     setSelectedSections([])
     setGeneratedCredentials({ username: '', password: '', guestId: '' })
+    setCustomRoleId('')
   }
 
   const exportUserList = () => {
