@@ -33,8 +33,8 @@ interface Department {
   status: string
 }
 
-interface ProfileLite { id: string; name: string | null; email: string | null }
-interface EmployeeLite { id: string; name: string; position: string | null; department: string | null; organization_id: string | null }
+interface ProfileLite { id: string; name: string | null; email: string | null; department?: string | null; organization?: string | null; position?: string | null }
+interface EmployeeLite { id: string; name: string; position: string | null; department: string | null; organization_id: string | null; email?: string | null }
 
 const emptyOrg = { name: '', description: '', address: '', phone: '', email: '', status: 'Active' }
 const emptyDept = { name: '', description: '', manager_id: '', manager_name: '', budget: 0, status: 'Active', organization_id: '' }
@@ -62,8 +62,8 @@ export default function Organizations() {
     const [{ data: orgs, error: orgErr }, { data: depts, error: deptErr }, { data: profs }, { data: emps }] = await Promise.all([
       supabase.from('organizations').select('*').order('created_at', { ascending: false }),
       supabase.from('departments').select('*').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('id, name, email').order('name'),
-      supabase.from('employees').select('id, name, position, department, organization_id').order('name'),
+      supabase.from('profiles').select('id, name, email, department, organization, position').order('name'),
+      supabase.from('employees').select('id, name, position, department, organization_id, email').order('name'),
     ])
     if (orgErr) toast({ title: 'Failed to load organizations', description: orgErr.message, variant: 'destructive' })
     if (deptErr) toast({ title: 'Failed to load departments', description: deptErr.message, variant: 'destructive' })
@@ -226,7 +226,12 @@ export default function Organizations() {
         <div className="space-y-8">
           {filteredOrganizations.map((org) => {
             const orgDepts = departments.filter(d => d.organization_id === org.id)
-            const orgEmployees = employees.filter(e => e.organization_id === org.id)
+            const empEmails = new Set(employees.filter(e => e.email).map(e => (e.email as string).toLowerCase()))
+            const profileMembers: EmployeeLite[] = profiles
+              .filter(p => (p.organization ?? '').toLowerCase() === org.name.toLowerCase())
+              .filter(p => !p.email || !empEmails.has(p.email.toLowerCase()))
+              .map(p => ({ id: `profile-${p.id}`, name: p.name ?? p.email ?? 'User', position: p.position ?? null, department: p.department ?? null, organization_id: org.id, email: p.email }))
+            const orgEmployees = [...employees.filter(e => e.organization_id === org.id), ...profileMembers]
             return (
               <Card key={org.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
