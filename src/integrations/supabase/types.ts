@@ -428,6 +428,7 @@ export type Database = {
           location: string | null
           manager: string | null
           name: string
+          organization_id: string | null
           performance_score: number | null
           phone: string | null
           position: string | null
@@ -446,6 +447,7 @@ export type Database = {
           location?: string | null
           manager?: string | null
           name: string
+          organization_id?: string | null
           performance_score?: number | null
           phone?: string | null
           position?: string | null
@@ -464,6 +466,7 @@ export type Database = {
           location?: string | null
           manager?: string | null
           name?: string
+          organization_id?: string | null
           performance_score?: number | null
           phone?: string | null
           position?: string | null
@@ -471,7 +474,22 @@ export type Database = {
           status?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "employees_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
