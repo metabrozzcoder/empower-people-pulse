@@ -145,12 +145,13 @@ export default function Organizations() {
       toast({ title: 'Name required', description: 'Please enter a department name.', variant: 'destructive' })
       return
     }
+    const payload = { ...deptForm, manager_id: deptForm.manager_id || null }
     if (editingDept) {
-      const { error } = await supabase.from('departments').update(deptForm).eq('id', editingDept.id)
+      const { error } = await supabase.from('departments').update(payload).eq('id', editingDept.id)
       if (error) return toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
       toast({ title: 'Department updated' })
     } else {
-      const { error } = await supabase.from('departments').insert({ ...deptForm, organization_id: activeOrgId })
+      const { error } = await supabase.from('departments').insert({ ...payload, organization_id: activeOrgId })
       if (error) return toast({ title: 'Create failed', description: error.message, variant: 'destructive' })
       toast({ title: 'Department created' })
     }
