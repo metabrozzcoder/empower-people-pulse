@@ -64,6 +64,8 @@ const POSITION_PRESETS = [
 export default function Employees() {
   const { t } = useTranslation()
   const { toast } = useToast()
+  const { currentUser } = useAuth()
+  const canView = currentUser?.role === 'Admin' || currentUser?.role === 'HR'
   const [employees, setEmployees] = useState<EmployeeView[]>([])
   const [organizations, setOrganizations] = useState<OrgLite[]>([])
   const [searchTerm, setSearchTerm] = useState("")
