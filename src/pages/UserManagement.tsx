@@ -449,6 +449,23 @@ export default function UserManagement() {
       }
     }
 
+    // Sync custom role assignment for this user
+    try {
+      let targetUserId = selectedUser?.id as string | undefined
+      if (!targetUserId) {
+        const { data: prof } = await supabase.from('profiles').select('id').eq('email', formData.email).maybeSingle()
+        targetUserId = (prof as any)?.id
+      }
+      if (targetUserId) {
+        await supabase.from('user_custom_roles').delete().eq('user_id', targetUserId)
+        if (customRoleId) {
+          await supabase.from('user_custom_roles').insert({ user_id: targetUserId, custom_role_id: customRoleId })
+        }
+      }
+    } catch (e) {
+      console.warn('Custom role sync failed', e)
+    }
+
     setIsDialogOpen(false)
     setFormData({
       name: '',
