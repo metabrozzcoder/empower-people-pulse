@@ -448,6 +448,37 @@ export default function Organizations() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* View Members Dialog */}
+      <Dialog open={!!viewDeptMembers} onOpenChange={(open) => { if (!open) setViewDeptMembers(null) }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{viewDeptMembers?.dept.name} — Members</DialogTitle>
+            <DialogDescription>
+              {viewDeptMembers?.members.length ?? 0} {viewDeptMembers && viewDeptMembers.members.length === 1 ? 'member' : 'members'} in this department
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto py-2">
+            {viewDeptMembers?.members.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No members in this department yet.</p>
+            ) : (
+              viewDeptMembers?.members.map((m) => (
+                <div key={m.id} className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{m.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {[m.position, m.email].filter(Boolean).join(' • ') || '—'}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setViewDeptMembers(null)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
