@@ -27,13 +27,17 @@ interface Department {
   organization_id: string
   name: string
   description: string | null
+  manager_id: string | null
   manager_name: string | null
   budget: number | null
   status: string
 }
 
+interface ProfileLite { id: string; name: string | null; email: string | null }
+interface EmployeeLite { id: string; name: string; position: string | null; department: string | null; organization_id: string | null }
+
 const emptyOrg = { name: '', description: '', address: '', phone: '', email: '', status: 'Active' }
-const emptyDept = { name: '', description: '', manager_name: '', budget: 0, status: 'Active' }
+const emptyDept = { name: '', description: '', manager_id: '', manager_name: '', budget: 0, status: 'Active' }
 
 export default function Organizations() {
   const { t } = useTranslation()
