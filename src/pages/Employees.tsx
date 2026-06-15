@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { EmployeeCard } from "@/components/EmployeeCard"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/context/AuthContext"
 import type { Employee } from "@/types/employee"
 
 interface DbEmployee {
