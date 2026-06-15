@@ -648,7 +648,7 @@ export default function Documentation() {
 
       {/* View / Review Dialog */}
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           {viewing && (() => {
             const status = STATUS_DB_TO_UI[viewing.status] ?? 'Draft'
             return (
