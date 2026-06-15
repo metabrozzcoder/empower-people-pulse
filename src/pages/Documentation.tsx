@@ -748,3 +748,46 @@ export default function Documentation() {
     </div>
   )
 }
+
+function FilePreview({ url, fileType, fileName }: { url: string | null; fileType: string | null; fileName: string }) {
+  if (!url) {
+    return (
+      <div className="flex h-40 items-center justify-center rounded-md border bg-muted/30 text-sm text-muted-foreground">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading preview…
+      </div>
+    )
+  }
+  const ft = (fileType || '').toLowerCase()
+  const name = fileName.toLowerCase()
+  const isImage = ft.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(name)
+  const isPdf = ft === 'application/pdf' || name.endsWith('.pdf')
+  const isOffice = /(word|excel|powerpoint|officedocument|msword|ms-excel|ms-powerpoint)/.test(ft) || /\.(docx?|xlsx?|pptx?)$/i.test(name)
+
+  if (isImage) {
+    return (
+      <div className="overflow-hidden rounded-md border bg-muted/30">
+        <img src={url} alt={fileName} className="mx-auto max-h-[500px] w-auto object-contain" />
+      </div>
+    )
+  }
+  if (isPdf) {
+    return (
+      <div className="overflow-hidden rounded-md border bg-muted/30">
+        <iframe src={url} title={fileName} className="h-[500px] w-full" />
+      </div>
+    )
+  }
+  if (isOffice) {
+    const viewer = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`
+    return (
+      <div className="overflow-hidden rounded-md border bg-muted/30">
+        <iframe src={viewer} title={fileName} className="h-[500px] w-full" />
+      </div>
+    )
+  }
+  return (
+    <div className="rounded-md border bg-muted/30 p-4 text-center text-xs text-muted-foreground">
+      Inline preview is not available for this file type. Use Download below.
+    </div>
+  )
+}
