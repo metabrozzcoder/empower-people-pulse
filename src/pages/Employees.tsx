@@ -122,7 +122,18 @@ export default function Employees() {
     setEmployees([...fromEmps, ...fromProfiles])
   }
 
-  useEffect(() => { loadEmployees() }, [])
+  useEffect(() => { if (canView) loadEmployees() }, [canView])
+
+  if (!canView) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <h1 className="text-2xl font-bold mb-2">Access restricted</h1>
+        <p className="text-muted-foreground max-w-md">
+          The Employees section is only available to Admin and HR users.
+        </p>
+      </div>
+    )
+  }
 
   const departments = useMemo(
     () => Array.from(new Set(employees.map(e => e.department).filter(Boolean))).sort(),
