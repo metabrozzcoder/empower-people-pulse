@@ -203,6 +203,7 @@ export default function Organizations() {
         <div className="space-y-8">
           {filteredOrganizations.map((org) => {
             const orgDepts = departments.filter(d => d.organization_id === org.id)
+            const orgEmployees = employees.filter(e => e.organization_id === org.id)
             return (
               <Card key={org.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
