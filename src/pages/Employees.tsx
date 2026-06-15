@@ -54,6 +54,12 @@ const toViewEmployee = (e: DbEmployee, idx: number, orgName?: string): EmployeeV
   organizationName: orgName,
 })
 
+const POSITION_PRESETS = [
+  'Software Engineer', 'Senior Engineer', 'Product Manager', 'Designer',
+  'HR Manager', 'Accountant', 'Operations Manager', 'Marketing Specialist',
+  'Sales Representative', 'Director', 'Driver', 'Technician',
+]
+
 export default function Employees() {
   const { t } = useTranslation()
   const { toast } = useToast()
@@ -64,6 +70,7 @@ export default function Employees() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [orgFilter, setOrgFilter] = useState("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [positionMode, setPositionMode] = useState<'preset' | 'custom'>('preset')
   const [employeeData, setEmployeeData] = useState({
     firstName: '',
     lastName: '',
@@ -78,16 +85,38 @@ export default function Employees() {
   })
 
   const loadEmployees = async () => {
-    const [{ data: emps }, { data: orgs }] = await Promise.all([
+    const [{ data: emps }, { data: orgs }, { data: profs }] = await Promise.all([
       supabase.from('employees').select('*').order('created_at', { ascending: false }),
       supabase.from('organizations').select('id, name').order('name'),
+      supabase.from('profiles').select('id, name, email, position, department').order('name'),
     ])
     const orgList = (orgs ?? []) as OrgLite[]
     setOrganizations(orgList)
     const orgMap = new Map(orgList.map(o => [o.id, o.name]))
-    setEmployees(((emps ?? []) as DbEmployee[]).map((e, i) =>
+    const fromEmps = ((emps ?? []) as DbEmployee[]).map((e, i) =>
       toViewEmployee(e, i, e.organization_id ? orgMap.get(e.organization_id) : undefined)
-    ))
+    )
+    // Surface assigned users (profiles) that don't already have an employee record (by email)
+    const knownEmails = new Set(fromEmps.map(e => (e.email || '').toLowerCase()).filter(Boolean))
+    const fromProfiles: EmployeeView[] = ((profs ?? []) as any[])
+      .filter(p => p.email && !knownEmails.has(String(p.email).toLowerCase()))
+      .map((p, i) => ({
+        id: fromEmps.length + i + 1,
+        name: p.name || p.email,
+        email: p.email || '',
+        position: p.position || 'Team Member',
+        department: p.department || 'General',
+        hireDate: '',
+        birthday: '',
+        salary: 0,
+        status: 'Active' as Employee['status'],
+        avatar: undefined,
+        phone: '',
+        location: '',
+        manager: undefined,
+        performanceScore: 0,
+      }))
+    setEmployees([...fromEmps, ...fromProfiles])
   }
 
   useEffect(() => { loadEmployees() }, [])
@@ -246,7 +275,40 @@ export default function Employees() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="position">Position</Label>
-              <Input id="position" placeholder="Enter job position" value={employeeData.position} onChange={(e) => setEmployeeData({...employeeData, position: e.target.value})} />
+              {positionMode === 'preset' ? (
+                <Select
+                  value={employeeData.position}
+                  onValueChange={(v) => {
+                    if (v === '__custom__') {
+                      setPositionMode('custom')
+                      setEmployeeData({ ...employeeData, position: '' })
+                    } else {
+                      setEmployeeData({ ...employeeData, position: v })
+                    }
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
+                  <SelectContent>
+                    {POSITION_PRESETS.map(p => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                    <SelectItem value="__custom__">+ Add custom position…</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    id="position"
+                    placeholder="Enter custom position"
+                    value={employeeData.position}
+                    onChange={(e) => setEmployeeData({ ...employeeData, position: e.target.value })}
+                    autoFocus
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={() => { setPositionMode('preset'); setEmployeeData({ ...employeeData, position: '' }) }}>
+                    Presets
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>

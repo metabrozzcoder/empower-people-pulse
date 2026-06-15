@@ -37,7 +37,7 @@ interface ProfileLite { id: string; name: string | null; email: string | null }
 interface EmployeeLite { id: string; name: string; position: string | null; department: string | null; organization_id: string | null }
 
 const emptyOrg = { name: '', description: '', address: '', phone: '', email: '', status: 'Active' }
-const emptyDept = { name: '', description: '', manager_id: '', manager_name: '', budget: 0, status: 'Active' }
+const emptyDept = { name: '', description: '', manager_id: '', manager_name: '', budget: 0, status: 'Active', organization_id: '' }
 
 export default function Organizations() {
   const { t } = useTranslation()
@@ -122,7 +122,7 @@ export default function Organizations() {
   const openCreateDept = (orgId: string) => {
     setActiveOrgId(orgId)
     setEditingDept(null)
-    setDeptForm({ ...emptyDept })
+    setDeptForm({ ...emptyDept, organization_id: orgId })
     setIsDeptDialogOpen(true)
   }
   const openEditDept = (dept: Department) => {
@@ -135,23 +135,29 @@ export default function Organizations() {
       manager_name: dept.manager_name ?? '',
       budget: Number(dept.budget ?? 0),
       status: dept.status,
+      organization_id: dept.organization_id,
     })
     setIsDeptDialogOpen(true)
   }
 
   const saveDepartment = async () => {
-    if (!activeOrgId) return
+    const orgId = deptForm.organization_id || activeOrgId
+    if (!orgId) {
+      toast({ title: 'Organization required', description: 'Please select an organization.', variant: 'destructive' })
+      return
+    }
     if (!deptForm.name.trim()) {
       toast({ title: 'Name required', description: 'Please enter a department name.', variant: 'destructive' })
       return
     }
-    const payload = { ...deptForm, manager_id: deptForm.manager_id || null }
+    const { organization_id, ...rest } = deptForm
+    const payload = { ...rest, manager_id: rest.manager_id || null, organization_id: orgId }
     if (editingDept) {
       const { error } = await supabase.from('departments').update(payload).eq('id', editingDept.id)
       if (error) return toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
       toast({ title: 'Department updated' })
     } else {
-      const { error } = await supabase.from('departments').insert({ ...payload, organization_id: activeOrgId })
+      const { error } = await supabase.from('departments').insert(payload)
       if (error) return toast({ title: 'Create failed', description: error.message, variant: 'destructive' })
       toast({ title: 'Department created' })
     }
@@ -178,10 +184,26 @@ export default function Organizations() {
           <h1 className="text-3xl font-bold">{t('pages.organizations.title')}</h1>
           <p className="text-muted-foreground">{t('pages.organizations.subtitle')}</p>
         </div>
-        <Button onClick={openCreateOrg} className="flex items-center space-x-2">
-          <Plus className="w-4 h-4" />
-          <span>Add Organization</span>
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setActiveOrgId(null)
+              setEditingDept(null)
+              setDeptForm({ ...emptyDept })
+              setIsDeptDialogOpen(true)
+            }}
+            className="flex items-center space-x-2"
+            disabled={organizations.length === 0}
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Department</span>
+          </Button>
+          <Button onClick={openCreateOrg} className="flex items-center space-x-2">
+            <Plus className="w-4 h-4" />
+            <span>Add Organization</span>
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center space-x-4">
@@ -241,7 +263,9 @@ export default function Organizations() {
                       <p className="text-sm text-muted-foreground">No departments yet.</p>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {orgDepts.map((dept) => (
+                        {orgDepts.map((dept) => {
+                          const deptMembers = orgEmployees.filter(e => (e.department ?? '').toLowerCase() === dept.name.toLowerCase())
+                          return (
                           <Card key={dept.id} className="bg-muted/30">
                             <CardHeader className="pb-2">
                               <div className="flex items-start justify-between">
@@ -249,7 +273,10 @@ export default function Organizations() {
                                   <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                                     <UsersIcon className="w-4 h-4 text-primary" />
                                   </div>
-                                  <CardTitle className="text-base">{dept.name}</CardTitle>
+                                  <div>
+                                    <CardTitle className="text-base">{dept.name}</CardTitle>
+                                    <Badge variant="secondary" className="text-[10px] mt-1">{deptMembers.length} {deptMembers.length === 1 ? 'member' : 'members'}</Badge>
+                                  </div>
                                 </div>
                                 <div className="flex space-x-1">
                                   <Button variant="ghost" size="sm" onClick={() => openEditDept(dept)}><Edit className="w-3 h-3" /></Button>
@@ -261,10 +288,23 @@ export default function Organizations() {
                               {dept.description && <p className="text-xs text-muted-foreground">{dept.description}</p>}
                               {dept.manager_name && <p className="text-xs text-muted-foreground">Manager: {dept.manager_name}</p>}
                               <p className="text-xs text-muted-foreground">Budget: ${Number(dept.budget ?? 0).toLocaleString()}</p>
-                              <Badge variant="outline" className="text-xs">{dept.status}</Badge>
+                              {deptMembers.length > 0 && (
+                                <div className="pt-2 space-y-1">
+                                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Members</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {deptMembers.slice(0, 6).map(m => (
+                                      <Badge key={m.id} variant="outline" className="text-[10px] font-normal">{m.name}</Badge>
+                                    ))}
+                                    {deptMembers.length > 6 && (
+                                      <Badge variant="outline" className="text-[10px]">+{deptMembers.length - 6}</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              <Badge variant="outline" className="text-xs mt-2">{dept.status}</Badge>
                             </CardContent>
                           </Card>
-                        ))}
+                        )})}
                       </div>
                     )}
                   </div>
@@ -349,6 +389,20 @@ export default function Organizations() {
             <DialogDescription>{editingDept ? 'Update department information' : 'Create a new department'}</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="col-span-2 space-y-2">
+              <Label>Organization</Label>
+              <Select
+                value={deptForm.organization_id}
+                onValueChange={(v) => { setDeptForm({ ...deptForm, organization_id: v }); setActiveOrgId(v) }}
+              >
+                <SelectTrigger><SelectValue placeholder="Select organization" /></SelectTrigger>
+                <SelectContent>
+                  {organizations.map(o => (
+                    <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label>Department Name</Label>
               <Input value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} />
