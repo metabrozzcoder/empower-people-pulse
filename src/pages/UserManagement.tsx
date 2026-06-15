@@ -30,7 +30,7 @@ import {
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { useUsers } from '@/context/UserContext'
@@ -142,6 +142,25 @@ export default function UserManagement() {
   const [orgOptions, setOrgOptions] = useState<string[]>([])
   const [deptOptions, setDeptOptions] = useState<string[]>([])
   const [employeeOptions, setEmployeeOptions] = useState<string[]>([])
+  const [customRoles, setCustomRoles] = useState<Array<{ id: string; name: string; allowed_sections: string[] }>>([])
+  const [customRoleId, setCustomRoleId] = useState<string>('')
+
+  const loadCustomRoles = async () => {
+    const { data } = await supabase.from('custom_roles').select('id, name, allowed_sections').order('name')
+    setCustomRoles(((data ?? []) as any[]).map(r => ({
+      id: r.id, name: r.name,
+      allowed_sections: Array.isArray(r.allowed_sections) ? r.allowed_sections : [],
+    })))
+  }
+
+  useEffect(() => {
+    loadCustomRoles()
+    const ch = supabase
+      .channel('custom_roles_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_roles' }, () => loadCustomRoles())
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [])
 
   useEffect(() => {
     (async () => {
@@ -265,6 +284,24 @@ export default function UserManagement() {
   }
 
   const handleFormChange = (field: string, value: string) => {
+    // Custom role chosen from the same Role dropdown
+    if (field === 'role' && value.startsWith('custom:')) {
+      const id = value.slice('custom:'.length)
+      const cr = customRoles.find(c => c.id === id)
+      setCustomRoleId(id)
+      const newFormData = { ...formData, role: 'Employee' }
+      setFormData(newFormData)
+      setSelectedSections(cr?.allowed_sections?.length ? cr.allowed_sections : ROLE_DEFAULT_SECTIONS.Employee)
+      setGeneratedCredentials(prev => ({
+        username: prev.username || buildLoginEmail(newFormData.name, newFormData.surname),
+        password: prev.password || generateStrongPassword(),
+        guestId: '',
+      }))
+      return
+    }
+
+    if (field === 'role') setCustomRoleId('')
+
     const newFormData = { ...formData, [field]: value }
     setFormData(newFormData)
 
@@ -303,6 +340,9 @@ export default function UserManagement() {
     })
     setSelectedSections(user.allowedSections || [])
     setGeneratedCredentials({ username: user.username, password: 'password123', guestId: user.guestId || '' })
+    // Load any existing custom role assignment for this user
+    supabase.from('user_custom_roles').select('custom_role_id').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => setCustomRoleId((data as any)?.custom_role_id ?? ''))
     setIsDialogOpen(true)
   }
 
@@ -409,6 +449,23 @@ export default function UserManagement() {
       }
     }
 
+    // Sync custom role assignment for this user
+    try {
+      let targetUserId = selectedUser?.id as string | undefined
+      if (!targetUserId) {
+        const { data: prof } = await supabase.from('profiles').select('id').eq('email', formData.email).maybeSingle()
+        targetUserId = (prof as any)?.id
+      }
+      if (targetUserId) {
+        await supabase.from('user_custom_roles').delete().eq('user_id', targetUserId)
+        if (customRoleId) {
+          await supabase.from('user_custom_roles').insert({ user_id: targetUserId, custom_role_id: customRoleId })
+        }
+      }
+    } catch (e) {
+      console.warn('Custom role sync failed', e)
+    }
+
     setIsDialogOpen(false)
     setFormData({
       name: '',
@@ -423,6 +480,7 @@ export default function UserManagement() {
     })
     setSelectedSections([])
     setGeneratedCredentials({ username: '', password: '', guestId: '' })
+    setCustomRoleId('')
   }
 
   const exportUserList = () => {
@@ -826,17 +884,31 @@ export default function UserManagement() {
                 <div className="space-y-2">
                   <Label htmlFor="role">Role *</Label>
                   <Select 
-                    value={formData.role}
+                    value={customRoleId ? `custom:${customRoleId}` : formData.role}
                     onValueChange={(value) => handleFormChange('role', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Admin">Admin</SelectItem>
-                      <SelectItem value="HR">HR</SelectItem>
-                      <SelectItem value="Guest">Guest</SelectItem>
-                      <SelectItem value="Employee">Employee</SelectItem>
+                      <SelectGroup>
+                        <SelectLabel>System Roles</SelectLabel>
+                        <SelectItem value="Admin">Admin</SelectItem>
+                        <SelectItem value="HR">HR</SelectItem>
+                        <SelectItem value="Guest">Guest</SelectItem>
+                        <SelectItem value="Employee">Employee</SelectItem>
+                      </SelectGroup>
+                      {customRoles.length > 0 && (
+                        <>
+                          <SelectSeparator />
+                          <SelectGroup>
+                            <SelectLabel>Custom Roles</SelectLabel>
+                            {customRoles.map(cr => (
+                              <SelectItem key={cr.id} value={`custom:${cr.id}`}>{cr.name}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
