@@ -155,3 +155,38 @@ function Field({ label, value }: { label: string; value: string }) {
     </div>
   )
 }
+
+function DocumentPreview({ url, fileType, title }: { url: string; fileType: string | null; title: string }) {
+  const ft = (fileType || '').toLowerCase()
+  const isImage = ft.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(url)
+  const isPdf = ft === 'application/pdf' || /\.pdf(\?|$)/i.test(url)
+  const isOffice = /(word|excel|powerpoint|officedocument|msword|ms-excel|ms-powerpoint)/.test(ft) || /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url)
+
+  if (isImage) {
+    return (
+      <div className="overflow-hidden rounded-lg border bg-muted/30">
+        <img src={url} alt={title} className="mx-auto max-h-[600px] w-auto object-contain" />
+      </div>
+    )
+  }
+  if (isPdf) {
+    return (
+      <div className="overflow-hidden rounded-lg border bg-muted/30">
+        <iframe src={url} title={title} className="h-[600px] w-full" />
+      </div>
+    )
+  }
+  if (isOffice) {
+    const viewer = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`
+    return (
+      <div className="overflow-hidden rounded-lg border bg-muted/30">
+        <iframe src={viewer} title={title} className="h-[600px] w-full" />
+      </div>
+    )
+  }
+  return (
+    <div className="rounded-lg border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+      Preview not available for this file type. Use the download button below.
+    </div>
+  )
+}
