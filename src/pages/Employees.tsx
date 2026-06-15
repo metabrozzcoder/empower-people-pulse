@@ -275,7 +275,40 @@ export default function Employees() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="position">Position</Label>
-              <Input id="position" placeholder="Enter job position" value={employeeData.position} onChange={(e) => setEmployeeData({...employeeData, position: e.target.value})} />
+              {positionMode === 'preset' ? (
+                <Select
+                  value={employeeData.position}
+                  onValueChange={(v) => {
+                    if (v === '__custom__') {
+                      setPositionMode('custom')
+                      setEmployeeData({ ...employeeData, position: '' })
+                    } else {
+                      setEmployeeData({ ...employeeData, position: v })
+                    }
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
+                  <SelectContent>
+                    {POSITION_PRESETS.map(p => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                    <SelectItem value="__custom__">+ Add custom position…</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    id="position"
+                    placeholder="Enter custom position"
+                    value={employeeData.position}
+                    onChange={(e) => setEmployeeData({ ...employeeData, position: e.target.value })}
+                    autoFocus
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={() => { setPositionMode('preset'); setEmployeeData({ ...employeeData, position: '' }) }}>
+                    Presets
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
