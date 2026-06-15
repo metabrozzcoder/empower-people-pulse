@@ -56,6 +56,8 @@ export default function Organizations() {
   const [activeOrgId, setActiveOrgId] = useState<string | null>(null)
   const [orgForm, setOrgForm] = useState({ ...emptyOrg })
   const [deptForm, setDeptForm] = useState({ ...emptyDept })
+  const [viewDeptMembers, setViewDeptMembers] = useState<{ dept: Department; members: EmployeeLite[] } | null>(null)
+
 
   const load = async () => {
     setLoading(true)
@@ -280,7 +282,13 @@ export default function Organizations() {
                                   </div>
                                   <div>
                                     <CardTitle className="text-base">{dept.name}</CardTitle>
-                                    <Badge variant="secondary" className="text-[10px] mt-1">{deptMembers.length} {deptMembers.length === 1 ? 'member' : 'members'}</Badge>
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-[10px] mt-1 cursor-pointer hover:bg-primary/20 transition-colors"
+                                      onClick={() => setViewDeptMembers({ dept, members: deptMembers })}
+                                    >
+                                      {deptMembers.length} {deptMembers.length === 1 ? 'member' : 'members'}
+                                    </Badge>
                                   </div>
                                 </div>
                                 <div className="flex space-x-1">
@@ -314,25 +322,6 @@ export default function Organizations() {
                     )}
                   </div>
 
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Employees ({orgEmployees.length})</h3>
-                    {orgEmployees.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No employees linked to this organization yet.</p>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {orgEmployees.map((emp) => (
-                          <div key={emp.id} className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">{emp.name}</p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {[emp.position, emp.department].filter(Boolean).join(' • ') || '—'}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </CardContent>
               </Card>
             )
@@ -456,6 +445,37 @@ export default function Organizations() {
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => setIsDeptDialogOpen(false)}>Cancel</Button>
             <Button onClick={saveDepartment}>{editingDept ? 'Update' : 'Create'} Department</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Members Dialog */}
+      <Dialog open={!!viewDeptMembers} onOpenChange={(open) => { if (!open) setViewDeptMembers(null) }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{viewDeptMembers?.dept.name} — Members</DialogTitle>
+            <DialogDescription>
+              {viewDeptMembers?.members.length ?? 0} {viewDeptMembers && viewDeptMembers.members.length === 1 ? 'member' : 'members'} in this department
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto py-2">
+            {viewDeptMembers?.members.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No members in this department yet.</p>
+            ) : (
+              viewDeptMembers?.members.map((m) => (
+                <div key={m.id} className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{m.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {[m.position, m.email].filter(Boolean).join(' • ') || '—'}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setViewDeptMembers(null)}>Close</Button>
           </div>
         </DialogContent>
       </Dialog>
