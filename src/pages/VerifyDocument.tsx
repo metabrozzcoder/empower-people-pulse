@@ -117,10 +117,13 @@ export default function VerifyDocument() {
             </div>
 
             {fileUrl && (
-              <div className="mt-6 flex justify-center">
-                <a href={fileUrl} target="_blank" rel="noopener noreferrer">
-                  <Button><Download className="mr-2 h-4 w-4" /> Download attached file</Button>
-                </a>
+              <div className="mt-6 space-y-4">
+                <DocumentPreview url={fileUrl} fileType={doc.file_type} title={doc.title} />
+                <div className="flex justify-center">
+                  <a href={fileUrl} target="_blank" rel="noopener noreferrer" download>
+                    <Button><Download className="mr-2 h-4 w-4" /> Download attached file</Button>
+                  </a>
+                </div>
               </div>
             )}
           </CardContent>
@@ -149,6 +152,41 @@ function Field({ label, value }: { label: string; value: string }) {
     <div className="rounded-md border bg-muted/30 p-3">
       <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-medium">{value}</p>
+    </div>
+  )
+}
+
+function DocumentPreview({ url, fileType, title }: { url: string; fileType: string | null; title: string }) {
+  const ft = (fileType || '').toLowerCase()
+  const isImage = ft.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(url)
+  const isPdf = ft === 'application/pdf' || /\.pdf(\?|$)/i.test(url)
+  const isOffice = /(word|excel|powerpoint|officedocument|msword|ms-excel|ms-powerpoint)/.test(ft) || /\.(docx?|xlsx?|pptx?)(\?|$)/i.test(url)
+
+  if (isImage) {
+    return (
+      <div className="overflow-hidden rounded-lg border bg-muted/30">
+        <img src={url} alt={title} className="mx-auto max-h-[600px] w-auto object-contain" />
+      </div>
+    )
+  }
+  if (isPdf) {
+    return (
+      <div className="overflow-hidden rounded-lg border bg-muted/30">
+        <iframe src={url} title={title} className="h-[600px] w-full" />
+      </div>
+    )
+  }
+  if (isOffice) {
+    const viewer = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`
+    return (
+      <div className="overflow-hidden rounded-lg border bg-muted/30">
+        <iframe src={viewer} title={title} className="h-[600px] w-full" />
+      </div>
+    )
+  }
+  return (
+    <div className="rounded-lg border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+      Preview not available for this file type. Use the download button below.
     </div>
   )
 }
