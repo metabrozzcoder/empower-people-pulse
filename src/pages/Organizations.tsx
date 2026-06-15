@@ -27,19 +27,25 @@ interface Department {
   organization_id: string
   name: string
   description: string | null
+  manager_id: string | null
   manager_name: string | null
   budget: number | null
   status: string
 }
 
+interface ProfileLite { id: string; name: string | null; email: string | null }
+interface EmployeeLite { id: string; name: string; position: string | null; department: string | null; organization_id: string | null }
+
 const emptyOrg = { name: '', description: '', address: '', phone: '', email: '', status: 'Active' }
-const emptyDept = { name: '', description: '', manager_name: '', budget: 0, status: 'Active' }
+const emptyDept = { name: '', description: '', manager_id: '', manager_name: '', budget: 0, status: 'Active' }
 
 export default function Organizations() {
   const { t } = useTranslation()
   const { toast } = useToast()
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
+  const [profiles, setProfiles] = useState<ProfileLite[]>([])
+  const [employees, setEmployees] = useState<EmployeeLite[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -53,14 +59,18 @@ export default function Organizations() {
 
   const load = async () => {
     setLoading(true)
-    const [{ data: orgs, error: orgErr }, { data: depts, error: deptErr }] = await Promise.all([
+    const [{ data: orgs, error: orgErr }, { data: depts, error: deptErr }, { data: profs }, { data: emps }] = await Promise.all([
       supabase.from('organizations').select('*').order('created_at', { ascending: false }),
       supabase.from('departments').select('*').order('created_at', { ascending: false }),
+      supabase.from('profiles').select('id, name, email').order('name'),
+      supabase.from('employees').select('id, name, position, department, organization_id').order('name'),
     ])
     if (orgErr) toast({ title: 'Failed to load organizations', description: orgErr.message, variant: 'destructive' })
     if (deptErr) toast({ title: 'Failed to load departments', description: deptErr.message, variant: 'destructive' })
     setOrganizations((orgs as Organization[]) ?? [])
     setDepartments((depts as Department[]) ?? [])
+    setProfiles((profs as ProfileLite[]) ?? [])
+    setEmployees((emps as EmployeeLite[]) ?? [])
     setLoading(false)
   }
 
@@ -121,6 +131,7 @@ export default function Organizations() {
     setDeptForm({
       name: dept.name,
       description: dept.description ?? '',
+      manager_id: dept.manager_id ?? '',
       manager_name: dept.manager_name ?? '',
       budget: Number(dept.budget ?? 0),
       status: dept.status,
@@ -134,12 +145,13 @@ export default function Organizations() {
       toast({ title: 'Name required', description: 'Please enter a department name.', variant: 'destructive' })
       return
     }
+    const payload = { ...deptForm, manager_id: deptForm.manager_id || null }
     if (editingDept) {
-      const { error } = await supabase.from('departments').update(deptForm).eq('id', editingDept.id)
+      const { error } = await supabase.from('departments').update(payload).eq('id', editingDept.id)
       if (error) return toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
       toast({ title: 'Department updated' })
     } else {
-      const { error } = await supabase.from('departments').insert({ ...deptForm, organization_id: activeOrgId })
+      const { error } = await supabase.from('departments').insert({ ...payload, organization_id: activeOrgId })
       if (error) return toast({ title: 'Create failed', description: error.message, variant: 'destructive' })
       toast({ title: 'Department created' })
     }
@@ -192,6 +204,7 @@ export default function Organizations() {
         <div className="space-y-8">
           {filteredOrganizations.map((org) => {
             const orgDepts = departments.filter(d => d.organization_id === org.id)
+            const orgEmployees = employees.filter(e => e.organization_id === org.id)
             return (
               <Card key={org.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
@@ -251,6 +264,26 @@ export default function Organizations() {
                               <Badge variant="outline" className="text-xs">{dept.status}</Badge>
                             </CardContent>
                           </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Employees ({orgEmployees.length})</h3>
+                    {orgEmployees.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No employees linked to this organization yet.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {orgEmployees.map((emp) => (
+                          <div key={emp.id} className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{emp.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {[emp.position, emp.department].filter(Boolean).join(' • ') || '—'}
+                              </p>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     )}
@@ -321,8 +354,26 @@ export default function Organizations() {
               <Input value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Manager Name</Label>
-              <Input value={deptForm.manager_name} onChange={(e) => setDeptForm({ ...deptForm, manager_name: e.target.value })} />
+              <Label>Manager</Label>
+              <Select
+                value={deptForm.manager_id || 'none'}
+                onValueChange={(v) => {
+                  if (v === 'none') {
+                    setDeptForm({ ...deptForm, manager_id: '', manager_name: '' })
+                  } else {
+                    const p = profiles.find(x => x.id === v)
+                    setDeptForm({ ...deptForm, manager_id: v, manager_name: p?.name || p?.email || '' })
+                  }
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Select manager from users" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— No manager —</SelectItem>
+                  {profiles.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name || p.email || p.id}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="col-span-2 space-y-2">
               <Label>Description</Label>

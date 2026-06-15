@@ -1,0 +1,2 @@
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES public.organizations(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_employees_organization_id ON public.employees(organization_id);

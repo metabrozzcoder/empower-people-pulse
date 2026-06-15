@@ -28,9 +28,14 @@ interface DbEmployee {
   location: string | null
   manager: string | null
   performance_score: number | null
+  organization_id: string | null
 }
 
-const toViewEmployee = (e: DbEmployee, idx: number): Employee => ({
+interface OrgLite { id: string; name: string }
+
+type EmployeeView = Employee & { organizationId?: string; organizationName?: string }
+
+const toViewEmployee = (e: DbEmployee, idx: number, orgName?: string): EmployeeView => ({
   id: idx + 1,
   name: e.name,
   email: e.email ?? '',
@@ -45,15 +50,19 @@ const toViewEmployee = (e: DbEmployee, idx: number): Employee => ({
   location: e.location ?? '',
   manager: e.manager ?? undefined,
   performanceScore: e.performance_score ?? 0,
+  organizationId: e.organization_id ?? undefined,
+  organizationName: orgName,
 })
 
 export default function Employees() {
   const { t } = useTranslation()
   const { toast } = useToast()
-  const [employees, setEmployees] = useState<Employee[]>([])
+  const [employees, setEmployees] = useState<EmployeeView[]>([])
+  const [organizations, setOrganizations] = useState<OrgLite[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [orgFilter, setOrgFilter] = useState("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [employeeData, setEmployeeData] = useState({
     firstName: '',
@@ -64,12 +73,21 @@ export default function Employees() {
     department: '',
     salary: '',
     location: '',
-    manager: ''
+    manager: '',
+    organizationId: '',
   })
 
   const loadEmployees = async () => {
-    const { data } = await supabase.from('employees').select('*').order('created_at', { ascending: false })
-    setEmployees(((data ?? []) as DbEmployee[]).map(toViewEmployee))
+    const [{ data: emps }, { data: orgs }] = await Promise.all([
+      supabase.from('employees').select('*').order('created_at', { ascending: false }),
+      supabase.from('organizations').select('id, name').order('name'),
+    ])
+    const orgList = (orgs ?? []) as OrgLite[]
+    setOrganizations(orgList)
+    const orgMap = new Map(orgList.map(o => [o.id, o.name]))
+    setEmployees(((emps ?? []) as DbEmployee[]).map((e, i) =>
+      toViewEmployee(e, i, e.organization_id ? orgMap.get(e.organization_id) : undefined)
+    ))
   }
 
   useEffect(() => { loadEmployees() }, [])
@@ -86,9 +104,10 @@ export default function Employees() {
         employee.position.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesDepartment = departmentFilter === "all" || employee.department === departmentFilter
       const matchesStatus = statusFilter === "all" || employee.status === statusFilter
-      return matchesSearch && matchesDepartment && matchesStatus
+      const matchesOrg = orgFilter === "all" || employee.organizationId === orgFilter
+      return matchesSearch && matchesDepartment && matchesStatus && matchesOrg
     })
-  }, [employees, searchTerm, departmentFilter, statusFilter])
+  }, [employees, searchTerm, departmentFilter, statusFilter, orgFilter])
 
   const handleAddEmployeeSubmit = async () => {
     if (!employeeData.firstName || !employeeData.lastName || !employeeData.email || !employeeData.position) {
@@ -106,6 +125,7 @@ export default function Employees() {
       phone: employeeData.phone || null,
       location: employeeData.location || null,
       manager: employeeData.manager || null,
+      organization_id: employeeData.organizationId || null,
     })
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" })
@@ -113,7 +133,7 @@ export default function Employees() {
     }
     toast({ title: "Employee Added", description: `${employeeData.firstName} ${employeeData.lastName} has been added.` })
     setIsAddDialogOpen(false)
-    setEmployeeData({ firstName: '', lastName: '', email: '', phone: '', position: '', department: '', salary: '', location: '', manager: '' })
+    setEmployeeData({ firstName: '', lastName: '', email: '', phone: '', position: '', department: '', salary: '', location: '', manager: '', organizationId: '' })
     loadEmployees()
   }
 
@@ -152,6 +172,18 @@ export default function Employees() {
             <SelectItem value="all">All Departments</SelectItem>
             {departments.map(dept => (
               <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={orgFilter} onValueChange={setOrgFilter}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Organization" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Organizations</SelectItem>
+            {organizations.map(o => (
+              <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -231,6 +263,17 @@ export default function Employees() {
             <div className="space-y-2 col-span-2">
               <Label htmlFor="manager">Manager</Label>
               <Input id="manager" placeholder="Manager name" value={employeeData.manager} onChange={(e) => setEmployeeData({...employeeData, manager: e.target.value})} />
+            </div>
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="organization">Organization</Label>
+              <Select value={employeeData.organizationId} onValueChange={(v) => setEmployeeData({...employeeData, organizationId: v})}>
+                <SelectTrigger><SelectValue placeholder="Select organization" /></SelectTrigger>
+                <SelectContent>
+                  {organizations.map(o => (
+                    <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="col-span-2 space-y-2">
               <Label htmlFor="notes">Notes</Label>
