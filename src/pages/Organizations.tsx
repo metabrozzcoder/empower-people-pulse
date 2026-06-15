@@ -56,6 +56,8 @@ export default function Organizations() {
   const [activeOrgId, setActiveOrgId] = useState<string | null>(null)
   const [orgForm, setOrgForm] = useState({ ...emptyOrg })
   const [deptForm, setDeptForm] = useState({ ...emptyDept })
+  const [viewDeptMembers, setViewDeptMembers] = useState<{ dept: Department; members: EmployeeLite[] } | null>(null)
+
 
   const load = async () => {
     setLoading(true)
