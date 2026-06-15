@@ -679,8 +679,9 @@ export default function Documentation() {
                     </div>
                   )}
                   {viewing.file_path && (
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Attachment</Label>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Attachment preview</Label>
+                      <FilePreview url={previewUrl} fileType={viewing.file_type} fileName={viewing.file_path.split('/').pop() || 'file'} />
                       <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
                         <div className="flex items-center gap-2">
                           <Paperclip className="h-3 w-3 text-muted-foreground" />
