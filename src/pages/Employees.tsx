@@ -28,9 +28,14 @@ interface DbEmployee {
   location: string | null
   manager: string | null
   performance_score: number | null
+  organization_id: string | null
 }
 
-const toViewEmployee = (e: DbEmployee, idx: number): Employee => ({
+interface OrgLite { id: string; name: string }
+
+type EmployeeView = Employee & { organizationId?: string; organizationName?: string }
+
+const toViewEmployee = (e: DbEmployee, idx: number, orgName?: string): EmployeeView => ({
   id: idx + 1,
   name: e.name,
   email: e.email ?? '',
@@ -45,6 +50,8 @@ const toViewEmployee = (e: DbEmployee, idx: number): Employee => ({
   location: e.location ?? '',
   manager: e.manager ?? undefined,
   performanceScore: e.performance_score ?? 0,
+  organizationId: e.organization_id ?? undefined,
+  organizationName: orgName,
 })
 
 export default function Employees() {
