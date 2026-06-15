@@ -44,6 +44,8 @@ export default function Organizations() {
   const { toast } = useToast()
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
+  const [profiles, setProfiles] = useState<ProfileLite[]>([])
+  const [employees, setEmployees] = useState<EmployeeLite[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -57,14 +59,18 @@ export default function Organizations() {
 
   const load = async () => {
     setLoading(true)
-    const [{ data: orgs, error: orgErr }, { data: depts, error: deptErr }] = await Promise.all([
+    const [{ data: orgs, error: orgErr }, { data: depts, error: deptErr }, { data: profs }, { data: emps }] = await Promise.all([
       supabase.from('organizations').select('*').order('created_at', { ascending: false }),
       supabase.from('departments').select('*').order('created_at', { ascending: false }),
+      supabase.from('profiles').select('id, name, email').order('name'),
+      supabase.from('employees').select('id, name, position, department, organization_id').order('name'),
     ])
     if (orgErr) toast({ title: 'Failed to load organizations', description: orgErr.message, variant: 'destructive' })
     if (deptErr) toast({ title: 'Failed to load departments', description: deptErr.message, variant: 'destructive' })
     setOrganizations((orgs as Organization[]) ?? [])
     setDepartments((depts as Department[]) ?? [])
+    setProfiles((profs as ProfileLite[]) ?? [])
+    setEmployees((emps as EmployeeLite[]) ?? [])
     setLoading(false)
   }
 
