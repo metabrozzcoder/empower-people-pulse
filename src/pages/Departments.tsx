@@ -37,6 +37,7 @@ interface Department {
   memberCount: number
   members: DepartmentMember[]
   budget: number
+  totalSpent: number
   status: 'Active' | 'Inactive'
   createdDate: string
 }
