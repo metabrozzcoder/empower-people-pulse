@@ -265,7 +265,9 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${(totalBudget / 1000).toFixed(0)}K</div>
-            <p className="text-xs text-muted-foreground">Sum of employee salaries</p>
+            <p className="text-xs text-muted-foreground">
+              Salaries · Paid commissions: ${(totalSpent / 1000).toFixed(1)}K
+            </p>
           </CardContent>
         </Card>
       </div>
