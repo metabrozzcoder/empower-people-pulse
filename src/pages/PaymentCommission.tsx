@@ -35,11 +35,10 @@ import {
   Clock,
   Wallet,
   LayoutGrid,
-  List,
+  List as ListIcon,
 } from "lucide-react"
 
 type ViewMode = "card" | "list"
-
 
 type Order = {
   id: string
@@ -352,6 +351,128 @@ export default function PaymentCommission() {
     )
   }
 
+  function renderOrderRow(o: Order) {
+    const list = assigneesFor(o.id)
+    const myRow = currentUser ? list.find((a) => a.user_id === currentUser.id) : undefined
+    const fullyApproved = list.length > 0 && list.every((a) => a.status === "approved")
+    const approvedCount = list.filter((a) => a.status === "approved").length
+    const rejectedCount = list.filter((a) => a.status === "rejected").length
+
+    return (
+      <div
+        key={o.id}
+        className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border-b last:border-b-0 hover:bg-muted/40 transition-colors"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-medium truncate">{o.title}</span>
+            <Badge className={statusColor[o.status] ?? ""} variant="secondary">
+              {o.status}
+            </Badge>
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <DollarSign className="h-3.5 w-3.5" />
+              {o.budget.toLocaleString()} {o.currency}
+            </span>
+            <span className="flex items-center gap-1">
+              <Building2 className="h-3.5 w-3.5" />
+              {o.department_name ?? "—"}
+            </span>
+            <span className="flex items-center gap-1">
+              <UserCircle2 className="h-3.5 w-3.5" />
+              {userLabel(o.created_by)}
+            </span>
+            <span className="flex items-center gap-1">
+              <CalendarDays className="h-3.5 w-3.5" />
+              {o.due_date ?? "—"}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+            <span>{approvedCount}</span>
+            {rejectedCount > 0 && (
+              <>
+                <XCircle className="h-3.5 w-3.5 text-red-600 ml-1" />
+                <span>{rejectedCount}</span>
+              </>
+            )}
+            <span className="text-xs">/ {list.length}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {myRow && myRow.status === "pending" && o.status !== "paid" && (
+              <>
+                <Button size="sm" onClick={() => decide(o.id, "approved")}>
+                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                  Approve
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => decide(o.id, "rejected")}>
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Reject
+                </Button>
+              </>
+            )}
+            {isAccountant && fullyApproved && o.status !== "paid" && (
+              <Button size="sm" variant="default" onClick={() => markPaid(o.id)}>
+                <Wallet className="h-4 w-4 mr-1" />
+                Pay
+              </Button>
+            )}
+            {o.status === "paid" && o.paid_by && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Wallet className="h-3 w-3" />
+                {userLabel(o.paid_by)}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  function renderSection(title: string, items: Order[]) {
+    if (loading) {
+      return (
+        <section>
+          <h2 className="text-xl font-semibold mb-3">{title}</h2>
+          <p className="text-muted-foreground">Loading…</p>
+        </section>
+      )
+    }
+    if (items.length === 0) {
+      return (
+        <section>
+          <h2 className="text-xl font-semibold mb-3">{title}</h2>
+          <Card>
+            <CardContent className="py-10 text-center text-muted-foreground">
+              No {title.toLowerCase()} payment orders.
+            </CardContent>
+          </Card>
+        </section>
+      )
+    }
+    if (viewMode === "card") {
+      return (
+        <section>
+          <h2 className="text-xl font-semibold mb-3">{title}</h2>
+          <div className="grid gap-4 md:grid-cols-2">{items.map(renderOrder)}</div>
+        </section>
+      )
+    }
+    return (
+      <section>
+        <h2 className="text-xl font-semibold mb-3">{title}</h2>
+        <Card>
+          <div className="divide-y">{items.map(renderOrderRow)}</div>
+        </Card>
+      </section>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -361,139 +482,142 @@ export default function PaymentCommission() {
             Upcoming payment orders awaiting approval, then routed to the accountant.
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Payment Order
+        <div className="flex items-center gap-2">
+          <div className="inline-flex items-center rounded-md border bg-muted p-1">
+            <Button
+              variant={viewMode === "card" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8 w-8 px-0"
+              onClick={() => setViewMode("card")}
+              aria-label="Card view"
+            >
+              <LayoutGrid className="h-4 w-4" />
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Create payment order</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <Label>Title</Label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Camera rental for shoot" />
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Reason / details"
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8 w-8 px-0"
+              onClick={() => setViewMode("list")}
+              aria-label="List view"
+            >
+              <ListIcon className="h-4 w-4" />
+            </Button>
+          </div>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Payment Order
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Create payment order</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
                 <div>
-                  <Label>Budget</Label>
-                  <Input
-                    type="number"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    placeholder="0"
+                  <Label>Title</Label>
+                  <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Camera rental for shoot" />
+                </div>
+                <div>
+                  <Label>Description</Label>
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Reason / details"
+                    rows={3}
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Budget</Label>
+                    <Input
+                      type="number"
+                      value={budget}
+                      onChange={(e) => setBudget(e.target.value)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label>Currency</Label>
+                    <Select value={currency} onValueChange={setCurrency}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["USD", "EUR", "UZS", "RUB", "GBP"].map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Department</Label>
+                    <Select value={departmentId} onValueChange={setDepartmentId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((d) => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Due date</Label>
+                    <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                  </div>
+                </div>
                 <div>
-                  <Label>Currency</Label>
-                  <Select value={currency} onValueChange={setCurrency}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["USD", "EUR", "UZS", "RUB", "GBP"].map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
+                  <Label>Approvers (must all approve)</Label>
+                  <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1.5 mt-1">
+                    {profiles
+                      .filter((p) => p.id !== currentUser?.id)
+                      .map((p) => (
+                        <label
+                          key={p.id}
+                          className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5"
+                        >
+                          <Checkbox
+                            checked={selectedAssignees.includes(p.id)}
+                            onCheckedChange={(c) => {
+                              setSelectedAssignees((prev) =>
+                                c ? [...prev, p.id] : prev.filter((x) => x !== p.id)
+                              )
+                            }}
+                          />
+                          <span>{p.name}</span>
+                          {p.department && (
+                            <span className="text-xs text-muted-foreground">· {p.department}</span>
+                          )}
+                        </label>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    {profiles.length === 0 && (
+                      <p className="text-xs text-muted-foreground">No users found.</p>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Department</Label>
-                  <Select value={departmentId} onValueChange={setDepartmentId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departments.map((d) => (
-                        <SelectItem key={d.id} value={d.id}>
-                          {d.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Due date</Label>
-                  <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <Label>Approvers (must all approve)</Label>
-                <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1.5 mt-1">
-                  {profiles
-                    .filter((p) => p.id !== currentUser?.id)
-                    .map((p) => (
-                      <label
-                        key={p.id}
-                        className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5"
-                      >
-                        <Checkbox
-                          checked={selectedAssignees.includes(p.id)}
-                          onCheckedChange={(c) => {
-                            setSelectedAssignees((prev) =>
-                              c ? [...prev, p.id] : prev.filter((x) => x !== p.id)
-                            )
-                          }}
-                        />
-                        <span>{p.name}</span>
-                        {p.department && (
-                          <span className="text-xs text-muted-foreground">· {p.department}</span>
-                        )}
-                      </label>
-                    ))}
-                  {profiles.length === 0 && (
-                    <p className="text-xs text-muted-foreground">No users found.</p>
-                  )}
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreate}>Create</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreate}>Create</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <section>
-        <h2 className="text-xl font-semibold mb-3">Upcoming</h2>
-        {loading ? (
-          <p className="text-muted-foreground">Loading…</p>
-        ) : upcoming.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center text-muted-foreground">
-              No upcoming payment orders.
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">{upcoming.map(renderOrder)}</div>
-        )}
-      </section>
-
-      {history.length > 0 && (
-        <section>
-          <h2 className="text-xl font-semibold mb-3">History</h2>
-          <div className="grid gap-4 md:grid-cols-2">{history.map(renderOrder)}</div>
-        </section>
-      )}
+      {renderSection("Upcoming", upcoming)}
+      {history.length > 0 && renderSection("History", history)}
     </div>
   )
 }
