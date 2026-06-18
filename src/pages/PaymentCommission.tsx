@@ -86,6 +86,7 @@ export default function PaymentCommission() {
   const [departments, setDepartments] = useState<Dept[]>([])
   const [isAccountant, setIsAccountant] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>("card")
   const [open, setOpen] = useState(false)
 
   // Form
