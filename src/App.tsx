@@ -42,6 +42,7 @@ import Settings from "./pages/Settings"
 import NotFound from "./pages/NotFound"
 import Login from "./pages/Login"
 import VerifyDocument from "./pages/VerifyDocument"
+import PaymentCommission from "./pages/PaymentCommission"
 
 const queryClient = new QueryClient()
 
@@ -111,6 +112,7 @@ function AppContent() {
               <Route path="/access-control" element={<ProtectedRoute sectionName="Access Control" allowedRoles={['Admin']}><AccessControl /></ProtectedRoute>} />
               <Route path="/role-management" element={<ProtectedRoute sectionName="Role Management" allowedRoles={['Admin']}><RoleManagement /></ProtectedRoute>} />
               <Route path="/garage" element={<ProtectedRoute sectionName="Garage"><Garage /></ProtectedRoute>} />
+              <Route path="/payment-commission" element={<ProtectedRoute sectionName="Payment Commission"><PaymentCommission /></ProtectedRoute>} />
               <Route path="/assistant" element={<ProtectedRoute sectionName="Assistant"><Assistant /></ProtectedRoute>} />
               
               

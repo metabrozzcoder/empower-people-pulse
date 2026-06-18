@@ -110,6 +110,14 @@ const sidebarSections = [
     ]
   },
   {
+    title: "Finance",
+    titleKey: "sidebar.groups.finance",
+    collapsible: true,
+    items: [
+      { title: "Payment Commission", titleKey: "sidebar.items.paymentCommission", url: "/payment-commission", icon: DollarSign, sectionName: "Payment Commission" },
+    ]
+  },
+  {
     title: "Drivers & Garage",
     titleKey: "sidebar.groups.garage",
     collapsible: true,

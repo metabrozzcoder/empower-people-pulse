@@ -623,6 +623,113 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_order_assignees: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          id: string
+          note: string | null
+          payment_order_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          note?: string | null
+          payment_order_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          note?: string | null
+          payment_order_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_order_assignees_payment_order_id_fkey"
+            columns: ["payment_order_id"]
+            isOneToOne: false
+            referencedRelation: "payment_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_orders: {
+        Row: {
+          budget: number
+          created_at: string
+          created_by: string
+          currency: string
+          department_id: string | null
+          department_name: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          paid_by: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          budget?: number
+          created_at?: string
+          created_by: string
+          currency?: string
+          department_id?: string | null
+          department_name?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          budget?: number
+          created_at?: string
+          created_by?: string
+          currency?: string
+          department_id?: string | null
+          department_name?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_orders_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_orders_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           allowed_sections: Json
@@ -1336,6 +1443,10 @@ export type Database = {
       }
       is_conversation_member: {
         Args: { _conv: string; _user: string }
+        Returns: boolean
+      }
+      is_payment_order_assignee: {
+        Args: { _order: string; _user: string }
         Returns: boolean
       }
       profile_privilege_fields_unchanged: {
