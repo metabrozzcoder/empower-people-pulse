@@ -80,26 +80,39 @@ const Analytics = () => {
   }, [employees])
 
   const departmentData = useMemo(() => {
-    const map = new Map<string, { name: string; employees: number; performance: number; budget: number; perfCount: number }>()
+    const map = new Map<string, { name: string; employees: number; performance: number; budget: number; spent: number; perfCount: number }>()
+    const deptNameById = new Map(deptList.map(d => [d.id, d.name]))
     const source = employees.length > 0
       ? employees.map(e => ({ dept: e.department || 'General', perf: e.performance_score ?? 0, salary: e.salary ?? 0 }))
       : profiles.map(p => ({ dept: p.department || 'General', perf: 0, salary: 0 }))
     source.forEach(({ dept, perf, salary }) => {
-      const cur = map.get(dept) ?? { name: dept, employees: 0, performance: 0, budget: 0, perfCount: 0 }
+      const cur = map.get(dept) ?? { name: dept, employees: 0, performance: 0, budget: 0, spent: 0, perfCount: 0 }
       cur.employees += 1
       cur.budget += salary
       if (perf > 0) { cur.performance += perf; cur.perfCount += 1 }
       map.set(dept, cur)
+    })
+    // Add payment commission spend per department (paid orders)
+    paidOrders.forEach(o => {
+      const name = o.department_name ?? (o.department_id ? deptNameById.get(o.department_id) : null) ?? 'General'
+      const cur = map.get(name) ?? { name, employees: 0, performance: 0, budget: 0, spent: 0, perfCount: 0 }
+      cur.spent += Number(o.budget ?? 0)
+      map.set(name, cur)
     })
     return Array.from(map.values()).map(d => ({
       name: d.name,
       employees: d.employees,
       performance: d.perfCount ? Math.round(d.performance / d.perfCount) : 0,
       budget: d.budget,
+      spent: d.spent,
     }))
-  }, [employees, profiles])
+  }, [employees, profiles, paidOrders, deptList])
 
   const totalBudget = departmentData.reduce((s, d) => s + d.budget, 0)
+  const totalSpent = useMemo(
+    () => paidOrders.reduce((s, o) => s + Number(o.budget ?? 0), 0),
+    [paidOrders]
+  )
 
   const attendanceRate = useMemo(() => {
     if (!attendance.length) return 0
