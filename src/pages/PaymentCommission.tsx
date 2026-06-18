@@ -361,74 +361,77 @@ export default function PaymentCommission() {
     return (
       <div
         key={o.id}
-        className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border-b last:border-b-0 hover:bg-muted/40 transition-colors"
+        className="grid grid-cols-12 gap-4 items-center p-4 border-b last:border-b-0 hover:bg-muted/40 transition-colors text-sm"
       >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+        {/* Order */}
+        <div className="col-span-3 min-w-0">
+          <div className="flex items-center gap-2">
             <span className="font-medium truncate">{o.title}</span>
             <Badge className={statusColor[o.status] ?? ""} variant="secondary">
               {o.status}
             </Badge>
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <DollarSign className="h-3.5 w-3.5" />
-              {o.budget.toLocaleString()} {o.currency}
-            </span>
-            <span className="flex items-center gap-1">
-              <Building2 className="h-3.5 w-3.5" />
-              {o.department_name ?? "—"}
-            </span>
-            <span className="flex items-center gap-1">
-              <UserCircle2 className="h-3.5 w-3.5" />
-              {userLabel(o.created_by)}
-            </span>
-            <span className="flex items-center gap-1">
-              <CalendarDays className="h-3.5 w-3.5" />
-              {o.due_date ?? "—"}
-            </span>
-          </div>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            {userLabel(o.created_by)}
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-            <span>{approvedCount}</span>
-            {rejectedCount > 0 && (
-              <>
-                <XCircle className="h-3.5 w-3.5 text-red-600 ml-1" />
-                <span>{rejectedCount}</span>
-              </>
-            )}
-            <span className="text-xs">/ {list.length}</span>
-          </div>
+        {/* Budget */}
+        <div className="col-span-2 flex items-center gap-1.5 text-muted-foreground">
+          <DollarSign className="h-3.5 w-3.5" />
+          <span>
+            {o.budget.toLocaleString()} {o.currency}
+          </span>
+        </div>
 
-          <div className="flex items-center gap-2">
-            {myRow && myRow.status === "pending" && o.status !== "paid" && (
-              <>
-                <Button size="sm" onClick={() => decide(o.id, "approved")}>
-                  <CheckCircle2 className="h-4 w-4 mr-1" />
-                  Approve
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => decide(o.id, "rejected")}>
-                  <XCircle className="h-4 w-4 mr-1" />
-                  Reject
-                </Button>
-              </>
-            )}
-            {isAccountant && fullyApproved && o.status !== "paid" && (
-              <Button size="sm" variant="default" onClick={() => markPaid(o.id)}>
-                <Wallet className="h-4 w-4 mr-1" />
-                Pay
+        {/* Department */}
+        <div className="col-span-2 flex items-center gap-1.5 text-muted-foreground">
+          <Building2 className="h-3.5 w-3.5" />
+          <span className="truncate">{o.department_name ?? "—"}</span>
+        </div>
+
+        {/* Due Date */}
+        <div className="col-span-2 flex items-center gap-1.5 text-muted-foreground">
+          <CalendarDays className="h-3.5 w-3.5" />
+          <span>{o.due_date ?? "—"}</span>
+        </div>
+
+        {/* Assigners */}
+        <div className="col-span-2 flex items-center gap-1.5 text-muted-foreground">
+          <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+          <span>{approvedCount}</span>
+          {rejectedCount > 0 && (
+            <>
+              <XCircle className="h-3.5 w-3.5 text-red-600 ml-1" />
+              <span>{rejectedCount}</span>
+            </>
+          )}
+          <span className="text-xs">/ {list.length}</span>
+        </div>
+
+        {/* Actions */}
+        <div className="col-span-1 flex items-center justify-end gap-2">
+          {myRow && myRow.status === "pending" && o.status !== "paid" && (
+            <>
+              <Button size="sm" className="h-7 px-2" onClick={() => decide(o.id, "approved")}>
+                <CheckCircle2 className="h-3.5 w-3.5" />
               </Button>
-            )}
-            {o.status === "paid" && o.paid_by && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Wallet className="h-3 w-3" />
-                {userLabel(o.paid_by)}
-              </span>
-            )}
-          </div>
+              <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => decide(o.id, "rejected")}>
+                <XCircle className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          )}
+          {isAccountant && fullyApproved && o.status !== "paid" && (
+            <Button size="sm" variant="default" className="h-7 px-2" onClick={() => markPaid(o.id)}>
+              <Wallet className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          {o.status === "paid" && o.paid_by && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Wallet className="h-3 w-3" />
+              {userLabel(o.paid_by)}
+            </span>
+          )}
         </div>
       </div>
     )
