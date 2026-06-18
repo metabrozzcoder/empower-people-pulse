@@ -44,17 +44,21 @@ const Analytics = () => {
   const [tasks, setTasks] = useState<TaskRow[]>([])
   const [shootings, setShootings] = useState<ShootingRow[]>([])
   const [attendance, setAttendance] = useState<AttendanceRow[]>([])
+  const [paidOrders, setPaidOrders] = useState<PaidOrderRow[]>([])
+  const [deptList, setDeptList] = useState<DeptRow[]>([])
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
-      const [e, pr, p, t, sr, a] = await Promise.all([
+      const [e, pr, p, t, sr, a, po, dl] = await Promise.all([
         supabase.from('employees').select('id,department,salary,performance_score,status,name,hire_date'),
         supabase.from('profiles_public' as never).select('id,department'),
         supabase.from('projects').select('id,status,progress'),
         supabase.from('tasks').select('id,status,priority'),
         supabase.from('shooting_requests').select('id,status'),
         supabase.from('attendance').select('id,date,status,hours'),
+        supabase.from('payment_orders').select('id,budget,department_id,department_name,status').eq('status', 'paid'),
+        supabase.from('departments').select('id,name'),
       ])
       setEmployees((e.data ?? []) as EmployeeRow[])
       setProfiles((pr.data ?? []) as ProfileRow[])
@@ -62,6 +66,8 @@ const Analytics = () => {
       setTasks((t.data ?? []) as TaskRow[])
       setShootings((sr.data ?? []) as ShootingRow[])
       setAttendance((a.data ?? []) as AttendanceRow[])
+      setPaidOrders((po.data ?? []) as PaidOrderRow[])
+      setDeptList((dl.data ?? []) as DeptRow[])
       setLoading(false)
     }
     load()
