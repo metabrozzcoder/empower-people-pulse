@@ -34,7 +34,12 @@ import {
   XCircle,
   Clock,
   Wallet,
+  LayoutGrid,
+  List,
 } from "lucide-react"
+
+type ViewMode = "card" | "list"
+
 
 type Order = {
   id: string
