@@ -125,10 +125,8 @@ export default function Departments() {
     dept.organizationName.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const filteredDepartments = departments.filter(dept =>
-    dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    dept.organizationName.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+
+
 
   const handleAddDepartment = () => {
     setSelectedDept(null)
