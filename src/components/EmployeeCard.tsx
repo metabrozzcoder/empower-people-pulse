@@ -181,6 +181,17 @@ export function EmployeeCard({ employee }: EmployeeCardProps) {
                   <p className="font-medium">Salary</p>
                   <p className="text-sm text-muted-foreground">${employee.salary.toLocaleString()}</p>
                 </div>
+                {(employee.bonusPayments ?? 0) > 0 && (
+                  <div>
+                    <p className="font-medium">Bonus Payments (paid)</p>
+                    <p className="text-sm text-green-600 font-medium">
+                      +${(employee.bonusPayments ?? 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Total earnings: ${(employee.salary + (employee.bonusPayments ?? 0)).toLocaleString()}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
