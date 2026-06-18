@@ -14,6 +14,7 @@ export interface Employee {
   location: string
   manager?: string
   performanceScore: number
+  bonusPayments?: number
 }
 
 export interface Department {

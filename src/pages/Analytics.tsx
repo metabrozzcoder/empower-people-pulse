@@ -15,6 +15,8 @@ interface TaskRow { id: string; status: string | null; priority: string | null }
 interface ShootingRow { id: string; status: string | null }
 interface AttendanceRow { id: string; date: string; status: string | null; hours: number | null }
 interface ProfileRow { id: string; department: string | null }
+interface PaidOrderRow { id: string; budget: number | null; department_id: string | null; department_name: string | null; status: string }
+interface DeptRow { id: string; name: string }
 
 const COLORS = ['hsl(var(--primary))', '#82ca9d', '#ffc658', '#ff7300', '#8884d8']
 
@@ -42,17 +44,21 @@ const Analytics = () => {
   const [tasks, setTasks] = useState<TaskRow[]>([])
   const [shootings, setShootings] = useState<ShootingRow[]>([])
   const [attendance, setAttendance] = useState<AttendanceRow[]>([])
+  const [paidOrders, setPaidOrders] = useState<PaidOrderRow[]>([])
+  const [deptList, setDeptList] = useState<DeptRow[]>([])
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
-      const [e, pr, p, t, sr, a] = await Promise.all([
+      const [e, pr, p, t, sr, a, po, dl] = await Promise.all([
         supabase.from('employees').select('id,department,salary,performance_score,status,name,hire_date'),
         supabase.from('profiles_public' as never).select('id,department'),
         supabase.from('projects').select('id,status,progress'),
         supabase.from('tasks').select('id,status,priority'),
         supabase.from('shooting_requests').select('id,status'),
         supabase.from('attendance').select('id,date,status,hours'),
+        supabase.from('payment_orders').select('id,budget,department_id,department_name,status').eq('status', 'paid'),
+        supabase.from('departments').select('id,name'),
       ])
       setEmployees((e.data ?? []) as EmployeeRow[])
       setProfiles((pr.data ?? []) as ProfileRow[])
@@ -60,6 +66,8 @@ const Analytics = () => {
       setTasks((t.data ?? []) as TaskRow[])
       setShootings((sr.data ?? []) as ShootingRow[])
       setAttendance((a.data ?? []) as AttendanceRow[])
+      setPaidOrders((po.data ?? []) as PaidOrderRow[])
+      setDeptList((dl.data ?? []) as DeptRow[])
       setLoading(false)
     }
     load()
@@ -72,26 +80,39 @@ const Analytics = () => {
   }, [employees])
 
   const departmentData = useMemo(() => {
-    const map = new Map<string, { name: string; employees: number; performance: number; budget: number; perfCount: number }>()
+    const map = new Map<string, { name: string; employees: number; performance: number; budget: number; spent: number; perfCount: number }>()
+    const deptNameById = new Map(deptList.map(d => [d.id, d.name]))
     const source = employees.length > 0
       ? employees.map(e => ({ dept: e.department || 'General', perf: e.performance_score ?? 0, salary: e.salary ?? 0 }))
       : profiles.map(p => ({ dept: p.department || 'General', perf: 0, salary: 0 }))
     source.forEach(({ dept, perf, salary }) => {
-      const cur = map.get(dept) ?? { name: dept, employees: 0, performance: 0, budget: 0, perfCount: 0 }
+      const cur = map.get(dept) ?? { name: dept, employees: 0, performance: 0, budget: 0, spent: 0, perfCount: 0 }
       cur.employees += 1
       cur.budget += salary
       if (perf > 0) { cur.performance += perf; cur.perfCount += 1 }
       map.set(dept, cur)
+    })
+    // Add payment commission spend per department (paid orders)
+    paidOrders.forEach(o => {
+      const name = o.department_name ?? (o.department_id ? deptNameById.get(o.department_id) : null) ?? 'General'
+      const cur = map.get(name) ?? { name, employees: 0, performance: 0, budget: 0, spent: 0, perfCount: 0 }
+      cur.spent += Number(o.budget ?? 0)
+      map.set(name, cur)
     })
     return Array.from(map.values()).map(d => ({
       name: d.name,
       employees: d.employees,
       performance: d.perfCount ? Math.round(d.performance / d.perfCount) : 0,
       budget: d.budget,
+      spent: d.spent,
     }))
-  }, [employees, profiles])
+  }, [employees, profiles, paidOrders, deptList])
 
   const totalBudget = departmentData.reduce((s, d) => s + d.budget, 0)
+  const totalSpent = useMemo(
+    () => paidOrders.reduce((s, o) => s + Number(o.budget ?? 0), 0),
+    [paidOrders]
+  )
 
   const attendanceRate = useMemo(() => {
     if (!attendance.length) return 0
@@ -244,7 +265,9 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${(totalBudget / 1000).toFixed(0)}K</div>
-            <p className="text-xs text-muted-foreground">Sum of employee salaries</p>
+            <p className="text-xs text-muted-foreground">
+              Salaries · Paid commissions: ${(totalSpent / 1000).toFixed(1)}K
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -303,16 +326,27 @@ const Analytics = () => {
               </CardContent>
             </Card>
             <Card>
-              <CardHeader><CardTitle>Payroll Allocation</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle>Payroll & Spend</CardTitle>
+                <CardDescription>Salaries + paid payment commission per department</CardDescription>
+              </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {departmentData.map(d => (
                     <div key={d.name} className="flex justify-between items-center">
                       <span className="font-medium">{d.name}</span>
                       <div className="text-right">
-                        <div className="font-medium">${(d.budget / 1000).toFixed(1)}K</div>
+                        <div className="font-medium">
+                          ${(d.budget / 1000).toFixed(1)}K
+                          {d.spent > 0 && (
+                            <span className="text-green-600 ml-2">
+                              +${(d.spent / 1000).toFixed(1)}K
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-muted-foreground">
-                          {totalBudget ? Math.round((d.budget / totalBudget) * 100) : 0}%
+                          {totalBudget ? Math.round((d.budget / totalBudget) * 100) : 0}% payroll
+                          {d.spent > 0 && ` · spent $${d.spent.toLocaleString()}`}
                         </div>
                       </div>
                     </div>

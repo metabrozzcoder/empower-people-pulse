@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
+import { supabase } from '@/integrations/supabase/client'
+import { DollarSign } from 'lucide-react'
 
 interface DepartmentMember {
   id: string
@@ -35,6 +37,7 @@ interface Department {
   memberCount: number
   members: DepartmentMember[]
   budget: number
+  totalSpent: number
   status: 'Active' | 'Inactive'
   createdDate: string
 }
@@ -53,10 +56,77 @@ export default function Departments() {
   const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false)
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
 
+  React.useEffect(() => {
+    const load = async () => {
+      const [{ data: deptRows }, { data: orgs }, { data: emps }, { data: paid }] = await Promise.all([
+        supabase.from('departments').select('id, name, description, organization_id, manager_id, budget, status, created_at').order('name'),
+        supabase.from('organizations').select('id, name'),
+        supabase.from('employees').select('id, name, email, position, department, avatar, salary, status'),
+        supabase.from('payment_orders').select('budget, department_id, department_name').eq('status', 'paid'),
+      ])
+      if (!deptRows) return
+      const orgMap = new Map(((orgs ?? []) as { id: string; name: string }[]).map(o => [o.id, o.name]))
+      const empList = (emps ?? []) as { id: string; name: string; email: string | null; position: string | null; department: string | null; avatar: string | null; salary: number | null; status: string | null }[]
+
+      // Build spent map: by department_id first, then by department_name
+      const spentById = new Map<string, number>()
+      const spentByName = new Map<string, number>()
+      ;((paid ?? []) as { budget: number | null; department_id: string | null; department_name: string | null }[]).forEach(p => {
+        const amt = Number(p.budget ?? 0)
+        if (p.department_id) spentById.set(p.department_id, (spentById.get(p.department_id) ?? 0) + amt)
+        else if (p.department_name) spentByName.set(p.department_name, (spentByName.get(p.department_name) ?? 0) + amt)
+      })
+
+      const mapped: Department[] = (deptRows as Array<{
+        id: string; name: string; description: string | null; organization_id: string | null;
+        manager_id: string | null; budget: number | null; status: string | null; created_at: string
+      }>).map(d => {
+        const members: DepartmentMember[] = empList
+          .filter(e => (e.department ?? '').toLowerCase() === d.name.toLowerCase())
+          .map(e => ({
+            id: e.id,
+            name: e.name,
+            position: e.position ?? '',
+            email: e.email ?? '',
+            avatar: e.avatar ?? undefined,
+            isManager: d.manager_id ? e.id === d.manager_id : false,
+          }))
+        return {
+          id: d.id,
+          name: d.name,
+          description: d.description ?? '',
+          organizationId: d.organization_id ?? '',
+          organizationName: d.organization_id ? (orgMap.get(d.organization_id) ?? '') : '',
+          managerId: d.manager_id ?? '',
+          managerName: members.find(m => m.isManager)?.name ?? '—',
+          memberCount: members.length,
+          members,
+          budget: Number(d.budget ?? 0),
+          totalSpent: (spentById.get(d.id) ?? 0) + (spentByName.get(d.name) ?? 0),
+          status: (d.status === 'Inactive' ? 'Inactive' : 'Active'),
+          createdDate: d.created_at,
+        }
+      })
+      setDepartments(mapped)
+    }
+    load()
+
+    const ch = supabase
+      .channel('departments-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payment_orders' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'departments' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' }, () => load())
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [])
+
   const filteredDepartments = departments.filter(dept =>
     dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     dept.organizationName.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+
+
 
   const handleAddDepartment = () => {
     setSelectedDept(null)
@@ -185,6 +255,17 @@ export default function Departments() {
                 </div>
                 <div className="text-muted-foreground">
                   Budget: ${dept.budget.toLocaleString()}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="w-4 h-4 text-green-600" />
+                  <span className="font-medium">
+                    Total Spent: ${dept.totalSpent.toLocaleString()}
+                  </span>
+                  {dept.budget > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      ({Math.round((dept.totalSpent / dept.budget) * 100)}% of budget)
+                    </span>
+                  )}
                 </div>
               </div>
 

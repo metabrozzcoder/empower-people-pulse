@@ -88,24 +88,41 @@ export default function Employees() {
   })
 
   const loadEmployees = async () => {
-    const [{ data: emps }, { data: orgs }, { data: profs }] = await Promise.all([
+    const [{ data: emps }, { data: orgs }, { data: profs }, { data: paidOrders }] = await Promise.all([
       supabase.from('employees').select('*').order('created_at', { ascending: false }),
       supabase.from('organizations').select('id, name').order('name'),
       supabase.from('profiles').select('id, name, email, position, department').order('name'),
+      supabase.from('payment_orders').select('budget, created_by').eq('status', 'paid'),
     ])
     const orgList = (orgs ?? []) as OrgLite[]
     setOrganizations(orgList)
     const orgMap = new Map(orgList.map(o => [o.id, o.name]))
-    const fromEmps = ((emps ?? []) as DbEmployee[]).map((e, i) =>
-      toViewEmployee(e, i, e.organization_id ? orgMap.get(e.organization_id) : undefined)
-    )
+
+    // Map paid payment totals → user_id → total
+    const paidByUser = new Map<string, number>()
+    ;((paidOrders ?? []) as { budget: number | null; created_by: string }[]).forEach(p => {
+      paidByUser.set(p.created_by, (paidByUser.get(p.created_by) ?? 0) + Number(p.budget ?? 0))
+    })
+    // Map user_id → email via profiles
+    const profilesList = (profs ?? []) as { id: string; name: string | null; email: string | null; position: string | null; department: string | null }[]
+    const emailToBonus = new Map<string, number>()
+    profilesList.forEach(p => {
+      const bonus = paidByUser.get(p.id) ?? 0
+      if (bonus > 0 && p.email) emailToBonus.set(p.email.toLowerCase(), bonus)
+    })
+
+    const fromEmps = ((emps ?? []) as DbEmployee[]).map((e, i) => {
+      const v = toViewEmployee(e, i, e.organization_id ? orgMap.get(e.organization_id) : undefined)
+      v.bonusPayments = emailToBonus.get((e.email ?? '').toLowerCase()) ?? 0
+      return v
+    })
     // Surface assigned users (profiles) that don't already have an employee record (by email)
     const knownEmails = new Set(fromEmps.map(e => (e.email || '').toLowerCase()).filter(Boolean))
-    const fromProfiles: EmployeeView[] = ((profs ?? []) as any[])
+    const fromProfiles: EmployeeView[] = profilesList
       .filter(p => p.email && !knownEmails.has(String(p.email).toLowerCase()))
       .map((p, i) => ({
         id: fromEmps.length + i + 1,
-        name: p.name || p.email,
+        name: p.name || p.email!,
         email: p.email || '',
         position: p.position || 'Team Member',
         department: p.department || 'General',
@@ -118,9 +135,11 @@ export default function Employees() {
         location: '',
         manager: undefined,
         performanceScore: 0,
+        bonusPayments: paidByUser.get(p.id) ?? 0,
       }))
     setEmployees([...fromEmps, ...fromProfiles])
   }
+
 
   useEffect(() => { if (canView) loadEmployees() }, [canView])
 
