@@ -326,16 +326,27 @@ const Analytics = () => {
               </CardContent>
             </Card>
             <Card>
-              <CardHeader><CardTitle>Payroll Allocation</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle>Payroll & Spend</CardTitle>
+                <CardDescription>Salaries + paid payment commission per department</CardDescription>
+              </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {departmentData.map(d => (
                     <div key={d.name} className="flex justify-between items-center">
                       <span className="font-medium">{d.name}</span>
                       <div className="text-right">
-                        <div className="font-medium">${(d.budget / 1000).toFixed(1)}K</div>
+                        <div className="font-medium">
+                          ${(d.budget / 1000).toFixed(1)}K
+                          {d.spent > 0 && (
+                            <span className="text-green-600 ml-2">
+                              +${(d.spent / 1000).toFixed(1)}K
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-muted-foreground">
-                          {totalBudget ? Math.round((d.budget / totalBudget) * 100) : 0}%
+                          {totalBudget ? Math.round((d.budget / totalBudget) * 100) : 0}% payroll
+                          {d.spent > 0 && ` · spent $${d.spent.toLocaleString()}`}
                         </div>
                       </div>
                     </div>
