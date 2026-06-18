@@ -470,6 +470,15 @@ export default function PaymentCommission() {
       <section>
         <h2 className="text-xl font-semibold mb-3">{title}</h2>
         <Card>
+          {/* Table header */}
+          <div className="grid grid-cols-12 gap-4 px-4 py-2.5 border-b bg-muted/60 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="col-span-3">Order</div>
+            <div className="col-span-2">Budget</div>
+            <div className="col-span-2">Department</div>
+            <div className="col-span-2">Due Date</div>
+            <div className="col-span-2">Assigners</div>
+            <div className="col-span-1 text-right">Actions</div>
+          </div>
           <div className="divide-y">{items.map(renderOrderRow)}</div>
         </Card>
       </section>
