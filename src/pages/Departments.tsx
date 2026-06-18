@@ -256,6 +256,17 @@ export default function Departments() {
                 <div className="text-muted-foreground">
                   Budget: ${dept.budget.toLocaleString()}
                 </div>
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="w-4 h-4 text-green-600" />
+                  <span className="font-medium">
+                    Total Spent: ${dept.totalSpent.toLocaleString()}
+                  </span>
+                  {dept.budget > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      ({Math.round((dept.totalSpent / dept.budget) * 100)}% of budget)
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div>
