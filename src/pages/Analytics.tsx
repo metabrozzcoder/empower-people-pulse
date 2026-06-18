@@ -15,6 +15,8 @@ interface TaskRow { id: string; status: string | null; priority: string | null }
 interface ShootingRow { id: string; status: string | null }
 interface AttendanceRow { id: string; date: string; status: string | null; hours: number | null }
 interface ProfileRow { id: string; department: string | null }
+interface PaidOrderRow { id: string; budget: number | null; department_id: string | null; department_name: string | null; status: string }
+interface DeptRow { id: string; name: string }
 
 const COLORS = ['hsl(var(--primary))', '#82ca9d', '#ffc658', '#ff7300', '#8884d8']
 
