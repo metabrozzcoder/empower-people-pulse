@@ -24,6 +24,7 @@ Capabilities:
   library to a specific person as approver), update_document, delete_document.
 - Library: search_items, list_recent, save_note, save_bookmark.
 - Profile: get_my_profile, update_my_profile.
+- Vehicles/Garage: create_vehicle (add a car), list_vehicles. To assign a driver by name, call search_people first to get assigned_driver_id.
 
 Rules:
 - Always use a tool for actionable requests instead of just describing how.
@@ -393,7 +394,45 @@ const tools = [
       parameters: { type: "object", properties: { item_id: { type: "string" } }, required: ["item_id"] },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "create_vehicle",
+      description: "Create a new vehicle (car) in the garage. Only plate_number is required. Optionally assign a driver (use search_people first to get assigned_driver_id).",
+      parameters: {
+        type: "object",
+        properties: {
+          plate_number: { type: "string" },
+          make: { type: "string" },
+          model: { type: "string" },
+          year: { type: "number" },
+          color: { type: "string" },
+          current_mileage: { type: "number" },
+          status: { type: "string", enum: ["Active", "Maintenance", "Inactive"] },
+          assigned_driver_id: { type: "string", description: "UUID of the driver user" },
+          photo_url: { type: "string" },
+          notes: { type: "string" },
+        },
+        required: ["plate_number"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_vehicles",
+      description: "List vehicles in the garage.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["Active", "Maintenance", "Inactive"] },
+          limit: { type: "number" },
+        },
+      },
+    },
+  },
 ];
+
 
 async function runTool(name: string, args: any, supabase: any, userId: string) {
   if (name === "search_items") {
@@ -715,7 +754,37 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     if (error) return { error: error.message };
     return { ok: true };
   }
+  if (name === "create_vehicle") {
+    if (!args.plate_number) return { error: "plate_number is required" };
+    const payload: any = {
+      plate_number: String(args.plate_number).trim(),
+      make: args.make ?? null,
+      model: args.model ?? null,
+      year: args.year ?? null,
+      color: args.color ?? null,
+      current_mileage: args.current_mileage ?? 0,
+      status: args.status ?? "Active",
+      assigned_driver_id: args.assigned_driver_id ?? null,
+      photo_url: args.photo_url ?? null,
+      notes: args.notes ?? null,
+    };
+    const { data, error } = await supabase.from("vehicles").insert(payload).select("id,plate_number,make,model,year,status,assigned_driver_id").single();
+    if (error) return { error: error.message };
+    return { ok: true, vehicle: data };
+  }
+  if (name === "list_vehicles") {
+    let query = supabase
+      .from("vehicles")
+      .select("id,plate_number,make,model,year,color,status,current_mileage,assigned_driver_id")
+      .order("created_at", { ascending: false })
+      .limit(Math.min(args.limit ?? 20, 100));
+    if (args.status) query = query.eq("status", args.status);
+    const { data, error } = await query;
+    if (error) return { error: error.message };
+    return { vehicles: data ?? [] };
+  }
   return { error: `Unknown tool ${name}` };
+
 }
 
 Deno.serve(async (req) => {
