@@ -24,6 +24,7 @@ Capabilities:
   library to a specific person as approver), update_document, delete_document.
 - Library: search_items, list_recent, save_note, save_bookmark.
 - Profile: get_my_profile, update_my_profile.
+- Vehicles/Garage: create_vehicle (add a car), list_vehicles. To assign a driver by name, call search_people first to get assigned_driver_id.
 
 Rules:
 - Always use a tool for actionable requests instead of just describing how.
