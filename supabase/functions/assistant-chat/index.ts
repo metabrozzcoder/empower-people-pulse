@@ -393,7 +393,45 @@ const tools = [
       parameters: { type: "object", properties: { item_id: { type: "string" } }, required: ["item_id"] },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "create_vehicle",
+      description: "Create a new vehicle (car) in the garage. Only plate_number is required. Optionally assign a driver (use search_people first to get assigned_driver_id).",
+      parameters: {
+        type: "object",
+        properties: {
+          plate_number: { type: "string" },
+          make: { type: "string" },
+          model: { type: "string" },
+          year: { type: "number" },
+          color: { type: "string" },
+          current_mileage: { type: "number" },
+          status: { type: "string", enum: ["Active", "Maintenance", "Inactive"] },
+          assigned_driver_id: { type: "string", description: "UUID of the driver user" },
+          photo_url: { type: "string" },
+          notes: { type: "string" },
+        },
+        required: ["plate_number"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_vehicles",
+      description: "List vehicles in the garage.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["Active", "Maintenance", "Inactive"] },
+          limit: { type: "number" },
+        },
+      },
+    },
+  },
 ];
+
 
 async function runTool(name: string, args: any, supabase: any, userId: string) {
   if (name === "search_items") {
