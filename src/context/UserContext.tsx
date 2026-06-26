@@ -109,13 +109,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (data && (data as { error?: string }).error) throw new Error((data as { error: string }).error)
     const newId = (data as { user?: { id?: string } } | null)?.user?.id
     if (newId) {
+      // If organization not provided but department is, auto-derive from departments table
+      let orgName = user.organization ?? null
+      if (!orgName && user.department) {
+        const { data: dept } = await supabase
+          .from('departments')
+          .select('organization_id, organizations(name)')
+          .eq('name', user.department)
+          .maybeSingle()
+        orgName = ((dept as any)?.organizations?.name) ?? null
+      }
       await supabase.from('profiles').update({
         permissions: (user.permissions ?? []) as never,
         allowed_sections: (user.allowedSections ?? []) as never,
         section_access: (user.sectionAccess ?? []) as never,
         guest_id: user.guestId ?? null,
         linked_employee: user.linkedEmployee ?? null,
-        organization: user.organization ?? null,
+        organization: orgName,
       } as never).eq('id', newId)
     }
     await refresh()
