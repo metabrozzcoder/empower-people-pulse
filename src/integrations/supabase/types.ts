@@ -76,6 +76,27 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_user_credentials: {
+        Row: {
+          created_at: string
+          generated_password: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          generated_password: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          generated_password?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       assistant_items: {
         Row: {
           content: string | null
@@ -737,7 +758,6 @@ export type Database = {
           created_at: string
           department: string | null
           email: string
-          generated_password: string | null
           guest_id: string | null
           id: string
           linked_employee: string | null
@@ -758,7 +778,6 @@ export type Database = {
           created_at?: string
           department?: string | null
           email: string
-          generated_password?: string | null
           guest_id?: string | null
           id: string
           linked_employee?: string | null
@@ -779,7 +798,6 @@ export type Database = {
           created_at?: string
           department?: string | null
           email?: string
-          generated_password?: string | null
           guest_id?: string | null
           id?: string
           linked_employee?: string | null
