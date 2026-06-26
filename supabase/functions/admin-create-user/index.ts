@@ -96,8 +96,8 @@ Deno.serve(async (req) => {
     } else {
       uid = created.user.id;
     }
-    // Update profile (trigger created it with defaults)
-    await admin.from("profiles").update({ name, phone, department, position, username }).eq("id", uid);
+    // Update profile (trigger created it with defaults). Store the generated password so admins can view it later.
+    await admin.from("profiles").update({ name, phone, department, position, username, generated_password: password }).eq("id", uid);
     // Replace default 'guest' role with chosen role
     await admin.from("user_roles").delete().eq("user_id", uid);
     await admin.from("user_roles").insert({ user_id: uid, role: validRole });

@@ -737,6 +737,7 @@ export type Database = {
           created_at: string
           department: string | null
           email: string
+          generated_password: string | null
           guest_id: string | null
           id: string
           linked_employee: string | null
@@ -757,6 +758,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           email: string
+          generated_password?: string | null
           guest_id?: string | null
           id: string
           linked_employee?: string | null
@@ -777,6 +779,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           email?: string
+          generated_password?: string | null
           guest_id?: string | null
           id?: string
           linked_employee?: string | null

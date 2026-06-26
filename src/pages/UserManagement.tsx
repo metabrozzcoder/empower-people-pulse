@@ -339,7 +339,7 @@ export default function UserManagement() {
       linkedEmployee: user.linkedEmployee || ''
     })
     setSelectedSections(user.allowedSections || [])
-    setGeneratedCredentials({ username: user.username, password: 'password123', guestId: user.guestId || '' })
+    setGeneratedCredentials({ username: user.username, password: user.generatedPassword || '', guestId: user.guestId || '' })
     // Load any existing custom role assignment for this user
     supabase.from('user_custom_roles').select('custom_role_id').eq('user_id', user.id).maybeSingle()
       .then(({ data }) => setCustomRoleId((data as any)?.custom_role_id ?? ''))
