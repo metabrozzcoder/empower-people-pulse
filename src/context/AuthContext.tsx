@@ -15,6 +15,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+}
+
 function capitalize(role: string): User['role'] {
   if (role === 'admin') return 'Admin'
   if (role === 'hr') return 'HR'
@@ -53,9 +57,9 @@ async function loadUserProfile(userId: string, email: string): Promise<User | nu
     organization: profile.organization ?? undefined,
     lastLogin: new Date().toLocaleString(),
     createdDate: profile.created_at?.split('T')[0] ?? '',
-    permissions: Array.isArray(profile.permissions) ? profile.permissions : (dbRole === 'admin' ? ['full_access', 'user_management', 'system_settings'] : []),
-    allowedSections: Array.isArray(profile.allowed_sections) ? profile.allowed_sections : [],
-    sectionAccess: Array.isArray(profile.section_access) ? profile.section_access : [],
+    permissions: stringArray(profile.permissions).length ? stringArray(profile.permissions) : (dbRole === 'admin' ? ['full_access', 'user_management', 'system_settings'] : []),
+    allowedSections: stringArray(profile.allowed_sections),
+    sectionAccess: stringArray(profile.section_access),
     guestId: profile.guest_id ?? undefined,
     linkedEmployee: profile.linked_employee ?? undefined,
     username: profile.username ?? profile.email ?? email,
