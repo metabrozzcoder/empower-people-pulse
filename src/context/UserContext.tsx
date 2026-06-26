@@ -20,6 +20,7 @@ export interface User {
   username: string
   password: string
   guestId?: string
+  generatedPassword?: string
   sectionAccess?: string[]
   allowedSections?: string[]
 }
