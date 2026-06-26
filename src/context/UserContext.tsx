@@ -36,7 +36,6 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
-function capitalize(role: string): 'Admin' | 'HR' | 'Guest' {
 function capitalize(role: string): User['role'] {
   if (role === 'admin') return 'Admin'
   if (role === 'hr') return 'HR'
