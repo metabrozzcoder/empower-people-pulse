@@ -37,9 +37,18 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
 function capitalize(role: string): 'Admin' | 'HR' | 'Guest' {
+function capitalize(role: string): User['role'] {
   if (role === 'admin') return 'Admin'
   if (role === 'hr') return 'HR'
+  if (role === 'employee') return 'Employee'
   return 'Guest'
+}
+
+function mapRole(r: string): 'admin' | 'hr' | 'employee' | 'guest' {
+  if (r === 'Admin') return 'admin'
+  if (r === 'HR') return 'hr'
+  if (r === 'Employee') return 'employee'
+  return 'guest'
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
