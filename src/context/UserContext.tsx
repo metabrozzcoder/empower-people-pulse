@@ -57,10 +57,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     setLoading(true)
-    const [{ data: profiles }, { data: roles }] = await Promise.all([
+    const [{ data: profiles }, { data: roles }, { data: creds }] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at'),
       supabase.from('user_roles').select('user_id, role'),
+      supabase.from('admin_user_credentials').select('user_id, generated_password'),
     ])
+    const credMap = new Map<string, string>()
+    ;(creds ?? []).forEach((c: any) => credMap.set(c.user_id, c.generated_password))
     const roleMap = new Map<string, string>()
     ;(roles ?? []).forEach((r) => {
       const cur = roleMap.get(r.user_id)
@@ -81,7 +84,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       linkedEmployee: p.linked_employee ?? undefined,
       lastLogin: '—',
       createdDate: p.created_at?.split('T')[0] ?? '',
-      generatedPassword: p.generated_password ?? undefined,
+      generatedPassword: credMap.get(p.id) ?? undefined,
       permissions: Array.isArray(p.permissions) ? p.permissions : [],
       allowedSections: Array.isArray(p.allowed_sections) ? p.allowed_sections : [],
       sectionAccess: Array.isArray(p.section_access) ? p.section_access : [],
