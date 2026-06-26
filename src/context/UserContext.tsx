@@ -161,8 +161,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
     if (updates.role !== undefined) {
       const newRole = mapRole(updates.role)
-      await supabase.from('user_roles').delete().eq('user_id', id)
-      await supabase.from('user_roles').insert({ user_id: id, role: newRole as any })
+      const { error: delErr } = await supabase.from('user_roles').delete().eq('user_id', id)
+      if (delErr) { console.error('user_roles delete failed', delErr); throw new Error(`Role update failed (delete): ${delErr.message}`) }
+      const { error: insErr } = await supabase.from('user_roles').insert({ user_id: id, role: newRole as any })
+      if (insErr) { console.error('user_roles insert failed', insErr); throw new Error(`Role update failed (insert): ${insErr.message}`) }
     }
     await refresh()
   }
