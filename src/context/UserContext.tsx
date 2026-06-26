@@ -8,7 +8,7 @@ export interface User {
   email: string
   phone: string
   avatar?: string
-  role: 'Admin' | 'HR' | 'Guest'
+  role: 'Admin' | 'HR' | 'Employee' | 'Guest'
   position?: string
   status: 'Active' | 'Inactive' | 'Pending'
   department?: string
@@ -99,7 +99,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [session, refresh])
 
   const addUser = async (user: Omit<User, 'id' | 'createdDate' | 'lastLogin'>) => {
-    const role = user.role === 'Admin' ? 'admin' : user.role === 'HR' ? 'hr' : 'guest'
+    const role = mapRole(user.role)
     const password = user.password && user.password.length >= 6 ? user.password : Math.random().toString(36).slice(2, 10) + 'A1'
     const { data, error } = await supabase.functions.invoke('admin-create-user', {
       body: {
@@ -157,9 +157,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       await supabase.from('profiles').update(patch as never).eq('id', id)
     }
     if (updates.role !== undefined) {
-      const newRole = updates.role === 'Admin' ? 'admin' : updates.role === 'HR' ? 'hr' : 'guest'
+      const newRole = mapRole(updates.role)
       await supabase.from('user_roles').delete().eq('user_id', id)
-      await supabase.from('user_roles').insert({ user_id: id, role: newRole as 'admin' | 'hr' | 'guest' })
+      await supabase.from('user_roles').insert({ user_id: id, role: newRole as any })
     }
     await refresh()
   }
