@@ -72,6 +72,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       linkedEmployee: p.linked_employee ?? undefined,
       lastLogin: '—',
       createdDate: p.created_at?.split('T')[0] ?? '',
+      generatedPassword: p.generated_password ?? undefined,
       permissions: Array.isArray(p.permissions) ? p.permissions : [],
       allowedSections: Array.isArray(p.allowed_sections) ? p.allowed_sections : [],
       sectionAccess: Array.isArray(p.section_access) ? p.section_access : [],
