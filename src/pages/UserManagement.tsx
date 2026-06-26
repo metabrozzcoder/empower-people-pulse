@@ -393,28 +393,32 @@ export default function UserManagement() {
 
     if (selectedUser) {
       // Update existing user
-      updateUser(selectedUser.id, {
-        name: fullName,
-        email: formData.email,
-        phone: formData.phone || '',
-        role: formData.role as 'Admin' | 'HR' | 'Guest',
-        position: formData.position,
-        department: formData.department,
-        organization: formData.organization,
-        linkedEmployee: formData.linkedEmployee,
-        permissions: userPermissions,
-        username: generatedCredentials.username,
-        password: generatedCredentials.password,
-        // Remove accessRules property as it doesn't exist on User type
-        guestId: generatedCredentials.guestId,
-        allowedSections: selectedSections,
-        sectionAccess: [] // Clear any restrictions when updating allowed sections
-      })
-      
-      toast({
-        title: "User Updated Successfully",
-        description: `User ${fullName} has been updated with section access.`,
-      })
+      try {
+        await updateUser(selectedUser.id, {
+          name: fullName,
+          email: formData.email,
+          phone: formData.phone || '',
+          role: formData.role as 'Admin' | 'HR' | 'Employee' | 'Guest',
+          position: formData.position,
+          department: formData.department,
+          organization: formData.organization,
+          linkedEmployee: formData.linkedEmployee,
+          permissions: userPermissions,
+          username: generatedCredentials.username,
+          password: generatedCredentials.password,
+          guestId: generatedCredentials.guestId,
+          allowedSections: selectedSections,
+          sectionAccess: []
+        })
+        toast({
+          title: "User Updated Successfully",
+          description: `User ${fullName} has been updated with section access.`,
+        })
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to update user'
+        toast({ title: 'Update failed', description: msg, variant: 'destructive' })
+        return
+      }
     } else {
       // Create new user
       const newUser = {
