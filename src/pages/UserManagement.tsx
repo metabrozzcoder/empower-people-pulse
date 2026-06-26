@@ -426,7 +426,7 @@ export default function UserManagement() {
         email: formData.email,
         phone: formData.phone || '',
         position: formData.position,
-        role: formData.role as 'Admin' | 'HR' | 'Guest',
+        role: formData.role as 'Admin' | 'HR' | 'Employee' | 'Guest',
         status: 'Active' as const,
         department: formData.department,
         organization: formData.organization,

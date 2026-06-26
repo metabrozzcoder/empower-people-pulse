@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       email = `${slug}.${crypto.randomUUID().slice(0, 8)}@noemail.local`;
       syntheticEmail = true;
     }
-    const allowedRoles = ["admin", "hr", "guest", "shooting_moderator", "director", "tech_supply", "driver"];
+    const allowedRoles = ["admin", "hr", "employee", "guest", "shooting_moderator", "director", "tech_supply", "driver", "accountant"];
     const validRole = allowedRoles.includes(role) ? role : "guest";
 
     let uid: string | null = null;
