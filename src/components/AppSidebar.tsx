@@ -194,25 +194,29 @@ export function AppSidebar() {
 
   // Filter items based on user restrictions and role permissions
   const isItemAccessible = (item: any) => {
-    // Guest users: check specific allowed sections first, otherwise default to Chat only
+    // Admins always see everything
+    if (currentUser?.role === 'Admin') return true
+
+    // If the user has an explicit allowed-sections list, restrict strictly to it
+    if (currentUser?.allowedSections && currentUser.allowedSections.length > 0) {
+      return item.sectionName ? currentUser.allowedSections.includes(item.sectionName) : false
+    }
+
+    // Guests without explicit permissions: only Chat
     if (currentUser?.role === 'Guest') {
-      if (currentUser.allowedSections && currentUser.allowedSections.length > 0) {
-        return currentUser.allowedSections.includes(item.sectionName)
-      }
-      // Default behavior: only Chat for guests without specific permissions
       return item.sectionName === 'Chat'
     }
-    
+
     // Check section restrictions (blocked sections)
     if (item.sectionName && currentUser?.sectionAccess?.includes(item.sectionName)) {
       return false
     }
-    
+
     // Check role restrictions
     if (item.allowedRoles && !item.allowedRoles.includes(currentUser?.role)) {
       return false
     }
-    
+
     return true
   }
 
