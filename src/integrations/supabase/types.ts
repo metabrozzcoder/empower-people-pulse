@@ -1472,6 +1472,7 @@ export type Database = {
         | "tech_supply"
         | "driver"
         | "accountant"
+        | "employee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1608,6 +1609,7 @@ export const Constants = {
         "tech_supply",
         "driver",
         "accountant",
+        "employee",
       ],
     },
   },
