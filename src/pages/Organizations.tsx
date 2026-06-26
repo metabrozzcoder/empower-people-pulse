@@ -229,8 +229,13 @@ export default function Organizations() {
           {filteredOrganizations.map((org) => {
             const orgDepts = departments.filter(d => d.organization_id === org.id)
             const empEmails = new Set(employees.filter(e => e.email).map(e => (e.email as string).toLowerCase()))
+            const orgDeptNames = new Set(orgDepts.map(d => d.name.toLowerCase()))
             const profileMembers: EmployeeLite[] = profiles
-              .filter(p => (p.organization ?? '').toLowerCase() === org.name.toLowerCase())
+              .filter(p => {
+                const orgMatch = (p.organization ?? '').toLowerCase() === org.name.toLowerCase()
+                const deptMatch = !!p.department && orgDeptNames.has(p.department.toLowerCase())
+                return orgMatch || deptMatch
+              })
               .filter(p => !p.email || !empEmails.has(p.email.toLowerCase()))
               .map(p => ({ id: `profile-${p.id}`, name: p.name ?? p.email ?? 'User', position: p.position ?? null, department: p.department ?? null, organization_id: org.id, email: p.email }))
             const orgEmployees = [...employees.filter(e => e.organization_id === org.id), ...profileMembers]
