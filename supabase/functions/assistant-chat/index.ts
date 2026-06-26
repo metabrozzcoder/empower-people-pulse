@@ -247,7 +247,7 @@ const tools = [
         type: "object",
         properties: {
           user_id: { type: "string" },
-          role: { type: "string", enum: ["admin", "hr", "guest", "shooting_moderator", "director", "tech_supply", "driver"] },
+          role: { type: "string", enum: ["admin", "hr", "employee", "guest", "shooting_moderator", "director", "tech_supply", "driver", "accountant"] },
           replace_all: { type: "boolean", description: "If true, removes all current roles before assigning." },
         },
         required: ["user_id", "role"],
@@ -263,7 +263,7 @@ const tools = [
         type: "object",
         properties: {
           user_id: { type: "string" },
-          role: { type: "string", enum: ["admin", "hr", "guest", "shooting_moderator", "director", "tech_supply", "driver"] },
+          role: { type: "string", enum: ["admin", "hr", "employee", "guest", "shooting_moderator", "director", "tech_supply", "driver", "accountant"] },
         },
         required: ["user_id", "role"],
       },
@@ -280,7 +280,7 @@ const tools = [
           email: { type: "string", description: "Optional. Omit if the user has no email." },
           name: { type: "string" }, username: { type: "string" },
           password: { type: "string", description: "Optional. Auto-generated if omitted." },
-          role: { type: "string", enum: ["admin", "hr", "guest"] },
+          role: { type: "string", enum: ["admin", "hr", "employee", "guest", "accountant"] },
           phone: { type: "string" }, department: { type: "string" }, position: { type: "string" },
         },
         required: ["name"],
@@ -625,7 +625,7 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
       email = `${slug}.${crypto.randomUUID().slice(0, 8)}@noemail.local`;
       syntheticEmail = true;
     }
-    const allowedRoles = ["admin", "hr", "guest", "shooting_moderator", "director", "tech_supply", "driver"];
+    const allowedRoles = ["admin", "hr", "employee", "guest", "shooting_moderator", "director", "tech_supply", "driver", "accountant"];
     const validRole = allowedRoles.includes(args.role) ? args.role : "guest";
 
     let uid: string | null = null;

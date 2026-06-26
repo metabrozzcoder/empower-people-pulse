@@ -50,6 +50,8 @@ function mapRole(r: string): 'admin' | 'hr' | 'employee' | 'guest' {
   return 'guest'
 }
 
+const roleRank = (role: string) => (role === 'admin' ? 4 : role === 'hr' ? 3 : role === 'employee' ? 2 : 1)
+
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth()
   const [users, setUsers] = useState<User[]>([])
@@ -67,8 +69,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const roleMap = new Map<string, string>()
     ;(roles ?? []).forEach((r) => {
       const cur = roleMap.get(r.user_id)
-      const rank = (x: string) => (x === 'admin' ? 4 : x === 'hr' ? 3 : x === 'employee' ? 2 : 1)
-      if (!cur || rank(r.role) > rank(cur)) roleMap.set(r.user_id, r.role)
+      if (!cur || roleRank(r.role) > roleRank(cur)) roleMap.set(r.user_id, r.role)
     })
     const list: User[] = (profiles ?? []).map((p: any) => ({
       id: p.id,

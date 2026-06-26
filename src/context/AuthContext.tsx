@@ -15,9 +15,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-function capitalize(role: string): 'Admin' | 'HR' | 'Guest' {
+function capitalize(role: string): User['role'] {
   if (role === 'admin') return 'Admin'
   if (role === 'hr') return 'HR'
+  if (role === 'employee') return 'Employee'
   return 'Guest'
 }
 
@@ -29,9 +30,9 @@ async function loadUserProfile(userId: string, email: string): Promise<User | nu
 
   if (!profile) return null
 
-  // Pick highest role: admin > hr > guest
+  // Pick highest role: admin > hr > employee > guest
   const roleSet = new Set((roles ?? []).map((r) => r.role))
-  const dbRole = roleSet.has('admin') ? 'admin' : roleSet.has('hr') ? 'hr' : 'guest'
+  const dbRole = roleSet.has('admin') ? 'admin' : roleSet.has('hr') ? 'hr' : roleSet.has('employee') ? 'employee' : 'guest'
 
   const pref = (profile as { preferred_language?: string }).preferred_language
   if (pref && ['en', 'ru', 'uz'].includes(pref) && i18n.language !== pref) {
@@ -52,8 +53,12 @@ async function loadUserProfile(userId: string, email: string): Promise<User | nu
     organization: profile.organization ?? undefined,
     lastLogin: new Date().toLocaleString(),
     createdDate: profile.created_at?.split('T')[0] ?? '',
-    permissions: dbRole === 'admin' ? ['full_access', 'user_management', 'system_settings'] : [],
-    username: profile.email ?? email,
+    permissions: Array.isArray(profile.permissions) ? profile.permissions : (dbRole === 'admin' ? ['full_access', 'user_management', 'system_settings'] : []),
+    allowedSections: Array.isArray(profile.allowed_sections) ? profile.allowed_sections : [],
+    sectionAccess: Array.isArray(profile.section_access) ? profile.section_access : [],
+    guestId: profile.guest_id ?? undefined,
+    linkedEmployee: profile.linked_employee ?? undefined,
+    username: profile.username ?? profile.email ?? email,
     password: '',
   }
 }
