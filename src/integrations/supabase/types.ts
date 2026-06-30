@@ -1335,6 +1335,27 @@ export type Database = {
       }
     }
     Views: {
+      admin_user_credentials_masked: {
+        Row: {
+          created_at: string | null
+          password_hint: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          password_hint?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          password_hint?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       departments_public: {
         Row: {
           created_at: string | null
