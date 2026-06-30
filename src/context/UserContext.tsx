@@ -157,14 +157,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (updates.guestId !== undefined) patch.guest_id = updates.guestId
     if (updates.linkedEmployee !== undefined) patch.linked_employee = updates.linkedEmployee
     if (Object.keys(patch).length) {
-      await supabase.from('profiles').update(patch as never).eq('id', id)
+      const { error } = await supabase.from('profiles').update(patch as never).eq('id', id)
+      if (error) { console.error('profiles update failed', error); throw new Error(`Profile update failed: ${error.message}`) }
     }
     if (updates.role !== undefined) {
       const newRole = mapRole(updates.role)
-      const { error: delErr } = await supabase.from('user_roles').delete().eq('user_id', id)
-      if (delErr) { console.error('user_roles delete failed', delErr); throw new Error(`Role update failed (delete): ${delErr.message}`) }
-      const { error: insErr } = await supabase.from('user_roles').insert({ user_id: id, role: newRole as any })
-      if (insErr) { console.error('user_roles insert failed', insErr); throw new Error(`Role update failed (insert): ${insErr.message}`) }
+      const { error } = await (supabase as any).rpc('set_user_system_role', {
+        _user_id: id,
+        _role: newRole,
+      })
+      if (error) { console.error('user_roles update failed', error); throw new Error(`Role update failed: ${error.message}`) }
     }
     await refresh()
   }
