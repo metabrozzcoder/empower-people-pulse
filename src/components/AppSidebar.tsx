@@ -157,7 +157,9 @@ export function AppSidebar() {
   const { t } = useTranslation()
   const { logout, currentUser } = useAuth()
   const [openSections, setOpenSections] = useState<string[]>([
-    "Main Menu", "HR & Projects", "Organization"
+    "Main Menu", "HR & Projects", "Organization", "Communication",
+    "Management & Analytics", "Finance", "Drivers & Garage",
+    "Documentation", "Security & Settings"
   ])
 
   const toggleSection = (section: string) => {
