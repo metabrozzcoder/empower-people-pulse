@@ -18,7 +18,8 @@ import { useTranslation } from 'react-i18next'
 const ALL_SECTIONS = [
   'Dashboard', 'Shooting Requests', 'Employees', 'Projects', 'Recruitment', 'Tasks',
   'Scheduling', 'Attendance', 'Analytics', 'Organizations', 'Chat', 'User Management',
-  'Access Control', 'Documentation', 'Security System', 'Garage', 'Settings'
+  'Role Management', 'Access Control', 'Documentation', 'Security System', 'Garage',
+  'Payment Commission', 'Settings'
 ]
 
 const ALL_PERMISSIONS = [
