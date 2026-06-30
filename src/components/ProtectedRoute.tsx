@@ -29,6 +29,12 @@ export function ProtectedRoute({
     )
   }
 
+  // Admins must always be able to access every management section, even if their
+  // stored allowedSections list was created before newer sections existed.
+  if (currentUser.role === 'Admin') {
+    return <>{children}</>
+  }
+
   // Check section access using unified permissions logic
   if (sectionName) {
     // For users with specific allowed sections defined, only allow those sections
