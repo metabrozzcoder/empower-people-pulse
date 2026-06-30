@@ -120,6 +120,7 @@ export default function UserManagement() {
   const { t } = useTranslation()
   const { users, addUser, updateUser, deleteUser } = useUsers()
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('all')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
