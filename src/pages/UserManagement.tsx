@@ -535,7 +535,11 @@ export default function UserManagement() {
           <h1 className="text-3xl font-bold">{t('pages.userManagement.title')}</h1>
           <p className="text-muted-foreground">{t('pages.userManagement.subtitle')}</p>
         </div>
-        <div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate('/role-management')} className="flex items-center space-x-2">
+            <Shield className="w-4 h-4" />
+            <span>Manage Roles</span>
+          </Button>
           <Button onClick={handleAddUser} className="flex items-center space-x-2">
             <Plus className="w-4 h-4" />
             <span>Add User</span>
