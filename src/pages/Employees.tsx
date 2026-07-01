@@ -189,6 +189,7 @@ export default function Employees() {
       location: employeeData.location || null,
       manager: employeeData.manager || null,
       organization_id: employeeData.organizationId || null,
+      birthday: employeeData.birthday || null,
     })
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" })
@@ -196,7 +197,7 @@ export default function Employees() {
     }
     toast({ title: "Employee Added", description: `${employeeData.firstName} ${employeeData.lastName} has been added.` })
     setIsAddDialogOpen(false)
-    setEmployeeData({ firstName: '', lastName: '', email: '', phone: '', position: '', department: '', salary: '', location: '', manager: '', organizationId: '' })
+    setEmployeeData({ firstName: '', lastName: '', email: '', phone: '', position: '', department: '', salary: '', location: '', manager: '', organizationId: '', birthday: '' })
     loadEmployees()
   }
 
