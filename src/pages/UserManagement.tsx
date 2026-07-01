@@ -455,8 +455,9 @@ export default function UserManagement() {
         accessRules: selectedAccessRules,
         guestId: generatedCredentials.guestId,
         sectionAccess: [], // No restrictions by default
-        allowedSections: selectedSections // Granted sections
-      }
+        allowedSections: selectedSections, // Granted sections
+        birthday: formData.birthday || undefined,
+      } as any
 
       try {
         await addUser(newUser)
