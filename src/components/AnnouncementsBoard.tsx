@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { useTranslation } from "react-i18next"
-import { formatDMY } from "@/lib/date"
+import { formatDate } from "@/lib/date"
 
 interface Announcement {
   id: string
