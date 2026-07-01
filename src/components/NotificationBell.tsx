@@ -29,6 +29,7 @@ export function NotificationBell() {
     const { data } = await supabase
       .from('notifications')
       .select('id,type,title,body,link,read,created_at')
+      .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(30)
     setItems((data as Notification[]) ?? [])
