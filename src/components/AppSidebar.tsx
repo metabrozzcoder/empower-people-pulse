@@ -241,64 +241,78 @@ export function AppSidebar() {
 
   const filteredSections = sidebarSections.map(filterSectionItems).filter(section => section.items.length > 0)
 
-  const SidebarSection = ({ section }: { section: typeof sidebarSections[0] }) => (
-    <SidebarGroup className="mb-4">
-      {section.collapsible ? (
-        <Collapsible open={openSections.includes(section.title)} onOpenChange={() => toggleSection(section.title)}>
-          <CollapsibleTrigger asChild>
-            <SidebarGroupLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 px-3 cursor-pointer flex items-center justify-between hover:text-foreground transition-colors">
+  const SidebarSection = ({ section }: { section: typeof sidebarSections[0] }) => {
+    const sectionUnread = getSectionUnread(section.items)
+    const renderItem = (item: any) => {
+      const count = getItemUnread(item.url)
+      return (
+        <SidebarMenuItem key={item.title}>
+          <SidebarMenuButton asChild>
+            <NavLink
+              to={item.url}
+              end
+              className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
+            >
+              <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
+              <span className="flex-1 truncate">{t((item as any).titleKey) as string}</span>
+              {count > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="ml-2 h-5 min-w-5 px-1.5 text-[10px] flex items-center justify-center rounded-full"
+                >
+                  {count > 99 ? '99+' : count}
+                </Badge>
+              )}
+            </NavLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      )
+    }
+
+    return (
+      <SidebarGroup className="mb-4">
+        {section.collapsible ? (
+          <Collapsible open={openSections.includes(section.title)} onOpenChange={() => toggleSection(section.title)}>
+            <CollapsibleTrigger asChild>
+              <SidebarGroupLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 px-3 cursor-pointer flex items-center justify-between hover:text-foreground transition-colors">
+                <span className="flex items-center gap-2">
+                  {t((section as any).titleKey) as string}
+                  {!openSections.includes(section.title) && sectionUnread > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="h-4 min-w-4 px-1 text-[9px] flex items-center justify-center rounded-full"
+                    >
+                      {sectionUnread > 99 ? '99+' : sectionUnread}
+                    </Badge>
+                  )}
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${openSections.includes(section.title) ? 'rotate-180' : ''}`} />
+              </SidebarGroupLabel>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu className="space-y-1">
+                  {section.items.map(renderItem)}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </Collapsible>
+        ) : (
+          <>
+            <SidebarGroupLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 px-3">
               {t((section as any).titleKey) as string}
-              <ChevronDown className={`h-4 w-4 transition-transform ${openSections.includes(section.title) ? 'rotate-180' : ''}`} />
             </SidebarGroupLabel>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
             <SidebarGroupContent>
               <SidebarMenu className="space-y-1">
-                {section.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.url} 
-                        end 
-                        className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
-                      >
-                        <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                        <span>{t((item as any).titleKey) as string}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {section.items.map(renderItem)}
               </SidebarMenu>
             </SidebarGroupContent>
-          </CollapsibleContent>
-        </Collapsible>
-      ) : (
-        <>
-          <SidebarGroupLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 px-3">
-            {t((section as any).titleKey) as string}
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
-              {section.items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end 
-                      className={({ isActive }) => `${getNavCls({ isActive })} flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
-                    >
-                      <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                      <span>{t((item as any).titleKey) as string}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </>
-      )}
-    </SidebarGroup>
-  )
+          </>
+        )}
+      </SidebarGroup>
+    )
+  }
+
 
   return (
     <Sidebar className="border-r shadow-lg bg-background" style={{ minWidth: '280px' }}>
