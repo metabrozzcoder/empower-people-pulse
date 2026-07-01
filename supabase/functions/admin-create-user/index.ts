@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    let { email, password, name, username, role, phone, department, position } = body ?? {};
+    let { email, password, name, username, role, phone, department, position, birthday } = body ?? {};
     if (!name) {
       return new Response(JSON.stringify({ error: "name is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
