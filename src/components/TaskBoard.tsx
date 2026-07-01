@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress"
 import { Plus, Edit, Trash2, Calendar, User, Clock, Tag } from "lucide-react"
 import { Task } from "@/types/hrms"
 import { useToast } from "@/hooks/use-toast"
+import { formatDate } from '@/lib/date'
 
 interface TaskBoardProps {
   tasks: Task[]
@@ -191,7 +192,7 @@ export function TaskBoard({ tasks, onTaskUpdate, onTasksReorder, onTaskDelete, o
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Calendar className="h-3 w-3" />
-                        {new Date(task.dueDate).toLocaleDateString()}
+                        {formatDate(task.dueDate)}
                       </div>
                       <Avatar className="w-6 h-6">
                         <AvatarFallback className="text-xs">

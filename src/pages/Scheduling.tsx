@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { format } from 'date-fns'
+import { formatDate } from '@/lib/date'
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
@@ -305,7 +306,7 @@ const Scheduling = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">{new Date(selected + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</CardTitle>
+            <CardTitle className="text-base">{formatDate(selected + 'T00:00:00')}</CardTitle>
             <Button size="sm" variant="ghost" onClick={() => openCreate(selected)}><Plus className="w-4 h-4" /></Button>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -349,7 +350,7 @@ const Scheduling = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{r.title}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                      <CalIcon className="w-3 h-3" />{new Date(r.date + 'T00:00:00').toLocaleDateString()}
+                      <CalIcon className="w-3 h-3" />{formatDate(r.date + 'T00:00:00')}
                       {r.time && <><Clock className="w-3 h-3 ml-1" />{r.time}</>}
                     </p>
                     <Badge variant="secondary" className="mt-2 text-[10px]">{typeMeta(r.type).label}</Badge>

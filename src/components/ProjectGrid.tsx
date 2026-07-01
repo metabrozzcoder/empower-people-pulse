@@ -24,6 +24,7 @@ import {
 import { Project } from "@/types/hrms"
 import { useToast } from "@/hooks/use-toast"
 import {
+import { formatDate } from '@/lib/date'
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -211,7 +212,7 @@ export function ProjectGrid({ projects, onProjectUpdate, onProjectDelete, onProj
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-muted-foreground">Due Date</p>
-                    <p className="font-medium">{new Date(project.dueDate).toLocaleDateString()}</p>
+                    <p className="font-medium">{formatDate(project.dueDate)}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">

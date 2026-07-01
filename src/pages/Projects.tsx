@@ -14,6 +14,7 @@ import { Plus, Edit, Trash2, Calendar, X, Users } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
+import { formatDate } from '@/lib/date'
 
 interface ChecklistItem { id: string; text: string; done: boolean }
 interface TeamMember { id: string; name: string }
@@ -253,7 +254,7 @@ const Projects = () => {
                   )}
                   {p.due_date && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Calendar className="w-3 h-3" />Due {new Date(p.due_date).toLocaleDateString()}
+                      <Calendar className="w-3 h-3" />Due {formatDate(p.due_date)}
                     </div>
                   )}
                   {p.tags && p.tags.length > 0 && (

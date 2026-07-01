@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 import CallDialog from '@/components/CallDialog'
+import { formatTime } from '@/lib/date'
 
 
 interface ChatUser {
@@ -49,7 +50,7 @@ interface Message {
 const EMOJIS = ['😊','😂','❤️','👍','🎉','🔥','🙏','👏','😍','🤔','😎','💯','✅','🚀','💡']
 
 const fmtTime = (iso: string) => {
-  try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) } catch { return '' }
+  try { return formatTime(iso) } catch { return '' }
 }
 
 export default function Chat() {

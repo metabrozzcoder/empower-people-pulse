@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client'
 import type { Session } from '@supabase/supabase-js'
 import type { User } from '@/context/UserContext'
 import i18n from '@/i18n'
+import { formatDateTime } from '@/lib/date'
 
 interface AuthContextType {
   currentUser: User | null
@@ -55,7 +56,7 @@ async function loadUserProfile(userId: string, email: string): Promise<User | nu
     status: (profile.status as User['status']) ?? 'Active',
     department: profile.department ?? undefined,
     organization: profile.organization ?? undefined,
-    lastLogin: new Date().toLocaleString(),
+    lastLogin: formatDateTime(),
     createdDate: profile.created_at?.split('T')[0] ?? '',
     permissions: stringArray(profile.permissions).length ? stringArray(profile.permissions) : (dbRole === 'admin' ? ['full_access', 'user_management', 'system_settings'] : []),
     allowedSections: stringArray(profile.allowed_sections),

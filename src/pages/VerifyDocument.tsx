@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, ShieldCheck, ShieldAlert, Loader2, Download, ArrowLeft } from 'lucide-react'
+import { formatDateTime } from '@/lib/date'
 
 interface PublicDoc {
   id: string
@@ -112,8 +113,8 @@ export default function VerifyDocument() {
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <Field label="Owner / Submitter" value={ownerName} />
               <Field label="Approved by" value={approverName} />
-              <Field label="Created" value={new Date(doc.created_at).toLocaleString()} />
-              <Field label="Reviewed" value={doc.reviewed_at ? new Date(doc.reviewed_at).toLocaleString() : '—'} />
+              <Field label="Created" value={formatDateTime(doc.created_at)} />
+              <Field label="Reviewed" value={doc.reviewed_at ? formatDateTime(doc.reviewed_at) : '—'} />
             </div>
 
             {fileUrl && (

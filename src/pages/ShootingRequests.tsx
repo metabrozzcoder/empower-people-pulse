@@ -14,6 +14,7 @@ import { Camera, Plus, MapPin, Calendar, AlertTriangle, CheckCircle2, XCircle, A
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
+import { formatDateTime } from '@/lib/date'
 
 type WorkflowStatus =
   | 'pending_moderator'
@@ -428,7 +429,7 @@ export default function ShootingRequests() {
                 <div><div className="text-muted-foreground text-xs">Requester</div>{profiles[selected.requester_id ?? '']?.name ?? '—'}</div>
                 <div><div className="text-muted-foreground text-xs">Date</div>{selected.scheduled_date ?? '—'}</div>
                 <div><div className="text-muted-foreground text-xs">Location</div>{selected.location ?? '—'}</div>
-                <div><div className="text-muted-foreground text-xs">Created</div>{new Date(selected.created_at).toLocaleString()}</div>
+                <div><div className="text-muted-foreground text-xs">Created</div>{formatDateTime(selected.created_at)}</div>
               </div>
               {selected.description && (
                 <div className="text-sm"><div className="text-muted-foreground text-xs mb-1">Description</div>{selected.description}</div>
@@ -520,7 +521,7 @@ export default function ShootingRequests() {
                   <div className="space-y-2">
                     {history.map((h) => (
                       <div key={h.id} className="text-xs flex items-start gap-2">
-                        <div className="text-muted-foreground whitespace-nowrap">{new Date(h.created_at).toLocaleString()}</div>
+                        <div className="text-muted-foreground whitespace-nowrap">{formatDateTime(h.created_at)}</div>
                         <div>
                           <span className="font-medium">{profiles[h.actor_id ?? '']?.name ?? 'System'}</span>
                           {' · '}{h.action.replace(/_/g, ' ')}

@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/hooks/use-toast'
+import { formatDateTime, formatTime } from '@/lib/date'
 
 interface SecurityDevice {
   id: string
@@ -266,7 +267,7 @@ export default function SecuritySystem() {
                           {log.action}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(log.timestamp).toLocaleTimeString()}
+                          {formatTime(log.timestamp)}
                         </p>
                       </div>
                     </div>
@@ -346,7 +347,7 @@ export default function SecuritySystem() {
                     Method: log.method,
                     Location: log.location,
                     Success: log.success ? 'Yes' : 'No',
-                    Timestamp: new Date(log.timestamp).toLocaleString()
+                    Timestamp: formatDateTime(log.timestamp)
                   }))
                   
                   const csvContent = [
@@ -389,7 +390,7 @@ export default function SecuritySystem() {
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           <span>Location: {log.location}</span>
                           <span>Method: {log.method}</span>
-                          <span>Time: {new Date(log.timestamp).toLocaleString()}</span>
+                          <span>Time: {formatDateTime(log.timestamp)}</span>
                         </div>
                       </div>
                     </div>
