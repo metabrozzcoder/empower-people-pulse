@@ -33,6 +33,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { DocumentEditor } from '@/components/DocumentEditor'
 import { QRCodeSVG } from 'qrcode.react'
+import { formatDate, formatDateTime } from '@/lib/date'
 
 type ApprovalStatus = 'Draft' | 'Pending' | 'Approved' | 'Rejected'
 type Priority = 'Low' | 'Normal' | 'High' | 'Urgent'
@@ -469,7 +470,7 @@ export default function Documentation() {
                               <UserCheck className="h-3 w-3" />
                               Receiver: <span className="font-medium text-foreground">{d.receiver_name ?? (d.approver_id ? ownerName(d.approver_id) : '—')}</span>
                             </span>
-                            <span>Updated {new Date(d.updated_at).toLocaleDateString()}</span>
+                            <span>Updated {formatDate(d.updated_at)}</span>
                             {d.file_path && (
                               <span className="flex items-center gap-1">
                                 <Paperclip className="h-3 w-3" /> 1 file
@@ -664,7 +665,7 @@ export default function Documentation() {
                   </div>
                   <DialogTitle className="mt-2">{viewing.title}</DialogTitle>
                   <DialogDescription>
-                    From <b>{ownerName(viewing.owner_id)}</b> · To <b>{viewing.receiver_name ?? (viewing.approver_id ? ownerName(viewing.approver_id) : '—')}</b> · {new Date(viewing.created_at).toLocaleString()}
+                    From <b>{ownerName(viewing.owner_id)}</b> · To <b>{viewing.receiver_name ?? (viewing.approver_id ? ownerName(viewing.approver_id) : '—')}</b> · {formatDateTime(viewing.created_at)}
                   </DialogDescription>
                 </DialogHeader>
 

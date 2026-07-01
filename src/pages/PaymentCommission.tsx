@@ -37,6 +37,7 @@ import {
   LayoutGrid,
   List as ListIcon,
 } from "lucide-react"
+import { formatDate } from '@/lib/date'
 
 type ViewMode = "card" | "list"
 
@@ -322,7 +323,7 @@ export default function PaymentCommission() {
             <div className="text-xs text-muted-foreground flex items-center gap-1">
               <Wallet className="h-3 w-3" />
               Paid by {userLabel(o.paid_by)}
-              {o.paid_at && ` on ${new Date(o.paid_at).toLocaleDateString()}`}
+              {o.paid_at && ` on ${formatDate(o.paid_at)}`}
             </div>
           )}
 

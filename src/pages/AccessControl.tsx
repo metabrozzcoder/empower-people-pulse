@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
+import { formatDate } from '@/lib/date'
 
 type RuleType = 'IP_RESTRICTION' | 'TIME_RESTRICTION' | 'LOCATION_RESTRICTION' | 'DEVICE_RESTRICTION'
 
@@ -235,7 +236,7 @@ export default function AccessControl() {
                         <p className="text-sm text-muted-foreground">{rule.description}</p>
                         <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                           <span>{t('pages.accessControl.users')}: {rule.users.length}</span>
-                          <span>{t('pages.accessControl.created')}: {new Date(rule.created_at).toLocaleDateString()}</span>
+                          <span>{t('pages.accessControl.created')}: {formatDate(rule.created_at)}</span>
                         </div>
                       </div>
                     </div>

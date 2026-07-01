@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Clock, Calendar, Users, CheckCircle, XCircle, AlertTriangle, Download } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { formatDate, formatTime } from '@/lib/date'
 
 const Attendance = () => {
   const { t } = useTranslation()
@@ -92,7 +93,7 @@ const Attendance = () => {
     // Update the attendance data
     setAttendanceData(prev => prev.map(emp =>
       emp.employeeId === employeeId 
-        ? { ...emp, todayStatus: status as any, checkInTime: status === 'Present' ? new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-' }
+        ? { ...emp, todayStatus: status as any, checkInTime: status === 'Present' ? formatTime() : '-' }
         : emp
     ))
     
@@ -197,7 +198,7 @@ const Attendance = () => {
                 <div>
                   <CardTitle>Today's Attendance</CardTitle>
                   <CardDescription>
-                    Real-time attendance status for {new Date().toLocaleDateString()}
+                    Real-time attendance status for {formatDate()}
                   </CardDescription>
                 </div>
                  <Button onClick={() => {

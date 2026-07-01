@@ -29,6 +29,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { formatDate } from '@/lib/date'
 
 interface ProjectGridProps {
   projects: Project[]
@@ -211,7 +212,7 @@ export function ProjectGrid({ projects, onProjectUpdate, onProjectDelete, onProj
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-muted-foreground">Due Date</p>
-                    <p className="font-medium">{new Date(project.dueDate).toLocaleDateString()}</p>
+                    <p className="font-medium">{formatDate(project.dueDate)}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">

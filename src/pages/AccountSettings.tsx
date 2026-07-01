@@ -23,6 +23,7 @@ import { useTheme } from "next-themes"
 import { useAuth } from "@/context/AuthContext"
 import { supabase } from "@/integrations/supabase/client"
 import i18n from "@/i18n"
+import { formatDate } from '@/lib/date'
 
 const AccountSettings = () => {
   const { t } = useTranslation()
@@ -244,7 +245,7 @@ const AccountSettings = () => {
   }
 
   const passwordLastChanged = security.passwordUpdatedAt
-    ? new Date(security.passwordUpdatedAt).toLocaleDateString()
+    ? formatDate(security.passwordUpdatedAt)
     : 'Never'
 
   return (

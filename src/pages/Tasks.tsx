@@ -12,6 +12,7 @@ import { Plus, Edit, Trash2, Calendar } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
+import { formatDate } from '@/lib/date'
 
 interface TaskRow {
   id: string
@@ -212,7 +213,7 @@ const Tasks = () => {
                 <Badge variant="outline">{labelize(t.priority ?? 'medium')}</Badge>
                 {projectName(t.project_id) && <Badge variant="secondary">{projectName(t.project_id)}</Badge>}
                 {profileName(t.assignee_id) && <span className="text-muted-foreground">@{profileName(t.assignee_id)}</span>}
-                {t.due_date && <span className="flex items-center gap-1 text-muted-foreground"><Calendar className="w-3 h-3" />{new Date(t.due_date).toLocaleDateString()}</span>}
+                {t.due_date && <span className="flex items-center gap-1 text-muted-foreground"><Calendar className="w-3 h-3" />{formatDate(t.due_date)}</span>}
                 {t.tags?.map((tag, i) => <span key={i} className="px-2 py-0.5 bg-muted rounded">{tag}</span>)}
               </CardContent>
             </Card>
