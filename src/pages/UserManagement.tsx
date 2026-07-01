@@ -274,7 +274,7 @@ export default function UserManagement() {
     setSelectedUser(null)
     setFormData({
       name: '', surname: '', email: '', phone: '',
-      role: '', position: '', organization: '', department: '', linkedEmployee: ''
+      role: '', position: '', organization: '', department: '', linkedEmployee: '', birthday: ''
     })
     setSelectedSections([])
     setGeneratedCredentials({
