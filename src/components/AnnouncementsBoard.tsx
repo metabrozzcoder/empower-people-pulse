@@ -3,6 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -33,6 +43,7 @@ export function AnnouncementsBoard() {
   const [body, setBody] = useState("")
   const [pinned, setPinned] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null)
 
   const isAdmin = user?.role === "Admin"
   const isGuest = user?.role === "Guest"
@@ -61,7 +72,6 @@ export function AnnouncementsBoard() {
 
   if (!user || isGuest) return null
 
-
   const create = async () => {
     if (!title.trim() || !body.trim()) return
     setSaving(true)
@@ -83,6 +93,7 @@ export function AnnouncementsBoard() {
   const remove = async (id: string) => {
     const { error } = await (supabase as any).from("announcements").delete().eq("id", id)
     if (error) toast({ title: t("common.error", "Error"), description: error.message, variant: "destructive" })
+    setPendingDelete(null)
   }
 
   return (
@@ -91,10 +102,10 @@ export function AnnouncementsBoard() {
         <div>
           <CardTitle className="flex items-center">
             <Megaphone className="mr-2 h-5 w-5" />
-            {t("pages.dashboard.announcements.title", "Announcements from Leadership")}
+            {t("pages.dashboard.announcements.title", "Announcements")}
           </CardTitle>
           <CardDescription>
-            {t("pages.dashboard.announcements.subtitle", "Official updates and messages from the leadership team")}
+            {t("pages.dashboard.announcements.subtitle", "Official updates and messages")}
           </CardDescription>
         </div>
         {isAdmin && (
@@ -109,11 +120,20 @@ export function AnnouncementsBoard() {
               <div className="space-y-3">
                 <div>
                   <Label>{t("common.title", "Title")}</Label>
-                  <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder={t("pages.dashboard.announcements.titlePlaceholder", "Announcement title")}
+                  />
                 </div>
                 <div>
                   <Label>{t("common.message", "Message")}</Label>
-                  <Textarea rows={5} value={body} onChange={(e) => setBody(e.target.value)} />
+                  <Textarea
+                    rows={5}
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    placeholder={t("pages.dashboard.announcements.messagePlaceholder", "Write your message…")}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch checked={pinned} onCheckedChange={setPinned} id="pin-ann" />
@@ -122,7 +142,9 @@ export function AnnouncementsBoard() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>
-                <Button onClick={create} disabled={saving}>{t("common.post", "Post")}</Button>
+                <Button onClick={create} disabled={saving || !title.trim() || !body.trim()}>
+                  {t("common.post", "Post")}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -139,14 +161,19 @@ export function AnnouncementsBoard() {
             {items.map((a) => (
               <div key={a.id} className="p-4 rounded-lg border bg-card/50">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    {a.pinned && <Badge variant="secondary"><Pin className="h-3 w-3 mr-1" />Pinned</Badge>}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {a.pinned && (
+                      <Badge variant="secondary">
+                        <Pin className="h-3 w-3 mr-1" />
+                        {t("pages.dashboard.announcements.pinned", "Pinned")}
+                      </Badge>
+                    )}
                     <h4 className="font-semibold">{a.title}</h4>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <span className="text-xs text-muted-foreground">{formatDate(a.created_at)}</span>
                     {isAdmin && (
-                      <Button size="icon" variant="ghost" onClick={() => remove(a.id)}>
+                      <Button size="icon" variant="ghost" onClick={() => setPendingDelete(a.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
@@ -158,6 +185,23 @@ export function AnnouncementsBoard() {
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("pages.dashboard.announcements.deleteConfirm", "Delete this announcement?")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("common.actionCannotBeUndone", "This action cannot be undone.")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => pendingDelete && remove(pendingDelete)}>
+              {t("common.delete", "Delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }

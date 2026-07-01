@@ -102,7 +102,20 @@
       "viewAllEvents": "Barcha tadbirlar",
       "birthdays": "Xodimlarning tug'ilgan kunlari",
       "birthdaysDesc": "Bugun va ertangi bayramlar",
-      "noBirthdays": "Bugun va ertaga tug'ilgan kunlar yo'q"
+      "noBirthdays": "Bugun va ertaga tug'ilgan kunlar yo'q",
+      "announcements": {
+        "title": "E'lonlar",
+        "subtitle": "Rasmiy yangiliklar va xabarlar",
+        "new": "Yangi",
+        "newTitle": "Yangi e'lon",
+        "pin": "Yuqoriga qadash",
+        "pinned": "Qadalgan",
+        "empty": "Hozircha e'lonlar yo'q",
+        "posted": "E'lon joylandi",
+        "deleteConfirm": "Ushbu e'lon o'chirilsinmi?",
+        "titlePlaceholder": "E'lon sarlavhasi",
+        "messagePlaceholder": "Xabaringizni yozing…"
+      }
     },
     "employees": { "title": "Xodimlar", "subtitle": "Jamoangiz va ularning ma'lumotlarini boshqaring." },
     "projects": { "title": "Loyihalar", "subtitle": "Barcha loyihalarni kuzating va boshqaring." },

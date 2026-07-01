@@ -102,7 +102,20 @@
       "viewAllEvents": "View All Events",
       "birthdays": "Employee Birthdays",
       "birthdaysDesc": "Today and tomorrow celebrations",
-      "noBirthdays": "No birthdays today or tomorrow"
+      "noBirthdays": "No birthdays today or tomorrow",
+      "announcements": {
+        "title": "Announcements",
+        "subtitle": "Official updates and messages",
+        "new": "New",
+        "newTitle": "New announcement",
+        "pin": "Pin to top",
+        "pinned": "Pinned",
+        "empty": "No announcements yet",
+        "posted": "Announcement posted",
+        "deleteConfirm": "Delete this announcement?",
+        "titlePlaceholder": "Announcement title",
+        "messagePlaceholder": "Write your message…"
+      }
     },
     "employees": { "title": "Employees", "subtitle": "Manage your team members and their information." },
     "projects": { "title": "Projects", "subtitle": "Track and manage all projects." },
