@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { format } from 'date-fns'
-import { formatDate } from '@/lib/date'
+import { formatDate, formatMonthYear } from '@/lib/date'
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
