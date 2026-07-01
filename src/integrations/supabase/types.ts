@@ -1476,6 +1476,25 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_public_document: {
+        Args: { _id: string }
+        Returns: {
+          approver_name: string
+          body_html: string
+          category: string
+          created_at: string
+          description: string
+          file_path: string
+          file_type: string
+          id: string
+          owner_name: string
+          receiver_name: string
+          reviewed_at: string
+          status: string
+          title: string
+          visibility: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
