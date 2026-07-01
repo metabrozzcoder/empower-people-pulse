@@ -50,6 +50,8 @@
       "chat": "Chat",
       "userManagement": "User Management",
       "accessControl": "Access Control",
+      "roleManagement": "Role Management",
+      "paymentCommission": "Payment Commission",
       "analytics": "Analytics",
       "garage": "Garage",
       "documentation": "Documentation",

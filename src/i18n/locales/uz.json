@@ -50,6 +50,8 @@
       "chat": "Chat",
       "userManagement": "Foydalanuvchilarni boshqarish",
       "accessControl": "Kirish nazorati",
+      "roleManagement": "Rollarni boshqarish",
+      "paymentCommission": "To'lov komissiyasi",
       "analytics": "Tahlil",
       "garage": "Garaj",
       "documentation": "Hujjatlar",

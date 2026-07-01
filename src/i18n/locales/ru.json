@@ -50,6 +50,8 @@
       "chat": "Чат",
       "userManagement": "Управление пользователями",
       "accessControl": "Контроль доступа",
+      "roleManagement": "Управление ролями",
+      "paymentCommission": "Платёжная комиссия",
       "analytics": "Аналитика",
       "garage": "Гараж",
       "documentation": "Документация",
