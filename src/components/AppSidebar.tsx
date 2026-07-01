@@ -159,11 +159,17 @@ export function AppSidebar() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { logout, currentUser } = useAuth()
+  const unreadByRoute = useUnreadByRoute()
   const [openSections, setOpenSections] = useState<string[]>([
     "Main Menu", "HR & Projects", "Organization", "Communication",
     "Management & Analytics", "Finance", "Drivers & Garage",
     "Documentation", "Security & Settings"
   ])
+
+  const getItemUnread = (url: string) => unreadByRoute[url] ?? 0
+  const getSectionUnread = (items: any[]) =>
+    items.reduce((sum, it) => sum + getItemUnread(it.url), 0)
+
 
   const toggleSection = (section: string) => {
     setOpenSections(prev => 
