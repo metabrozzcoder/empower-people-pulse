@@ -394,7 +394,7 @@ export default function PaymentCommission() {
         {/* Due Date */}
         <div className="col-span-2 flex items-center gap-1.5 text-muted-foreground">
           <CalendarDays className="h-3.5 w-3.5" />
-          <span>{o.due_date ?? "—"}</span>
+          <span>{o.due_date ? formatDate(o.due_date) : "—"}</span>
         </div>
 
         {/* Assigners */}
