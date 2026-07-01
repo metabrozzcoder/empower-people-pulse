@@ -23,6 +23,7 @@ export interface User {
   generatedPassword?: string
   sectionAccess?: string[]
   allowedSections?: string[]
+  birthday?: string
 }
 
 interface UserContextType {
