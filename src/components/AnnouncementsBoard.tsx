@@ -35,19 +35,20 @@ export function AnnouncementsBoard() {
   const [saving, setSaving] = useState(false)
 
   const isAdmin = user?.role === "Admin"
-  const isGuest = !user || user.role === "Guest"
+  const isGuest = user?.role === "Guest"
 
   const load = async () => {
-    const { data } = await (supabase as any)
+    const { data, error } = await (supabase as any)
       .from("announcements")
       .select("*")
       .order("pinned", { ascending: false })
       .order("created_at", { ascending: false })
+    if (error) console.error("[Announcements] load error", error)
     setItems((data ?? []) as Announcement[])
   }
 
   useEffect(() => {
-    if (isGuest) return
+    if (!user || isGuest) return
     load()
     const channel = supabase
       .channel("announcements-board")
@@ -56,9 +57,10 @@ export function AnnouncementsBoard() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [isGuest])
+  }, [user?.id, isGuest])
 
-  if (isGuest) return null
+  if (!user || isGuest) return null
+
 
   const create = async () => {
     if (!title.trim() || !body.trim()) return
