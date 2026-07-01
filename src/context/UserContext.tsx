@@ -139,6 +139,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         guest_id: user.guestId ?? null,
         linked_employee: user.linkedEmployee ?? null,
         organization: orgName,
+        birthday: user.birthday ?? null,
       } as never).eq('id', newId)
     }
     await refresh()
