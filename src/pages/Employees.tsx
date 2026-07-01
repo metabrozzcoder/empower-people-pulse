@@ -85,6 +85,7 @@ export default function Employees() {
     location: '',
     manager: '',
     organizationId: '',
+    birthday: '',
   })
 
   const loadEmployees = async () => {
@@ -188,6 +189,7 @@ export default function Employees() {
       location: employeeData.location || null,
       manager: employeeData.manager || null,
       organization_id: employeeData.organizationId || null,
+      birthday: employeeData.birthday || null,
     })
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" })
@@ -195,7 +197,7 @@ export default function Employees() {
     }
     toast({ title: "Employee Added", description: `${employeeData.firstName} ${employeeData.lastName} has been added.` })
     setIsAddDialogOpen(false)
-    setEmployeeData({ firstName: '', lastName: '', email: '', phone: '', position: '', department: '', salary: '', location: '', manager: '', organizationId: '' })
+    setEmployeeData({ firstName: '', lastName: '', email: '', phone: '', position: '', department: '', salary: '', location: '', manager: '', organizationId: '', birthday: '' })
     loadEmployees()
   }
 
@@ -354,6 +356,22 @@ export default function Employees() {
             <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
               <Input id="location" placeholder="Enter work location" value={employeeData.location} onChange={(e) => setEmployeeData({...employeeData, location: e.target.value})} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="birthday">
+                Date of Birth {employeeData.birthday && (
+                  <span className="text-xs text-muted-foreground">
+                    (age {Math.max(0, Math.floor((Date.now() - new Date(employeeData.birthday).getTime())/(365.25*24*3600*1000)))})
+                  </span>
+                )}
+              </Label>
+              <Input
+                id="birthday"
+                type="date"
+                value={employeeData.birthday}
+                max={new Date().toISOString().slice(0,10)}
+                onChange={(e) => setEmployeeData({...employeeData, birthday: e.target.value})}
+              />
             </div>
             <div className="space-y-2 col-span-2">
               <Label htmlFor="manager">Manager</Label>
