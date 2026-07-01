@@ -85,6 +85,7 @@ export default function Employees() {
     location: '',
     manager: '',
     organizationId: '',
+    birthday: '',
   })
 
   const loadEmployees = async () => {
