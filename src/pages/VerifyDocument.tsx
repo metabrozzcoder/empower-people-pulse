@@ -15,13 +15,13 @@ interface PublicDoc {
   category: string | null
   status: string
   visibility: string
-  owner_id: string
-  approver_id: string | null
   receiver_name: string | null
   file_path: string | null
   file_type: string | null
   created_at: string
   reviewed_at: string | null
+  owner_name: string | null
+  approver_name: string | null
 }
 
 export default function VerifyDocument() {
@@ -37,26 +37,13 @@ export default function VerifyDocument() {
     if (!id) return
     ;(async () => {
       setLoading(true)
-      const { data } = await supabase
-        .from('documents')
-        .select('id,title,description,body_html,category,status,visibility,owner_id,approver_id,receiver_name,file_path,file_type,created_at,reviewed_at')
-        .eq('id', id)
-        .maybeSingle()
-      if (!data) { setNotFound(true); setLoading(false); return }
-      const d = data as unknown as PublicDoc
+      const { data } = await supabase.rpc('get_public_document', { _id: id })
+      const row = Array.isArray(data) ? data[0] : data
+      if (!row) { setNotFound(true); setLoading(false); return }
+      const d = row as unknown as PublicDoc
       setDoc(d)
-
-      const ids = [d.owner_id, d.approver_id].filter(Boolean) as string[]
-      if (ids.length) {
-        const { data: profs } = await supabase
-          .from('profiles_public' as never)
-          .select('id, name')
-          .in('id', ids)
-        const byId = new Map<string, string>()
-        ;(profs ?? []).forEach((p: { id: string; name: string }) => byId.set(p.id, p.name))
-        setOwnerName(byId.get(d.owner_id) ?? '—')
-        if (d.approver_id) setApproverName(byId.get(d.approver_id) ?? d.receiver_name ?? '—')
-      }
+      setOwnerName(d.owner_name ?? '—')
+      setApproverName(d.approver_name ?? d.receiver_name ?? '—')
 
       if (d.file_path) {
         const { data: signed } = await supabase.storage.from('documents').createSignedUrl(d.file_path, 300)
@@ -65,6 +52,7 @@ export default function VerifyDocument() {
       setLoading(false)
     })()
   }, [id])
+
 
   if (loading) {
     return (
