@@ -914,6 +914,16 @@ export default function UserManagement() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="birthday">Date of Birth {formData.birthday && (<span className="text-xs text-muted-foreground">(age {Math.max(0, Math.floor((Date.now() - new Date(formData.birthday).getTime())/(365.25*24*3600*1000)))})</span>)}</Label>
+                  <Input
+                    id="birthday"
+                    type="date"
+                    value={formData.birthday}
+                    onChange={(e) => handleFormChange('birthday', e.target.value)}
+                    max={new Date().toISOString().slice(0,10)}
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="role">Role *</Label>
                   <Select 
                     value={customRoleId ? `custom:${customRoleId}` : formData.role}
