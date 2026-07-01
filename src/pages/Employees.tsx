@@ -357,6 +357,22 @@ export default function Employees() {
               <Label htmlFor="location">Location</Label>
               <Input id="location" placeholder="Enter work location" value={employeeData.location} onChange={(e) => setEmployeeData({...employeeData, location: e.target.value})} />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="birthday">
+                Date of Birth {employeeData.birthday && (
+                  <span className="text-xs text-muted-foreground">
+                    (age {Math.max(0, Math.floor((Date.now() - new Date(employeeData.birthday).getTime())/(365.25*24*3600*1000)))})
+                  </span>
+                )}
+              </Label>
+              <Input
+                id="birthday"
+                type="date"
+                value={employeeData.birthday}
+                max={new Date().toISOString().slice(0,10)}
+                onChange={(e) => setEmployeeData({...employeeData, birthday: e.target.value})}
+              />
+            </div>
             <div className="space-y-2 col-span-2">
               <Label htmlFor="manager">Manager</Label>
               <Input id="manager" placeholder="Manager name" value={employeeData.manager} onChange={(e) => setEmployeeData({...employeeData, manager: e.target.value})} />
