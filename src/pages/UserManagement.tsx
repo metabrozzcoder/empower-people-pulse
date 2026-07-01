@@ -725,9 +725,15 @@ export default function UserManagement() {
                       <Badge className={getRoleColor(user.role)}>
                         {user.role}
                       </Badge>
+                      {userCustomRoleMap[user.id] && (
+                        <Badge variant="secondary" className="text-xs">
+                          {customRoles.find(c => c.id === userCustomRoleMap[user.id])?.name ?? 'Custom Role'}
+                        </Badge>
+                      )}
                       <Badge className={getStatusColor(user.status)}>
                         {user.status}
                       </Badge>
+
                     </div>
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                       <div className="flex items-center space-x-1">
