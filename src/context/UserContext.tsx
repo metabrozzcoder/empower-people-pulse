@@ -116,6 +116,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         phone: user.phone,
         department: user.department,
         position: user.position,
+        birthday: user.birthday,
       },
     })
     if (error) throw error
