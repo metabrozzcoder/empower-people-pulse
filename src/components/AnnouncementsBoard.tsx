@@ -24,7 +24,7 @@ interface Announcement {
 }
 
 export function AnnouncementsBoard() {
-  const { user } = useAuth()
+  const { currentUser: user } = useAuth()
   const { t } = useTranslation()
   const { toast } = useToast()
   const [items, setItems] = useState<Announcement[]>([])
@@ -142,7 +142,7 @@ export function AnnouncementsBoard() {
                     <h4 className="font-semibold">{a.title}</h4>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{formatDMY(a.created_at)}</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(a.created_at)}</span>
                     {isAdmin && (
                       <Button size="icon" variant="ghost" onClick={() => remove(a.id)}>
                         <Trash2 className="h-4 w-4" />
