@@ -148,6 +148,7 @@ export default function UserManagement() {
   const [employeeOptions, setEmployeeOptions] = useState<string[]>([])
   const [customRoles, setCustomRoles] = useState<Array<{ id: string; name: string; allowed_sections: string[] }>>([])
   const [customRoleId, setCustomRoleId] = useState<string>('')
+  const [userCustomRoleMap, setUserCustomRoleMap] = useState<Record<string, string>>({})
 
   const loadCustomRoles = async () => {
     const { data } = await supabase.from('custom_roles').select('id, name, allowed_sections').order('name')
@@ -157,14 +158,24 @@ export default function UserManagement() {
     })))
   }
 
+  const loadUserCustomRoles = async () => {
+    const { data } = await supabase.from('user_custom_roles').select('user_id, custom_role_id')
+    const map: Record<string, string> = {}
+    ;((data ?? []) as any[]).forEach(r => { map[r.user_id] = r.custom_role_id })
+    setUserCustomRoleMap(map)
+  }
+
   useEffect(() => {
     loadCustomRoles()
+    loadUserCustomRoles()
     const ch = supabase
       .channel('custom_roles_sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_roles' }, () => loadCustomRoles())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_custom_roles' }, () => loadUserCustomRoles())
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [])
+
 
   useEffect(() => {
     (async () => {
@@ -714,9 +725,15 @@ export default function UserManagement() {
                       <Badge className={getRoleColor(user.role)}>
                         {user.role}
                       </Badge>
+                      {userCustomRoleMap[user.id] && (
+                        <Badge variant="secondary" className="text-xs">
+                          {customRoles.find(c => c.id === userCustomRoleMap[user.id])?.name ?? 'Custom Role'}
+                        </Badge>
+                      )}
                       <Badge className={getStatusColor(user.status)}>
                         {user.status}
                       </Badge>
+
                     </div>
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                       <div className="flex items-center space-x-1">
