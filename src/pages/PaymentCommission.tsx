@@ -25,7 +25,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "@/hooks/use-toast"
 import {
-import { formatDate } from '@/lib/date'
   Building2,
   DollarSign,
   CalendarDays,
@@ -38,6 +37,7 @@ import { formatDate } from '@/lib/date'
   LayoutGrid,
   List as ListIcon,
 } from "lucide-react"
+import { formatDate } from '@/lib/date'
 
 type ViewMode = "card" | "list"
 
