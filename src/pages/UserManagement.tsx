@@ -497,7 +497,8 @@ export default function UserManagement() {
       position: '',
       organization: '',
       department: '',
-      linkedEmployee: ''
+      linkedEmployee: '',
+      birthday: ''
     })
     setSelectedSections([])
     setGeneratedCredentials({ username: '', password: '', guestId: '' })
