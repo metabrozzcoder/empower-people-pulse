@@ -23,6 +23,7 @@ export interface User {
   generatedPassword?: string
   sectionAccess?: string[]
   allowedSections?: string[]
+  birthday?: string
 }
 
 interface UserContextType {
@@ -91,6 +92,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       guestId: p.guest_id ?? undefined,
       username: p.username ?? p.email ?? '',
       password: '',
+      birthday: p.birthday ?? undefined,
     }))
     setUsers(list)
     setLoading(false)
@@ -114,6 +116,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         phone: user.phone,
         department: user.department,
         position: user.position,
+        birthday: user.birthday,
       },
     })
     if (error) throw error
@@ -137,6 +140,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         guest_id: user.guestId ?? null,
         linked_employee: user.linkedEmployee ?? null,
         organization: orgName,
+        birthday: user.birthday ?? null,
       } as never).eq('id', newId)
     }
     await refresh()
@@ -156,6 +160,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (updates.sectionAccess !== undefined) patch.section_access = updates.sectionAccess
     if (updates.guestId !== undefined) patch.guest_id = updates.guestId
     if (updates.linkedEmployee !== undefined) patch.linked_employee = updates.linkedEmployee
+    if (updates.birthday !== undefined) patch.birthday = updates.birthday || null
     if (Object.keys(patch).length) {
       const { error } = await supabase.from('profiles').update(patch as never).eq('id', id)
       if (error) { console.error('profiles update failed', error); throw new Error(`Profile update failed: ${error.message}`) }

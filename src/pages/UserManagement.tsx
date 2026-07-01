@@ -136,7 +136,8 @@ export default function UserManagement() {
     position: '',
     organization: '',
     department: '',
-    linkedEmployee: ''
+    linkedEmployee: '',
+    birthday: ''
   })
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [selectedAccessRules, setSelectedAccessRules] = useState<string[]>([])
@@ -273,7 +274,7 @@ export default function UserManagement() {
     setSelectedUser(null)
     setFormData({
       name: '', surname: '', email: '', phone: '',
-      role: '', position: '', organization: '', department: '', linkedEmployee: ''
+      role: '', position: '', organization: '', department: '', linkedEmployee: '', birthday: ''
     })
     setSelectedSections([])
     setGeneratedCredentials({
@@ -351,7 +352,8 @@ export default function UserManagement() {
       position: user.position || '',
       organization: user.organization || '',
       department: user.department || '',
-      linkedEmployee: user.linkedEmployee || ''
+      linkedEmployee: user.linkedEmployee || '',
+      birthday: (user as any).birthday || ''
     })
     setSelectedSections(user.allowedSections || [])
     setGeneratedCredentials({ username: user.username, password: user.generatedPassword || '', guestId: user.guestId || '' })
@@ -423,8 +425,9 @@ export default function UserManagement() {
           password: generatedCredentials.password,
           guestId: generatedCredentials.guestId,
           allowedSections: selectedSections,
-          sectionAccess: []
-        })
+          sectionAccess: [],
+          birthday: formData.birthday || undefined,
+        } as any)
         toast({
           title: "User Updated Successfully",
           description: `User ${fullName} has been updated with section access.`,
@@ -452,8 +455,9 @@ export default function UserManagement() {
         accessRules: selectedAccessRules,
         guestId: generatedCredentials.guestId,
         sectionAccess: [], // No restrictions by default
-        allowedSections: selectedSections // Granted sections
-      }
+        allowedSections: selectedSections, // Granted sections
+        birthday: formData.birthday || undefined,
+      } as any
 
       try {
         await addUser(newUser)
@@ -495,7 +499,8 @@ export default function UserManagement() {
       position: '',
       organization: '',
       department: '',
-      linkedEmployee: ''
+      linkedEmployee: '',
+      birthday: ''
     })
     setSelectedSections([])
     setGeneratedCredentials({ username: '', password: '', guestId: '' })
@@ -908,6 +913,16 @@ export default function UserManagement() {
                     placeholder="Enter phone number" 
                     value={formData.phone}
                     onChange={(e) => handleFormChange('phone', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="birthday">Date of Birth {formData.birthday && (<span className="text-xs text-muted-foreground">(age {Math.max(0, Math.floor((Date.now() - new Date(formData.birthday).getTime())/(365.25*24*3600*1000)))})</span>)}</Label>
+                  <Input
+                    id="birthday"
+                    type="date"
+                    value={formData.birthday}
+                    onChange={(e) => handleFormChange('birthday', e.target.value)}
+                    max={new Date().toISOString().slice(0,10)}
                   />
                 </div>
                 <div className="space-y-2">

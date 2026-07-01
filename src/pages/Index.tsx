@@ -40,21 +40,41 @@ const Index = () => {
   ]
 
   useEffect(() => {
-    supabase.from('employees').select('id, name, position, avatar, birthday').then(({ data }) => {
-      const list = (data ?? [])
-        .filter((e) => e.birthday)
-        .map((e) => ({ ...e, _d: new Date(e.birthday as string) }))
-        .filter((e) => isToday(e._d) || isTomorrow(e._d))
-        .map((e) => ({
+    (async () => {
+      const [{ data: emps }, { data: profs }] = await Promise.all([
+        supabase.from('employees').select('id, name, position, avatar, birthday'),
+        supabase.from('profiles').select('id, name, position, avatar_url, birthday'),
+      ])
+      const raw = [
+        ...((emps ?? []).map((e: any) => ({ id: `e:${e.id}`, name: e.name, position: e.position, avatar: e.avatar, birthday: e.birthday }))),
+        ...((profs ?? []).map((p: any) => ({ id: `p:${p.id}`, name: p.name, position: p.position, avatar: p.avatar_url, birthday: p.birthday }))),
+      ].filter((x) => x.birthday)
+
+      const today = new Date(); today.setHours(0,0,0,0)
+      const seen = new Set<string>()
+      const list: BirthdayEmp[] = []
+      for (const e of raw) {
+        const b = new Date(e.birthday as string)
+        if (isNaN(b.getTime())) continue
+        const key = `${(e.name || '').toLowerCase()}|${b.getMonth()}-${b.getDate()}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        const next = new Date(today.getFullYear(), b.getMonth(), b.getDate())
+        if (next < today) next.setFullYear(today.getFullYear() + 1)
+        const diffDays = Math.round((next.getTime() - today.getTime()) / 86400000)
+        if (diffDays > 30) continue
+        list.push({
           id: e.id,
           name: e.name,
           position: e.position,
           avatar: e.avatar,
-          isToday: isToday(e._d),
-          formattedDate: format(e._d, 'MMM dd'),
-        }))
+          isToday: diffDays === 0,
+          formattedDate: format(next, 'MMM dd'),
+        })
+      }
+      list.sort((a, b) => (a.isToday === b.isToday ? a.formattedDate.localeCompare(b.formattedDate) : a.isToday ? -1 : 1))
       setBirthdayEmployees(list)
-    })
+    })()
 
     ;(async () => {
       const { data: auth } = await supabase.auth.getUser()

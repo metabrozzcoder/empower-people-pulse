@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    let { email, password, name, username, role, phone, department, position } = body ?? {};
+    let { email, password, name, username, role, phone, department, position, birthday } = body ?? {};
     if (!name) {
       return new Response(JSON.stringify({ error: "name is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
       uid = created.user.id;
     }
     // Update profile (trigger created it with defaults).
-    await admin.from("profiles").update({ name, phone, department, position, username }).eq("id", uid);
+    await admin.from("profiles").update({ name, phone, department, position, username, birthday: birthday || null }).eq("id", uid);
     // Store the generated password in an admin-only table so admins can retrieve it later.
     await admin.from("admin_user_credentials").upsert({ user_id: uid, generated_password: password });
     // Replace default 'guest' role with chosen role
