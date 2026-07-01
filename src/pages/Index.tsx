@@ -9,6 +9,7 @@ import { format, isToday, isTomorrow } from "date-fns"
 import { useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { AnnouncementsBoard } from "@/components/AnnouncementsBoard"
 
 interface UpcomingEvent {
   id: string
