@@ -59,6 +59,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { Badge } from "@/components/ui/badge"
+import { useUnreadByRoute } from "@/hooks/useUnreadByRoute"
+
 
 const sidebarSections = [
   {
