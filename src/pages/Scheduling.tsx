@@ -208,7 +208,7 @@ const Scheduling = () => {
   )
   const dayItems = (byDate.get(selected) ?? []).sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''))
 
-  const monthLabel = cursor.toLocaleString(undefined, { month: 'long', year: 'numeric' })
+  const monthLabel = formatMonthYear(cursor)
 
   return (
     <div className="space-y-6">
