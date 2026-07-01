@@ -785,6 +785,7 @@ export type Database = {
         Row: {
           allowed_sections: Json
           avatar_url: string | null
+          birthday: string | null
           created_at: string
           department: string | null
           email: string
@@ -805,6 +806,7 @@ export type Database = {
         Insert: {
           allowed_sections?: Json
           avatar_url?: string | null
+          birthday?: string | null
           created_at?: string
           department?: string | null
           email: string
@@ -825,6 +827,7 @@ export type Database = {
         Update: {
           allowed_sections?: Json
           avatar_url?: string | null
+          birthday?: string | null
           created_at?: string
           department?: string | null
           email?: string

@@ -136,7 +136,8 @@ export default function UserManagement() {
     position: '',
     organization: '',
     department: '',
-    linkedEmployee: ''
+    linkedEmployee: '',
+    birthday: ''
   })
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [selectedAccessRules, setSelectedAccessRules] = useState<string[]>([])
