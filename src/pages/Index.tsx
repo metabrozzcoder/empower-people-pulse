@@ -110,6 +110,9 @@ const Index = () => {
         ))}
       </div>
 
+      {/* Announcements */}
+      <AnnouncementsBoard />
+
       {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Upcoming Events */}
