@@ -92,6 +92,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       guestId: p.guest_id ?? undefined,
       username: p.username ?? p.email ?? '',
       password: '',
+      birthday: p.birthday ?? undefined,
     }))
     setUsers(list)
     setLoading(false)
