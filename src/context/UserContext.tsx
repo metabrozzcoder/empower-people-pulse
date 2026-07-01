@@ -159,6 +159,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (updates.sectionAccess !== undefined) patch.section_access = updates.sectionAccess
     if (updates.guestId !== undefined) patch.guest_id = updates.guestId
     if (updates.linkedEmployee !== undefined) patch.linked_employee = updates.linkedEmployee
+    if (updates.birthday !== undefined) patch.birthday = updates.birthday || null
     if (Object.keys(patch).length) {
       const { error } = await supabase.from('profiles').update(patch as never).eq('id', id)
       if (error) { console.error('profiles update failed', error); throw new Error(`Profile update failed: ${error.message}`) }
