@@ -425,8 +425,9 @@ export default function UserManagement() {
           password: generatedCredentials.password,
           guestId: generatedCredentials.guestId,
           allowedSections: selectedSections,
-          sectionAccess: []
-        })
+          sectionAccess: [],
+          birthday: formData.birthday || undefined,
+        } as any)
         toast({
           title: "User Updated Successfully",
           description: `User ${fullName} has been updated with section access.`,
