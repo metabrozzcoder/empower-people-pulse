@@ -352,7 +352,8 @@ export default function UserManagement() {
       position: user.position || '',
       organization: user.organization || '',
       department: user.department || '',
-      linkedEmployee: user.linkedEmployee || ''
+      linkedEmployee: user.linkedEmployee || '',
+      birthday: (user as any).birthday || ''
     })
     setSelectedSections(user.allowedSections || [])
     setGeneratedCredentials({ username: user.username, password: user.generatedPassword || '', guestId: user.guestId || '' })
