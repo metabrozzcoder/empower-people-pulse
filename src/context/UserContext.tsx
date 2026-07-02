@@ -99,8 +99,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (session) refresh()
-    else { setUsers([]); setLoading(false) }
+    if (!session) { setUsers([]); setLoading(false); return }
+    refresh()
+    let t: ReturnType<typeof setTimeout> | null = null
+    const debounced = () => {
+      if (t) clearTimeout(t)
+      t = setTimeout(() => { refresh() }, 300)
+    }
+    const channel = supabase
+      .channel('users-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, debounced)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_roles' }, debounced)
+      .subscribe()
+    return () => {
+      if (t) clearTimeout(t)
+      supabase.removeChannel(channel)
+    }
   }, [session, refresh])
 
   const addUser = async (user: Omit<User, 'id' | 'createdDate' | 'lastLogin'>) => {
