@@ -283,7 +283,7 @@ export default function Chat() {
     ;(async () => {
       const { data } = await supabase
         .from('messages')
-        .select('id, conversation_id, sender_id, content, created_at, edited')
+        .select('id, conversation_id, sender_id, content, created_at, edited, attachments')
         .eq('conversation_id', activeConvId)
         .order('created_at', { ascending: true })
         .limit(500)
