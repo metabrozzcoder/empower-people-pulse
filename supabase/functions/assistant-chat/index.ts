@@ -658,12 +658,31 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     } else {
       uid = created.user.id;
     }
+    // Role-based default sidebar sections (mirrors UserManagement.tsx defaults)
+    const ALL_SECTIONS = [
+      "Dashboard","Shooting Requests","Employees","Projects","Recruitment","Tasks",
+      "Scheduling","Attendance","Analytics","Organizations","Chat","User Management",
+      "Access Control","Role Management","Garage","Payment Commission","Assistant","Documentation","Settings",
+    ];
+    const ROLE_DEFAULT_SECTIONS: Record<string, string[]> = {
+      admin: ALL_SECTIONS,
+      hr: ["Dashboard","Employees","Projects","Recruitment","Tasks","Scheduling","Attendance","Analytics","Organizations","Chat","Documentation","Settings"],
+      employee: ["Dashboard","Shooting Requests","Organizations","Chat","Scheduling","Documentation","Tasks"],
+      accountant: ["Dashboard","Payment Commission","Chat","Documentation","Settings"],
+      guest: ["Chat"],
+      shooting_moderator: ["Dashboard","Shooting Requests","Chat","Documentation"],
+      director: ["Dashboard","Shooting Requests","Projects","Chat","Documentation"],
+      tech_supply: ["Dashboard","Shooting Requests","Garage","Chat"],
+      driver: ["Dashboard","Shooting Requests","Garage","Chat"],
+    };
+    const defaultSections = ROLE_DEFAULT_SECTIONS[validRole] ?? ROLE_DEFAULT_SECTIONS.employee;
+
     const profilePatch: any = {
       name: args.name, phone: args.phone, department: args.department,
       position: args.position, username,
+      allowed_sections: Array.isArray(args.allowed_sections) ? args.allowed_sections : defaultSections,
     };
     if (args.organization !== undefined) profilePatch.organization = args.organization;
-    if (Array.isArray(args.allowed_sections)) profilePatch.allowed_sections = args.allowed_sections;
     await supabase.from("profiles").update(profilePatch).eq("id", uid);
     await supabase.from("user_roles").delete().eq("user_id", uid);
     await supabase.from("user_roles").insert({ user_id: uid, role: validRole });
