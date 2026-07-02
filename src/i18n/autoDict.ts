@@ -442,13 +442,12 @@ export const ru: Record<string, string> = {
   "Confirm Password": "Подтвердите пароль",
   "Two-Factor Authentication": "Двухфакторная аутентификация",
   "Enable two-factor authentication for extra security": "Включите двухфакторную аутентификацию для дополнительной безопасности",
-  "Session Timeout": "Тайм-аут сессии",
   "Login Alerts": "Оповещения о входе",
   "Get notified of new sign-ins to your account": "Получать уведомления о новых входах в аккаунт",
   "Your security settings have been updated.": "Ваши настройки безопасности обновлены.",
 
   // Notifications
-  "Receive push notifications in your browser": "Получать push-уведомления в браузере",
+  "Manage your notification preferences": "Управляйте настройками уведомлений",
   "Manage your notification preferences": "Управляйте настройками уведомлений",
 
 }
