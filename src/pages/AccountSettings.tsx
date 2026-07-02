@@ -23,7 +23,7 @@ import { useTheme } from "next-themes"
 import { useAuth } from "@/context/AuthContext"
 import { supabase } from "@/integrations/supabase/client"
 import i18n from "@/i18n"
-import { formatDate } from '@/lib/date'
+import { formatDate, setDateFormat, setTimeFormat, getDateFormat, getTimeFormat, type DateFormat, type TimeFormat } from '@/lib/date'
 
 const AccountSettings = () => {
   const { t } = useTranslation()
@@ -44,7 +44,6 @@ const AccountSettings = () => {
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
     pushNotifications: false,
-    weeklyReports: true,
     systemAlerts: true,
   })
 
@@ -57,8 +56,8 @@ const AccountSettings = () => {
 
   const [preferences, setPreferences] = useState({
     language: "en",
-    dateFormat: "mm/dd/yyyy",
-    timeFormat: "12",
+    dateFormat: (typeof window !== 'undefined' ? getDateFormat() : 'dd/mmm/yyyy') as DateFormat,
+    timeFormat: (typeof window !== 'undefined' ? getTimeFormat() : '24') as TimeFormat,
   })
 
   const [pwOpen, setPwOpen] = useState(false)
@@ -156,6 +155,8 @@ const AccountSettings = () => {
         await supabase.from('profiles').update({ preferred_language: preferences.language } as never).eq('id', currentUser.id)
       }
     }
+    setDateFormat(preferences.dateFormat)
+    setTimeFormat(preferences.timeFormat)
     const { error } = await upsertSettings({ preferences })
     if (error) { toast({ title: 'Save failed', description: error.message, variant: 'destructive' }); return }
     toast({ title: 'Preferences Updated', description: 'Your preferences have been saved and applied.' })
@@ -459,21 +460,23 @@ const AccountSettings = () => {
 
                 <div className="space-y-2">
                   <Label>Date Format</Label>
-                  <Select value={preferences.dateFormat} onValueChange={(value) => setPreferences({ ...preferences, dateFormat: value })}>
+                  <Select value={preferences.dateFormat} onValueChange={(value) => setPreferences({ ...preferences, dateFormat: value as DateFormat })}>
                     <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="dd/mmm/yyyy">DD/MMM/YYYY</SelectItem>
                       <SelectItem value="mm/dd/yyyy">MM/DD/YYYY</SelectItem>
                       <SelectItem value="dd/mm/yyyy">DD/MM/YYYY</SelectItem>
                       <SelectItem value="yyyy-mm-dd">YYYY-MM-DD</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-sm text-muted-foreground">Preview: {formatDate(new Date(), preferences.dateFormat)}</p>
                 </div>
 
                 <Separator />
 
                 <div className="space-y-2">
                   <Label>Time Format</Label>
-                  <Select value={preferences.timeFormat} onValueChange={(value) => setPreferences({ ...preferences, timeFormat: value })}>
+                  <Select value={preferences.timeFormat} onValueChange={(value) => setPreferences({ ...preferences, timeFormat: value as TimeFormat })}>
                     <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="12">12-hour</SelectItem>
