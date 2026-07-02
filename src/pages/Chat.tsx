@@ -290,7 +290,7 @@ export default function Chat() {
       if (cancelled) return
       // Merge: keep any optimistic/realtime messages not yet in DB result
       setMessages(prev => {
-        const fetched = (data as Message[]) ?? []
+        const fetched = ((data ?? []) as any[]).map(r => ({ ...r, attachments: Array.isArray(r.attachments) ? r.attachments : [] })) as Message[]
         const ids = new Set(fetched.map(m => m.id))
         const extras = prev.filter(m => m.conversation_id === activeConvId && !ids.has(m.id))
         return [...fetched, ...extras]
