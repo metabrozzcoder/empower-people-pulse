@@ -1012,7 +1012,7 @@ export const uz: Record<string, string> = {
   "Planning": "Rejalashtirish", "Review": "Ko'rib chiqish", "Critical": "Muhim",
   "On Hold": "Kutilmoqda", "Paused": "To'xtatilgan", "Closed": "Yopilgan", "Todo": "Bajarish kerak",
   "Not provided": "Ko'rsatilmagan", "Not assigned": "Tayinlanmagan", "Unknown": "Noma'lum",
-  "Unassigned": "Tayinlanmagan", "Untitled": "Nomsiz", "Untitled group": "Nomsiz guruh",
+  "Untitled": "Nomsiz", "Untitled group": "Nomsiz guruh",
   "User": "Foydalanuvchi", "Enter": "Kiritish", "Escape": "Bekor qilish", "Signature": "Imzo",
 
   // Days & months short
