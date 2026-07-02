@@ -1008,6 +1008,94 @@ export const uz: Record<string, string> = {
   "you@company.com": "you@company.com",
   "· To": "· Ga",
 
+  // Status / states
+  "Planning": "Rejalashtirish", "Review": "Ko'rib chiqish", "Critical": "Muhim",
+  "On Hold": "Kutilmoqda", "Paused": "To'xtatilgan", "Closed": "Yopilgan", "Todo": "Bajarish kerak",
+  "Not provided": "Ko'rsatilmagan", "Not assigned": "Tayinlanmagan", "Unknown": "Noma'lum",
+  "Unassigned": "Tayinlanmagan", "Untitled": "Nomsiz", "Untitled group": "Nomsiz guruh",
+  "User": "Foydalanuvchi", "Enter": "Kiritish", "Escape": "Bekor qilish", "Signature": "Imzo",
+
+  // Days & months short
+  "Sun": "Yak", "Mon": "Dsh", "Tue": "Sesh", "Wed": "Chr", "Thu": "Psh", "Fri": "Jum", "Sat": "Sha",
+  "Jan": "Yan", "Feb": "Fev", "Mar": "Mar", "Apr": "Apr", "May": "May", "Jun": "Iyn",
+  "Jul": "Iyl", "Aug": "Avg", "Sep": "Sen", "Oct": "Okt", "Nov": "Noy", "Dec": "Dek",
+
+  // Roles
+  "Administrator": "Administrator", "Accountant": "Buxgalter",
+  "HR Manager": "HR menejer", "HR Department": "HR bo'limi", "HR Request": "HR so'rov",
+  "Software Engineer": "Dasturchi", "Product Manager": "Mahsulot menejeri",
+  "Designer": "Dizayner", "Sales Rep": "Sotuv menejeri", "Server Room": "Server xonasi",
+  "Main Entrance": "Asosiy kirish", "Executive Offices": "Rahbariyat xonalari",
+  "Fingerprint": "Barmoq izi", "Face": "Yuz",
+
+  // Payment / general
+  "Payment Commission": "To'lov komissiyasi", "Admin Approved": "Admin tasdiqlagan",
+  "Performance %": "Samaradorlik %",
+  "Notification": "Bildirishnoma", "Notifications enabled": "Bildirishnomalar yoqildi",
+  "New message": "Yangi xabar", "New": "Yangi", "Post": "Joylash", "Pinned": "Mahkamlangan",
+  "Draft saved": "Qoralama saqlandi",
+
+  // Announcements
+  "Announcements": "E'lonlar", "Official updates and messages": "Rasmiy yangiliklar va xabarlar",
+  "New announcement": "Yangi e'lon", "Announcement title": "E'lon sarlavhasi",
+  "Write your message…": "Xabaringizni yozing…", "Pin to top": "Yuqoriga mahkamlash",
+  "No announcements yet": "Hozircha e'lonlar yo'q", "Delete this announcement?": "Ushbu e'lon o'chirilsinmi?",
+  "This action cannot be undone.": "Ushbu amalni bekor qilib bo'lmaydi.",
+  "Announcement posted": "E'lon joylandi",
+
+  // Documents / editor
+  "Write your document…": "Hujjatingizni yozing…", "Bold": "Qalin", "Italic": "Kursiv",
+  "Strike": "Chizilgan", "Code": "Kod", "Bullet list": "Belgilangan ro'yxat",
+  "Ordered list": "Raqamli ro'yxat", "Quote": "Iqtibos", "Link": "Havola",
+  "Undo": "Bekor qilish", "Redo": "Qayta bajarish", "Type here…": "Bu yerga yozing…",
+  "Add text": "Matn qo'shish", "Pen": "Qalam", "Highlight": "Belgilash",
+  "Delete selected": "Tanlanganni o'chirish", "Clear page annotations": "Sahifa belgilarini tozalash",
+  "Rotate page": "Sahifani aylantirish", "Delete page": "Sahifani o'chirish",
+  "Permission denied": "Ruxsat berilmagan",
+
+  // Empty states
+  "No department data yet.": "Hozircha bo'lim ma'lumotlari yo'q.",
+  "No employees yet.": "Hozircha xodimlar yo'q.",
+  "No payroll data yet.": "Hozircha ish haqi ma'lumotlari yo'q.",
+  "No shooting requests yet.": "Hozircha suratga olish so'rovlari yo'q.",
+  "No hires recorded yet.": "Hozircha yollash yozuvlari yo'q.",
+  "No attendance records yet.": "Hozircha davomat yozuvlari yo'q.",
+  "No conversations yet": "Hozircha suhbatlar yo'q",
+  "Delete this conversation?": "Ushbu suhbatni o'chirasizmi?",
+  "Delete all conversations?": "Barcha suhbatlar o'chirilsinmi?",
+  "Clear all": "Barchasini tozalash",
+  "Security & Settings": "Xavfsizlik va sozlamalar",
+
+  // Recruitment
+  "Shortlist": "Qisqa ro'yxat", "LinkedIn": "LinkedIn", "Company Website": "Kompaniya sayti",
+  "Referrals": "Tavsiyalar", "Job Boards": "Ish e'lonlari saytlari",
+
+  // Uploads / async
+  "Uploading…": "Yuklanmoqda…", "Updating…": "Yangilanmoqda…",
+  "Passwords don't match": "Parollar mos kelmadi",
+  "system preference": "tizim sozlamalari",
+  "Receive push notifications in your browser": "Brauzerda push bildirishnomalarni qabul qilish",
+  "Receive important system alerts and updates": "Muhim tizim ogohlantirishlari va yangilanishlarini qabul qilish",
+  "Rule created": "Qoida yaratildi", "Rule updated": "Qoida yangilandi",
+
+  // Assistant
+  "New chat": "Yangi suhbat", "How can I help you today?": "Bugun sizga qanday yordam bera olaman?",
+  "Ask anything, get information, or have me do a task for you.": "Nimanidir so'rang, ma'lumot oling yoki men uchun vazifa bering.",
+  "Thinking…": "O'ylanyapti…", "Message AI Assistant…": "AI yordamchisiga xabar…",
+  "Voice input": "Ovozli kiritish", "Stop recording": "Yozishni to'xtatish",
+  "Voice input not supported": "Ovozli kiritish qo'llab-quvvatlanmaydi",
+  "Your browser doesn't support speech recognition. Try Chrome or Edge.": "Brauzeringiz nutqni tanib olishni qo'llab-quvvatlamaydi. Chrome yoki Edge dan foydalaning.",
+  "Voice error": "Ovoz xatosi", "Recognition failed": "Tanib olish muvaffaqiyatsiz",
+  "AI can make mistakes. Verify important info.": "AI xato qilishi mumkin. Muhim ma'lumotlarni tekshiring.",
+  "Write a professional email to a client": "Mijozga professional xat yozish",
+  "Summarize a long article I'll paste": "Men joylashtiradigan uzun maqolani qisqacha bayon qilish",
+  "Plan my week as an HR manager": "HR menejer sifatida haftamni rejalashtirish",
+  "Explain a complex topic simply": "Murakkab mavzuni oddiy tilda tushuntirish",
+
+  // Chat misc
+  "Someone": "Kimdir", "Caller": "Qo'ng'iroq qiluvchi",
+  "Send messages to your team in real time": "Jamoangizga real vaqt rejimida xabar yuboring",
+
 }
 
 
