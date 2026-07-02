@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/context/AuthContext'
 import { DollarSign } from 'lucide-react'
 
 interface DepartmentMember {
@@ -49,6 +50,8 @@ const mockDepartments: Department[] = []
 export default function Departments() {
   const { t } = useTranslation()
   const { toast } = useToast()
+  const { currentUser } = useAuth()
+  const isAdmin = currentUser?.role === 'Admin'
   const [departments, setDepartments] = useState<Department[]>(mockDepartments)
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -177,10 +180,12 @@ export default function Departments() {
           <h1 className="text-3xl font-bold">{t('pages.departments.title')}</h1>
           <p className="text-muted-foreground">{t('pages.departments.subtitle')}</p>
         </div>
-        <Button onClick={handleAddDepartment} className="flex items-center space-x-2">
-          <Plus className="w-4 h-4" />
-          <span>Add Department</span>
-        </Button>
+        {isAdmin && (
+          <Button onClick={handleAddDepartment} className="flex items-center space-x-2">
+            <Plus className="w-4 h-4" />
+            <span>Add Department</span>
+          </Button>
+        )}
       </div>
 
       <div className="flex items-center space-x-4">
@@ -211,30 +216,32 @@ export default function Departments() {
                     </Badge>
                   </div>
                 </div>
-                <div className="flex space-x-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleManageMembers(dept)}
-                    title="Manage Members"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEditDepartment(dept)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteDepartment(dept.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
+                {isAdmin && (
+                  <div className="flex space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleManageMembers(dept)}
+                      title="Manage Members"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditDepartment(dept)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteDepartment(dept.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">

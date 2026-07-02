@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/context/AuthContext'
 
 interface Organization {
   id: string
@@ -42,6 +43,8 @@ const emptyDept = { name: '', description: '', manager_id: '', manager_name: '',
 export default function Organizations() {
   const { t } = useTranslation()
   const { toast } = useToast()
+  const { currentUser } = useAuth()
+  const isAdmin = currentUser?.role === 'Admin'
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [profiles, setProfiles] = useState<ProfileLite[]>([])
@@ -186,27 +189,30 @@ export default function Organizations() {
           <h1 className="text-3xl font-bold">{t('pages.organizations.title')}</h1>
           <p className="text-muted-foreground">{t('pages.organizations.subtitle')}</p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setActiveOrgId(null)
-              setEditingDept(null)
-              setDeptForm({ ...emptyDept })
-              setIsDeptDialogOpen(true)
-            }}
-            className="flex items-center space-x-2"
-            disabled={organizations.length === 0}
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Department</span>
-          </Button>
-          <Button onClick={openCreateOrg} className="flex items-center space-x-2">
-            <Plus className="w-4 h-4" />
-            <span>Add Organization</span>
-          </Button>
-        </div>
+        {isAdmin && (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setActiveOrgId(null)
+                setEditingDept(null)
+                setDeptForm({ ...emptyDept })
+                setIsDeptDialogOpen(true)
+              }}
+              className="flex items-center space-x-2"
+              disabled={organizations.length === 0}
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Department</span>
+            </Button>
+            <Button onClick={openCreateOrg} className="flex items-center space-x-2">
+              <Plus className="w-4 h-4" />
+              <span>Add Organization</span>
+            </Button>
+          </div>
+        )}
       </div>
+
 
       <div className="flex items-center space-x-4">
         <div className="relative flex-1 max-w-sm">
@@ -252,13 +258,15 @@ export default function Organizations() {
                         <Badge variant={org.status === 'Active' ? 'default' : 'secondary'}>{org.status}</Badge>
                       </div>
                     </div>
-                    <div className="flex space-x-1">
-                      <Button variant="outline" size="sm" onClick={() => openCreateDept(org.id)}>
-                        <Plus className="w-4 h-4 mr-1" />Add Department
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => openEditOrg(org)}><Edit className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteOrganization(org.id)}><Trash2 className="w-4 h-4" /></Button>
-                    </div>
+                    {isAdmin && (
+                      <div className="flex space-x-1">
+                        <Button variant="outline" size="sm" onClick={() => openCreateDept(org.id)}>
+                          <Plus className="w-4 h-4 mr-1" />Add Department
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openEditOrg(org)}><Edit className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => deleteOrganization(org.id)}><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -296,10 +304,12 @@ export default function Organizations() {
                                     </Badge>
                                   </div>
                                 </div>
-                                <div className="flex space-x-1">
-                                  <Button variant="ghost" size="sm" onClick={() => openEditDept(dept)}><Edit className="w-3 h-3" /></Button>
-                                  <Button variant="ghost" size="sm" onClick={() => deleteDepartment(dept.id)}><Trash2 className="w-3 h-3" /></Button>
-                                </div>
+                                {isAdmin && (
+                                  <div className="flex space-x-1">
+                                    <Button variant="ghost" size="sm" onClick={() => openEditDept(dept)}><Edit className="w-3 h-3" /></Button>
+                                    <Button variant="ghost" size="sm" onClick={() => deleteDepartment(dept.id)}><Trash2 className="w-3 h-3" /></Button>
+                                  </div>
+                                )}
                               </div>
                             </CardHeader>
                             <CardContent className="space-y-1">
