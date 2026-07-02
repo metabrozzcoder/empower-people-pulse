@@ -273,7 +273,7 @@ const tools = [
     type: "function",
     function: {
       name: "create_user",
-      description: "Create a new workspace user (admin only). Only 'name' is required. Email and password are optional — if email is omitted, a placeholder is generated; if password is omitted, a random one is generated.",
+      description: "Create a new workspace user (admin only). Only 'name' is required. Email and password are optional. Pass 'organization' to assign the user to a company/branch (e.g. 'TJK'). Pass 'allowed_sections' to restrict which sidebar sections the user can access — if omitted, non-admins may see many sections by default, so always set it explicitly for employees/guests.",
       parameters: {
         type: "object",
         properties: {
@@ -282,6 +282,11 @@ const tools = [
           password: { type: "string", description: "Optional. Auto-generated if omitted." },
           role: { type: "string", enum: ["admin", "hr", "employee", "guest", "accountant"] },
           phone: { type: "string" }, department: { type: "string" }, position: { type: "string" },
+          organization: { type: "string", description: "Organization/branch name to assign (must match an existing organization, e.g. 'TJK')." },
+          allowed_sections: {
+            type: "array", items: { type: "string" },
+            description: "Sidebar sections the user may access. Valid values: Dashboard, Shooting Requests, Employees, Projects, Recruitment, Tasks, Scheduling, Attendance, Analytics, Organizations, Chat, User Management, Access Control, Role Management, Garage, Payment Commission, Assistant, Documentation.",
+          },
         },
         required: ["name"],
       },
