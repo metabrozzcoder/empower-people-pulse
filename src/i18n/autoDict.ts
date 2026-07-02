@@ -448,7 +448,6 @@ export const ru: Record<string, string> = {
 
   // Notifications
   "Manage your notification preferences": "Управляйте настройками уведомлений",
-  "Manage your notification preferences": "Управляйте настройками уведомлений",
 
 }
 
