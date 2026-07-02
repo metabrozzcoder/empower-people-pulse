@@ -678,7 +678,8 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     for (const k of ["name", "phone", "position", "department", "organization", "status"]) {
       if (args[k] !== undefined) patch[k] = args[k];
     }
-    const { data, error } = await supabase.from("profiles").update(patch).eq("id", args.user_id).select("id,name,phone,position,department,organization,status").single();
+    if (Array.isArray(args.allowed_sections)) patch.allowed_sections = args.allowed_sections;
+    const { data, error } = await supabase.from("profiles").update(patch).eq("id", args.user_id).select("id,name,phone,position,department,organization,status,allowed_sections").single();
     if (error) return { error: error.message };
     return { ok: true, profile: data };
   }
