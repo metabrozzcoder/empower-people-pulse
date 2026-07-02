@@ -56,8 +56,8 @@ const AccountSettings = () => {
 
   const [preferences, setPreferences] = useState({
     language: "en",
-    dateFormat: "mm/dd/yyyy",
-    timeFormat: "12",
+    dateFormat: (typeof window !== 'undefined' ? getDateFormat() : 'dd/mmm/yyyy') as DateFormat,
+    timeFormat: (typeof window !== 'undefined' ? getTimeFormat() : '24') as TimeFormat,
   })
 
   const [pwOpen, setPwOpen] = useState(false)
