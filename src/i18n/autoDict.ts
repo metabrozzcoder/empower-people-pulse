@@ -417,7 +417,23 @@ export const ru: Record<string, string> = {
   "Vehicle / driver": "Автомобиль / водитель",
   "Equipment provided": "Оборудование предоставлено", "Vehicle / driver info": "Информация об автомобиле / водителе",
 
+  // Account Settings
+  "Profile Information": "Информация профиля",
+  "Update your personal and professional information.": "Обновите вашу личную и профессиональную информацию.",
+  "Update your personal and professional information": "Обновите вашу личную и профессиональную информацию",
+  "Change Photo": "Изменить фото",
+  "Human Resources": "Отдел кадров",
+  "Engineering": "Инженерия",
+  "Marketing": "Маркетинг",
+  "Finance": "Финансы",
+  "Manage your account.": "Управление вашим аккаунтом.",
+  "Mountain Time (UTC-7)": "Горное время (UTC-7)",
+  "Central Time (UTC-6)": "Центральное время (UTC-6)",
+  "Eastern Time (UTC-5)": "Восточное время (UTC-5)",
+
 }
+
+
 
 
 export const uz: Record<string, string> = {
