@@ -281,7 +281,7 @@ const tools = [
           name: { type: "string" }, username: { type: "string" },
           password: { type: "string", description: "Optional. Auto-generated if omitted." },
           role: { type: "string", enum: ["admin", "hr", "employee", "guest", "accountant"] },
-          phone: { type: "string" }, department: { type: "string" }, position: { type: "string" },
+          phone: { type: "string" }, department: { type: "string" }, position: { type: "string" }, birthday: { type: "string", description: "Optional date of birth in YYYY-MM-DD format." },
           organization: { type: "string", description: "Organization/branch name to assign (must match an existing organization, e.g. 'TJK')." },
           allowed_sections: {
             type: "array", items: { type: "string" },
@@ -678,14 +678,32 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     const defaultSections = ROLE_DEFAULT_SECTIONS[validRole] ?? ROLE_DEFAULT_SECTIONS.employee;
 
     const profilePatch: any = {
-      name: args.name, phone: args.phone, department: args.department,
-      position: args.position, username,
+      id: uid,
+      name: args.name,
+      email,
+      phone: args.phone ?? null,
+      department: args.department ?? null,
+      position: args.position ?? null,
+      username,
+      birthday: args.birthday ?? null,
+      status: "Active",
       allowed_sections: Array.isArray(args.allowed_sections) ? args.allowed_sections : defaultSections,
     };
     if (args.organization !== undefined) profilePatch.organization = args.organization;
-    await supabase.from("profiles").update(profilePatch).eq("id", uid);
-    await supabase.from("user_roles").delete().eq("user_id", uid);
-    await supabase.from("user_roles").insert({ user_id: uid, role: validRole });
+    const { error: profileErr } = await supabase
+      .from("profiles")
+      .upsert(profilePatch, { onConflict: "id" });
+    if (profileErr) return { error: `Profile creation failed: ${profileErr.message}` };
+
+    const { error: roleDeleteErr } = await supabase.from("user_roles").delete().eq("user_id", uid);
+    if (roleDeleteErr) return { error: `Role reset failed: ${roleDeleteErr.message}` };
+    const { error: roleInsertErr } = await supabase.from("user_roles").insert({ user_id: uid, role: validRole });
+    if (roleInsertErr) return { error: `Role assignment failed: ${roleInsertErr.message}` };
+
+    const { error: credentialErr } = await supabase
+      .from("admin_user_credentials")
+      .upsert({ user_id: uid, generated_password: password }, { onConflict: "user_id" });
+    if (credentialErr) return { error: `Password record failed: ${credentialErr.message}` };
     return {
       ok: true,
       user: { id: uid, email, name: args.name, role: validRole, synthetic_email: syntheticEmail },
