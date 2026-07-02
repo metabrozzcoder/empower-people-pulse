@@ -99,7 +99,7 @@ function AppContent() {
               
               {/* Fully functional HR pages */}
               <Route path="/recruitment" element={<ProtectedRoute sectionName="Recruitment"><Recruitment /></ProtectedRoute>} />
-              <Route path="/tasks" element={<ProtectedRoute sectionName="Tasks"><Tasks /></ProtectedRoute>} />
+              <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
               <Route path="/scheduling" element={<ProtectedRoute sectionName="Scheduling"><Scheduling /></ProtectedRoute>} />
               <Route path="/attendance" element={<ProtectedRoute sectionName="Attendance"><Attendance /></ProtectedRoute>} />
               <Route path="/analytics" element={<ProtectedRoute sectionName="Analytics"><Analytics /></ProtectedRoute>} />
