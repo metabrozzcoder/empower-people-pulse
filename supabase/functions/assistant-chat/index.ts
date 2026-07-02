@@ -296,13 +296,14 @@ const tools = [
     type: "function",
     function: {
       name: "update_person",
-      description: "Update another user's profile (admin only).",
+      description: "Update another user's profile (admin only). Can also change organization and allowed sidebar sections.",
       parameters: {
         type: "object",
         properties: {
           user_id: { type: "string" }, name: { type: "string" }, phone: { type: "string" },
           position: { type: "string" }, department: { type: "string" }, organization: { type: "string" },
           status: { type: "string", enum: ["Active", "Inactive", "Pending"] },
+          allowed_sections: { type: "array", items: { type: "string" }, description: "Replaces the user's allowed sidebar sections." },
         },
         required: ["user_id"],
       },
