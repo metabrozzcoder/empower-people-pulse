@@ -9,7 +9,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   MessageSquare, Send, Search, Smile, Check, CheckCheck, Bell, BellOff,
-  Phone, Video, Plus, Users, UserPlus,
+  Phone, Video, Plus, Users, UserPlus, Paperclip, X, FileText, Download, Image as ImageIcon,
+  Film, Music, Loader2,
 } from 'lucide-react'
 import {
   Popover, PopoverContent, PopoverTrigger,

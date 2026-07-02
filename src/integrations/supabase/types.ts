@@ -545,6 +545,7 @@ export type Database = {
       messages: {
         Row: {
           archived: boolean
+          attachments: Json
           content: string
           conversation_id: string
           created_at: string
@@ -557,6 +558,7 @@ export type Database = {
         }
         Insert: {
           archived?: boolean
+          attachments?: Json
           content: string
           conversation_id: string
           created_at?: string
@@ -569,6 +571,7 @@ export type Database = {
         }
         Update: {
           archived?: boolean
+          attachments?: Json
           content?: string
           conversation_id?: string
           created_at?: string
