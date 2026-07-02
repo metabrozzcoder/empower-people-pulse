@@ -332,9 +332,9 @@ export default function ShootingRequests() {
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="inbox"><Inbox className="w-4 h-4 mr-2" />Inbox ({inbox.length})</TabsTrigger>
-          <TabsTrigger value="mine"><UserIcon className="w-4 h-4 mr-2" />My requests ({myRequests.length})</TabsTrigger>
-          <TabsTrigger value="all">All ({requests.length})</TabsTrigger>
+          <TabsTrigger value="inbox"><Inbox className="w-4 h-4 mr-2" />{t('Inbox')} ({inbox.length})</TabsTrigger>
+          <TabsTrigger value="mine"><UserIcon className="w-4 h-4 mr-2" />{t('My requests')} ({myRequests.length})</TabsTrigger>
+          <TabsTrigger value="all">{t('All')} ({requests.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="inbox" className="space-y-3 mt-4">
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : inbox.length === 0 ? (
