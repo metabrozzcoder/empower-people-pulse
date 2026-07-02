@@ -258,13 +258,15 @@ export default function Organizations() {
                         <Badge variant={org.status === 'Active' ? 'default' : 'secondary'}>{org.status}</Badge>
                       </div>
                     </div>
-                    <div className="flex space-x-1">
-                      <Button variant="outline" size="sm" onClick={() => openCreateDept(org.id)}>
-                        <Plus className="w-4 h-4 mr-1" />Add Department
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => openEditOrg(org)}><Edit className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteOrganization(org.id)}><Trash2 className="w-4 h-4" /></Button>
-                    </div>
+                    {isAdmin && (
+                      <div className="flex space-x-1">
+                        <Button variant="outline" size="sm" onClick={() => openCreateDept(org.id)}>
+                          <Plus className="w-4 h-4 mr-1" />Add Department
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openEditOrg(org)}><Edit className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => deleteOrganization(org.id)}><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
