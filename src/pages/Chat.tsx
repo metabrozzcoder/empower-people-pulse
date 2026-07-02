@@ -9,7 +9,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   MessageSquare, Send, Search, Smile, Check, CheckCheck, Bell, BellOff,
-  Phone, Video, Plus, Users, UserPlus,
+  Phone, Video, Plus, Users, UserPlus, Paperclip, X, FileText, Download, Image as ImageIcon,
+  Film, Music, Loader2,
 } from 'lucide-react'
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -38,6 +39,13 @@ interface ChatUser {
   unreadCount: number
 }
 
+interface Attachment {
+  path: string
+  name: string
+  size: number
+  type: string
+}
+
 interface Message {
   id: string
   conversation_id: string
@@ -45,6 +53,7 @@ interface Message {
   content: string
   created_at: string
   edited?: boolean
+  attachments?: Attachment[]
 }
 
 const EMOJIS = ['😊','😂','❤️','👍','🎉','🔥','🙏','👏','😍','🤔','😎','💯','✅','🚀','💡']
@@ -67,6 +76,10 @@ export default function Chat() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
   const [notifEnabled, setNotifEnabled] = useState(false)
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({})
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const selectedUserRef = useRef<ChatUser | null>(null)
   useEffect(() => { selectedUserRef.current = selectedUser }, [selectedUser])
@@ -270,14 +283,14 @@ export default function Chat() {
     ;(async () => {
       const { data } = await supabase
         .from('messages')
-        .select('id, conversation_id, sender_id, content, created_at, edited')
+        .select('id, conversation_id, sender_id, content, created_at, edited, attachments')
         .eq('conversation_id', activeConvId)
         .order('created_at', { ascending: true })
         .limit(500)
       if (cancelled) return
       // Merge: keep any optimistic/realtime messages not yet in DB result
       setMessages(prev => {
-        const fetched = (data as Message[]) ?? []
+        const fetched = ((data ?? []) as any[]).map(r => ({ ...r, attachments: Array.isArray(r.attachments) ? r.attachments : [] })) as Message[]
         const ids = new Set(fetched.map(m => m.id))
         const extras = prev.filter(m => m.conversation_id === activeConvId && !ids.has(m.id))
         return [...fetched, ...extras]
@@ -371,33 +384,111 @@ export default function Chat() {
   }, [users, selectedUser, selectedGroupId])
 
 
+  const uploadFilesToConv = async (convId: string, files: File[]): Promise<Attachment[]> => {
+    const uploaded: Attachment[] = []
+    for (const f of files) {
+      if (f.size > 50 * 1024 * 1024) {
+        toast({ title: 'File too large', description: `${f.name} exceeds 50MB`, variant: 'destructive' })
+        continue
+      }
+      const safeName = f.name.replace(/[^\w.\-]+/g, '_')
+      const path = `${convId}/${crypto.randomUUID()}-${safeName}`
+      const { error } = await supabase.storage.from('chat-attachments').upload(path, f, {
+        contentType: f.type || 'application/octet-stream',
+        upsert: false,
+      })
+      if (error) {
+        toast({ title: 'Upload failed', description: `${f.name}: ${error.message}`, variant: 'destructive' })
+        continue
+      }
+      uploaded.push({ path, name: f.name, size: f.size, type: f.type || 'application/octet-stream' })
+    }
+    return uploaded
+  }
+
   const handleSend = async () => {
-    if (!draft.trim() || !myId) return
+    if ((!draft.trim() && pendingFiles.length === 0) || !myId) return
     let convId: string | null = null
     if (selectedGroupId) convId = selectedGroupId
     else if (selectedUser) convId = await getOrCreateDm(selectedUser.id)
     if (!convId) return
     const content = draft.trim()
+    const filesToSend = pendingFiles
     setDraft('')
+    setPendingFiles([])
+    let attachments: Attachment[] = []
+    if (filesToSend.length > 0) {
+      setUploading(true)
+      attachments = await uploadFilesToConv(convId, filesToSend)
+      setUploading(false)
+      if (attachments.length === 0 && !content) return
+    }
     const { data, error } = await supabase
       .from('messages')
-      .insert({ conversation_id: convId, sender_id: myId, content })
-      .select('id, conversation_id, sender_id, content, created_at, edited')
+      .insert({ conversation_id: convId, sender_id: myId, content, attachments: attachments as any })
+      .select('id, conversation_id, sender_id, content, created_at, edited, attachments')
       .single()
     if (error) {
       toast({ title: 'Failed to send', description: error.message, variant: 'destructive' })
       setDraft(content)
+      setPendingFiles(filesToSend)
       return
     }
     if (data) {
-      setMessages(prev => prev.some(x => x.id === (data as any).id) ? prev : [...prev, data as Message])
+      const msg = { ...(data as any), attachments: Array.isArray((data as any).attachments) ? (data as any).attachments : [] } as Message
+      setMessages(prev => prev.some(x => x.id === msg.id) ? prev : [...prev, msg])
     }
   }
 
+  const getSignedUrl = useCallback(async (path: string): Promise<string | null> => {
+    if (signedUrls[path]) return signedUrls[path]
+    const { data } = await supabase.storage.from('chat-attachments').createSignedUrl(path, 3600)
+    if (data?.signedUrl) {
+      setSignedUrls(prev => ({ ...prev, [path]: data.signedUrl }))
+      return data.signedUrl
+    }
+    return null
+  }, [signedUrls])
+
+  // Pre-sign attachments in the current view
+  useEffect(() => {
+    const paths = messages.flatMap(m => (m.attachments ?? []).map(a => a.path)).filter(p => !signedUrls[p])
+    if (paths.length === 0) return
+    ;(async () => {
+      const entries: Record<string, string> = {}
+      for (const p of paths) {
+        const { data } = await supabase.storage.from('chat-attachments').createSignedUrl(p, 3600)
+        if (data?.signedUrl) entries[p] = data.signedUrl
+      }
+      if (Object.keys(entries).length) setSignedUrls(prev => ({ ...prev, ...entries }))
+    })()
+  }, [messages, signedUrls])
+
   const activeGroup = groups.find(g => g.id === selectedGroupId) || null
 
-
   const insertEmoji = (e: string) => setDraft(prev => prev + e)
+
+  const onFilesPicked = (files: FileList | null) => {
+    if (!files) return
+    const arr = Array.from(files).slice(0, 10)
+    setPendingFiles(prev => [...prev, ...arr].slice(0, 10))
+  }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const files = Array.from(e.clipboardData.files || [])
+    if (files.length) {
+      e.preventDefault()
+      setPendingFiles(prev => [...prev, ...files].slice(0, 10))
+    }
+  }
+
+  const fmtSize = (b: number) => b < 1024 ? `${b} B` : b < 1024*1024 ? `${(b/1024).toFixed(1)} KB` : `${(b/1024/1024).toFixed(1)} MB`
+  const fileIcon = (type: string) => {
+    if (type.startsWith('image/')) return <ImageIcon className="w-4 h-4" />
+    if (type.startsWith('video/')) return <Film className="w-4 h-4" />
+    if (type.startsWith('audio/')) return <Music className="w-4 h-4" />
+    return <FileText className="w-4 h-4" />
+  }
 
   return (
     <div className="space-y-6">
@@ -579,11 +670,51 @@ export default function Chat() {
                         )}
 
                         <div className={cn(
-                          'max-w-xs lg:max-w-md px-3 py-2 rounded-2xl shadow-sm',
+                          'max-w-xs lg:max-w-md px-3 py-2 rounded-2xl shadow-sm space-y-2',
                           mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm'
                         )}>
-                          <p className="whitespace-pre-wrap break-words text-sm">{m.content}</p>
-                          <div className="flex items-center gap-1 mt-1 justify-end">
+                          {(m.attachments ?? []).length > 0 && (
+                            <div className="space-y-2">
+                              {(m.attachments ?? []).map((a, i) => {
+                                const url = signedUrls[a.path]
+                                if (a.type.startsWith('image/') && url) {
+                                  return (
+                                    <a key={i} href={url} target="_blank" rel="noreferrer" className="block">
+                                      <img src={url} alt={a.name} className="rounded-lg max-h-64 object-cover" />
+                                    </a>
+                                  )
+                                }
+                                if (a.type.startsWith('video/') && url) {
+                                  return <video key={i} src={url} controls className="rounded-lg max-h-64 w-full" />
+                                }
+                                if (a.type.startsWith('audio/') && url) {
+                                  return <audio key={i} src={url} controls className="w-full" />
+                                }
+                                return (
+                                  <a
+                                    key={i}
+                                    href={url || '#'}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    download={a.name}
+                                    className={cn(
+                                      'flex items-center gap-2 p-2 rounded-lg border text-xs hover:opacity-90 transition',
+                                      mine ? 'border-primary-foreground/30 bg-primary-foreground/10' : 'bg-background/60 border-border'
+                                    )}
+                                  >
+                                    {fileIcon(a.type)}
+                                    <div className="flex-1 min-w-0">
+                                      <p className="truncate font-medium">{a.name}</p>
+                                      <p className="opacity-70">{fmtSize(a.size)}</p>
+                                    </div>
+                                    <Download className="w-3.5 h-3.5 opacity-70" />
+                                  </a>
+                                )
+                              })}
+                            </div>
+                          )}
+                          {m.content && <p className="whitespace-pre-wrap break-words text-sm">{m.content}</p>}
+                          <div className="flex items-center gap-1 justify-end">
                             <span className="text-[10px] opacity-70">{fmtTime(m.created_at)}</span>
                             {mine && <CheckCheck className="w-3.5 h-3.5 opacity-70" />}
                           </div>
@@ -596,8 +727,40 @@ export default function Chat() {
               </ScrollArea>
             </CardContent>
 
-            <div className="border-t p-3">
-              <div className="flex items-center gap-2">
+            <div className="border-t p-3 space-y-2">
+              {pendingFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {pendingFiles.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-accent rounded-lg pl-2 pr-1 py-1 text-xs">
+                      {fileIcon(f.type)}
+                      <span className="max-w-[160px] truncate">{f.name}</span>
+                      <span className="opacity-60">{fmtSize(f.size)}</span>
+                      <button
+                        className="p-1 hover:bg-background rounded"
+                        onClick={() => setPendingFiles(prev => prev.filter((_, j) => j !== i))}
+                        aria-label="Remove"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div
+                className="flex items-center gap-2"
+                onDragOver={(e) => { e.preventDefault() }}
+                onDrop={(e) => { e.preventDefault(); onFilesPicked(e.dataTransfer.files) }}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => { onFilesPicked(e.target.files); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                />
+                <Button variant="ghost" size="sm" title="Attach files" onClick={() => fileInputRef.current?.click()}>
+                  <Paperclip className="w-4 h-4" />
+                </Button>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="ghost" size="sm"><Smile className="w-4 h-4" /></Button>
@@ -614,14 +777,17 @@ export default function Chat() {
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
-                  placeholder="Type a message..."
+                  onPaste={handlePaste}
+                  placeholder={pendingFiles.length ? 'Add a caption...' : 'Type a message, drop files, or paste an image...'}
                   className="flex-1"
+                  disabled={uploading}
                 />
-                <Button onClick={handleSend} disabled={!draft.trim()}>
-                  <Send className="w-4 h-4" />
+                <Button onClick={handleSend} disabled={uploading || (!draft.trim() && pendingFiles.length === 0)}>
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
             </div>
+
           </Card>
         ) : (
           <Card className="flex-1 flex items-center justify-center">
