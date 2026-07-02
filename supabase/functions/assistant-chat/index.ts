@@ -273,7 +273,7 @@ const tools = [
     type: "function",
     function: {
       name: "create_user",
-      description: "Create a new workspace user (admin only). Only 'name' is required. Email and password are optional — if email is omitted, a placeholder is generated; if password is omitted, a random one is generated.",
+      description: "Create a new workspace user (admin only). Only 'name' is required. Email and password are optional. Pass 'organization' to assign the user to a company/branch (e.g. 'TJK'). Pass 'allowed_sections' to restrict which sidebar sections the user can access — if omitted, non-admins may see many sections by default, so always set it explicitly for employees/guests.",
       parameters: {
         type: "object",
         properties: {
@@ -282,6 +282,11 @@ const tools = [
           password: { type: "string", description: "Optional. Auto-generated if omitted." },
           role: { type: "string", enum: ["admin", "hr", "employee", "guest", "accountant"] },
           phone: { type: "string" }, department: { type: "string" }, position: { type: "string" },
+          organization: { type: "string", description: "Organization/branch name to assign (must match an existing organization, e.g. 'TJK')." },
+          allowed_sections: {
+            type: "array", items: { type: "string" },
+            description: "Sidebar sections the user may access. Valid values: Dashboard, Shooting Requests, Employees, Projects, Recruitment, Tasks, Scheduling, Attendance, Analytics, Organizations, Chat, User Management, Access Control, Role Management, Garage, Payment Commission, Assistant, Documentation.",
+          },
         },
         required: ["name"],
       },
@@ -291,13 +296,14 @@ const tools = [
     type: "function",
     function: {
       name: "update_person",
-      description: "Update another user's profile (admin only).",
+      description: "Update another user's profile (admin only). Can also change organization and allowed sidebar sections.",
       parameters: {
         type: "object",
         properties: {
           user_id: { type: "string" }, name: { type: "string" }, phone: { type: "string" },
           position: { type: "string" }, department: { type: "string" }, organization: { type: "string" },
           status: { type: "string", enum: ["Active", "Inactive", "Pending"] },
+          allowed_sections: { type: "array", items: { type: "string" }, description: "Replaces the user's allowed sidebar sections." },
         },
         required: ["user_id"],
       },
@@ -652,10 +658,13 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     } else {
       uid = created.user.id;
     }
-    await supabase.from("profiles").update({
+    const profilePatch: any = {
       name: args.name, phone: args.phone, department: args.department,
       position: args.position, username,
-    }).eq("id", uid);
+    };
+    if (args.organization !== undefined) profilePatch.organization = args.organization;
+    if (Array.isArray(args.allowed_sections)) profilePatch.allowed_sections = args.allowed_sections;
+    await supabase.from("profiles").update(profilePatch).eq("id", uid);
     await supabase.from("user_roles").delete().eq("user_id", uid);
     await supabase.from("user_roles").insert({ user_id: uid, role: validRole });
     return {
@@ -669,7 +678,8 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     for (const k of ["name", "phone", "position", "department", "organization", "status"]) {
       if (args[k] !== undefined) patch[k] = args[k];
     }
-    const { data, error } = await supabase.from("profiles").update(patch).eq("id", args.user_id).select("id,name,phone,position,department,organization,status").single();
+    if (Array.isArray(args.allowed_sections)) patch.allowed_sections = args.allowed_sections;
+    const { data, error } = await supabase.from("profiles").update(patch).eq("id", args.user_id).select("id,name,phone,position,department,organization,status,allowed_sections").single();
     if (error) return { error: error.message };
     return { ok: true, profile: data };
   }
