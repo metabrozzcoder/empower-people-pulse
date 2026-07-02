@@ -184,7 +184,137 @@
     "documentation": { "title": "Hujjatlar", "subtitle": "Bilimlar bazasi va hujjat pochta qutisi." },
     "settings": { "title": "Sozlamalar", "subtitle": "Ilova sozlamalari." },
     "profile": { "title": "Profil", "subtitle": "Shaxsiy ma'lumotlaringiz." },
-    "accountSettings": { "title": "Hisob sozlamalari", "subtitle": "Hisobingizni boshqaring." },
+    "accountSettings": {
+      "title": "Hisob sozlamalari",
+      "subtitle": "Hisobingizni boshqaring.",
+      "tabs": {
+        "profile": "Profil",
+        "notifications": "Bildirishnomalar",
+        "security": "Xavfsizlik",
+        "preferences": "Afzalliklar"
+      },
+      "profile": {
+        "title": "Profil ma'lumotlari",
+        "description": "Shaxsiy va kasbiy ma'lumotlaringizni yangilang.",
+        "changePhoto": "Rasmni o'zgartirish",
+        "uploading": "Yuklanmoqda…",
+        "photoHint": "JPG, PNG yoki GIF. Maks. hajm 2MB.",
+        "fullName": "To'liq ism",
+        "email": "Email",
+        "phone": "Telefon",
+        "department": "Bo'lim",
+        "role": "Rol",
+        "timezone": "Vaqt mintaqasi",
+        "saveChanges": "O'zgarishlarni saqlash",
+        "departments": {
+          "humanResources": "Kadrlar bo'limi",
+          "engineering": "Muhandislik",
+          "marketing": "Marketing",
+          "sales": "Savdo",
+          "finance": "Moliya"
+        },
+        "timezones": {
+          "pacific": "Tinch okeani vaqti (UTC-8)",
+          "mountain": "Tog' vaqti (UTC-7)",
+          "central": "Markaziy vaqt (UTC-6)",
+          "eastern": "Sharqiy vaqt (UTC-5)"
+        }
+      },
+      "notifications": {
+        "title": "Bildirishnoma sozlamalari",
+        "description": "Muhim yangilanishlar haqida qanday xabardor bo'lishni tanlang.",
+        "email": "Email bildirishnomalari",
+        "emailDesc": "Bildirishnomalarni email orqali olish",
+        "push": "Push bildirishnomalari",
+        "pushDesc": "Brauzeringizda push bildirishnomalarini olish",
+        "systemAlerts": "Tizim ogohlantirishlari",
+        "systemAlertsDesc": "Muhim tizim ogohlantirishlari va yangilanishlarni olish",
+        "savePreferences": "Afzalliklarni saqlash"
+      },
+      "security": {
+        "title": "Xavfsizlik sozlamalari",
+        "description": "Hisob xavfsizligi va autentifikatsiya afzalliklarini boshqaring.",
+        "sessionTimeout": "Sessiya tugash vaqti (daqiqa)",
+        "password": "Parol",
+        "changePassword": "Parolni o'zgartirish",
+        "lastChanged": "Oxirgi o'zgarish: {{date}}",
+        "never": "Hech qachon",
+        "saveSecurity": "Xavfsizlik sozlamalarini saqlash",
+        "timeOptions": {
+          "15": "15 daqiqa",
+          "30": "30 daqiqa",
+          "60": "1 soat",
+          "120": "2 soat"
+        }
+      },
+      "preferences": {
+        "title": "Ilova afzalliklari",
+        "description": "Ilova tajribasi va ko'rinishini sozlang.",
+        "theme": "Mavzu",
+        "themeHint": "O'zingiz xohlagan mavzuni tanlang yoki tizim sozlamalariga amal qiling",
+        "language": "Til",
+        "dateFormat": "Sana formati",
+        "preview": "Oldindan ko'rish: {{date}}",
+        "timeFormat": "Vaqt formati",
+        "savePreferences": "Afzalliklarni saqlash",
+        "systemPreference": "tizim afzalligi",
+        "themeOptions": {
+          "light": "Yorug'",
+          "dark": "Qorong'i",
+          "system": "Tizim"
+        },
+        "timeOptions": {
+          "12": "12 soatlik",
+          "24": "24 soatlik"
+        }
+      },
+      "passwordDialog": {
+        "title": "Parolni o'zgartirish",
+        "description": "Kamida 8 belgidan iborat, bosh harf va raqamni o'z ichiga olgan kuchli parol tanlang.",
+        "newPassword": "Yangi parol",
+        "confirmNewPassword": "Yangi parolni tasdiqlang",
+        "placeholder": "Kamida 8 belgi",
+        "repeatPlaceholder": "Yangi parolni takrorlang",
+        "toggleVisibility": "Parol ko'rinishini almashtirish",
+        "cancel": "Bekor qilish",
+        "updating": "Yangilanmoqda…",
+        "updatePassword": "Parolni yangilash"
+      },
+      "toasts": {
+        "notSignedIn": "Tizimga kirilmagan",
+        "signInAgain": "Iltimos, qayta kiring.",
+        "nameRequired": "Ism talab qilinadi",
+        "saveFailed": "Saqlash muvaffaqiyatsiz tugadi",
+        "profileUpdated": "Profil yangilandi",
+        "profileUpdatedDesc": "Profilingiz muvaffaqiyatli yangilandi.",
+        "notificationsUpdated": "Bildirishnomalar yangilandi",
+        "notificationsUpdatedDesc": "Bildirishnoma afzalliklaringiz saqlandi.",
+        "securityUpdated": "Xavfsizlik sozlamalari yangilandi",
+        "securityUpdatedDesc": "Xavfsizlik sozlamalaringiz yangilandi.",
+        "preferencesUpdated": "Afzalliklar yangilandi",
+        "preferencesUpdatedDesc": "Afzalliklaringiz saqlandi va qo'llandi.",
+        "fileTooLarge": "Fayl juda katta",
+        "fileTooLargeDesc": "2MB dan kichik rasm tanlang.",
+        "invalidFile": "Noto'g'ri fayl",
+        "invalidFileDesc": "Rasm faylini tanlang.",
+        "photoUpdated": "Rasm yangilandi",
+        "photoUpdatedDesc": "Profil rasmingiz muvaffaqiyatli yangilandi.",
+        "uploadFailed": "Yuklash muvaffaqiyatsiz tugadi",
+        "themeChanged": "Mavzu o'zgartirildi",
+        "themeChangedDesc": "Mavzu {{theme}} ga o'zgartirildi.",
+        "missingFields": "Maydonlar to'ldirilmagan",
+        "passwordFieldsRequired": "Barcha parol maydonlari majburiy.",
+        "passwordTooShort": "Parol juda qisqa",
+        "useAtLeast8": "Kamida 8 belgidan foydalaning.",
+        "weakPassword": "Zaif parol",
+        "includeUppercaseNumber": "Kamida bitta bosh harf va bitta raqam kiriting.",
+        "passwordsDontMatch": "Parollar mos emas",
+        "passwordsDontMatchDesc": "Yangi parol va tasdiqlash mos kelishi kerak.",
+        "passwordUpdateFailed": "Parolni yangilab bo'lmadi",
+        "passwordChanged": "Parol o'zgartirildi",
+        "passwordChangedDesc": "Parolingiz muvaffaqiyatli yangilandi."
+      }
+    },
     "shootingRequests": { "title": "Suratga olish so'rovlari", "subtitle": "Media suratga olish so'rovlarini boshqaring." },
     "recruitment": { "title": "AI yordamida ishga qabul", "subtitle": "Aqlli nomzodlarni tanlash bilan ishga qabul jarayonini optimallashtiring." },
     "garage": {

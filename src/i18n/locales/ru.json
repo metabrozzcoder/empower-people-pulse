@@ -184,7 +184,137 @@
     "documentation": { "title": "Документация", "subtitle": "База знаний и почтовый ящик документов." },
     "settings": { "title": "Настройки", "subtitle": "Настройки приложения." },
     "profile": { "title": "Профиль", "subtitle": "Ваша личная информация." },
-    "accountSettings": { "title": "Настройки аккаунта", "subtitle": "Управление вашим аккаунтом." },
+    "accountSettings": {
+      "title": "Настройки аккаунта",
+      "subtitle": "Управление вашим аккаунтом.",
+      "tabs": {
+        "profile": "Профиль",
+        "notifications": "Уведомления",
+        "security": "Безопасность",
+        "preferences": "Предпочтения"
+      },
+      "profile": {
+        "title": "Информация профиля",
+        "description": "Обновите вашу личную и профессиональную информацию.",
+        "changePhoto": "Изменить фото",
+        "uploading": "Загрузка…",
+        "photoHint": "JPG, PNG или GIF. Макс. 2 МБ.",
+        "fullName": "Полное имя",
+        "email": "Email",
+        "phone": "Телефон",
+        "department": "Отдел",
+        "role": "Роль",
+        "timezone": "Часовой пояс",
+        "saveChanges": "Сохранить изменения",
+        "departments": {
+          "humanResources": "Отдел кадров",
+          "engineering": "Инженерия",
+          "marketing": "Маркетинг",
+          "sales": "Продажи",
+          "finance": "Финансы"
+        },
+        "timezones": {
+          "pacific": "Тихоокеанское время (UTC-8)",
+          "mountain": "Горное время (UTC-7)",
+          "central": "Центральное время (UTC-6)",
+          "eastern": "Восточное время (UTC-5)"
+        }
+      },
+      "notifications": {
+        "title": "Настройки уведомлений",
+        "description": "Выберите, как получать уведомления о важных обновлениях.",
+        "email": "Email-уведомления",
+        "emailDesc": "Получать уведомления по email",
+        "push": "Push-уведомления",
+        "pushDesc": "Получать push-уведомления в браузере",
+        "systemAlerts": "Системные оповещения",
+        "systemAlertsDesc": "Получать важные системные оповещения и обновления",
+        "savePreferences": "Сохранить предпочтения"
+      },
+      "security": {
+        "title": "Настройки безопасности",
+        "description": "Управляйте безопасностью аккаунта и параметрами аутентификации.",
+        "sessionTimeout": "Тайм-аут сессии (минуты)",
+        "password": "Пароль",
+        "changePassword": "Изменить пароль",
+        "lastChanged": "Последнее изменение: {{date}}",
+        "never": "Никогда",
+        "saveSecurity": "Сохранить настройки безопасности",
+        "timeOptions": {
+          "15": "15 минут",
+          "30": "30 минут",
+          "60": "1 час",
+          "120": "2 часа"
+        }
+      },
+      "preferences": {
+        "title": "Настройки приложения",
+        "description": "Настройте внешний вид и работу приложения.",
+        "theme": "Тема",
+        "themeHint": "Выберите тему или используйте системные настройки",
+        "language": "Язык",
+        "dateFormat": "Формат даты",
+        "preview": "Предпросмотр: {{date}}",
+        "timeFormat": "Формат времени",
+        "savePreferences": "Сохранить предпочтения",
+        "systemPreference": "системные настройки",
+        "themeOptions": {
+          "light": "Светлая",
+          "dark": "Тёмная",
+          "system": "Системная"
+        },
+        "timeOptions": {
+          "12": "12-часовой",
+          "24": "24-часовой"
+        }
+      },
+      "passwordDialog": {
+        "title": "Изменить пароль",
+        "description": "Выберите надёжный пароль минимум из 8 символов, включая заглавную букву и цифру.",
+        "newPassword": "Новый пароль",
+        "confirmNewPassword": "Подтвердите новый пароль",
+        "placeholder": "Не менее 8 символов",
+        "repeatPlaceholder": "Повторите новый пароль",
+        "toggleVisibility": "Показать или скрыть пароль",
+        "cancel": "Отмена",
+        "updating": "Обновление…",
+        "updatePassword": "Обновить пароль"
+      },
+      "toasts": {
+        "notSignedIn": "Вход не выполнен",
+        "signInAgain": "Пожалуйста, войдите снова.",
+        "nameRequired": "Требуется имя",
+        "saveFailed": "Не удалось сохранить",
+        "profileUpdated": "Профиль обновлён",
+        "profileUpdatedDesc": "Ваш профиль успешно обновлён.",
+        "notificationsUpdated": "Уведомления обновлены",
+        "notificationsUpdatedDesc": "Настройки уведомлений сохранены.",
+        "securityUpdated": "Настройки безопасности обновлены",
+        "securityUpdatedDesc": "Ваши настройки безопасности обновлены.",
+        "preferencesUpdated": "Предпочтения обновлены",
+        "preferencesUpdatedDesc": "Ваши предпочтения сохранены и применены.",
+        "fileTooLarge": "Файл слишком большой",
+        "fileTooLargeDesc": "Выберите изображение меньше 2 МБ.",
+        "invalidFile": "Неверный файл",
+        "invalidFileDesc": "Выберите файл изображения.",
+        "photoUpdated": "Фото обновлено",
+        "photoUpdatedDesc": "Фото профиля успешно обновлено.",
+        "uploadFailed": "Ошибка загрузки",
+        "themeChanged": "Тема изменена",
+        "themeChangedDesc": "Тема изменена на {{theme}}.",
+        "missingFields": "Заполните поля",
+        "passwordFieldsRequired": "Все поля пароля обязательны.",
+        "passwordTooShort": "Пароль слишком короткий",
+        "useAtLeast8": "Используйте не менее 8 символов.",
+        "weakPassword": "Слабый пароль",
+        "includeUppercaseNumber": "Добавьте хотя бы одну заглавную букву и одну цифру.",
+        "passwordsDontMatch": "Пароли не совпадают",
+        "passwordsDontMatchDesc": "Новый пароль и подтверждение должны совпадать.",
+        "passwordUpdateFailed": "Не удалось обновить пароль",
+        "passwordChanged": "Пароль изменён",
+        "passwordChangedDesc": "Ваш пароль успешно обновлён."
+      }
+    },
     "shootingRequests": { "title": "Заявки на съёмку", "subtitle": "Управление заявками на съёмку." },
     "recruitment": { "title": "Рекрутинг с ИИ", "subtitle": "Оптимизируйте процесс найма с интеллектуальным отбором кандидатов." },
     "garage": {

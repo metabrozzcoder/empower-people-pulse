@@ -184,7 +184,137 @@
     "documentation": { "title": "Documentation", "subtitle": "Knowledge base and document mailbox." },
     "settings": { "title": "Settings", "subtitle": "Application preferences." },
     "profile": { "title": "Profile", "subtitle": "Your personal information." },
-    "accountSettings": { "title": "Account Settings", "subtitle": "Manage your account." },
+    "accountSettings": {
+      "title": "Account Settings",
+      "subtitle": "Manage your account.",
+      "tabs": {
+        "profile": "Profile",
+        "notifications": "Notifications",
+        "security": "Security",
+        "preferences": "Preferences"
+      },
+      "profile": {
+        "title": "Profile Information",
+        "description": "Update your personal and professional information.",
+        "changePhoto": "Change Photo",
+        "uploading": "Uploading…",
+        "photoHint": "JPG, PNG or GIF. Max size 2MB.",
+        "fullName": "Full Name",
+        "email": "Email",
+        "phone": "Phone",
+        "department": "Department",
+        "role": "Role",
+        "timezone": "Timezone",
+        "saveChanges": "Save Changes",
+        "departments": {
+          "humanResources": "Human Resources",
+          "engineering": "Engineering",
+          "marketing": "Marketing",
+          "sales": "Sales",
+          "finance": "Finance"
+        },
+        "timezones": {
+          "pacific": "Pacific Time (UTC-8)",
+          "mountain": "Mountain Time (UTC-7)",
+          "central": "Central Time (UTC-6)",
+          "eastern": "Eastern Time (UTC-5)"
+        }
+      },
+      "notifications": {
+        "title": "Notification Preferences",
+        "description": "Choose how you want to be notified about important updates.",
+        "email": "Email Notifications",
+        "emailDesc": "Receive notifications via email",
+        "push": "Push Notifications",
+        "pushDesc": "Receive push notifications in your browser",
+        "systemAlerts": "System Alerts",
+        "systemAlertsDesc": "Receive important system alerts and updates",
+        "savePreferences": "Save Preferences"
+      },
+      "security": {
+        "title": "Security Settings",
+        "description": "Manage your account security and authentication preferences.",
+        "sessionTimeout": "Session Timeout (minutes)",
+        "password": "Password",
+        "changePassword": "Change Password",
+        "lastChanged": "Last changed: {{date}}",
+        "never": "Never",
+        "saveSecurity": "Save Security Settings",
+        "timeOptions": {
+          "15": "15 minutes",
+          "30": "30 minutes",
+          "60": "1 hour",
+          "120": "2 hours"
+        }
+      },
+      "preferences": {
+        "title": "Application Preferences",
+        "description": "Customize your application experience and appearance.",
+        "theme": "Theme",
+        "themeHint": "Choose your preferred theme or follow system settings",
+        "language": "Language",
+        "dateFormat": "Date Format",
+        "preview": "Preview: {{date}}",
+        "timeFormat": "Time Format",
+        "savePreferences": "Save Preferences",
+        "systemPreference": "system preference",
+        "themeOptions": {
+          "light": "Light",
+          "dark": "Dark",
+          "system": "System"
+        },
+        "timeOptions": {
+          "12": "12-hour",
+          "24": "24-hour"
+        }
+      },
+      "passwordDialog": {
+        "title": "Change Password",
+        "description": "Choose a strong password with at least 8 characters, including an uppercase letter and a number.",
+        "newPassword": "New Password",
+        "confirmNewPassword": "Confirm New Password",
+        "placeholder": "At least 8 characters",
+        "repeatPlaceholder": "Repeat new password",
+        "toggleVisibility": "Toggle password visibility",
+        "cancel": "Cancel",
+        "updating": "Updating…",
+        "updatePassword": "Update Password"
+      },
+      "toasts": {
+        "notSignedIn": "Not signed in",
+        "signInAgain": "Please sign in again.",
+        "nameRequired": "Name required",
+        "saveFailed": "Save failed",
+        "profileUpdated": "Profile Updated",
+        "profileUpdatedDesc": "Your profile has been successfully updated.",
+        "notificationsUpdated": "Notifications Updated",
+        "notificationsUpdatedDesc": "Your notification preferences have been saved.",
+        "securityUpdated": "Security Settings Updated",
+        "securityUpdatedDesc": "Your security settings have been updated.",
+        "preferencesUpdated": "Preferences Updated",
+        "preferencesUpdatedDesc": "Your preferences have been saved and applied.",
+        "fileTooLarge": "File too large",
+        "fileTooLargeDesc": "Please select an image smaller than 2MB.",
+        "invalidFile": "Invalid file",
+        "invalidFileDesc": "Please select an image file.",
+        "photoUpdated": "Photo Updated",
+        "photoUpdatedDesc": "Your profile photo has been updated successfully.",
+        "uploadFailed": "Upload failed",
+        "themeChanged": "Theme Changed",
+        "themeChangedDesc": "Theme has been changed to {{theme}}.",
+        "missingFields": "Missing fields",
+        "passwordFieldsRequired": "All password fields are required.",
+        "passwordTooShort": "Password too short",
+        "useAtLeast8": "Use at least 8 characters.",
+        "weakPassword": "Weak password",
+        "includeUppercaseNumber": "Include at least one uppercase letter and one number.",
+        "passwordsDontMatch": "Passwords don't match",
+        "passwordsDontMatchDesc": "New password and confirmation must match.",
+        "passwordUpdateFailed": "Password update failed",
+        "passwordChanged": "Password Changed",
+        "passwordChangedDesc": "Your password has been updated successfully."
+      }
+    },
     "shootingRequests": { "title": "Shooting Requests", "subtitle": "Manage media shooting requests." },
     "recruitment": { "title": "AI-Powered Recruitment", "subtitle": "Streamline your hiring process with intelligent candidate screening and comprehensive management." },
     "garage": {
