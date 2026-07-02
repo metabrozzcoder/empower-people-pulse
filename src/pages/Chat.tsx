@@ -384,33 +384,111 @@ export default function Chat() {
   }, [users, selectedUser, selectedGroupId])
 
 
+  const uploadFilesToConv = async (convId: string, files: File[]): Promise<Attachment[]> => {
+    const uploaded: Attachment[] = []
+    for (const f of files) {
+      if (f.size > 50 * 1024 * 1024) {
+        toast({ title: 'File too large', description: `${f.name} exceeds 50MB`, variant: 'destructive' })
+        continue
+      }
+      const safeName = f.name.replace(/[^\w.\-]+/g, '_')
+      const path = `${convId}/${crypto.randomUUID()}-${safeName}`
+      const { error } = await supabase.storage.from('chat-attachments').upload(path, f, {
+        contentType: f.type || 'application/octet-stream',
+        upsert: false,
+      })
+      if (error) {
+        toast({ title: 'Upload failed', description: `${f.name}: ${error.message}`, variant: 'destructive' })
+        continue
+      }
+      uploaded.push({ path, name: f.name, size: f.size, type: f.type || 'application/octet-stream' })
+    }
+    return uploaded
+  }
+
   const handleSend = async () => {
-    if (!draft.trim() || !myId) return
+    if ((!draft.trim() && pendingFiles.length === 0) || !myId) return
     let convId: string | null = null
     if (selectedGroupId) convId = selectedGroupId
     else if (selectedUser) convId = await getOrCreateDm(selectedUser.id)
     if (!convId) return
     const content = draft.trim()
+    const filesToSend = pendingFiles
     setDraft('')
+    setPendingFiles([])
+    let attachments: Attachment[] = []
+    if (filesToSend.length > 0) {
+      setUploading(true)
+      attachments = await uploadFilesToConv(convId, filesToSend)
+      setUploading(false)
+      if (attachments.length === 0 && !content) return
+    }
     const { data, error } = await supabase
       .from('messages')
-      .insert({ conversation_id: convId, sender_id: myId, content })
-      .select('id, conversation_id, sender_id, content, created_at, edited')
+      .insert({ conversation_id: convId, sender_id: myId, content, attachments: attachments as any })
+      .select('id, conversation_id, sender_id, content, created_at, edited, attachments')
       .single()
     if (error) {
       toast({ title: 'Failed to send', description: error.message, variant: 'destructive' })
       setDraft(content)
+      setPendingFiles(filesToSend)
       return
     }
     if (data) {
-      setMessages(prev => prev.some(x => x.id === (data as any).id) ? prev : [...prev, data as Message])
+      const msg = { ...(data as any), attachments: Array.isArray((data as any).attachments) ? (data as any).attachments : [] } as Message
+      setMessages(prev => prev.some(x => x.id === msg.id) ? prev : [...prev, msg])
     }
   }
 
+  const getSignedUrl = useCallback(async (path: string): Promise<string | null> => {
+    if (signedUrls[path]) return signedUrls[path]
+    const { data } = await supabase.storage.from('chat-attachments').createSignedUrl(path, 3600)
+    if (data?.signedUrl) {
+      setSignedUrls(prev => ({ ...prev, [path]: data.signedUrl }))
+      return data.signedUrl
+    }
+    return null
+  }, [signedUrls])
+
+  // Pre-sign attachments in the current view
+  useEffect(() => {
+    const paths = messages.flatMap(m => (m.attachments ?? []).map(a => a.path)).filter(p => !signedUrls[p])
+    if (paths.length === 0) return
+    ;(async () => {
+      const entries: Record<string, string> = {}
+      for (const p of paths) {
+        const { data } = await supabase.storage.from('chat-attachments').createSignedUrl(p, 3600)
+        if (data?.signedUrl) entries[p] = data.signedUrl
+      }
+      if (Object.keys(entries).length) setSignedUrls(prev => ({ ...prev, ...entries }))
+    })()
+  }, [messages, signedUrls])
+
   const activeGroup = groups.find(g => g.id === selectedGroupId) || null
 
-
   const insertEmoji = (e: string) => setDraft(prev => prev + e)
+
+  const onFilesPicked = (files: FileList | null) => {
+    if (!files) return
+    const arr = Array.from(files).slice(0, 10)
+    setPendingFiles(prev => [...prev, ...arr].slice(0, 10))
+  }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const files = Array.from(e.clipboardData.files || [])
+    if (files.length) {
+      e.preventDefault()
+      setPendingFiles(prev => [...prev, ...files].slice(0, 10))
+    }
+  }
+
+  const fmtSize = (b: number) => b < 1024 ? `${b} B` : b < 1024*1024 ? `${(b/1024).toFixed(1)} KB` : `${(b/1024/1024).toFixed(1)} MB`
+  const fileIcon = (type: string) => {
+    if (type.startsWith('image/')) return <ImageIcon className="w-4 h-4" />
+    if (type.startsWith('video/')) return <Film className="w-4 h-4" />
+    if (type.startsWith('audio/')) return <Music className="w-4 h-4" />
+    return <FileText className="w-4 h-4" />
+  }
 
   return (
     <div className="space-y-6">
