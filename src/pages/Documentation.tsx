@@ -194,6 +194,12 @@ export default function Documentation() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => {
         loadDocs()
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        loadAssigners()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_roles' }, () => {
+        loadAssigners()
+      })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
