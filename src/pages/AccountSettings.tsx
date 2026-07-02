@@ -155,6 +155,8 @@ const AccountSettings = () => {
         await supabase.from('profiles').update({ preferred_language: preferences.language } as never).eq('id', currentUser.id)
       }
     }
+    setDateFormat(preferences.dateFormat)
+    setTimeFormat(preferences.timeFormat)
     const { error } = await upsertSettings({ preferences })
     if (error) { toast({ title: 'Save failed', description: error.message, variant: 'destructive' }); return }
     toast({ title: 'Preferences Updated', description: 'Your preferences have been saved and applied.' })
