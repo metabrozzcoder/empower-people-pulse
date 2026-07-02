@@ -191,6 +191,94 @@ export const ru: Record<string, string> = {
   "Document approved": "Документ одобрен", "Document rejected": "Документ отклонён",
   "Urgent": "Срочно", "Normal": "Обычный",
 
+  // Status / states
+  "Planning": "Планирование", "Review": "Проверка", "Critical": "Критический",
+  "On Hold": "Приостановлено", "Paused": "Пауза", "Closed": "Закрыто", "Todo": "К выполнению",
+  "Not provided": "Не указано", "Not assigned": "Не назначено", "Unknown": "Неизвестно",
+  "Unassigned": "Не назначено", "Untitled": "Без названия", "Untitled group": "Группа без названия",
+  "User": "Пользователь", "Enter": "Ввод", "Escape": "Отмена", "Signature": "Подпись",
+
+  // Days & months short
+  "Sun": "Вс", "Mon": "Пн", "Tue": "Вт", "Wed": "Ср", "Thu": "Чт", "Fri": "Пт", "Sat": "Сб",
+  "Jan": "Янв", "Feb": "Фев", "Mar": "Мар", "Apr": "Апр", "May": "Май", "Jun": "Июн",
+  "Jul": "Июл", "Aug": "Авг", "Sep": "Сен", "Oct": "Окт", "Nov": "Ноя", "Dec": "Дек",
+
+  // Roles
+  "Administrator": "Администратор", "Accountant": "Бухгалтер",
+  "HR Manager": "HR менеджер", "HR Department": "Отдел HR", "HR Request": "HR запрос",
+  "Software Engineer": "Программист", "Product Manager": "Продукт менеджер",
+  "Designer": "Дизайнер", "Sales Rep": "Менеджер по продажам", "Server Room": "Серверная",
+  "Main Entrance": "Главный вход", "Executive Offices": "Кабинеты руководства",
+  "Fingerprint": "Отпечаток пальца", "Face": "Лицо",
+
+  // Payment / general
+  "Payment Commission": "Платёжная комиссия", "Admin Approved": "Одобрено админом",
+  "Performance %": "Эффективность %",
+  "Notification": "Уведомление", "Notifications enabled": "Уведомления включены",
+  "New message": "Новое сообщение", "New": "Новое", "Post": "Опубликовать", "Pinned": "Закреплено",
+  "Draft saved": "Черновик сохранён",
+
+  // Announcements
+  "Announcements": "Объявления", "Official updates and messages": "Официальные обновления и сообщения",
+  "New announcement": "Новое объявление", "Announcement title": "Заголовок объявления",
+  "Write your message…": "Напишите ваше сообщение…", "Pin to top": "Закрепить сверху",
+  "No announcements yet": "Пока нет объявлений", "Delete this announcement?": "Удалить это объявление?",
+  "This action cannot be undone.": "Это действие нельзя отменить.",
+  "Announcement posted": "Объявление опубликовано",
+
+  // Documents / editor
+  "Write your document…": "Напишите ваш документ…", "Bold": "Жирный", "Italic": "Курсив",
+  "Strike": "Зачёркнутый", "Code": "Код", "Bullet list": "Маркированный список",
+  "Ordered list": "Нумерованный список", "Quote": "Цитата", "Link": "Ссылка",
+  "Undo": "Отменить", "Redo": "Повторить", "Type here…": "Введите здесь…",
+  "Add text": "Добавить текст", "Pen": "Ручка", "Highlight": "Выделение",
+  "Delete selected": "Удалить выбранное", "Clear page annotations": "Очистить пометки страницы",
+  "Rotate page": "Повернуть страницу", "Delete page": "Удалить страницу",
+  "Permission denied": "Доступ запрещён",
+
+  // Empty states / feedback
+  "No department data yet.": "Пока нет данных по отделам.",
+  "No employees yet.": "Пока нет сотрудников.",
+  "No payroll data yet.": "Пока нет данных по зарплате.",
+  "No shooting requests yet.": "Пока нет заявок на съёмку.",
+  "No hires recorded yet.": "Пока нет записей о найме.",
+  "No attendance records yet.": "Пока нет записей о посещаемости.",
+  "No conversations yet": "Пока нет бесед",
+  "Delete this conversation?": "Удалить этот диалог?",
+  "Delete all conversations?": "Удалить все диалоги?",
+  "Clear all": "Очистить всё",
+  "Security & Settings": "Безопасность и настройки",
+
+  // Feedback / recruitment
+  "Shortlist": "Шортлист", "LinkedIn": "LinkedIn", "Company Website": "Сайт компании",
+  "Referrals": "Рекомендации", "Job Boards": "Сайты вакансий",
+
+  // Uploads / async
+  "Uploading…": "Загрузка…", "Updating…": "Обновление…",
+  "Passwords don't match": "Пароли не совпадают",
+  "system preference": "системные настройки",
+  "Receive push notifications in your browser": "Получать push-уведомления в браузере",
+  "Receive important system alerts and updates": "Получать важные системные оповещения и обновления",
+  "Rule created": "Правило создано", "Rule updated": "Правило обновлено",
+
+  // Assistant
+  "New chat": "Новый чат", "How can I help you today?": "Чем я могу помочь вам сегодня?",
+  "Ask anything, get information, or have me do a task for you.": "Спрашивайте что угодно, получайте информацию или поручайте мне задачи.",
+  "Thinking…": "Думаю…", "Message AI Assistant…": "Написать AI-ассистенту…",
+  "Voice input": "Голосовой ввод", "Stop recording": "Остановить запись",
+  "Voice input not supported": "Голосовой ввод не поддерживается",
+  "Your browser doesn't support speech recognition. Try Chrome or Edge.": "Ваш браузер не поддерживает распознавание речи. Попробуйте Chrome или Edge.",
+  "Voice error": "Ошибка распознавания", "Recognition failed": "Распознавание не удалось",
+  "AI can make mistakes. Verify important info.": "ИИ может ошибаться. Проверяйте важную информацию.",
+  "Write a professional email to a client": "Написать деловое письмо клиенту",
+  "Summarize a long article I'll paste": "Кратко изложить длинную статью, которую я вставлю",
+  "Plan my week as an HR manager": "Спланировать мою неделю как HR-менеджера",
+  "Explain a complex topic simply": "Объяснить сложную тему простыми словами",
+
+  // Chat misc
+  "Someone": "Кто-то", "Caller": "Звонящий",
+  "Send messages to your team in real time": "Отправляйте сообщения вашей команде в реальном времени",
+
 }
 
 
