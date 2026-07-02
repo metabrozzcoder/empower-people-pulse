@@ -700,9 +700,10 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     const { error: roleInsertErr } = await supabase.from("user_roles").insert({ user_id: uid, role: validRole });
     if (roleInsertErr) return { error: `Role assignment failed: ${roleInsertErr.message}` };
 
+    await supabase.from("admin_user_credentials").delete().eq("user_id", uid);
     const { error: credentialErr } = await supabase
       .from("admin_user_credentials")
-      .upsert({ user_id: uid, generated_password: password }, { onConflict: "user_id" });
+      .insert({ user_id: uid, generated_password: password });
     if (credentialErr) return { error: `Password record failed: ${credentialErr.message}` };
     return {
       ok: true,
