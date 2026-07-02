@@ -416,7 +416,6 @@ export const ru: Record<string, string> = {
   "Moderator": "Модератор", "Director": "Директор", "Equipment": "Оборудование", "Driver": "Водитель",
   "Vehicle / driver": "Автомобиль / водитель",
   "Equipment provided": "Оборудование предоставлено", "Vehicle / driver info": "Информация об автомобиле / водителе",
-  "Equipment provided": "Оборудование предоставлено", "Vehicle / driver info": "Информация об автомобиле / водителе",
 
   // Account Settings
   "Profile Information": "Информация профиля",
