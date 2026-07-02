@@ -304,10 +304,12 @@ export default function Organizations() {
                                     </Badge>
                                   </div>
                                 </div>
-                                <div className="flex space-x-1">
-                                  <Button variant="ghost" size="sm" onClick={() => openEditDept(dept)}><Edit className="w-3 h-3" /></Button>
-                                  <Button variant="ghost" size="sm" onClick={() => deleteDepartment(dept.id)}><Trash2 className="w-3 h-3" /></Button>
-                                </div>
+                                {isAdmin && (
+                                  <div className="flex space-x-1">
+                                    <Button variant="ghost" size="sm" onClick={() => openEditDept(dept)}><Edit className="w-3 h-3" /></Button>
+                                    <Button variant="ghost" size="sm" onClick={() => deleteDepartment(dept.id)}><Trash2 className="w-3 h-3" /></Button>
+                                  </div>
+                                )}
                               </div>
                             </CardHeader>
                             <CardContent className="space-y-1">
