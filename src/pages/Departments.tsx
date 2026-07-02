@@ -50,6 +50,8 @@ const mockDepartments: Department[] = []
 export default function Departments() {
   const { t } = useTranslation()
   const { toast } = useToast()
+  const { currentUser } = useAuth()
+  const isAdmin = currentUser?.role === 'Admin'
   const [departments, setDepartments] = useState<Department[]>(mockDepartments)
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
