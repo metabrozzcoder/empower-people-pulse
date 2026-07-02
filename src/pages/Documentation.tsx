@@ -125,29 +125,41 @@ export default function Documentation() {
   // ---------- Load assigners (admin + hr users) ----------
   const loadAssigners = useCallback(async () => {
     setAssignersLoading(true)
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('user_id, role')
-      .in('role', ['admin', 'hr'])
-    const ids = Array.from(new Set((roles ?? []).map((r) => r.user_id)))
-    if (ids.length === 0) { setAssigners([]); setAssignersLoading(false); return }
     const { data: profs } = await supabase
       .from('profiles_public' as never)
       .select('id, name, position, department')
-      .in('id', ids)
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('user_id, role')
     const roleByUser = new Map<string, string>()
     ;(roles ?? []).forEach((r) => {
       const cur = roleByUser.get(r.user_id)
       if (!cur || r.role === 'admin') roleByUser.set(r.user_id, r.role)
     })
-    const list: Assigner[] = (profs ?? []).map((p: { id: string; name: string; position: string | null; department: string | null }) => ({
-      id: p.id,
-      name: p.name,
-      role: p.position || (roleByUser.get(p.id) === 'admin' ? 'Administrator' : 'HR Manager'),
-    }))
+    const roleLabel = (r?: string) => {
+      switch (r) {
+        case 'admin': return 'Administrator'
+        case 'hr': return 'HR Manager'
+        case 'accountant': return 'Accountant'
+        case 'director': return 'Director'
+        case 'shooting_moderator': return 'Shooting Moderator'
+        case 'tech_supply': return 'Tech Supply'
+        case 'driver': return 'Driver'
+        case 'employee': return 'Employee'
+        case 'guest': return 'Guest'
+        default: return 'User'
+      }
+    }
+    const list: Assigner[] = (profs ?? [])
+      .filter((p: { id: string }) => p.id !== currentUser?.id)
+      .map((p: { id: string; name: string; position: string | null; department: string | null }) => ({
+        id: p.id,
+        name: p.name,
+        role: p.position || p.department || roleLabel(roleByUser.get(p.id)),
+      }))
     setAssigners(list.sort((a, b) => a.name.localeCompare(b.name)))
     setAssignersLoading(false)
-  }, [])
+  }, [currentUser?.id])
 
   const loadDocs = useCallback(async () => {
     setLoading(true)
