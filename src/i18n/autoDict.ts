@@ -431,6 +431,34 @@ export const ru: Record<string, string> = {
   "Central Time (UTC-6)": "Центральное время (UTC-6)",
   "Eastern Time (UTC-5)": "Восточное время (UTC-5)",
 
+  // Preferences / Appearance
+  "Application Preferences": "Настройки приложения",
+  "Customize your application experience and appearance.": "Настройте внешний вид и работу приложения.",
+  "Choose your preferred theme or follow system settings": "Выберите тему или используйте системные настройки",
+  "Save Preferences": "Сохранить настройки",
+  "12-hour": "12-часовой", "24-hour": "24-часовой",
+
+  // Security
+  "Security Settings": "Настройки безопасности",
+  "Security Settings Updated": "Настройки безопасности обновлены",
+  "Save Security Settings": "Сохранить настройки безопасности",
+  "Change Password": "Изменить пароль",
+  "Current Password": "Текущий пароль",
+  "Confirm Password": "Подтвердите пароль",
+  "Two-Factor Authentication": "Двухфакторная аутентификация",
+  "Enable two-factor authentication for extra security": "Включите двухфакторную аутентификацию для дополнительной безопасности",
+  "Session Timeout": "Тайм-аут сессии",
+  "Login Alerts": "Оповещения о входе",
+  "Get notified of new sign-ins to your account": "Получать уведомления о новых входах в аккаунт",
+  "Your security settings have been updated.": "Ваши настройки безопасности обновлены.",
+
+  // Notifications
+  "Email Notifications": "Email уведомления",
+  "Push Notifications": "Push-уведомления",
+  "Receive notifications via email": "Получать уведомления по email",
+  "Receive push notifications in your browser": "Получать push-уведомления в браузере",
+  "Manage your notification preferences": "Управляйте настройками уведомлений",
+
 }
 
 
