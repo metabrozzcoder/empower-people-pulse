@@ -16,6 +16,7 @@ import type { Employee } from "@/types/employee"
 
 interface DbEmployee {
   id: string
+  profile_id: string | null
   name: string
   email: string | null
   position: string | null
@@ -142,7 +143,29 @@ export default function Employees() {
   }
 
 
-  useEffect(() => { if (canView) loadEmployees() }, [canView])
+  useEffect(() => {
+    if (!canView) return
+
+    loadEmployees()
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null
+    const refreshEmployees = () => {
+      if (refreshTimer) clearTimeout(refreshTimer)
+      refreshTimer = setTimeout(() => { loadEmployees() }, 300)
+    }
+
+    const channel = supabase
+      .channel('employees-page-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' }, refreshEmployees)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, refreshEmployees)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_roles' }, refreshEmployees)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'organizations' }, refreshEmployees)
+      .subscribe()
+
+    return () => {
+      if (refreshTimer) clearTimeout(refreshTimer)
+      supabase.removeChannel(channel)
+    }
+  }, [canView])
 
   if (!canView) {
     return (
