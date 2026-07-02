@@ -435,14 +435,9 @@ export const ru: Record<string, string> = {
   "Application Preferences": "Настройки приложения",
   "Customize your application experience and appearance.": "Настройте внешний вид и работу приложения.",
   "Choose your preferred theme or follow system settings": "Выберите тему или используйте системные настройки",
-  "Save Preferences": "Сохранить настройки",
   "12-hour": "12-часовой", "24-hour": "24-часовой",
 
   // Security
-  "Security Settings": "Настройки безопасности",
-  "Security Settings Updated": "Настройки безопасности обновлены",
-  "Save Security Settings": "Сохранить настройки безопасности",
-  "Change Password": "Изменить пароль",
   "Current Password": "Текущий пароль",
   "Confirm Password": "Подтвердите пароль",
   "Two-Factor Authentication": "Двухфакторная аутентификация",
@@ -453,9 +448,6 @@ export const ru: Record<string, string> = {
   "Your security settings have been updated.": "Ваши настройки безопасности обновлены.",
 
   // Notifications
-  "Email Notifications": "Email уведомления",
-  "Push Notifications": "Push-уведомления",
-  "Receive notifications via email": "Получать уведомления по email",
   "Receive push notifications in your browser": "Получать push-уведомления в браузере",
   "Manage your notification preferences": "Управляйте настройками уведомлений",
 
