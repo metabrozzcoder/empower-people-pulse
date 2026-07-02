@@ -416,33 +416,24 @@ export const ru: Record<string, string> = {
   "Moderator": "Модератор", "Director": "Директор", "Equipment": "Оборудование", "Driver": "Водитель",
   "Vehicle / driver": "Автомобиль / водитель",
   "Equipment provided": "Оборудование предоставлено", "Vehicle / driver info": "Информация об автомобиле / водителе",
+  "Equipment provided": "Оборудование предоставлено", "Vehicle / driver info": "Информация об автомобиле / водителе",
 
   // Account Settings
   "Profile Information": "Информация профиля",
   "Update your personal and professional information.": "Обновите вашу личную и профессиональную информацию.",
   "Update your personal and professional information": "Обновите вашу личную и профессиональную информацию",
   "Change Photo": "Изменить фото",
-  "Uploading…": "Загрузка…",
-  "JPG, PNG or GIF. Max size 2MB.": "JPG, PNG или GIF. Макс. 2 МБ.",
   "Human Resources": "Отдел кадров",
   "Engineering": "Инженерия",
   "Marketing": "Маркетинг",
-  "Sales": "Продажи",
   "Finance": "Финансы",
-  "Save Changes": "Сохранить изменения",
-  "Account Settings": "Настройки аккаунта",
   "Manage your account.": "Управление вашим аккаунтом.",
-  "Notifications": "Уведомления",
-  "Security": "Безопасность",
-  "Preferences": "Предпочтения",
-  "Role": "Роль",
-  "Department": "Отдел",
-  "Timezone": "Часовой пояс",
   "Mountain Time (UTC-7)": "Горное время (UTC-7)",
   "Central Time (UTC-6)": "Центральное время (UTC-6)",
   "Eastern Time (UTC-5)": "Восточное время (UTC-5)",
 
 }
+
 
 
 
