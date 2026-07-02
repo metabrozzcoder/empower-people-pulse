@@ -242,6 +242,7 @@ export default function Departments() {
                     </Button>
                   </div>
                 )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <CardDescription>{dept.description}</CardDescription>
