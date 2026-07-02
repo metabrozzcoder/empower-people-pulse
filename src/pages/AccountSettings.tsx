@@ -44,7 +44,6 @@ const AccountSettings = () => {
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
     pushNotifications: false,
-    weeklyReports: true,
     systemAlerts: true,
   })
 
