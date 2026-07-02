@@ -43,8 +43,8 @@ const emptyDept = { name: '', description: '', manager_id: '', manager_name: '',
 export default function Organizations() {
   const { t } = useTranslation()
   const { toast } = useToast()
-  const { user } = useAuth()
-  const isAdmin = user?.role === 'Admin'
+  const { currentUser } = useAuth()
+  const isAdmin = currentUser?.role === 'Admin'
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [profiles, setProfiles] = useState<ProfileLite[]>([])
