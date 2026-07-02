@@ -670,11 +670,51 @@ export default function Chat() {
                         )}
 
                         <div className={cn(
-                          'max-w-xs lg:max-w-md px-3 py-2 rounded-2xl shadow-sm',
+                          'max-w-xs lg:max-w-md px-3 py-2 rounded-2xl shadow-sm space-y-2',
                           mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm'
                         )}>
-                          <p className="whitespace-pre-wrap break-words text-sm">{m.content}</p>
-                          <div className="flex items-center gap-1 mt-1 justify-end">
+                          {(m.attachments ?? []).length > 0 && (
+                            <div className="space-y-2">
+                              {(m.attachments ?? []).map((a, i) => {
+                                const url = signedUrls[a.path]
+                                if (a.type.startsWith('image/') && url) {
+                                  return (
+                                    <a key={i} href={url} target="_blank" rel="noreferrer" className="block">
+                                      <img src={url} alt={a.name} className="rounded-lg max-h-64 object-cover" />
+                                    </a>
+                                  )
+                                }
+                                if (a.type.startsWith('video/') && url) {
+                                  return <video key={i} src={url} controls className="rounded-lg max-h-64 w-full" />
+                                }
+                                if (a.type.startsWith('audio/') && url) {
+                                  return <audio key={i} src={url} controls className="w-full" />
+                                }
+                                return (
+                                  <a
+                                    key={i}
+                                    href={url || '#'}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    download={a.name}
+                                    className={cn(
+                                      'flex items-center gap-2 p-2 rounded-lg border text-xs hover:opacity-90 transition',
+                                      mine ? 'border-primary-foreground/30 bg-primary-foreground/10' : 'bg-background/60 border-border'
+                                    )}
+                                  >
+                                    {fileIcon(a.type)}
+                                    <div className="flex-1 min-w-0">
+                                      <p className="truncate font-medium">{a.name}</p>
+                                      <p className="opacity-70">{fmtSize(a.size)}</p>
+                                    </div>
+                                    <Download className="w-3.5 h-3.5 opacity-70" />
+                                  </a>
+                                )
+                              })}
+                            </div>
+                          )}
+                          {m.content && <p className="whitespace-pre-wrap break-words text-sm">{m.content}</p>}
+                          <div className="flex items-center gap-1 justify-end">
                             <span className="text-[10px] opacity-70">{fmtTime(m.created_at)}</span>
                             {mine && <CheckCheck className="w-3.5 h-3.5 opacity-70" />}
                           </div>
@@ -687,8 +727,40 @@ export default function Chat() {
               </ScrollArea>
             </CardContent>
 
-            <div className="border-t p-3">
-              <div className="flex items-center gap-2">
+            <div className="border-t p-3 space-y-2">
+              {pendingFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {pendingFiles.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-accent rounded-lg pl-2 pr-1 py-1 text-xs">
+                      {fileIcon(f.type)}
+                      <span className="max-w-[160px] truncate">{f.name}</span>
+                      <span className="opacity-60">{fmtSize(f.size)}</span>
+                      <button
+                        className="p-1 hover:bg-background rounded"
+                        onClick={() => setPendingFiles(prev => prev.filter((_, j) => j !== i))}
+                        aria-label="Remove"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div
+                className="flex items-center gap-2"
+                onDragOver={(e) => { e.preventDefault() }}
+                onDrop={(e) => { e.preventDefault(); onFilesPicked(e.dataTransfer.files) }}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => { onFilesPicked(e.target.files); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                />
+                <Button variant="ghost" size="sm" title="Attach files" onClick={() => fileInputRef.current?.click()}>
+                  <Paperclip className="w-4 h-4" />
+                </Button>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="ghost" size="sm"><Smile className="w-4 h-4" /></Button>
@@ -705,14 +777,17 @@ export default function Chat() {
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
-                  placeholder="Type a message..."
+                  onPaste={handlePaste}
+                  placeholder={pendingFiles.length ? 'Add a caption...' : 'Type a message, drop files, or paste an image...'}
                   className="flex-1"
+                  disabled={uploading}
                 />
-                <Button onClick={handleSend} disabled={!draft.trim()}>
-                  <Send className="w-4 h-4" />
+                <Button onClick={handleSend} disabled={uploading || (!draft.trim() && pendingFiles.length === 0)}>
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
             </div>
+
           </Card>
         ) : (
           <Card className="flex-1 flex items-center justify-center">
