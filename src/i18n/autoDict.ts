@@ -411,12 +411,11 @@ export const ru: Record<string, string> = {
   "Short title": "Краткое название", "You haven't submitted any requests yet.": "Вы ещё не отправили ни одной заявки.",
   "Awaiting moderator": "Ожидает модератора", "Awaiting director": "Ожидает директора", "Awaiting equipment": "Ожидает оборудование", "Awaiting driver": "Ожидает водителя",
   "Scheduled": "Запланировано", "Declined": "Отклонено", "Failed to load requests": "Не удалось загрузить заявки", "Failed to create": "Не удалось создать",
-  "Title required": "Требуется название", "Request submitted": "Заявка отправлена", "Sent to the shooting moderator.": "Отправлено модератору съёмок.",
+  "Request submitted": "Заявка отправлена", "Sent to the shooting moderator.": "Отправлено модератору съёмок.",
   "Marked sensitive": "Отмечено как чувствительное", "Submitting…": "Отправка…",
   "Moderator": "Модератор", "Director": "Директор", "Equipment": "Оборудование", "Driver": "Водитель",
-  "Created": "Создано", "Moderator note": "Заметка модератора", "Director note": "Заметка директора", "Vehicle / driver": "Автомобиль / водитель",
-  "Equipment provided": "Оборудование предоставлено", "Vehicle / driver info": "Информация об автомобиле / водителе", "Approve → Equipment": "Одобрить → Оборудование",
-  "Escalate to Director": "Передать директору", "Mark provided → Driver": "Отметить выданным → Водитель", "Assign & schedule": "Назначить и запланировать", "Mark completed": "Отметить выполненным",
+  "Vehicle / driver": "Автомобиль / водитель",
+  "Equipment provided": "Оборудование предоставлено", "Vehicle / driver info": "Информация об автомобиле / водителе",
 
 }
 
@@ -1292,14 +1291,7 @@ export const uz: Record<string, string> = {
   // Shooting requests workflow
   "Inbox": "Kirish qutisi", "My requests": "Mening so'rovlarim",
   "Awaiting moderator": "Moderator kutilmoqda", "Awaiting director": "Direktor kutilmoqda", "Awaiting equipment": "Uskuna kutilmoqda", "Awaiting driver": "Haydovchi kutilmoqda",
-  "Scheduled": "Rejalashtirilgan", "Declined": "Rad etilgan", "You haven't submitted any requests yet.": "Siz hali hech qanday so'rov yubormadingiz.",
-  "It will be sent to the shooting moderator for review.": "U ko'rib chiqish uchun suratga olish moderatoriga yuboriladi.",
-  "Failed to load requests": "So'rovlarni yuklab bo'lmadi", "Title required": "Nom talab qilinadi", "Request submitted": "So'rov yuborildi",
-  "Sent to the shooting moderator.": "Suratga olish moderatoriga yuborildi.", "Marked sensitive": "Maxfiy deb belgilandi", "Submitting…": "Yuborilmoqda…",
-  "Moderator": "Moderator", "Director": "Direktor", "Equipment": "Uskuna", "Driver": "Haydovchi", "Created": "Yaratilgan",
-  "Moderator note": "Moderator eslatmasi", "Director note": "Direktor eslatmasi", "Vehicle / driver": "Avtomobil / haydovchi",
-  "Mark as sensitive (moderator will likely escalate to the director)": "Maxfiy deb belgilang (moderator ehtimol direktorga yuboradi)",
-  "Equipment provided": "Uskuna taqdim etildi", "Vehicle / driver info": "Avtomobil / haydovchi ma'lumoti", "Escalate to Director": "Direktorga yuborish",
+  "Scheduled": "Rejalashtirilgan", "Marked sensitive": "Maxfiy deb belgilandi", "Submitting…": "Yuborilmoqda…",
 
   // Scheduling / calendar
   "Edit Reminder": "Eslatmani tahrirlash", "New Reminder": "Yangi eslatma",
