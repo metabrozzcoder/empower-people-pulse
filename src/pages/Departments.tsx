@@ -180,10 +180,12 @@ export default function Departments() {
           <h1 className="text-3xl font-bold">{t('pages.departments.title')}</h1>
           <p className="text-muted-foreground">{t('pages.departments.subtitle')}</p>
         </div>
-        <Button onClick={handleAddDepartment} className="flex items-center space-x-2">
-          <Plus className="w-4 h-4" />
-          <span>Add Department</span>
-        </Button>
+        {isAdmin && (
+          <Button onClick={handleAddDepartment} className="flex items-center space-x-2">
+            <Plus className="w-4 h-4" />
+            <span>Add Department</span>
+          </Button>
+        )}
       </div>
 
       <div className="flex items-center space-x-4">
