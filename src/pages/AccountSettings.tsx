@@ -460,21 +460,23 @@ const AccountSettings = () => {
 
                 <div className="space-y-2">
                   <Label>Date Format</Label>
-                  <Select value={preferences.dateFormat} onValueChange={(value) => setPreferences({ ...preferences, dateFormat: value })}>
+                  <Select value={preferences.dateFormat} onValueChange={(value) => setPreferences({ ...preferences, dateFormat: value as DateFormat })}>
                     <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="dd/mmm/yyyy">DD/MMM/YYYY</SelectItem>
                       <SelectItem value="mm/dd/yyyy">MM/DD/YYYY</SelectItem>
                       <SelectItem value="dd/mm/yyyy">DD/MM/YYYY</SelectItem>
                       <SelectItem value="yyyy-mm-dd">YYYY-MM-DD</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-sm text-muted-foreground">Preview: {formatDate(new Date(), preferences.dateFormat)}</p>
                 </div>
 
                 <Separator />
 
                 <div className="space-y-2">
                   <Label>Time Format</Label>
-                  <Select value={preferences.timeFormat} onValueChange={(value) => setPreferences({ ...preferences, timeFormat: value })}>
+                  <Select value={preferences.timeFormat} onValueChange={(value) => setPreferences({ ...preferences, timeFormat: value as TimeFormat })}>
                     <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="12">12-hour</SelectItem>
