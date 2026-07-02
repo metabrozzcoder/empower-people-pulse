@@ -657,10 +657,13 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     } else {
       uid = created.user.id;
     }
-    await supabase.from("profiles").update({
+    const profilePatch: any = {
       name: args.name, phone: args.phone, department: args.department,
       position: args.position, username,
-    }).eq("id", uid);
+    };
+    if (args.organization !== undefined) profilePatch.organization = args.organization;
+    if (Array.isArray(args.allowed_sections)) profilePatch.allowed_sections = args.allowed_sections;
+    await supabase.from("profiles").update(profilePatch).eq("id", uid);
     await supabase.from("user_roles").delete().eq("user_id", uid);
     await supabase.from("user_roles").insert({ user_id: uid, role: validRole });
     return {
