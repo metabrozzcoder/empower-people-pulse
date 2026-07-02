@@ -11,7 +11,7 @@ import { getDict } from '@/i18n/autoDict'
  *  - WeakSet of processed nodes to skip re-work
  *  - Skip non-translatable nodes (numbers, single chars, whitespace, urls)
  */
-const ATTRS = ['placeholder', 'title', 'aria-label'] as const
+const ATTRS = ['placeholder', 'title', 'aria-label', 'aria-placeholder', 'alt'] as const
 const SKIP_TAGS = new Set([
   'SCRIPT', 'STYLE', 'NOSCRIPT', 'CODE', 'PRE', 'SVG', 'PATH', 'CANVAS', 'TEXTAREA',
 ])
