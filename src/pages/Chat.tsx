@@ -39,6 +39,13 @@ interface ChatUser {
   unreadCount: number
 }
 
+interface Attachment {
+  path: string
+  name: string
+  size: number
+  type: string
+}
+
 interface Message {
   id: string
   conversation_id: string
@@ -46,6 +53,7 @@ interface Message {
   content: string
   created_at: string
   edited?: boolean
+  attachments?: Attachment[]
 }
 
 const EMOJIS = ['😊','😂','❤️','👍','🎉','🔥','🙏','👏','😍','🤔','😎','💯','✅','🚀','💡']
