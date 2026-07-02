@@ -23,7 +23,7 @@ import { useTheme } from "next-themes"
 import { useAuth } from "@/context/AuthContext"
 import { supabase } from "@/integrations/supabase/client"
 import i18n from "@/i18n"
-import { formatDate } from '@/lib/date'
+import { formatDate, setDateFormat, setTimeFormat, getDateFormat, getTimeFormat, type DateFormat, type TimeFormat } from '@/lib/date'
 
 const AccountSettings = () => {
   const { t } = useTranslation()
