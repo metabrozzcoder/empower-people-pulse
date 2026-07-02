@@ -66,11 +66,20 @@ export function AutoTranslate() {
         if (trimmed !== original) node.nodeValue = raw.replace(trimmed, original)
         return
       }
-      const target = dict.get(original) ?? original
+      const target = translateWithCounter(original, dict) ?? dict.get(original) ?? original
       holder.__i18nOut = target
       if (target === trimmed) return
       const next = raw.replace(trimmed, target)
       if (next !== raw) node.nodeValue = next
+    }
+
+    const translateWithCounter = (text: string, dict: Map<string, string> | null): string | null => {
+      if (!dict) return null
+      const match = text.match(/^(.+?)\s*\((\d+)\)$/)
+      if (!match) return null
+      const [, label, count] = match
+      const translated = dict.get(label.trim())
+      return translated ? `${translated} (${count})` : null
     }
 
     const translateAttrs = (el: Element) => {
@@ -81,7 +90,7 @@ export function AutoTranslate() {
         const elx = el as Element & Record<string, string | undefined>
         const original = elx[key] ?? val.trim()
         elx[key] = original
-        const target = dict ? (dict.get(original) ?? original) : original
+        const target = dict ? (translateWithCounter(original, dict) ?? dict.get(original) ?? original) : original
         if (target !== val) el.setAttribute(attr, target)
       }
     }

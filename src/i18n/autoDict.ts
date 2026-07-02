@@ -404,6 +404,19 @@ export const ru: Record<string, string> = {
   "Not signed in": "Вход не выполнен", "Login Email": "Email для входа", "Login Failed": "Ошибка входа", "Login Successful": "Вход выполнен",
   "Logging out...": "Выход...", "Oops! Page not found": "Упс! Страница не найдена",
 
+  // Shooting requests workflow
+  "Submit and route shooting requests through approval, equipment, and dispatch.": "Отправляйте и маршрутизируйте заявки на съёмку через согласование, оборудование и диспетчеризацию.",
+  "Inbox": "Входящие", "My requests": "Мои заявки",
+  "New shooting request": "Новая заявка на съёмку", "It will be sent to the shooting moderator for review.": "Она будет отправлена модератору съёмок на проверку.",
+  "Short title": "Краткое название", "You haven't submitted any requests yet.": "Вы ещё не отправили ни одной заявки.",
+  "Awaiting moderator": "Ожидает модератора", "Awaiting director": "Ожидает директора", "Awaiting equipment": "Ожидает оборудование", "Awaiting driver": "Ожидает водителя",
+  "Scheduled": "Запланировано", "Declined": "Отклонено", "Failed to load requests": "Не удалось загрузить заявки", "Failed to create": "Не удалось создать",
+  "Request submitted": "Заявка отправлена", "Sent to the shooting moderator.": "Отправлено модератору съёмок.",
+  "Marked sensitive": "Отмечено как чувствительное", "Submitting…": "Отправка…",
+  "Moderator": "Модератор", "Director": "Директор", "Equipment": "Оборудование", "Driver": "Водитель",
+  "Vehicle / driver": "Автомобиль / водитель",
+  "Equipment provided": "Оборудование предоставлено", "Vehicle / driver info": "Информация об автомобиле / водителе",
+
 }
 
 
@@ -1274,6 +1287,11 @@ export const uz: Record<string, string> = {
   "Inline preview is not available for this file type. Use Download below.": "Bu fayl turi uchun ichki ko'rish mavjud emas. Quyida yuklab oling.",
   "Preview not available for this file type. Use the download button below.": "Bu fayl turi uchun ko'rish mavjud emas. Quyidagi yuklab olish tugmasidan foydalaning.",
   "Your changes are baked into the file.": "O'zgarishlaringiz faylga kiritildi.", "Edits applied": "Tahrirlar qo'llandi",
+
+  // Shooting requests workflow
+  "Inbox": "Kirish qutisi", "My requests": "Mening so'rovlarim",
+  "Awaiting moderator": "Moderator kutilmoqda", "Awaiting director": "Direktor kutilmoqda", "Awaiting equipment": "Uskuna kutilmoqda", "Awaiting driver": "Haydovchi kutilmoqda",
+  "Scheduled": "Rejalashtirilgan", "Marked sensitive": "Maxfiy deb belgilandi", "Submitting…": "Yuborilmoqda…",
 
   // Scheduling / calendar
   "Edit Reminder": "Eslatmani tahrirlash", "New Reminder": "Yangi eslatma",
