@@ -370,7 +370,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                     )}
                   </SelectContent>
                 </Select>
-                <Button onClick={() => { setAddForm({ ...emptyCandidate }); setIsAddCandidateDialogOpen(true) }}>
+                <Button variant="gradient" onClick={() => { setAddForm({ ...emptyCandidate }); setIsAddCandidateDialogOpen(true) }}>
                   <Plus className="h-4 w-4 mr-2" />Add Candidate
                 </Button>
               </div>
