@@ -265,6 +265,8 @@ export type Database = {
         Row: {
           ai_score: number
           applied_date: string
+          assigned_to: string | null
+          attachments: Json
           created_at: string
           created_by: string | null
           email: string | null
@@ -276,6 +278,9 @@ export type Database = {
           phone: string | null
           position: string | null
           resume_url: string | null
+          review_decision: string | null
+          review_note: string | null
+          reviewed_at: string | null
           skills: string[]
           source: string | null
           status: string
@@ -284,6 +289,8 @@ export type Database = {
         Insert: {
           ai_score?: number
           applied_date?: string
+          assigned_to?: string | null
+          attachments?: Json
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -295,6 +302,9 @@ export type Database = {
           phone?: string | null
           position?: string | null
           resume_url?: string | null
+          review_decision?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
           skills?: string[]
           source?: string | null
           status?: string
@@ -303,6 +313,8 @@ export type Database = {
         Update: {
           ai_score?: number
           applied_date?: string
+          assigned_to?: string | null
+          attachments?: Json
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -314,12 +326,29 @@ export type Database = {
           phone?: string | null
           position?: string | null
           resume_url?: string | null
+          review_decision?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
           skills?: string[]
           source?: string | null
           status?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "candidates_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidates_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "candidates_job_posting_id_fkey"
             columns: ["job_posting_id"]
