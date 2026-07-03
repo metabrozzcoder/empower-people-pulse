@@ -974,8 +974,8 @@ export default function UserManagement() {
                 <div className="space-y-2">
                   <Label htmlFor="position">Job Position</Label>
                   <Select
-                    value={formData.position}
-                    onValueChange={(value) => handleFormChange('position', value)}
+                    value={JOB_POSITIONS.includes(formData.position) ? formData.position : (formData.position ? '__custom__' : '')}
+                    onValueChange={(value) => handleFormChange('position', value === '__custom__' ? '' : value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select job position" />
@@ -984,8 +984,16 @@ export default function UserManagement() {
                       {JOB_POSITIONS.map(position => (
                         <SelectItem key={position} value={position}>{position}</SelectItem>
                       ))}
+                      <SelectItem value="__custom__">Custom…</SelectItem>
                     </SelectContent>
                   </Select>
+                  {!JOB_POSITIONS.includes(formData.position) && (
+                    <Input
+                      placeholder="Enter custom job position"
+                      value={formData.position}
+                      onChange={(e) => handleFormChange('position', e.target.value)}
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="organization">Organization</Label>
