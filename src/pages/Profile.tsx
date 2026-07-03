@@ -144,7 +144,7 @@ const Profile = () => {
                 <p className="text-sm text-muted-foreground">Employee ID</p>
                 <p className="font-medium">{userProfile.employeeId}</p>
               </div>
-              <Button className="w-full" variant="soft">
+              <Button className="w-full" variant="soft" onClick={openEdit}>
                 Edit Profile
               </Button>
             </CardContent>
