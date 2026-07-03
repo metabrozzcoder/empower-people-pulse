@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Brain, Search, Plus, Filter, Star, Clock, Mail, Phone, Calendar,
   Edit, Eye, UserCheck, MessageSquare, Download, Trash2, Loader2,
+  Paperclip, X, FileText, ThumbsUp, ThumbsDown, UserCircle,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
