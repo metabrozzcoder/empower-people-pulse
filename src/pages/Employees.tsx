@@ -220,10 +220,10 @@ export default function Employees() {
     }
     const fullName = `${employeeData.firstName} ${employeeData.lastName}`.trim()
     // Create auth user + profile so the employee appears in User Management and can log in.
+    // Always generate a @sevimlitv.uz login email on the backend — ignore any personal email entered.
     const { data, error } = await supabase.functions.invoke('admin-create-user', {
       body: {
         name: fullName,
-        email: employeeData.email || undefined,
         role: 'employee',
         phone: employeeData.phone || undefined,
         department: employeeData.department || undefined,
@@ -249,6 +249,7 @@ export default function Employees() {
         manager: employeeData.manager || null,
         organization_id: employeeData.organizationId || null,
         hire_date: new Date().toISOString().split('T')[0],
+        ...(employeeData.email ? { email: employeeData.email } : {}),
       }).eq('profile_id', res.id)
     }
     setCreatedCreds({ name: fullName, email: res.email, username: res.username, password: res.password })
@@ -263,7 +264,6 @@ export default function Employees() {
       body: {
         employee_id: employee.dbId,
         name: employee.name,
-        email: employee.email || undefined,
         role: 'employee',
         phone: employee.phone || undefined,
         department: employee.department || undefined,
