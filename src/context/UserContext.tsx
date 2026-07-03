@@ -60,11 +60,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     setLoading(true)
-    const [{ data: profiles }, { data: roles }] = await Promise.all([
+    const [{ data: profiles }, { data: roles }, { data: creds }] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at'),
       supabase.from('user_roles').select('user_id, role'),
+      supabase.from('admin_user_credentials').select('user_id, generated_password'),
     ])
     const credMap = new Map<string, string>()
+    ;(creds ?? []).forEach((c: any) => {
+      if (c?.user_id && c?.generated_password) credMap.set(c.user_id, c.generated_password)
+    })
 
     const roleMap = new Map<string, string>()
     ;(roles ?? []).forEach((r) => {
