@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Building2, Plus, Search, Edit, Trash2, MapPin, Phone, Mail, UsersIcon } from 'lucide-react'
+import { Building2, Plus, Search, Edit, Trash2, MapPin, Phone, Mail, UsersIcon, MessageSquare } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -44,6 +45,26 @@ export default function Organizations() {
   const { t } = useTranslation()
   const { toast } = useToast()
   const { currentUser } = useAuth()
+  const navigate = useNavigate()
+
+  const messageMember = (member: EmployeeLite) => {
+    let userId: string | null = null
+    if (member.id.startsWith('profile-')) userId = member.id.replace(/^profile-/, '')
+    else if (member.email) {
+      const p = profiles.find(pr => pr.email && pr.email.toLowerCase() === member.email!.toLowerCase())
+      if (p) userId = p.id
+    }
+    if (!userId) {
+      toast({ title: 'Cannot message user', description: 'This member has no linked account yet.', variant: 'destructive' })
+      return
+    }
+    if (userId === currentUser?.id) {
+      toast({ title: "That's you", description: 'You cannot message yourself.' })
+      return
+    }
+    sessionStorage.setItem('chat.startWithUser', userId)
+    navigate('/chat')
+  }
   const isAdmin = currentUser?.role === 'Admin'
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
@@ -491,16 +512,23 @@ export default function Organizations() {
             {viewDeptMembers?.members.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">No members in this department yet.</p>
             ) : (
-              viewDeptMembers?.members.map((m) => (
-                <div key={m.id} className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{m.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {[m.position, m.email].filter(Boolean).join(' • ') || '—'}
-                    </p>
+              viewDeptMembers?.members.map((m) => {
+                const isMe = m.id === `profile-${currentUser?.id}`
+                return (
+                  <div key={m.id} className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2 gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{m.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{m.position || '—'}</p>
+                    </div>
+                    {!isMe && (
+                      <Button size="sm" variant="outline" onClick={() => messageMember(m)}>
+                        <MessageSquare className="w-4 h-4 mr-1" />
+                        {t('message', 'Message')}
+                      </Button>
+                    )}
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
           <div className="flex justify-end">
