@@ -217,6 +217,45 @@ const Profile = () => {
           </Card>
         </div>
       </div>
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+            <DialogDescription>Update your personal information.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="p-name">Full name</Label>
+              <Input id="p-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="p-phone">Phone</Label>
+              <Input id="p-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="p-pos">Position</Label>
+                <Input id="p-pos" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-dep">Department</Label>
+                <Input id="p-dep" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="p-avatar">Avatar URL</Label>
+              <Input id="p-avatar" placeholder="https://…" value={form.avatar_url} onChange={(e) => setForm({ ...form, avatar_url: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={saving}>Cancel</Button>
+            <Button variant="gradient" onClick={saveProfile} disabled={saving || !form.name.trim()}>
+              {saving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving…</>) : 'Save changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
