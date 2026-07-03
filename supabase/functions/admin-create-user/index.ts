@@ -24,9 +24,12 @@ Deno.serve(async (req) => {
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
-    const { data: isAdmin } = await admin.rpc("has_role", { _user_id: userData.user.id, _role: "admin" });
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Forbidden: admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const [{ data: isAdmin }, { data: isHr }] = await Promise.all([
+      admin.rpc("has_role", { _user_id: userData.user.id, _role: "admin" }),
+      admin.rpc("has_role", { _user_id: userData.user.id, _role: "hr" }),
+    ]);
+    if (!isAdmin && !isHr) {
+      return new Response(JSON.stringify({ error: "Forbidden: admin or HR only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const body = await req.json();
@@ -105,7 +108,7 @@ Deno.serve(async (req) => {
     await admin.from("user_roles").delete().eq("user_id", uid);
     await admin.from("user_roles").insert({ user_id: uid, role: validRole });
 
-    return new Response(JSON.stringify({ user: { id: uid }, id: uid, email, name, role: validRole }), {
+    return new Response(JSON.stringify({ user: { id: uid }, id: uid, email, username, password, name, role: validRole }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

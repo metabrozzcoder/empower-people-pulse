@@ -208,30 +208,48 @@ export default function Employees() {
     })
   }, [employees, searchTerm, departmentFilter, statusFilter, orgFilter])
 
+  const [createdCreds, setCreatedCreds] = useState<{ name: string; email: string; username?: string; password: string } | null>(null)
+
   const handleAddEmployeeSubmit = async () => {
     if (!employeeData.firstName || !employeeData.lastName || !employeeData.position) {
       toast({ title: "Validation Error", description: "Please fill in first name, last name and position.", variant: "destructive" })
       return
     }
-    const { error } = await supabase.from('employees').insert({
-      name: `${employeeData.firstName} ${employeeData.lastName}`,
-      email: employeeData.email || null,
-      position: employeeData.position,
-      department: employeeData.department || 'General',
-      hire_date: new Date().toISOString().split('T')[0],
-      salary: parseInt(employeeData.salary) || null,
-      status: 'Active',
-      phone: employeeData.phone || null,
-      location: employeeData.location || null,
-      manager: employeeData.manager || null,
-      organization_id: employeeData.organizationId || null,
-      birthday: employeeData.birthday || null,
+    const fullName = `${employeeData.firstName} ${employeeData.lastName}`.trim()
+    // Create auth user + profile so the employee appears in User Management and can log in.
+    const { data, error } = await supabase.functions.invoke('admin-create-user', {
+      body: {
+        name: fullName,
+        email: employeeData.email || undefined,
+        role: 'employee',
+        phone: employeeData.phone || undefined,
+        department: employeeData.department || undefined,
+        position: employeeData.position,
+        birthday: employeeData.birthday || undefined,
+      },
     })
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" })
+    if (error || (data as { error?: string })?.error) {
+      toast({ title: "Error", description: error?.message || (data as { error?: string })?.error || 'Failed to create user', variant: "destructive" })
       return
     }
-    toast({ title: "Employee Added", description: `${employeeData.firstName} ${employeeData.lastName} has been added.` })
+    const res = data as { id?: string; email: string; username?: string; password: string }
+    // Enrich the profile / employee record with fields not handled by the function
+    if (res?.id) {
+      await supabase.from('profiles').update({
+        organization: employeeData.organizationId
+          ? (organizations.find(o => o.id === employeeData.organizationId)?.name ?? null)
+          : null,
+      } as never).eq('id', res.id)
+      await supabase.from('employees').update({
+        salary: parseInt(employeeData.salary) || null,
+        location: employeeData.location || null,
+        manager: employeeData.manager || null,
+        organization_id: employeeData.organizationId || null,
+        hire_date: new Date().toISOString().split('T')[0],
+      }).eq('profile_id', res.id)
+    }
+    setCreatedCreds({ name: fullName, email: res.email, username: res.username, password: res.password })
+    toast({ title: "Employee Added", description: `${fullName} has been created with login credentials.` })
     setIsAddDialogOpen(false)
     setEmployeeData({ firstName: '', lastName: '', email: '', phone: '', position: '', department: '', salary: '', location: '', manager: '', organizationId: '', birthday: '' })
     loadEmployees()
@@ -488,6 +506,48 @@ export default function Employees() {
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAddEmployeeSubmit}>Create Employee</Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!createdCreds} onOpenChange={(o) => !o && setCreatedCreds(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Login credentials</DialogTitle>
+            <DialogDescription>
+              Share these credentials with {createdCreds?.name} so they can sign in. This password is only shown once here — copy it now.
+            </DialogDescription>
+          </DialogHeader>
+          {createdCreds && (
+            <div className="space-y-3 py-2">
+              <div className="space-y-1">
+                <Label>Login email</Label>
+                <Input readOnly value={createdCreds.email} onFocus={(e) => e.currentTarget.select()} />
+              </div>
+              {createdCreds.username && (
+                <div className="space-y-1">
+                  <Label>Username</Label>
+                  <Input readOnly value={createdCreds.username} onFocus={(e) => e.currentTarget.select()} />
+                </div>
+              )}
+              <div className="space-y-1">
+                <Label>Temporary password</Label>
+                <Input readOnly value={createdCreds.password} onFocus={(e) => e.currentTarget.select()} />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const text = `Login: ${createdCreds.email}\nPassword: ${createdCreds.password}`
+                    navigator.clipboard.writeText(text)
+                    toast({ title: 'Copied', description: 'Credentials copied to clipboard.' })
+                  }}
+                >
+                  Copy
+                </Button>
+                <Button onClick={() => setCreatedCreds(null)}>Done</Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
