@@ -140,6 +140,10 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
   const updateCandidateStatus = async (id: string, status: CandidateStatus, extra: Record<string, any> = {}) => {
     const { error } = await supabase.from('candidates').update({ status, ...extra }).eq('id', id)
     if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return false }
+    setCandidates(prev => prev.map(candidate => (
+      candidate.id === id ? { ...candidate, status, ...extra } : candidate
+    )))
+    void fetchAll()
     return true
   }
 
@@ -165,7 +169,11 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
         if (!confirm(`Delete candidate ${c.name}?`)) return
         const { error } = await supabase.from('candidates').delete().eq('id', c.id)
         if (error) toast({ title: 'Delete failed', description: error.message, variant: 'destructive' })
-        else toast({ title: 'Deleted', description: `${c.name} removed` })
+        else {
+          setCandidates(prev => prev.filter(candidate => candidate.id !== c.id))
+          toast({ title: 'Deleted', description: `${c.name} removed` })
+          void fetchAll()
+        }
         break
       }
       case 'download_resume': {
@@ -220,6 +228,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
     toast({ title: 'Candidate added' })
     setAddForm({ ...emptyCandidate })
     setIsAddCandidateDialogOpen(false)
+    await fetchAll()
   }
 
   const submitEdit = async () => {
@@ -240,8 +249,12 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
     }
     const { error } = await supabase.from('candidates').update(payload).eq('id', selectedCandidate.id)
     if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return }
+    setCandidates(prev => prev.map(candidate => (
+      candidate.id === selectedCandidate.id ? { ...candidate, ...payload } as Candidate : candidate
+    )))
     toast({ title: 'Candidate updated' })
     setIsEditCandidateDialogOpen(false)
+    void fetchAll()
   }
 
   const submitMessage = () => {
@@ -270,6 +283,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
     toast({ title: 'Job posted' })
     setAddJobForm({ ...emptyJob })
     setIsAddJobDialogOpen(false)
+    await fetchAll()
   }
 
   const submitEditJob = async () => {
@@ -287,15 +301,23 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
     }
     const { error } = await supabase.from('job_postings').update(payload).eq('id', selectedJob.id)
     if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return }
+    setJobPostings(prev => prev.map(job => (
+      job.id === selectedJob.id ? { ...job, ...payload } as JobPosting : job
+    )))
     toast({ title: 'Job updated' })
     setIsEditJobDialogOpen(false)
+    void fetchAll()
   }
 
   const deleteJob = async (j: JobPosting) => {
     if (!confirm(`Delete job "${j.title}"?`)) return
     const { error } = await supabase.from('job_postings').delete().eq('id', j.id)
     if (error) toast({ title: 'Delete failed', description: error.message, variant: 'destructive' })
-    else toast({ title: 'Job deleted' })
+    else {
+      setJobPostings(prev => prev.filter(job => job.id !== j.id))
+      toast({ title: 'Job deleted' })
+      void fetchAll()
+    }
     onJobAction?.('delete', j.id)
   }
 
