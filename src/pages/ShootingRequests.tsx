@@ -11,10 +11,21 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Camera, Plus, MapPin, Calendar, AlertTriangle, CheckCircle2, XCircle, ArrowRight, Inbox, User as UserIcon, Truck, Package, ShieldCheck, Loader2, History } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { formatDateTime } from '@/lib/date'
+
+interface VehicleOption {
+  id: string
+  plate_number: string
+  model: string | null
+  make: string | null
+  status: string | null
+  assigned_driver_id: string | null
+  driver_name?: string
+}
 
 type WorkflowStatus =
   | 'pending_moderator'
