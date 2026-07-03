@@ -424,10 +424,10 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                               <Calendar className="w-4 h-4 mr-1" />Schedule Interview
                             </Button>
                             <div className="grid grid-cols-2 gap-2">
-                              <Button size="sm" variant="outline" onClick={() => handleCandidateAction('shortlist', c)} disabled={c.status==='Shortlisted'||c.status==='Hired'}>
+                              <Button size="sm" variant="soft" onClick={() => handleCandidateAction('shortlist', c)} disabled={c.status==='Shortlisted'||c.status==='Hired'}>
                                 <UserCheck className="w-4 h-4 mr-1" />Shortlist
                               </Button>
-                              <Button size="sm" variant="outline" onClick={() => handleCandidateAction('hire', c)} disabled={c.status==='Hired'}>
+                              <Button size="sm" variant="glow" onClick={() => handleCandidateAction('hire', c)} disabled={c.status==='Hired'}>
                                 Hire
                               </Button>
                             </div>
