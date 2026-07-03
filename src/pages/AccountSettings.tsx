@@ -248,6 +248,14 @@ const AccountSettings = () => {
       toast({ title: t('pages.accountSettings.toasts.passwordUpdateFailed'), description: error.message, variant: 'destructive' })
       return
     }
+    // Clear the admin-stored initial password now that the user has set their own.
+    try {
+      const { data: authData } = await supabase.auth.getUser()
+      const uid = authData?.user?.id
+      if (uid) {
+        await supabase.from('admin_user_credentials').delete().eq('user_id', uid)
+      }
+    } catch { /* non-fatal */ }
     const updated = { ...security, passwordUpdatedAt: new Date().toISOString() }
     setSecurity(updated)
     await upsertSettings({ security: updated })
