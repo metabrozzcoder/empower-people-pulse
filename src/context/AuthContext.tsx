@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean
   login: (email: string, password: string) => Promise<{ error: string | null }>
   logout: () => Promise<void>
+  refreshProfile: () => Promise<void>
   isAuthenticated: boolean
 }
 
