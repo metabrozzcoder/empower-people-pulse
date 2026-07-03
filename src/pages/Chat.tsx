@@ -378,9 +378,21 @@ export default function Chat() {
       .filter(u => filter === 'unread' ? u.unreadCount > 0 : true)
   }, [users, searchTerm, filter])
 
-  // Auto-select first
+  // Auto-select first, or a user requested via sessionStorage (e.g. from Organizations "Message" button)
   useEffect(() => {
-    if (!selectedUser && !selectedGroupId && users.length > 0) setSelectedUser(users[0])
+    if (users.length === 0) return
+    const pending = typeof window !== 'undefined' ? sessionStorage.getItem('chat.startWithUser') : null
+    if (pending) {
+      const target = users.find(u => u.id === pending)
+      if (target) {
+        sessionStorage.removeItem('chat.startWithUser')
+        setListTab('users')
+        setSelectedGroupId(null)
+        setSelectedUser(target)
+        return
+      }
+    }
+    if (!selectedUser && !selectedGroupId) setSelectedUser(users[0])
   }, [users, selectedUser, selectedGroupId])
 
 
