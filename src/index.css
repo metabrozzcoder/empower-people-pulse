@@ -103,3 +103,27 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Shadcn-studio inspired design tokens */
+@layer utilities {
+  .bg-gradient-primary {
+    background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(217 91% 60%) 50%, hsl(262 83% 58%) 100%);
+  }
+  .bg-gradient-sunset {
+    background-image: linear-gradient(135deg, hsl(346 84% 61%) 0%, hsl(24 95% 63%) 100%);
+  }
+  .bg-gradient-ring {
+    background-image: conic-gradient(from 180deg at 50% 50%, hsl(217 91% 60%), hsl(262 83% 58%), hsl(346 84% 61%), hsl(24 95% 63%), hsl(217 91% 60%));
+  }
+  .shadow-glow {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.1), 0 10px 30px -10px hsl(var(--primary) / 0.5);
+  }
+
+  @keyframes shimmer-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  .animate-shimmer-slide {
+    animation: shimmer-slide 2.2s linear infinite;
+  }
+}
