@@ -188,9 +188,16 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
   }
 
   const downloadAttachment = async (a: Attachment) => {
-    const { data, error } = await supabase.storage.from('candidate-files').createSignedUrl(a.path, 300)
-    if (error || !data?.signedUrl) { toast({ title: 'Download failed', description: error?.message, variant: 'destructive' }); return }
-    window.open(data.signedUrl, '_blank')
+    const { data, error } = await supabase.storage.from('candidate-files').download(a.path)
+    if (error || !data) { toast({ title: 'Download failed', description: error?.message, variant: 'destructive' }); return }
+    const url = URL.createObjectURL(data)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = a.name
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   const removeAttachment = async (c: Candidate, a: Attachment) => {
