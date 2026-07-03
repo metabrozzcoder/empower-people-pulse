@@ -388,7 +388,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between gap-4 flex-wrap">
                           <div className="flex items-start space-x-4 flex-1 min-w-[280px]">
-                            <Avatar className="w-16 h-16">
+                            <Avatar variant="gradient" size="xl">
                               <AvatarFallback>{c.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}</AvatarFallback>
                             </Avatar>
                             <div className="space-y-3 flex-1">
