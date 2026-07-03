@@ -392,7 +392,40 @@ export default function Employees() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              <Input id="department" placeholder="Enter department" value={employeeData.department} onChange={(e) => setEmployeeData({...employeeData, department: e.target.value})} />
+              {departmentMode === 'preset' ? (
+                <Select
+                  value={employeeData.department}
+                  onValueChange={(v) => {
+                    if (v === '__custom__') {
+                      setDepartmentMode('custom')
+                      setEmployeeData({ ...employeeData, department: '' })
+                    } else {
+                      setEmployeeData({ ...employeeData, department: v })
+                    }
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectContent>
+                    {departmentOptions.map(d => (
+                      <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                    ))}
+                    <SelectItem value="__custom__">+ Add custom department…</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    id="department"
+                    placeholder="Enter department"
+                    value={employeeData.department}
+                    onChange={(e) => setEmployeeData({ ...employeeData, department: e.target.value })}
+                    autoFocus
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={() => { setDepartmentMode('preset'); setEmployeeData({ ...employeeData, department: '' }) }}>
+                    Presets
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="salary">Salary</Label>
