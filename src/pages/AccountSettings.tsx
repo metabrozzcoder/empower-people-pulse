@@ -123,13 +123,16 @@ const AccountSettings = () => {
       toast({ title: t('pages.accountSettings.toasts.nameRequired'), variant: 'destructive' })
       return
     }
-    const { error } = await supabase.from('profiles').update({
+    const updates: Record<string, unknown> = {
       name: profile.name,
       phone: profile.phone,
-      department: profile.department,
-      position: profile.role,
       avatar_url: profile.avatar,
-    } as never).eq('id', currentUser.id)
+    }
+    if (canEditOrg) {
+      updates.department = profile.department
+      updates.position = profile.role
+    }
+    const { error } = await supabase.from('profiles').update(updates as never).eq('id', currentUser.id)
     if (error) {
       toast({ title: t('pages.accountSettings.toasts.saveFailed'), description: error.message, variant: 'destructive' })
       return
