@@ -1,6 +1,8 @@
 
 export interface Employee {
   id: number
+  dbId?: string
+  profileId?: string
   name: string
   email: string
   position: string

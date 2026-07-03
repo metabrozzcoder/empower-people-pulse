@@ -4,14 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Mail, Phone, MapPin, TrendingUp, Calendar } from "lucide-react"
+import { Mail, Phone, MapPin, TrendingUp, Calendar, KeyRound } from "lucide-react"
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
 
 interface EmployeeCardProps {
   employee: Employee
+  onCreateLogin?: (employee: Employee) => void
 }
 
-export function EmployeeCard({ employee }: EmployeeCardProps) {
+export function EmployeeCard({ employee, onCreateLogin }: EmployeeCardProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false)
 
   const getStatusColor = (status: Employee['status']) => {
@@ -77,6 +79,22 @@ export function EmployeeCard({ employee }: EmployeeCardProps) {
                 </div>
               </div>
               
+              {onCreateLogin && !employee.profileId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onCreateLogin(employee)
+                  }}
+                >
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Create login
+                </Button>
+              )}
+
               {employee.manager && (
                 <div className="mt-3 pt-3 border-t">
                   <p className="text-xs text-muted-foreground">
@@ -85,6 +103,20 @@ export function EmployeeCard({ employee }: EmployeeCardProps) {
                 </div>
               )}
             </div>
+            {onCreateLogin && !employee.profileId && (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setIsDetailOpen(false)
+                    onCreateLogin(employee)
+                  }}
+                >
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Create login for this employee
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
