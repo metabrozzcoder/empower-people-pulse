@@ -69,15 +69,19 @@ export default function Garage() {
   const [odomStart, setOdomStart] = useState<File | null>(null)
   const [odomEnd, setOdomEnd] = useState<File | null>(null)
 
+  const [driverIds, setDriverIds] = useState<string[]>([])
+
   const load = async () => {
-    const [v, t, r] = await Promise.all([
+    const [v, t, r, dr] = await Promise.all([
       supabase.from('vehicles').select('*').order('created_at', { ascending: false }),
       supabase.from('vehicle_trips').select('*').order('trip_date', { ascending: false }).limit(200),
       supabase.from('shooting_requests').select('id, title, workflow_status').order('created_at', { ascending: false }).limit(100),
+      supabase.from('user_roles').select('user_id').eq('role', 'driver' as any),
     ])
     setVehicles((v.data ?? []) as any)
     setTrips((t.data ?? []) as any)
     setRequests((r.data ?? []) as any)
+    setDriverIds(((dr.data ?? []) as any[]).map(x => x.user_id))
   }
   useEffect(() => { load() }, [])
 
@@ -298,13 +302,26 @@ export default function Garage() {
             <div className="space-y-2"><Label>{t('pages.garage.color')}</Label><Input value={vForm.color} onChange={e => setVForm({ ...vForm, color: e.target.value })} /></div>
             <div className="space-y-2"><Label>{t('pages.garage.currentMileage')}</Label><Input type="number" value={vForm.current_mileage} onChange={e => setVForm({ ...vForm, current_mileage: e.target.value })} /></div>
             <div className="space-y-2"><Label>{t('pages.garage.assignedDriver')}</Label>
-              <Select value={vForm.assigned_driver_id || 'none'} onValueChange={v => setVForm({ ...vForm, assigned_driver_id: v === 'none' ? '' : v })}>
-                <SelectTrigger><SelectValue placeholder={t('pages.garage.selectDriver')} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('pages.garage.none')}</SelectItem>
-                  {users.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {(() => {
+                const takenIds = new Set(
+                  vehicles
+                    .filter(v => v.assigned_driver_id && v.id !== vEdit?.id)
+                    .map(v => v.assigned_driver_id as string)
+                )
+                const availableDrivers = users.filter(u => driverIds.includes(u.id) && !takenIds.has(u.id))
+                return (
+                  <Select value={vForm.assigned_driver_id || 'none'} onValueChange={v => setVForm({ ...vForm, assigned_driver_id: v === 'none' ? '' : v })}>
+                    <SelectTrigger><SelectValue placeholder={t('pages.garage.selectDriver')} /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t('pages.garage.none')}</SelectItem>
+                      {availableDrivers.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                      {availableDrivers.length === 0 && (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">No available drivers</div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                )
+              })()}
             </div>
             <div className="col-span-2 space-y-2"><Label>{t('pages.garage.photo')}</Label>
               <Input type="file" accept="image/*" onChange={e => setVPhotoFile(e.target.files?.[0] ?? null)} />
