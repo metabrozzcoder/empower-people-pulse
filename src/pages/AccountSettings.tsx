@@ -31,6 +31,8 @@ const AccountSettings = () => {
   const { theme, setTheme } = useTheme()
   const { currentUser } = useAuth()
 
+  const canEditOrg = currentUser?.role === 'Admin' || currentUser?.role === 'HR'
+
   const [profile, setProfile] = useState({
     name: currentUser?.name || "",
     email: currentUser?.email || "",
