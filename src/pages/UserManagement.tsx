@@ -255,19 +255,24 @@ export default function UserManagement() {
     return pwd
   }
 
-  const LOGIN_DOMAIN = 'ark.local'
+  const LOGIN_DOMAIN = 'sevimlitv.uz'
 
   const buildLoginEmail = (name: string, surname: string) => {
+    const cyrMap: Record<string, string> = {
+      а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'yo',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',
+      н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'kh',ц:'ts',ч:'ch',ш:'sh',щ:'sch',
+      ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya',ў:'u',қ:'q',ғ:'g',ҳ:'h',
+    }
     const clean = (s: string) => (s || '')
       .toLowerCase()
+      .split('').map(ch => cyrMap[ch] ?? ch).join('')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/\s+/g, '')
       .replace(/[^a-z0-9]/g, '')
     const n = clean(name)
     const s = clean(surname)
     const local = n && s ? `${n}.${s}` : (n || s || `user${Math.floor(1000 + Math.random() * 9000)}`)
-    const suffix = Math.floor(100 + Math.random() * 900)
-    return `${local}.${suffix}@${LOGIN_DOMAIN}`
+    return `${local}@${LOGIN_DOMAIN}`
   }
 
   const handleAddUser = () => {
@@ -391,8 +396,23 @@ export default function UserManagement() {
     }
 
     // Login email and password are auto-generated; user has no manual control
-    const loginEmail = generatedCredentials.username || buildLoginEmail(formData.name, formData.surname)
+    let loginEmail = generatedCredentials.username || buildLoginEmail(formData.name, formData.surname)
     const password = generatedCredentials.password || generateStrongPassword()
+    // Ensure uniqueness of the generated login email against existing profiles
+    if (!selectedUser) {
+      const [local, domain] = loginEmail.split('@')
+      let candidate = loginEmail
+      let n = 1
+      // Try base, then base2, base3, ... until unused
+      while (true) {
+        const { data: existing } = await supabase.from('profiles').select('id').eq('email', candidate).maybeSingle()
+        if (!existing) break
+        n += 1
+        candidate = `${local}${n}@${domain}`
+        if (n > 50) { candidate = `${local}.${Math.floor(1000 + Math.random() * 9000)}@${domain}`; break }
+      }
+      loginEmail = candidate
+    }
     if (!generatedCredentials.username || !generatedCredentials.password) {
       setGeneratedCredentials(prev => ({ ...prev, username: loginEmail, password }))
     }

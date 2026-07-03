@@ -619,6 +619,7 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     };
     const slugify = (s: string) => translit(s).replace(/[^a-z0-9]+/g, "").slice(0, 24);
 
+    const LOGIN_DOMAIN = "sevimlitv.uz";
     let username: string | undefined = args.username;
     if (!username) {
       const base = slugify(args.name) || "user";
@@ -628,7 +629,7 @@ async function runTool(name: string, args: any, supabase: any, userId: string) {
     let syntheticEmail = false;
     if (!email) {
       const slug = slugify(username) || slugify(args.name) || "user";
-      email = `${slug}.${crypto.randomUUID().slice(0, 8)}@noemail.local`;
+      email = `${slug}.${crypto.randomUUID().slice(0, 6)}@${LOGIN_DOMAIN}`;
       syntheticEmail = true;
     }
     const allowedRoles = ["admin", "hr", "employee", "guest", "shooting_moderator", "director", "tech_supply", "driver", "accountant"];

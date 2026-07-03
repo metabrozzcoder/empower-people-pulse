@@ -48,16 +48,17 @@ Deno.serve(async (req) => {
     };
     const slugify = (s: string) => translit(String(s || "")).replace(/[^a-z0-9]+/g, "").slice(0, 24);
 
+    const LOGIN_DOMAIN = "sevimlitv.uz";
     // Auto-generate username from name if not provided
     if (!username) {
       const base = slugify(name) || "user";
       username = `${base}${Math.floor(1000 + Math.random() * 9000)}`;
     }
-    // Email is optional — synthesize a placeholder so Supabase Auth accepts the user
+    // Email is optional — synthesize a login email under the corporate domain
     let syntheticEmail = false;
     if (!email) {
       const slug = slugify(username) || slugify(name) || "user";
-      email = `${slug}.${crypto.randomUUID().slice(0, 8)}@noemail.local`;
+      email = `${slug}.${crypto.randomUUID().slice(0, 6)}@${LOGIN_DOMAIN}`;
       syntheticEmail = true;
     }
     const allowedRoles = ["admin", "hr", "employee", "guest", "shooting_moderator", "director", "tech_supply", "driver", "accountant"];
