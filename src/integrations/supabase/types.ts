@@ -261,6 +261,74 @@ export type Database = {
         }
         Relationships: []
       }
+      candidates: {
+        Row: {
+          ai_score: number
+          applied_date: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          experience: string | null
+          id: string
+          job_posting_id: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          position: string | null
+          resume_url: string | null
+          skills: string[]
+          source: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_score?: number
+          applied_date?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          experience?: string | null
+          id?: string
+          job_posting_id?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          position?: string | null
+          resume_url?: string | null
+          skills?: string[]
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_score?: number
+          applied_date?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          experience?: string | null
+          id?: string
+          job_posting_id?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          position?: string | null
+          resume_url?: string | null
+          skills?: string[]
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidates_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_members: {
         Row: {
           conversation_id: string
@@ -544,6 +612,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_postings: {
+        Row: {
+          created_at: string
+          department: string | null
+          description: string | null
+          id: string
+          posted_by: string | null
+          requirements: string[]
+          salary: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          posted_by?: string | null
+          requirements?: string[]
+          salary?: string | null
+          status?: string
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          posted_by?: string | null
+          requirements?: string[]
+          salary?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       messages: {
         Row: {

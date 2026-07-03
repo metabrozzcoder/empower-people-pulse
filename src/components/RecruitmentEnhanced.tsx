@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -6,174 +6,331 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { 
-  Brain, 
-  Users, 
-  Search, 
-  Plus, 
-  Filter, 
-  Star, 
-  Clock, 
-  Mail, 
-  Phone,
-  Calendar,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Edit,
-  Trash2,
-  Eye,
-  UserCheck,
-  MessageSquare,
-  Download
+import {
+  Brain, Search, Plus, Filter, Star, Clock, Mail, Phone, Calendar,
+  Edit, Eye, UserCheck, MessageSquare, Download, Trash2, Loader2,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/integrations/supabase/client'
+import { formatDate } from '@/lib/date'
+
+type CandidateStatus =
+  | 'Applied' | 'Shortlisted' | 'Interview Scheduled' | 'Interview Completed'
+  | 'Offered' | 'Hired' | 'Rejected'
 
 interface Candidate {
   id: string
   name: string
-  email: string
-  phone: string
-  position: string
-  aiScore: number
-  status: 'Applied' | 'Shortlisted' | 'Interview Scheduled' | 'Interview Completed' | 'Offered' | 'Hired' | 'Rejected'
+  email: string | null
+  phone: string | null
+  position: string | null
+  ai_score: number
+  status: CandidateStatus
   skills: string[]
-  experience: string
-  avatar?: string
-  appliedDate: string
-  notes?: string
+  experience: string | null
+  notes: string | null
+  applied_date: string
+  job_posting_id: string | null
+  source: string | null
 }
 
 interface JobPosting {
   id: string
   title: string
-  department: string
-  type: 'Full-time' | 'Part-time' | 'Contract' | 'Internship'
-  applicants: number
-  status: 'Active' | 'Paused' | 'Closed'
-  posted: string
-  salary: string
+  department: string | null
+  type: 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | string
+  status: 'Active' | 'Paused' | 'Closed' | string
+  salary: string | null
   requirements: string[]
+  description: string | null
+  created_at: string
+  applicants?: number
 }
-
-const mockCandidates: Candidate[] = []
-
-const mockJobPostings: JobPosting[] = []
 
 interface RecruitmentEnhancedProps {
   onCandidateAction?: (action: string, candidateId: string) => void
   onJobAction?: (action: string, jobId: string) => void
 }
 
+const emptyCandidate = {
+  name: '', email: '', phone: '', position: '',
+  ai_score: 0, status: 'Applied' as CandidateStatus,
+  skills: '', experience: '', notes: '', job_posting_id: '' as string,
+}
+
+const emptyJob = {
+  title: '', department: '', type: 'Full-time',
+  status: 'Active', salary: '', requirements: '', description: '',
+}
+
 export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: RecruitmentEnhancedProps) {
   const { toast } = useToast()
-  const [candidates, setCandidates] = useState<Candidate[]>(mockCandidates)
-  const [jobPostings, setJobPostings] = useState<JobPosting[]>(mockJobPostings)
+  const [loading, setLoading] = useState(true)
+  const [candidates, setCandidates] = useState<Candidate[]>([])
+  const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
+  const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null)
+
   const [isInterviewDialogOpen, setIsInterviewDialogOpen] = useState(false)
   const [isAddCandidateDialogOpen, setIsAddCandidateDialogOpen] = useState(false)
   const [isViewCandidateDialogOpen, setIsViewCandidateDialogOpen] = useState(false)
   const [isEditCandidateDialogOpen, setIsEditCandidateDialogOpen] = useState(false)
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false)
   const [isAddJobDialogOpen, setIsAddJobDialogOpen] = useState(false)
+  const [isViewJobDialogOpen, setIsViewJobDialogOpen] = useState(false)
+  const [isEditJobDialogOpen, setIsEditJobDialogOpen] = useState(false)
 
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-600'
-    if (score >= 70) return 'text-yellow-600'
-    return 'text-red-600'
+  const [interviewForm, setInterviewForm] = useState({ date: '', interviewer: '', notes: '' })
+  const [addForm, setAddForm] = useState({ ...emptyCandidate })
+  const [editForm, setEditForm] = useState({ ...emptyCandidate })
+  const [messageForm, setMessageForm] = useState({ subject: '', body: '' })
+  const [addJobForm, setAddJobForm] = useState({ ...emptyJob })
+  const [editJobForm, setEditJobForm] = useState({ ...emptyJob })
+
+  const fetchAll = async () => {
+    setLoading(true)
+    const [{ data: cands, error: cErr }, { data: jobs, error: jErr }] = await Promise.all([
+      supabase.from('candidates').select('*').order('created_at', { ascending: false }),
+      supabase.from('job_postings').select('*').order('created_at', { ascending: false }),
+    ])
+    if (cErr) toast({ title: 'Failed to load candidates', description: cErr.message, variant: 'destructive' })
+    if (jErr) toast({ title: 'Failed to load job postings', description: jErr.message, variant: 'destructive' })
+    setCandidates((cands as any) || [])
+    setJobPostings((jobs as any) || [])
+    setLoading(false)
   }
 
-  const getStatusColor = (status: Candidate['status']) => {
-    switch (status) {
+  useEffect(() => { fetchAll() }, [])
+
+  useEffect(() => {
+    const ch = supabase
+      .channel('recruitment-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'candidates' }, fetchAll)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'job_postings' }, fetchAll)
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const applicantsByJob = useMemo(() => {
+    const map: Record<string, number> = {}
+    candidates.forEach(c => { if (c.job_posting_id) map[c.job_posting_id] = (map[c.job_posting_id] || 0) + 1 })
+    return map
+  }, [candidates])
+
+  const getScoreColor = (s: number) => s >= 90 ? 'text-green-600' : s >= 70 ? 'text-yellow-600' : 'text-red-600'
+  const getStatusColor = (s: CandidateStatus) => {
+    switch (s) {
       case 'Applied': return 'bg-blue-100 text-blue-800'
       case 'Shortlisted': return 'bg-green-100 text-green-800'
       case 'Interview Scheduled': return 'bg-purple-100 text-purple-800'
       case 'Interview Completed': return 'bg-yellow-100 text-yellow-800'
       case 'Offered': return 'bg-orange-100 text-orange-800'
-      case 'Hired': return 'bg-green-100 text-green-800'
+      case 'Hired': return 'bg-emerald-100 text-emerald-800'
       case 'Rejected': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
 
-  const handleCandidateAction = (action: string, candidate: Candidate) => {
+  const updateCandidateStatus = async (id: string, status: CandidateStatus, extra: Record<string, any> = {}) => {
+    const { error } = await supabase.from('candidates').update({ status, ...extra }).eq('id', id)
+    if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return false }
+    return true
+  }
+
+  const handleCandidateAction = async (action: string, c: Candidate) => {
     switch (action) {
       case 'schedule_interview':
-        setSelectedCandidate(candidate)
-        setIsInterviewDialogOpen(true)
-        break
+        setSelectedCandidate(c)
+        setInterviewForm({ date: '', interviewer: '', notes: '' })
+        setIsInterviewDialogOpen(true); break
       case 'shortlist':
-        updateCandidateStatus(candidate.id, 'Shortlisted')
-        toast({
-          title: 'Candidate Shortlisted',
-          description: `${candidate.name} has been shortlisted for ${candidate.position}`,
-        })
+        if (await updateCandidateStatus(c.id, 'Shortlisted'))
+          toast({ title: 'Shortlisted', description: `${c.name} was shortlisted` })
         break
       case 'hire':
-        updateCandidateStatus(candidate.id, 'Hired')
-        toast({
-          title: 'Candidate Hired',
-          description: `${candidate.name} has been hired for ${candidate.position}`,
-        })
+        if (await updateCandidateStatus(c.id, 'Hired'))
+          toast({ title: 'Hired', description: `${c.name} was hired` })
         break
       case 'reject':
-        updateCandidateStatus(candidate.id, 'Rejected')
-        toast({
-          title: 'Candidate Rejected',
-          description: `${candidate.name} has been rejected`,
-          variant: 'destructive'
-        })
+        if (await updateCandidateStatus(c.id, 'Rejected'))
+          toast({ title: 'Rejected', description: `${c.name} was rejected`, variant: 'destructive' })
         break
-      case 'send_email':
-        toast({
-          title: 'Email Sent',
-          description: `Email sent to ${candidate.name} successfully`,
-        })
+      case 'delete': {
+        if (!confirm(`Delete candidate ${c.name}?`)) return
+        const { error } = await supabase.from('candidates').delete().eq('id', c.id)
+        if (error) toast({ title: 'Delete failed', description: error.message, variant: 'destructive' })
+        else toast({ title: 'Deleted', description: `${c.name} removed` })
         break
-      case 'download_resume':
-        // Simulate resume download
-        const resumeContent = `Resume for ${candidate.name}\n\nPosition: ${candidate.position}\nExperience: ${candidate.experience}\nSkills: ${candidate.skills.join(', ')}\nEmail: ${candidate.email}\nPhone: ${candidate.phone}`
-        const blob = new Blob([resumeContent], { type: 'text/plain' })
+      }
+      case 'download_resume': {
+        const content = `Resume for ${c.name}\n\nPosition: ${c.position ?? ''}\nExperience: ${c.experience ?? ''}\nSkills: ${c.skills.join(', ')}\nEmail: ${c.email ?? ''}\nPhone: ${c.phone ?? ''}\nNotes: ${c.notes ?? ''}`
+        const blob = new Blob([content], { type: 'text/plain' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
-        a.href = url
-        a.download = `${candidate.name.replace(/\s+/g, '_')}_Resume.txt`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
+        a.href = url; a.download = `${c.name.replace(/\s+/g, '_')}_Resume.txt`
+        document.body.appendChild(a); a.click(); document.body.removeChild(a)
         URL.revokeObjectURL(url)
-        toast({
-          title: 'Resume Downloaded',
-          description: `${candidate.name}'s resume has been downloaded`,
-        })
+        toast({ title: 'Resume downloaded' })
         break
-      default:
-        toast({
-          title: action,
-          description: `${action} performed for ${candidate.name}`,
-        })
+      }
+      case 'send_email': {
+        if (c.email) window.location.href = `mailto:${c.email}`
+        else toast({ title: 'No email', description: 'Candidate has no email', variant: 'destructive' })
+        break
+      }
     }
-    onCandidateAction?.(action, candidate.id)
+    onCandidateAction?.(action, c.id)
   }
 
-  const updateCandidateStatus = (candidateId: string, newStatus: Candidate['status']) => {
-    setCandidates(prev => 
-      prev.map(candidate => 
-        candidate.id === candidateId ? { ...candidate, status: newStatus } : candidate
-      )
-    )
+  const submitInterview = async () => {
+    if (!selectedCandidate) return
+    if (!interviewForm.date) { toast({ title: 'Pick a date', variant: 'destructive' }); return }
+    const note = `Interview scheduled for ${new Date(interviewForm.date).toLocaleString()}${interviewForm.interviewer ? ` with ${interviewForm.interviewer}` : ''}${interviewForm.notes ? ` — ${interviewForm.notes}` : ''}`
+    const combinedNotes = [selectedCandidate.notes, note].filter(Boolean).join('\n')
+    if (await updateCandidateStatus(selectedCandidate.id, 'Interview Scheduled', { notes: combinedNotes })) {
+      toast({ title: 'Interview scheduled', description: `for ${selectedCandidate.name}` })
+      setIsInterviewDialogOpen(false)
+    }
   }
 
-  const filteredCandidates = candidates.filter(candidate => {
-    if (filterStatus !== 'all' && candidate.status !== filterStatus) return false
-    if (searchTerm && !candidate.name.toLowerCase().includes(searchTerm.toLowerCase())) return false
+  const submitAdd = async () => {
+    if (!addForm.name.trim()) { toast({ title: 'Name required', variant: 'destructive' }); return }
+    const { data: { user } } = await supabase.auth.getUser()
+    const payload = {
+      name: addForm.name.trim(),
+      email: addForm.email.trim() || null,
+      phone: addForm.phone.trim() || null,
+      position: addForm.position.trim() || null,
+      ai_score: Number(addForm.ai_score) || 0,
+      status: addForm.status,
+      skills: addForm.skills.split(',').map(s => s.trim()).filter(Boolean),
+      experience: addForm.experience.trim() || null,
+      notes: addForm.notes.trim() || null,
+      job_posting_id: addForm.job_posting_id || null,
+      created_by: user?.id ?? null,
+    }
+    const { error } = await supabase.from('candidates').insert(payload)
+    if (error) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); return }
+    toast({ title: 'Candidate added' })
+    setAddForm({ ...emptyCandidate })
+    setIsAddCandidateDialogOpen(false)
+  }
+
+  const submitEdit = async () => {
+    if (!selectedCandidate) return
+    const payload = {
+      name: editForm.name.trim(),
+      email: editForm.email.trim() || null,
+      phone: editForm.phone.trim() || null,
+      position: editForm.position.trim() || null,
+      ai_score: Number(editForm.ai_score) || 0,
+      status: editForm.status,
+      skills: typeof editForm.skills === 'string'
+        ? editForm.skills.split(',').map(s => s.trim()).filter(Boolean)
+        : editForm.skills,
+      experience: editForm.experience.trim() || null,
+      notes: editForm.notes.trim() || null,
+      job_posting_id: editForm.job_posting_id || null,
+    }
+    const { error } = await supabase.from('candidates').update(payload).eq('id', selectedCandidate.id)
+    if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return }
+    toast({ title: 'Candidate updated' })
+    setIsEditCandidateDialogOpen(false)
+  }
+
+  const submitMessage = () => {
+    if (!selectedCandidate?.email) { toast({ title: 'No email on file', variant: 'destructive' }); return }
+    const url = `mailto:${selectedCandidate.email}?subject=${encodeURIComponent(messageForm.subject)}&body=${encodeURIComponent(messageForm.body)}`
+    window.location.href = url
+    setIsMessageDialogOpen(false)
+    setMessageForm({ subject: '', body: '' })
+  }
+
+  const submitAddJob = async () => {
+    if (!addJobForm.title.trim()) { toast({ title: 'Title required', variant: 'destructive' }); return }
+    const { data: { user } } = await supabase.auth.getUser()
+    const payload = {
+      title: addJobForm.title.trim(),
+      department: addJobForm.department.trim() || null,
+      type: addJobForm.type,
+      status: addJobForm.status,
+      salary: addJobForm.salary.trim() || null,
+      requirements: addJobForm.requirements.split(',').map(s => s.trim()).filter(Boolean),
+      description: addJobForm.description.trim() || null,
+      posted_by: user?.id ?? null,
+    }
+    const { error } = await supabase.from('job_postings').insert(payload)
+    if (error) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); return }
+    toast({ title: 'Job posted' })
+    setAddJobForm({ ...emptyJob })
+    setIsAddJobDialogOpen(false)
+  }
+
+  const submitEditJob = async () => {
+    if (!selectedJob) return
+    const payload = {
+      title: editJobForm.title.trim(),
+      department: editJobForm.department.trim() || null,
+      type: editJobForm.type,
+      status: editJobForm.status,
+      salary: editJobForm.salary.trim() || null,
+      requirements: typeof editJobForm.requirements === 'string'
+        ? editJobForm.requirements.split(',').map(s => s.trim()).filter(Boolean)
+        : editJobForm.requirements,
+      description: editJobForm.description.trim() || null,
+    }
+    const { error } = await supabase.from('job_postings').update(payload).eq('id', selectedJob.id)
+    if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return }
+    toast({ title: 'Job updated' })
+    setIsEditJobDialogOpen(false)
+  }
+
+  const deleteJob = async (j: JobPosting) => {
+    if (!confirm(`Delete job "${j.title}"?`)) return
+    const { error } = await supabase.from('job_postings').delete().eq('id', j.id)
+    if (error) toast({ title: 'Delete failed', description: error.message, variant: 'destructive' })
+    else toast({ title: 'Job deleted' })
+    onJobAction?.('delete', j.id)
+  }
+
+  const downloadJob = (j: JobPosting) => {
+    const content = `Job Title: ${j.title}\nDepartment: ${j.department ?? ''}\nType: ${j.type}\nStatus: ${j.status}\nSalary: ${j.salary ?? ''}\nRequirements: ${j.requirements.join(', ')}\nDescription: ${j.description ?? ''}\nApplicants: ${applicantsByJob[j.id] || 0}`
+    const blob = new Blob([content], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `${j.title.replace(/\s+/g, '_')}_Job_Posting.txt`
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    toast({ title: 'Job posting downloaded' })
+  }
+
+  const filteredCandidates = candidates.filter(c => {
+    if (filterStatus !== 'all' && c.status !== filterStatus) return false
+    if (searchTerm && !`${c.name} ${c.position ?? ''} ${c.email ?? ''}`.toLowerCase().includes(searchTerm.toLowerCase())) return false
     return true
   })
+
+  // Analytics from real data
+  const totalApps = candidates.length
+  const interviewCount = candidates.filter(c => c.status === 'Interview Scheduled' || c.status === 'Interview Completed').length
+  const hiredCount = candidates.filter(c => c.status === 'Hired').length
+  const interviewRate = totalApps ? Math.round((interviewCount / totalApps) * 100) : 0
+  const hireRate = totalApps ? Math.round((hiredCount / totalApps) * 100) : 0
+
+  const sourceStats = useMemo(() => {
+    const groups: Record<string, number> = {}
+    candidates.forEach(c => { const k = (c.source || 'Direct'); groups[k] = (groups[k] || 0) + 1 })
+    const items = Object.entries(groups).map(([source, count]) => ({ source, count }))
+    items.sort((a, b) => b.count - a.count)
+    const total = candidates.length || 1
+    return items.map(i => ({ ...i, percentage: Math.round((i.count / total) * 100) }))
+  }, [candidates])
 
   return (
     <div className="space-y-6">
@@ -190,176 +347,115 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Brain className="h-5 w-5 text-primary" />
-                AI-Enhanced Candidate Management
+                Candidate Management
               </CardTitle>
-              <CardDescription>
-                Advanced AI screening with comprehensive candidate tracking
-              </CardDescription>
+              <CardDescription>Track applicants through the hiring pipeline</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-4 mb-6">
-                <div className="flex-1">
+              <div className="flex gap-4 mb-6 flex-wrap">
+                <div className="flex-1 min-w-[220px]">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search candidates..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Search candidates..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
                   </div>
                 </div>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-[200px]">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue />
+                  <SelectTrigger className="w-[220px]">
+                    <Filter className="h-4 w-4 mr-2" /><SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Applied">Applied</SelectItem>
-                    <SelectItem value="Shortlisted">Shortlisted</SelectItem>
-                    <SelectItem value="Interview Scheduled">Interview Scheduled</SelectItem>
-                    <SelectItem value="Interview Completed">Interview Completed</SelectItem>
-                    <SelectItem value="Offered">Offered</SelectItem>
-                    <SelectItem value="Hired">Hired</SelectItem>
-                    <SelectItem value="Rejected">Rejected</SelectItem>
+                    {['Applied','Shortlisted','Interview Scheduled','Interview Completed','Offered','Hired','Rejected'].map(s =>
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
-                <Button onClick={() => setIsAddCandidateDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Candidate
+                <Button onClick={() => { setAddForm({ ...emptyCandidate }); setIsAddCandidateDialogOpen(true) }}>
+                  <Plus className="h-4 w-4 mr-2" />Add Candidate
                 </Button>
               </div>
 
-              <div className="grid gap-4">
-                {filteredCandidates.map((candidate) => (
-                  <Card key={candidate.id} className="border-l-4 border-l-primary hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4 flex-1">
-                          <Avatar className="w-16 h-16">
-                            <AvatarImage src={candidate.avatar} />
-                            <AvatarFallback>{candidate.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                          </Avatar>
-                          <div className="space-y-3 flex-1">
-                            <div>
-                              <div className="flex items-center space-x-3 mb-2">
-                                <h3 className="font-semibold text-lg">{candidate.name}</h3>
-                                <Badge className={getStatusColor(candidate.status)}>
-                                  {candidate.status}
-                                </Badge>
-                                <div className="flex items-center gap-2">
-                                  <Star className="h-4 w-4 text-yellow-500" />
-                                  <span className={`font-bold ${getScoreColor(candidate.aiScore)}`}>
-                                    {candidate.aiScore}% Match
-                                  </span>
+              {loading ? (
+                <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              ) : filteredCandidates.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  No candidates yet. Click "Add Candidate" to get started.
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {filteredCandidates.map(c => (
+                    <Card key={c.id} className="border-l-4 border-l-primary hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
+                          <div className="flex items-start space-x-4 flex-1 min-w-[280px]">
+                            <Avatar className="w-16 h-16">
+                              <AvatarFallback>{c.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="space-y-3 flex-1">
+                              <div>
+                                <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                  <h3 className="font-semibold text-lg">{c.name}</h3>
+                                  <Badge className={getStatusColor(c.status)}>{c.status}</Badge>
+                                  {c.ai_score > 0 && (
+                                    <div className="flex items-center gap-1">
+                                      <Star className="h-4 w-4 text-yellow-500" />
+                                      <span className={`font-bold ${getScoreColor(c.ai_score)}`}>{c.ai_score}% Match</span>
+                                    </div>
+                                  )}
                                 </div>
+                                {c.position && <p className="text-muted-foreground font-medium">{c.position}</p>}
                               </div>
-                              <p className="text-muted-foreground font-medium">{candidate.position}</p>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                                {c.email && <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground" /><span className="truncate">{c.email}</span></div>}
+                                {c.phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /><span>{c.phone}</span></div>}
+                                {c.experience && <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-muted-foreground" /><span>{c.experience}</span></div>}
+                                <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-muted-foreground" /><span>Applied {formatDate(c.applied_date)}</span></div>
+                              </div>
+                              {c.skills.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {c.skills.map((s,i) => <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>)}
+                                </div>
+                              )}
+                              {c.notes && <div className="bg-muted/50 p-3 rounded-lg"><p className="text-sm whitespace-pre-wrap">{c.notes}</p></div>}
                             </div>
-                            
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                              <div className="flex items-center gap-2">
-                                <Mail className="h-4 w-4 text-muted-foreground" />
-                                <span>{candidate.email}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Phone className="h-4 w-4 text-muted-foreground" />
-                                <span>{candidate.phone}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                <span>{candidate.experience} experience</span>
-                              </div>
-                            </div>
-                            
-                            <div className="flex flex-wrap gap-2">
-                              {candidate.skills.map((skill, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                  {skill}
-                                </Badge>
-                              ))}
-                            </div>
-
-                            {candidate.notes && (
-                              <div className="bg-muted/50 p-3 rounded-lg">
-                                <p className="text-sm">{candidate.notes}</p>
-                              </div>
-                            )}
                           </div>
-                        </div>
-                        
-                        <div className="flex flex-col gap-2 ml-4">
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleCandidateAction('schedule_interview', candidate)}
-                          >
-                            <Calendar className="w-4 h-4 mr-1" />
-                            Schedule Interview
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleCandidateAction('shortlist', candidate)}
-                            disabled={candidate.status === 'Shortlisted' || candidate.status === 'Hired'}
-                          >
-                            <UserCheck className="w-4 h-4 mr-1" />
-                            {candidate.status === 'Shortlisted' ? 'Shortlisted' : 'Shortlist'}
-                          </Button>
-                          <div className="flex gap-1">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedCandidate(candidate)
-                                setIsViewCandidateDialogOpen(true)
-                              }}
-                            >
-                              <Eye className="w-4 h-4" />
+                          <div className="flex flex-col gap-2 min-w-[180px]">
+                            <Button size="sm" onClick={() => handleCandidateAction('schedule_interview', c)}>
+                              <Calendar className="w-4 h-4 mr-1" />Schedule Interview
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedCandidate(candidate)
-                                setIsMessageDialogOpen(true)
-                              }}
-                            >
-                              <MessageSquare className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedCandidate(candidate)
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button size="sm" variant="outline" onClick={() => handleCandidateAction('shortlist', c)} disabled={c.status==='Shortlisted'||c.status==='Hired'}>
+                                <UserCheck className="w-4 h-4 mr-1" />Shortlist
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => handleCandidateAction('hire', c)} disabled={c.status==='Hired'}>
+                                Hire
+                              </Button>
+                            </div>
+                            <div className="flex gap-1 flex-wrap">
+                              <Button size="sm" variant="outline" onClick={() => { setSelectedCandidate(c); setIsViewCandidateDialogOpen(true) }} title="View"><Eye className="w-4 h-4" /></Button>
+                              <Button size="sm" variant="outline" onClick={() => { setSelectedCandidate(c); setMessageForm({ subject:'', body:'' }); setIsMessageDialogOpen(true) }} title="Message"><MessageSquare className="w-4 h-4" /></Button>
+                              <Button size="sm" variant="outline" onClick={() => {
+                                setSelectedCandidate(c)
+                                setEditForm({
+                                  name: c.name, email: c.email ?? '', phone: c.phone ?? '',
+                                  position: c.position ?? '', ai_score: c.ai_score, status: c.status,
+                                  skills: c.skills.join(', ') as any, experience: c.experience ?? '',
+                                  notes: c.notes ?? '', job_posting_id: c.job_posting_id ?? '',
+                                })
                                 setIsEditCandidateDialogOpen(true)
-                              }}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleCandidateAction('download_resume', candidate)}
-                              title="Download Resume"
-                            >
-                              <Download className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleCandidateAction('send_email', candidate)}
-                              title="Send Email"
-                            >
-                              <Mail className="w-4 h-4" />
-                            </Button>
+                              }} title="Edit"><Edit className="w-4 h-4" /></Button>
+                              <Button size="sm" variant="outline" onClick={() => handleCandidateAction('download_resume', c)} title="Download resume"><Download className="w-4 h-4" /></Button>
+                              <Button size="sm" variant="outline" onClick={() => handleCandidateAction('send_email', c)} title="Email"><Mail className="w-4 h-4" /></Button>
+                              <Button size="sm" variant="outline" onClick={() => handleCandidateAction('reject', c)} disabled={c.status==='Rejected'} title="Reject">Reject</Button>
+                              <Button size="sm" variant="outline" onClick={() => handleCandidateAction('delete', c)} title="Delete"><Trash2 className="w-4 h-4" /></Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -367,112 +463,84 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
         <TabsContent value="jobs" className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
                   <CardTitle>Job Postings Management</CardTitle>
                   <CardDescription>Create and manage job openings</CardDescription>
                 </div>
-                <Button onClick={() => setIsAddJobDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Post New Job
+                <Button onClick={() => { setAddJobForm({ ...emptyJob }); setIsAddJobDialogOpen(true) }}>
+                  <Plus className="h-4 w-4 mr-2" />Post New Job
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4">
-                {jobPostings.map((job) => (
-                  <Card key={job.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center space-x-3">
-                            <h3 className="font-semibold text-lg">{job.title}</h3>
-                            <Badge variant={job.status === 'Active' ? 'default' : 'secondary'}>
-                              {job.status}
-                            </Badge>
+              {loading ? (
+                <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+              ) : jobPostings.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">No job postings yet.</div>
+              ) : (
+                <div className="grid gap-4">
+                  {jobPostings.map(job => (
+                    <Card key={job.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between gap-4 flex-wrap">
+                          <div className="space-y-2 flex-1 min-w-[260px]">
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <h3 className="font-semibold text-lg">{job.title}</h3>
+                              <Badge variant={job.status === 'Active' ? 'default' : 'secondary'}>{job.status}</Badge>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+                              {job.department && <><span>{job.department}</span><span>•</span></>}
+                              <span>{job.type}</span>
+                              {job.salary && <><span>•</span><span>{job.salary}</span></>}
+                              <span>•</span><span>Posted {formatDate(job.created_at)}</span>
+                            </div>
+                            {job.requirements.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {job.requirements.map((r,i) => <Badge key={i} variant="outline" className="text-xs">{r}</Badge>)}
+                              </div>
+                            )}
                           </div>
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                            <span>{job.department}</span>
-                            <span>•</span>
-                            <span>{job.type}</span>
-                            <span>•</span>
-                            <span>{job.salary}</span>
-                            <span>•</span>
-                            <span>Posted: {job.posted}</span>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {job.requirements.map((req, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {req}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="text-right space-y-2">
-                          <div className="text-2xl font-bold text-primary">{job.applicants}</div>
-                          <p className="text-sm text-muted-foreground">Applicants</p>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => {
-                              toast({
-                                title: "Job Details",
-                                description: `Viewing details for ${job.title}`,
-                              })
-                            }}>
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => {
-                              toast({
-                                title: "Edit Job",
-                                description: `Editing ${job.title}`,
-                              })
-                            }}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => {
-                              const jobData = `Job Title: ${job.title}\nDepartment: ${job.department}\nType: ${job.type}\nSalary: ${job.salary}\nRequirements: ${job.requirements.join(', ')}\nApplicants: ${job.applicants}`
-                              const blob = new Blob([jobData], { type: 'text/plain' })
-                              const url = URL.createObjectURL(blob)
-                              const a = document.createElement('a')
-                              a.href = url
-                              a.download = `${job.title.replace(/\s+/g, '_')}_Job_Posting.txt`
-                              document.body.appendChild(a)
-                              a.click()
-                              document.body.removeChild(a)
-                              URL.revokeObjectURL(url)
-                              toast({
-                                title: "Job Posting Downloaded",
-                                description: `${job.title} job posting has been downloaded`,
-                              })
-                            }}>
-                              <Download className="w-4 h-4" />
-                            </Button>
+                          <div className="text-right space-y-2">
+                            <div className="text-2xl font-bold text-primary">{applicantsByJob[job.id] || 0}</div>
+                            <p className="text-sm text-muted-foreground">Applicants</p>
+                            <div className="flex gap-2 justify-end">
+                              <Button size="sm" variant="outline" onClick={() => { setSelectedJob(job); setIsViewJobDialogOpen(true) }}><Eye className="w-4 h-4" /></Button>
+                              <Button size="sm" variant="outline" onClick={() => {
+                                setSelectedJob(job)
+                                setEditJobForm({
+                                  title: job.title, department: job.department ?? '', type: job.type,
+                                  status: job.status, salary: job.salary ?? '',
+                                  requirements: job.requirements.join(', ') as any, description: job.description ?? '',
+                                })
+                                setIsEditJobDialogOpen(true)
+                              }}><Edit className="w-4 h-4" /></Button>
+                              <Button size="sm" variant="outline" onClick={() => downloadJob(job)}><Download className="w-4 h-4" /></Button>
+                              <Button size="sm" variant="outline" onClick={() => deleteJob(job)}><Trash2 className="w-4 h-4" /></Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="pipeline" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-4">
-            {['Applied', 'Shortlisted', 'Interview Scheduled', 'Hired'].map((stage) => (
+            {(['Applied','Shortlisted','Interview Scheduled','Hired'] as CandidateStatus[]).map(stage => (
               <Card key={stage}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">{stage}</CardTitle>
-                </CardHeader>
+                <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">{stage}</CardTitle></CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold mb-2">
-                    {candidates.filter(c => c.status === stage).length}
-                  </div>
+                  <div className="text-2xl font-bold mb-2">{candidates.filter(c => c.status === stage).length}</div>
                   <div className="space-y-2">
-                    {candidates.filter(c => c.status === stage).slice(0, 3).map((candidate) => (
-                      <div key={candidate.id} className="text-sm p-2 bg-muted/50 rounded">
-                        <p className="font-medium">{candidate.name}</p>
-                        <p className="text-muted-foreground text-xs">{candidate.position}</p>
+                    {candidates.filter(c => c.status === stage).slice(0,5).map(c => (
+                      <div key={c.id} className="text-sm p-2 bg-muted/50 rounded">
+                        <p className="font-medium">{c.name}</p>
+                        <p className="text-muted-foreground text-xs">{c.position}</p>
                       </div>
                     ))}
                   </div>
@@ -485,447 +553,270 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
         <TabsContent value="analytics" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">127</div>
-                <p className="text-xs text-muted-foreground">+12% from last month</p>
-                <div className="mt-2">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span>This Month</span>
-                    <span>127</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
-                  </div>
-                </div>
-              </CardContent>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Applications</CardTitle></CardHeader>
+              <CardContent><div className="text-2xl font-bold">{totalApps}</div><p className="text-xs text-muted-foreground">All time</p></CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Interview Rate</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">23%</div>
-                <p className="text-xs text-muted-foreground">+5% from last month</p>
-                <div className="mt-2">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span>Target: 25%</span>
-                    <span>23%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '92%' }}></div>
-                  </div>
-                </div>
-              </CardContent>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Interview Rate</CardTitle></CardHeader>
+              <CardContent><div className="text-2xl font-bold">{interviewRate}%</div><p className="text-xs text-muted-foreground">{interviewCount} interviewed</p></CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Hire Rate</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">18%</div>
-                <p className="text-xs text-muted-foreground">+2% from last month</p>
-                <div className="mt-2">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span>Target: 20%</span>
-                    <span>18%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-orange-600 h-2 rounded-full" style={{ width: '90%' }}></div>
-                  </div>
-                </div>
-              </CardContent>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Hire Rate</CardTitle></CardHeader>
+              <CardContent><div className="text-2xl font-bold">{hireRate}%</div><p className="text-xs text-muted-foreground">{hiredCount} hired</p></CardContent>
             </Card>
           </div>
-          
-          {/* Additional Analytics */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Source Effectiveness</CardTitle>
-                <CardDescription>Where our best candidates come from</CardDescription>
-              </CardHeader>
-              <CardContent>
+          <Card>
+            <CardHeader><CardTitle>Source Breakdown</CardTitle><CardDescription>Where candidates come from</CardDescription></CardHeader>
+            <CardContent>
+              {sourceStats.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No candidates yet.</p>
+              ) : (
                 <div className="space-y-4">
-                  {[
-                    { source: 'LinkedIn', percentage: 45, candidates: 57 },
-                    { source: 'Company Website', percentage: 28, candidates: 36 },
-                    { source: 'Referrals', percentage: 15, candidates: 19 },
-                    { source: 'Job Boards', percentage: 12, candidates: 15 }
-                  ].map((item) => (
-                    <div key={item.source} className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{item.source}</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${item.percentage}%` }}
-                          ></div>
+                  {sourceStats.map(i => (
+                    <div key={i.source} className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{i.source}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-32 bg-muted rounded-full h-2">
+                          <div className="bg-primary h-2 rounded-full" style={{ width: `${i.percentage}%` }} />
                         </div>
-                        <span className="text-sm text-muted-foreground w-12">{item.candidates}</span>
+                        <span className="text-sm text-muted-foreground w-16 text-right">{i.count} ({i.percentage}%)</span>
                       </div>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Time to Hire</CardTitle>
-                <CardDescription>Average days from application to hire</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { position: 'Software Engineer', days: 18, trend: 'down' },
-                    { position: 'Product Manager', days: 25, trend: 'up' },
-                    { position: 'Designer', days: 22, trend: 'stable' },
-                    { position: 'Sales Rep', days: 15, trend: 'down' }
-                  ].map((item) => (
-                    <div key={item.position} className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{item.position}</span>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm">{item.days} days</span>
-                        <div className={`w-2 h-2 rounded-full ${
-                          item.trend === 'down' ? 'bg-green-500' : 
-                          item.trend === 'up' ? 'bg-red-500' : 'bg-yellow-500'
-                        }`}></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
       {/* Interview Dialog */}
       <Dialog open={isInterviewDialogOpen} onOpenChange={setIsInterviewDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Schedule Interview</DialogTitle>
-            <DialogDescription>Schedule an interview with the selected candidate</DialogDescription>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Schedule Interview</DialogTitle><DialogDescription>{selectedCandidate?.name}</DialogDescription></DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Candidate</Label>
-              <p className="font-medium">{selectedCandidate?.name}</p>
+            <div className="space-y-2"><Label>Interview Date</Label><Input type="datetime-local" value={interviewForm.date} onChange={e => setInterviewForm(v => ({ ...v, date: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Interviewer</Label><Input placeholder="Name of interviewer" value={interviewForm.interviewer} onChange={e => setInterviewForm(v => ({ ...v, interviewer: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Notes</Label><Textarea placeholder="Interview notes..." value={interviewForm.notes} onChange={e => setInterviewForm(v => ({ ...v, notes: e.target.value }))} /></div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsInterviewDialogOpen(false)}>Cancel</Button>
+              <Button onClick={submitInterview}>Schedule</Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="interview-date">Interview Date</Label>
-              <Input type="datetime-local" id="interview-date" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="interviewer">Interviewer</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select interviewer" />
-                </SelectTrigger>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Candidate */}
+      <Dialog open={isAddCandidateDialogOpen} onOpenChange={setIsAddCandidateDialogOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Add Candidate</DialogTitle><DialogDescription>Create a new candidate</DialogDescription></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2"><Label>Full Name *</Label><Input value={addForm.name} onChange={e => setAddForm(v => ({ ...v, name: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Email</Label><Input type="email" value={addForm.email} onChange={e => setAddForm(v => ({ ...v, email: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Phone</Label><Input value={addForm.phone} onChange={e => setAddForm(v => ({ ...v, phone: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Position</Label><Input value={addForm.position} onChange={e => setAddForm(v => ({ ...v, position: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Job Posting</Label>
+              <Select value={addForm.job_posting_id || 'none'} onValueChange={val => setAddForm(v => ({ ...v, job_posting_id: val === 'none' ? '' : val }))}>
+                <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="john">John Smith - HR Manager</SelectItem>
-                  <SelectItem value="sarah">Sarah Wilson - Department Head</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
+                  {jobPostings.map(j => <SelectItem key={j.id} value={j.id}>{j.title}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea id="notes" placeholder="Interview notes..." />
+            <div className="space-y-2"><Label>Skills (comma separated)</Label><Input value={addForm.skills} onChange={e => setAddForm(v => ({ ...v, skills: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Experience</Label><Input placeholder="e.g. 5 years" value={addForm.experience} onChange={e => setAddForm(v => ({ ...v, experience: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>AI Match Score (0-100)</Label><Input type="number" min={0} max={100} value={addForm.ai_score} onChange={e => setAddForm(v => ({ ...v, ai_score: Number(e.target.value) }))} /></div>
+            <div className="space-y-2"><Label>Status</Label>
+              <Select value={addForm.status} onValueChange={val => setAddForm(v => ({ ...v, status: val as CandidateStatus }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {['Applied','Shortlisted','Interview Scheduled','Interview Completed','Offered','Hired','Rejected'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsInterviewDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => {
-                toast({
-                  title: "Interview Scheduled",
-                  description: `Interview scheduled for ${selectedCandidate?.name}`,
-                })
-                setIsInterviewDialogOpen(false)
-                if (selectedCandidate) {
-                  updateCandidateStatus(selectedCandidate.id, 'Interview Scheduled')
-                }
-              }}>
-                Schedule Interview
-              </Button>
+            <div className="space-y-2"><Label>Notes</Label><Textarea value={addForm.notes} onChange={e => setAddForm(v => ({ ...v, notes: e.target.value }))} /></div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsAddCandidateDialogOpen(false)}>Cancel</Button>
+              <Button onClick={submitAdd}>Add</Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Add Candidate Dialog */}
-      <Dialog open={isAddCandidateDialogOpen} onOpenChange={setIsAddCandidateDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add New Candidate</DialogTitle>
-            <DialogDescription>Add a new candidate to the recruitment system</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="candidate-name">Full Name</Label>
-              <Input id="candidate-name" placeholder="Enter candidate name" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="candidate-email">Email</Label>
-              <Input id="candidate-email" type="email" placeholder="Enter email address" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="candidate-phone">Phone</Label>
-              <Input id="candidate-phone" placeholder="Enter phone number" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="candidate-position">Position</Label>
-              <Input id="candidate-position" placeholder="Enter position applied for" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="candidate-skills">Skills</Label>
-              <Input id="candidate-skills" placeholder="Enter skills (comma separated)" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="candidate-experience">Experience</Label>
-              <Input id="candidate-experience" placeholder="Enter years of experience" />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsAddCandidateDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => {
-                toast({
-                  title: "Candidate Added",
-                  description: "New candidate has been added successfully",
-                })
-                setIsAddCandidateDialogOpen(false)
-              }}>
-                Add Candidate
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* View Candidate Dialog */}
+      {/* View Candidate */}
       <Dialog open={isViewCandidateDialogOpen} onOpenChange={setIsViewCandidateDialogOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Candidate Details</DialogTitle>
-            <DialogDescription>View complete candidate profile</DialogDescription>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Candidate Details</DialogTitle><DialogDescription>Complete profile</DialogDescription></DialogHeader>
           {selectedCandidate && (
             <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <Avatar className="w-20 h-20">
-                  <AvatarImage src={selectedCandidate.avatar} />
-                  <AvatarFallback>{selectedCandidate.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
+              <div className="flex items-center gap-4">
+                <Avatar className="w-20 h-20"><AvatarFallback>{selectedCandidate.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
                 <div>
                   <h3 className="font-semibold text-lg">{selectedCandidate.name}</h3>
-                  <p className="text-muted-foreground">{selectedCandidate.position}</p>
+                  {selectedCandidate.position && <p className="text-muted-foreground">{selectedCandidate.position}</p>}
                   <Badge className={getStatusColor(selectedCandidate.status)}>{selectedCandidate.status}</Badge>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <Label className="font-medium">Email</Label>
-                  <p>{selectedCandidate.email}</p>
-                </div>
-                <div>
-                  <Label className="font-medium">Phone</Label>
-                  <p>{selectedCandidate.phone}</p>
-                </div>
-                <div>
-                  <Label className="font-medium">Experience</Label>
-                  <p>{selectedCandidate.experience}</p>
-                </div>
-                <div>
-                  <Label className="font-medium">AI Score</Label>
-                  <p className={getScoreColor(selectedCandidate.aiScore)}>{selectedCandidate.aiScore}%</p>
-                </div>
+                <div><Label className="font-medium">Email</Label><p className="break-all">{selectedCandidate.email ?? '—'}</p></div>
+                <div><Label className="font-medium">Phone</Label><p>{selectedCandidate.phone ?? '—'}</p></div>
+                <div><Label className="font-medium">Experience</Label><p>{selectedCandidate.experience ?? '—'}</p></div>
+                <div><Label className="font-medium">AI Score</Label><p className={getScoreColor(selectedCandidate.ai_score)}>{selectedCandidate.ai_score}%</p></div>
+                <div><Label className="font-medium">Applied</Label><p>{formatDate(selectedCandidate.applied_date)}</p></div>
               </div>
-              <div>
-                <Label className="font-medium">Skills</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedCandidate.skills.map((skill, index) => (
-                    <Badge key={index} variant="secondary">{skill}</Badge>
-                  ))}
-                </div>
-              </div>
-              {selectedCandidate.notes && (
-                <div>
-                  <Label className="font-medium">Notes</Label>
-                  <p className="text-sm mt-1">{selectedCandidate.notes}</p>
+              {selectedCandidate.skills.length > 0 && (
+                <div><Label className="font-medium">Skills</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedCandidate.skills.map((s,i) => <Badge key={i} variant="secondary">{s}</Badge>)}
+                  </div>
                 </div>
               )}
-              <div className="flex justify-end">
-                <Button onClick={() => setIsViewCandidateDialogOpen(false)}>
-                  Close
-                </Button>
-              </div>
+              {selectedCandidate.notes && (<div><Label className="font-medium">Notes</Label><p className="text-sm mt-1 whitespace-pre-wrap">{selectedCandidate.notes}</p></div>)}
+              <div className="flex justify-end"><Button onClick={() => setIsViewCandidateDialogOpen(false)}>Close</Button></div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Edit Candidate Dialog */}
+      {/* Edit Candidate */}
       <Dialog open={isEditCandidateDialogOpen} onOpenChange={setIsEditCandidateDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Candidate</DialogTitle>
-            <DialogDescription>Update candidate information</DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Edit Candidate</DialogTitle><DialogDescription>Update information</DialogDescription></DialogHeader>
           {selectedCandidate && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Full Name</Label>
-                <Input id="edit-name" defaultValue={selectedCandidate.name} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-email">Email</Label>
-                <Input id="edit-email" type="email" defaultValue={selectedCandidate.email} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-phone">Phone</Label>
-                <Input id="edit-phone" defaultValue={selectedCandidate.phone} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-position">Position</Label>
-                <Input id="edit-position" defaultValue={selectedCandidate.position} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-status">Status</Label>
-                <Select defaultValue={selectedCandidate.status}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+            <div className="space-y-3">
+              <div className="space-y-2"><Label>Full Name</Label><Input value={editForm.name} onChange={e => setEditForm(v => ({ ...v, name: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Email</Label><Input type="email" value={editForm.email} onChange={e => setEditForm(v => ({ ...v, email: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Phone</Label><Input value={editForm.phone} onChange={e => setEditForm(v => ({ ...v, phone: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Position</Label><Input value={editForm.position} onChange={e => setEditForm(v => ({ ...v, position: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Skills (comma separated)</Label><Input value={editForm.skills as any} onChange={e => setEditForm(v => ({ ...v, skills: e.target.value as any }))} /></div>
+              <div className="space-y-2"><Label>Experience</Label><Input value={editForm.experience} onChange={e => setEditForm(v => ({ ...v, experience: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>AI Score</Label><Input type="number" min={0} max={100} value={editForm.ai_score} onChange={e => setEditForm(v => ({ ...v, ai_score: Number(e.target.value) }))} /></div>
+              <div className="space-y-2"><Label>Status</Label>
+                <Select value={editForm.status} onValueChange={val => setEditForm(v => ({ ...v, status: val as CandidateStatus }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Applied">Applied</SelectItem>
-                    <SelectItem value="Shortlisted">Shortlisted</SelectItem>
-                    <SelectItem value="Interview Scheduled">Interview Scheduled</SelectItem>
-                    <SelectItem value="Interview Completed">Interview Completed</SelectItem>
-                    <SelectItem value="Offered">Offered</SelectItem>
-                    <SelectItem value="Hired">Hired</SelectItem>
-                    <SelectItem value="Rejected">Rejected</SelectItem>
+                    {['Applied','Shortlisted','Interview Scheduled','Interview Completed','Offered','Hired','Rejected'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-notes">Notes</Label>
-                <Textarea id="edit-notes" defaultValue={selectedCandidate.notes} />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsEditCandidateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => {
-                  toast({
-                    title: "Candidate Updated",
-                    description: `${selectedCandidate.name} has been updated successfully`,
-                  })
-                  setIsEditCandidateDialogOpen(false)
-                }}>
-                  Save Changes
-                </Button>
+              <div className="space-y-2"><Label>Notes</Label><Textarea value={editForm.notes} onChange={e => setEditForm(v => ({ ...v, notes: e.target.value }))} /></div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsEditCandidateDialogOpen(false)}>Cancel</Button>
+                <Button onClick={submitEdit}>Save</Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Message Candidate Dialog */}
+      {/* Message Candidate */}
       <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Send Message</DialogTitle>
-            <DialogDescription>Send a message to the candidate</DialogDescription>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Send Email</DialogTitle><DialogDescription>Compose an email to the candidate</DialogDescription></DialogHeader>
           {selectedCandidate && (
             <div className="space-y-4">
-              <div>
-                <Label>To</Label>
-                <p className="font-medium">{selectedCandidate.name} ({selectedCandidate.email})</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="message-subject">Subject</Label>
-                <Input id="message-subject" placeholder="Enter message subject" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="message-body">Message</Label>
-                <Textarea id="message-body" placeholder="Enter your message..." rows={5} />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsMessageDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => {
-                  toast({
-                    title: "Message Sent",
-                    description: `Message sent to ${selectedCandidate.name}`,
-                  })
-                  setIsMessageDialogOpen(false)
-                }}>
-                  Send Message
-                </Button>
+              <div><Label>To</Label><p className="font-medium">{selectedCandidate.name} ({selectedCandidate.email ?? 'no email'})</p></div>
+              <div className="space-y-2"><Label>Subject</Label><Input value={messageForm.subject} onChange={e => setMessageForm(v => ({ ...v, subject: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Body</Label><Textarea rows={5} value={messageForm.body} onChange={e => setMessageForm(v => ({ ...v, body: e.target.value }))} /></div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsMessageDialogOpen(false)}>Cancel</Button>
+                <Button onClick={submitMessage}>Open in Mail</Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Add Job Dialog */}
+      {/* Add Job */}
       <Dialog open={isAddJobDialogOpen} onOpenChange={setIsAddJobDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Post New Job</DialogTitle>
-            <DialogDescription>Create a new job posting</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="job-title">Job Title</Label>
-              <Input id="job-title" placeholder="Enter job title" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="job-department">Department</Label>
-              <Input id="job-department" placeholder="Enter department" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="job-type">Job Type</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select job type" />
-                </SelectTrigger>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Post New Job</DialogTitle><DialogDescription>Create a job posting</DialogDescription></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2"><Label>Title *</Label><Input value={addJobForm.title} onChange={e => setAddJobForm(v => ({ ...v, title: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Department</Label><Input value={addJobForm.department} onChange={e => setAddJobForm(v => ({ ...v, department: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Type</Label>
+              <Select value={addJobForm.type} onValueChange={val => setAddJobForm(v => ({ ...v, type: val }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Full-time">Full-time</SelectItem>
-                  <SelectItem value="Part-time">Part-time</SelectItem>
-                  <SelectItem value="Contract">Contract</SelectItem>
-                  <SelectItem value="Internship">Internship</SelectItem>
+                  {['Full-time','Part-time','Contract','Internship'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="job-salary">Salary Range</Label>
-              <Input id="job-salary" placeholder="Enter salary range" />
+            <div className="space-y-2"><Label>Status</Label>
+              <Select value={addJobForm.status} onValueChange={val => setAddJobForm(v => ({ ...v, status: val }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {['Active','Paused','Closed'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="job-requirements">Requirements</Label>
-              <Textarea id="job-requirements" placeholder="Enter job requirements..." />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsAddJobDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => {
-                toast({
-                  title: "Job Posted",
-                  description: "New job has been posted successfully",
-                })
-                setIsAddJobDialogOpen(false)
-              }}>
-                Post Job
-              </Button>
+            <div className="space-y-2"><Label>Salary Range</Label><Input value={addJobForm.salary} onChange={e => setAddJobForm(v => ({ ...v, salary: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Requirements (comma separated)</Label><Textarea value={addJobForm.requirements} onChange={e => setAddJobForm(v => ({ ...v, requirements: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>Description</Label><Textarea value={addJobForm.description} onChange={e => setAddJobForm(v => ({ ...v, description: e.target.value }))} /></div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsAddJobDialogOpen(false)}>Cancel</Button>
+              <Button onClick={submitAddJob}>Post</Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Job */}
+      <Dialog open={isEditJobDialogOpen} onOpenChange={setIsEditJobDialogOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Edit Job</DialogTitle><DialogDescription>Update posting</DialogDescription></DialogHeader>
+          {selectedJob && (
+            <div className="space-y-3">
+              <div className="space-y-2"><Label>Title</Label><Input value={editJobForm.title} onChange={e => setEditJobForm(v => ({ ...v, title: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Department</Label><Input value={editJobForm.department} onChange={e => setEditJobForm(v => ({ ...v, department: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Type</Label>
+                <Select value={editJobForm.type} onValueChange={val => setEditJobForm(v => ({ ...v, type: val }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{['Full-time','Part-time','Contract','Internship'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Status</Label>
+                <Select value={editJobForm.status} onValueChange={val => setEditJobForm(v => ({ ...v, status: val }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{['Active','Paused','Closed'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Salary</Label><Input value={editJobForm.salary} onChange={e => setEditJobForm(v => ({ ...v, salary: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Requirements (comma separated)</Label><Textarea value={editJobForm.requirements as any} onChange={e => setEditJobForm(v => ({ ...v, requirements: e.target.value as any }))} /></div>
+              <div className="space-y-2"><Label>Description</Label><Textarea value={editJobForm.description} onChange={e => setEditJobForm(v => ({ ...v, description: e.target.value }))} /></div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsEditJobDialogOpen(false)}>Cancel</Button>
+                <Button onClick={submitEditJob}>Save</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* View Job */}
+      <Dialog open={isViewJobDialogOpen} onOpenChange={setIsViewJobDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{selectedJob?.title}</DialogTitle><DialogDescription>Job posting details</DialogDescription></DialogHeader>
+          {selectedJob && (
+            <div className="space-y-3 text-sm">
+              <div className="flex flex-wrap gap-2 items-center">
+                <Badge variant={selectedJob.status === 'Active' ? 'default' : 'secondary'}>{selectedJob.status}</Badge>
+                <Badge variant="outline">{selectedJob.type}</Badge>
+                {selectedJob.department && <Badge variant="outline">{selectedJob.department}</Badge>}
+              </div>
+              {selectedJob.salary && <div><Label className="font-medium">Salary</Label><p>{selectedJob.salary}</p></div>}
+              <div><Label className="font-medium">Applicants</Label><p>{applicantsByJob[selectedJob.id] || 0}</p></div>
+              <div><Label className="font-medium">Posted</Label><p>{formatDate(selectedJob.created_at)}</p></div>
+              {selectedJob.requirements.length > 0 && (
+                <div><Label className="font-medium">Requirements</Label>
+                  <div className="flex flex-wrap gap-1 mt-1">{selectedJob.requirements.map((r,i) => <Badge key={i} variant="outline">{r}</Badge>)}</div>
+                </div>
+              )}
+              {selectedJob.description && <div><Label className="font-medium">Description</Label><p className="whitespace-pre-wrap mt-1">{selectedJob.description}</p></div>}
+              <div className="flex justify-end"><Button onClick={() => setIsViewJobDialogOpen(false)}>Close</Button></div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
