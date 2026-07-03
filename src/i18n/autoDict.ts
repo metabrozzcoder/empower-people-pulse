@@ -195,6 +195,8 @@ export const ru: Record<string, string> = {
   "Planning": "Планирование", "Review": "Проверка", "Critical": "Критический",
   "On Hold": "Приостановлено", "Paused": "Пауза", "Closed": "Закрыто", "Todo": "К выполнению",
   "Not provided": "Не указано", "Not assigned": "Не назначено", "Unknown": "Неизвестно",
+  "Not calculated": "Не рассчитано", "Not evaluated": "Не оценено", "Not tracked": "Не отслеживается",
+  "No achievements recorded": "Достижения не записаны", "No skills recorded": "Навыки не записаны",
   "Unassigned": "Не назначено", "Untitled": "Без названия", "Untitled group": "Группа без названия",
   "User": "Пользователь", "Enter": "Ввод", "Escape": "Отмена", "Signature": "Подпись",
 
