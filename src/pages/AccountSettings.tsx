@@ -322,7 +322,7 @@ const AccountSettings = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="department">{t('pages.accountSettings.profile.department')}</Label>
-                  <Select value={profile.department} onValueChange={(value) => setProfile({ ...profile, department: value })}>
+                  <Select value={profile.department} onValueChange={(value) => setProfile({ ...profile, department: value })} disabled={!canEditOrg}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Human Resources">{t('pages.accountSettings.profile.departments.humanResources')}</SelectItem>
@@ -332,10 +332,16 @@ const AccountSettings = () => {
                       <SelectItem value="Finance">{t('pages.accountSettings.profile.departments.finance')}</SelectItem>
                     </SelectContent>
                   </Select>
+                  {!canEditOrg && (
+                    <p className="text-xs text-muted-foreground">Only HR or Admin can change your department.</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">{t('pages.accountSettings.profile.role')}</Label>
-                  <Input id="role" value={profile.role} onChange={(e) => setProfile({ ...profile, role: e.target.value })} />
+                  <Input id="role" value={profile.role} onChange={(e) => setProfile({ ...profile, role: e.target.value })} disabled={!canEditOrg} />
+                  {!canEditOrg && (
+                    <p className="text-xs text-muted-foreground">Your role and position are managed by HR / Admin.</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="timezone">{t('pages.accountSettings.profile.timezone')}</Label>
