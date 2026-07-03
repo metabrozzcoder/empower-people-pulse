@@ -69,15 +69,19 @@ export default function Garage() {
   const [odomStart, setOdomStart] = useState<File | null>(null)
   const [odomEnd, setOdomEnd] = useState<File | null>(null)
 
+  const [driverIds, setDriverIds] = useState<string[]>([])
+
   const load = async () => {
-    const [v, t, r] = await Promise.all([
+    const [v, t, r, dr] = await Promise.all([
       supabase.from('vehicles').select('*').order('created_at', { ascending: false }),
       supabase.from('vehicle_trips').select('*').order('trip_date', { ascending: false }).limit(200),
       supabase.from('shooting_requests').select('id, title, workflow_status').order('created_at', { ascending: false }).limit(100),
+      supabase.from('user_roles').select('user_id').eq('role', 'driver' as any),
     ])
     setVehicles((v.data ?? []) as any)
     setTrips((t.data ?? []) as any)
     setRequests((r.data ?? []) as any)
+    setDriverIds(((dr.data ?? []) as any[]).map(x => x.user_id))
   }
   useEffect(() => { load() }, [])
 
