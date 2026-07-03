@@ -102,19 +102,36 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
   const [messageForm, setMessageForm] = useState({ subject: '', body: '' })
   const [addJobForm, setAddJobForm] = useState({ ...emptyJob })
   const [editJobForm, setEditJobForm] = useState({ ...emptyJob })
+  const [profiles, setProfiles] = useState<ProfileLite[]>([])
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isAdminHR, setIsAdminHR] = useState(false)
+  const [addFiles, setAddFiles] = useState<File[]>([])
+  const [editFiles, setEditFiles] = useState<File[]>([])
+  const [uploading, setUploading] = useState(false)
 
   const fetchAll = async () => {
     setLoading(true)
-    const [{ data: cands, error: cErr }, { data: jobs, error: jErr }] = await Promise.all([
+    const { data: { user } } = await supabase.auth.getUser()
+    setCurrentUserId(user?.id ?? null)
+    let adminHR = false
+    if (user) {
+      const { data: roleRows } = await supabase.from('user_roles').select('role').eq('user_id', user.id)
+      adminHR = (roleRows || []).some((r: any) => r.role === 'admin' || r.role === 'hr')
+    }
+    setIsAdminHR(adminHR)
+    const [{ data: cands, error: cErr }, { data: jobs, error: jErr }, { data: profs }] = await Promise.all([
       supabase.from('candidates').select('*').order('created_at', { ascending: false }),
       supabase.from('job_postings').select('*').order('created_at', { ascending: false }),
+      supabase.from('profiles').select('id, name, position').order('name'),
     ])
     if (cErr) toast({ title: 'Failed to load candidates', description: cErr.message, variant: 'destructive' })
     if (jErr) toast({ title: 'Failed to load job postings', description: jErr.message, variant: 'destructive' })
     setCandidates((cands as any) || [])
     setJobPostings((jobs as any) || [])
+    setProfiles((profs as any) || [])
     setLoading(false)
   }
+
 
   useEffect(() => { fetchAll() }, [])
 
