@@ -220,10 +220,10 @@ export default function Employees() {
     }
     const fullName = `${employeeData.firstName} ${employeeData.lastName}`.trim()
     // Create auth user + profile so the employee appears in User Management and can log in.
+    // Always generate a @sevimlitv.uz login email on the backend — ignore any personal email entered.
     const { data, error } = await supabase.functions.invoke('admin-create-user', {
       body: {
         name: fullName,
-        email: employeeData.email || undefined,
         role: 'employee',
         phone: employeeData.phone || undefined,
         department: employeeData.department || undefined,
