@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean
   login: (email: string, password: string) => Promise<{ error: string | null }>
   logout: () => Promise<void>
+  refreshProfile: () => Promise<void>
   isAuthenticated: boolean
 }
 
@@ -113,9 +114,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null)
   }
 
+  const refreshProfile = async () => {
+    if (!session?.user) return
+    const u = await loadUserProfile(session.user.id, session.user.email ?? '')
+    setCurrentUser(u)
+  }
+
   return (
     <AuthContext.Provider
-      value={{ currentUser, session, loading, login, logout, isAuthenticated: !!session }}
+      value={{ currentUser, session, loading, login, logout, refreshProfile, isAuthenticated: !!session }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,4 +1,5 @@
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useTranslation } from 'react-i18next'
 import { Badge } from "@/components/ui/badge"
@@ -6,13 +7,62 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
-import { Calendar, Mail, Phone, MapPin, Building, User, Award, Clock, TrendingUp } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Calendar, Mail, Phone, MapPin, Building, User, Award, Clock, TrendingUp, Loader2 } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
+import { supabase } from "@/integrations/supabase/client"
+import { useToast } from "@/hooks/use-toast"
 
 const Profile = () => {
   const { t } = useTranslation()
-  const { currentUser } = useAuth()
-  
+  const { currentUser, refreshProfile } = useAuth()
+  const { toast } = useToast()
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    position: '',
+    department: '',
+    avatar_url: '',
+  })
+
+  const openEdit = () => {
+    setForm({
+      name: currentUser?.name ?? '',
+      phone: currentUser?.phone ?? '',
+      position: currentUser?.position ?? '',
+      department: currentUser?.department ?? '',
+      avatar_url: currentUser?.avatar ?? '',
+    })
+    setIsEditOpen(true)
+  }
+
+  const saveProfile = async () => {
+    if (!currentUser?.id) return
+    setSaving(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        name: form.name.trim(),
+        phone: form.phone.trim() || null,
+        position: form.position.trim() || null,
+        department: form.department.trim() || null,
+        avatar_url: form.avatar_url.trim() || null,
+      })
+      .eq('id', currentUser.id)
+    setSaving(false)
+    if (error) {
+      toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
+      return
+    }
+    await refreshProfile()
+    toast({ title: 'Profile updated', description: 'Your changes have been saved.' })
+    setIsEditOpen(false)
+  }
+
   const userProfile = {
     name: currentUser?.name || "Not provided",
     email: currentUser?.email || "Not provided",
@@ -21,7 +71,7 @@ const Profile = () => {
     department: currentUser?.department || "Not assigned",
     location: "Not provided",
     hireDate: currentUser?.createdDate || "Not provided",
-    employeeId: currentUser?.id ? `EMP-${currentUser.id}` : "Not assigned",
+    employeeId: currentUser?.id ? `#${currentUser.id.slice(0, 6).toUpperCase()}` : "—",
     manager: "Not assigned",
     status: currentUser?.status || "Unknown",
     performanceScore: 0
@@ -94,7 +144,7 @@ const Profile = () => {
                 <p className="text-sm text-muted-foreground">Employee ID</p>
                 <p className="font-medium">{userProfile.employeeId}</p>
               </div>
-              <Button className="w-full" variant="soft">
+              <Button className="w-full" variant="soft" onClick={openEdit}>
                 Edit Profile
               </Button>
             </CardContent>
@@ -167,6 +217,45 @@ const Profile = () => {
           </Card>
         </div>
       </div>
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+            <DialogDescription>Update your personal information.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="p-name">Full name</Label>
+              <Input id="p-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="p-phone">Phone</Label>
+              <Input id="p-phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="p-pos">Position</Label>
+                <Input id="p-pos" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-dep">Department</Label>
+                <Input id="p-dep" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="p-avatar">Avatar URL</Label>
+              <Input id="p-avatar" placeholder="https://…" value={form.avatar_url} onChange={(e) => setForm({ ...form, avatar_url: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={saving}>Cancel</Button>
+            <Button variant="gradient" onClick={saveProfile} disabled={saving || !form.name.trim()}>
+              {saving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving…</>) : 'Save changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
