@@ -103,20 +103,6 @@ export function EmployeeCard({ employee, onCreateLogin }: EmployeeCardProps) {
                 </div>
               )}
             </div>
-            {onCreateLogin && !employee.profileId && (
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setIsDetailOpen(false)
-                    onCreateLogin(employee)
-                  }}
-                >
-                  <KeyRound className="mr-2 h-4 w-4" />
-                  Create login for this employee
-                </Button>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -227,6 +213,20 @@ export function EmployeeCard({ employee, onCreateLogin }: EmployeeCardProps) {
               </CardContent>
             </Card>
           </div>
+          {onCreateLogin && !employee.profileId && (
+            <div className="flex justify-end pt-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  setIsDetailOpen(false)
+                  onCreateLogin(employee)
+                }}
+              >
+                <KeyRound className="mr-2 h-4 w-4" />
+                Create login for this employee
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

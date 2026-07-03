@@ -39,6 +39,8 @@ type EmployeeView = Employee & { organizationId?: string; organizationName?: str
 
 const toViewEmployee = (e: DbEmployee, idx: number, orgName?: string): EmployeeView => ({
   id: idx + 1,
+  dbId: e.id,
+  profileId: e.profile_id ?? undefined,
   name: e.name,
   email: e.email ?? '',
   position: e.position ?? '',
@@ -255,6 +257,29 @@ export default function Employees() {
     loadEmployees()
   }
 
+  const handleCreateLoginForEmployee = async (employee: EmployeeView) => {
+    const { data, error } = await supabase.functions.invoke('admin-create-user', {
+      body: {
+        employee_id: employee.dbId,
+        name: employee.name,
+        email: employee.email || undefined,
+        role: 'employee',
+        phone: employee.phone || undefined,
+        department: employee.department || undefined,
+        position: employee.position || undefined,
+        birthday: employee.birthday || undefined,
+      },
+    })
+    if (error || (data as { error?: string })?.error) {
+      toast({ title: "Error", description: error?.message || (data as { error?: string })?.error || 'Failed to create login', variant: "destructive" })
+      return
+    }
+    const res = data as { email: string; username?: string; password: string }
+    setCreatedCreds({ name: employee.name, email: res.email, username: res.username, password: res.password })
+    toast({ title: "Login created", description: `${employee.name} now appears in User Management.` })
+    loadEmployees()
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -327,7 +352,7 @@ export default function Employees() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredEmployees.map(employee => (
-          <EmployeeCard key={employee.id} employee={employee} />
+          <EmployeeCard key={`${employee.dbId ?? employee.id}-${employee.profileId ?? 'unlinked'}`} employee={employee} onCreateLogin={handleCreateLoginForEmployee} />
         ))}
       </div>
 
