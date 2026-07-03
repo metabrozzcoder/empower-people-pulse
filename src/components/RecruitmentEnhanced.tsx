@@ -420,7 +420,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                             </div>
                           </div>
                           <div className="flex flex-col gap-2 min-w-[180px]">
-                            <Button size="sm" onClick={() => handleCandidateAction('schedule_interview', c)}>
+                            <Button size="sm" variant="shimmer" onClick={() => handleCandidateAction('schedule_interview', c)}>
                               <Calendar className="w-4 h-4 mr-1" />Schedule Interview
                             </Button>
                             <div className="grid grid-cols-2 gap-2">
