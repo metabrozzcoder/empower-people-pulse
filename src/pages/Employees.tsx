@@ -209,13 +209,13 @@ export default function Employees() {
   }, [employees, searchTerm, departmentFilter, statusFilter, orgFilter])
 
   const handleAddEmployeeSubmit = async () => {
-    if (!employeeData.firstName || !employeeData.lastName || !employeeData.email || !employeeData.position) {
-      toast({ title: "Validation Error", description: "Please fill in all required fields.", variant: "destructive" })
+    if (!employeeData.firstName || !employeeData.lastName || !employeeData.position) {
+      toast({ title: "Validation Error", description: "Please fill in first name, last name and position.", variant: "destructive" })
       return
     }
     const { error } = await supabase.from('employees').insert({
       name: `${employeeData.firstName} ${employeeData.lastName}`,
-      email: employeeData.email,
+      email: employeeData.email || null,
       position: employeeData.position,
       department: employeeData.department || 'General',
       hire_date: new Date().toISOString().split('T')[0],
