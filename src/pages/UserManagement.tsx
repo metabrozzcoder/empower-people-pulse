@@ -396,8 +396,23 @@ export default function UserManagement() {
     }
 
     // Login email and password are auto-generated; user has no manual control
-    const loginEmail = generatedCredentials.username || buildLoginEmail(formData.name, formData.surname)
+    let loginEmail = generatedCredentials.username || buildLoginEmail(formData.name, formData.surname)
     const password = generatedCredentials.password || generateStrongPassword()
+    // Ensure uniqueness of the generated login email against existing profiles
+    if (!selectedUser) {
+      const [local, domain] = loginEmail.split('@')
+      let candidate = loginEmail
+      let n = 1
+      // Try base, then base2, base3, ... until unused
+      while (true) {
+        const { data: existing } = await supabase.from('profiles').select('id').eq('email', candidate).maybeSingle()
+        if (!existing) break
+        n += 1
+        candidate = `${local}${n}@${domain}`
+        if (n > 50) { candidate = `${local}.${Math.floor(1000 + Math.random() * 9000)}@${domain}`; break }
+      }
+      loginEmail = candidate
+    }
     if (!generatedCredentials.username || !generatedCredentials.password) {
       setGeneratedCredentials(prev => ({ ...prev, username: loginEmail, password }))
     }
