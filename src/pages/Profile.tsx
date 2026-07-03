@@ -94,7 +94,7 @@ const Profile = () => {
                 <p className="text-sm text-muted-foreground">Employee ID</p>
                 <p className="font-medium">{userProfile.employeeId}</p>
               </div>
-              <Button className="w-full" variant="outline">
+              <Button className="w-full" variant="soft">
                 Edit Profile
               </Button>
             </CardContent>
