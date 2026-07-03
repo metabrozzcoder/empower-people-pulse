@@ -790,10 +790,34 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2"><Label>Assign to (reviewer)</Label>
+              <Select value={addForm.assigned_to || 'none'} onValueChange={val => setAddForm(v => ({ ...v, assigned_to: val === 'none' ? '' : val }))}>
+                <SelectTrigger><SelectValue placeholder="Pick a person" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Unassigned</SelectItem>
+                  {profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.name}{p.position ? ` — ${p.position}` : ''}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">The assigned person will be able to view and approve/reject this candidate.</p>
+            </div>
             <div className="space-y-2"><Label>Notes</Label><Textarea value={addForm.notes} onChange={e => setAddForm(v => ({ ...v, notes: e.target.value }))} /></div>
+            <div className="space-y-2">
+              <Label>Attachments (CV & documents)</Label>
+              <Input type="file" multiple onChange={e => setAddFiles(Array.from(e.target.files || []))} />
+              {addFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {addFiles.map((f, i) => (
+                    <Badge key={i} variant="secondary" className="gap-1">
+                      <Paperclip className="w-3 h-3" />{f.name}
+                      <button onClick={() => setAddFiles(prev => prev.filter((_, j) => j !== i))} className="ml-1"><X className="w-3 h-3" /></button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAddCandidateDialogOpen(false)}>Cancel</Button>
-              <Button onClick={submitAdd}>Add</Button>
+              <Button variant="outline" onClick={() => setIsAddCandidateDialogOpen(false)} disabled={uploading}>Cancel</Button>
+              <Button onClick={submitAdd} disabled={uploading}>{uploading ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />Saving</> : 'Add'}</Button>
             </div>
           </div>
         </DialogContent>
