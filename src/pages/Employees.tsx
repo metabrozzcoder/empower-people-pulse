@@ -118,7 +118,8 @@ export default function Employees() {
       paidByUser.set(p.created_by, (paidByUser.get(p.created_by) ?? 0) + Number(p.budget ?? 0))
     })
     // Map user_id → email via profiles
-    const profilesList = (profs ?? []) as { id: string; name: string | null; email: string | null; position: string | null; department: string | null }[]
+    const profilesList = (profs ?? []) as ProfileLite[]
+    setProfiles(profilesList)
     const emailToBonus = new Map<string, number>()
     profilesList.forEach(p => {
       const bonus = paidByUser.get(p.id) ?? 0
