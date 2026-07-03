@@ -197,7 +197,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
     if (!confirm(`Remove ${a.name}?`)) return
     await supabase.storage.from('candidate-files').remove([a.path])
     const remaining = (c.attachments || []).filter(x => x.path !== a.path)
-    const { error } = await supabase.from('candidates').update({ attachments: remaining }).eq('id', c.id)
+    const { error } = await supabase.from('candidates').update({ attachments: remaining as any }).eq('id', c.id)
     if (error) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); return }
     setCandidates(prev => prev.map(x => x.id === c.id ? { ...x, attachments: remaining } : x))
     if (selectedCandidate?.id === c.id) setSelectedCandidate({ ...c, attachments: remaining })
