@@ -452,8 +452,21 @@ export default function Employees() {
               />
             </div>
             <div className="space-y-2 col-span-2">
-              <Label htmlFor="manager">Manager</Label>
-              <Input id="manager" placeholder="Manager name" value={employeeData.manager} onChange={(e) => setEmployeeData({...employeeData, manager: e.target.value})} />
+              <Label htmlFor="manager">Manager <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <Select
+                value={employeeData.manager || '__none__'}
+                onValueChange={(v) => setEmployeeData({ ...employeeData, manager: v === '__none__' ? '' : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Select manager" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— None —</SelectItem>
+                  {profiles.filter(p => p.name).map(p => (
+                    <SelectItem key={p.id} value={p.name as string}>
+                      {p.name}{p.position ? ` — ${p.position}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2 col-span-2">
               <Label htmlFor="organization">Organization</Label>
