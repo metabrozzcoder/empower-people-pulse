@@ -134,6 +134,8 @@ export default function ShootingRequests() {
   const [vehicleInfo, setVehicleInfo] = useState('')
   const [equipmentNote, setEquipmentNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [vehicles, setVehicles] = useState<VehicleOption[]>([])
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('')
 
   const isAdmin = currentUser?.role === 'Admin' || roles.includes('admin')
   const isModerator = isAdmin || roles.includes('shooting_moderator')
