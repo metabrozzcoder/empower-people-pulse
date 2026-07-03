@@ -852,6 +852,27 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                 </div>
               )}
               {selectedCandidate.notes && (<div><Label className="font-medium">Notes</Label><p className="text-sm mt-1 whitespace-pre-wrap">{selectedCandidate.notes}</p></div>)}
+              {selectedCandidate.assigned_to && (
+                <div><Label className="font-medium">Assigned reviewer</Label>
+                  <p className="text-sm mt-1">{profiles.find(p => p.id === selectedCandidate.assigned_to)?.name ?? '—'}</p>
+                </div>
+              )}
+              {selectedCandidate.review_decision && (
+                <div><Label className="font-medium">Review</Label>
+                  <p className="text-sm mt-1">{selectedCandidate.review_decision === 'approved' ? '✅ Approved' : '❌ Rejected'}{selectedCandidate.review_note ? ` — ${selectedCandidate.review_note}` : ''}</p>
+                </div>
+              )}
+              {selectedCandidate.attachments?.length > 0 && (
+                <div><Label className="font-medium">Attachments</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedCandidate.attachments.map((a, i) => (
+                      <Button key={i} size="sm" variant="outline" onClick={() => downloadAttachment(a)}>
+                        <FileText className="w-4 h-4 mr-1" />{a.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex justify-end"><Button onClick={() => setIsViewCandidateDialogOpen(false)}>Close</Button></div>
             </div>
           )}
