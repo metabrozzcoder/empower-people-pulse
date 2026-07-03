@@ -175,6 +175,48 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
     return true
   }
 
+  const uploadFilesForCandidate = async (candidateId: string, files: File[]): Promise<Attachment[]> => {
+    const out: Attachment[] = []
+    for (const f of files) {
+      const safe = f.name.replace(/[^\w.\-]+/g, '_')
+      const path = `${candidateId}/${Date.now()}_${safe}`
+      const { error } = await supabase.storage.from('candidate-files').upload(path, f, { upsert: false })
+      if (error) { toast({ title: 'Upload failed', description: `${f.name}: ${error.message}`, variant: 'destructive' }); continue }
+      out.push({ path, name: f.name, type: f.type, size: f.size })
+    }
+    return out
+  }
+
+  const downloadAttachment = async (a: Attachment) => {
+    const { data, error } = await supabase.storage.from('candidate-files').createSignedUrl(a.path, 300)
+    if (error || !data?.signedUrl) { toast({ title: 'Download failed', description: error?.message, variant: 'destructive' }); return }
+    window.open(data.signedUrl, '_blank')
+  }
+
+  const removeAttachment = async (c: Candidate, a: Attachment) => {
+    if (!confirm(`Remove ${a.name}?`)) return
+    await supabase.storage.from('candidate-files').remove([a.path])
+    const remaining = (c.attachments || []).filter(x => x.path !== a.path)
+    const { error } = await supabase.from('candidates').update({ attachments: remaining }).eq('id', c.id)
+    if (error) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); return }
+    setCandidates(prev => prev.map(x => x.id === c.id ? { ...x, attachments: remaining } : x))
+    if (selectedCandidate?.id === c.id) setSelectedCandidate({ ...c, attachments: remaining })
+  }
+
+  const reviewCandidate = async (c: Candidate, decision: 'approved' | 'rejected') => {
+    const note = window.prompt(`Optional note for ${decision === 'approved' ? 'approval' : 'rejection'}:`, c.review_note ?? '') ?? ''
+    const { error } = await supabase.from('candidates').update({
+      review_decision: decision,
+      review_note: note || null,
+      reviewed_at: new Date().toISOString(),
+      status: decision === 'rejected' ? 'Rejected' : c.status,
+    }).eq('id', c.id)
+    if (error) { toast({ title: 'Review failed', description: error.message, variant: 'destructive' }); return }
+    toast({ title: decision === 'approved' ? 'Approved' : 'Rejected', description: c.name })
+    void fetchAll()
+  }
+
+
   const handleCandidateAction = async (action: string, c: Candidate) => {
     switch (action) {
       case 'schedule_interview':
