@@ -1195,7 +1195,7 @@ export const uz: Record<string, string> = {
   "On Hold": "Kutilmoqda", "Paused": "To'xtatilgan", "Closed": "Yopilgan", "Todo": "Bajarish kerak",
   "Not provided": "Ko'rsatilmagan", "Not assigned": "Tayinlanmagan", "Unknown": "Noma'lum",
   "Not calculated": "Hisoblanmagan", "Not evaluated": "Baholanmagan", "Not tracked": "Kuzatilmayapti",
-  "No achievements recorded": "Yutuqlar qayd etilmagan", "No skills recorded": "Ko'nikmalar qayd etilmagan",
+  "No skills recorded": "Ko'nikmalar qayd etilmagan",
   "Untitled": "Nomsiz", "Untitled group": "Nomsiz guruh",
   "User": "Foydalanuvchi", "Enter": "Kiritish", "Escape": "Bekor qilish", "Signature": "Imzo",
 
