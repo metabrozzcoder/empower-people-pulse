@@ -1093,15 +1093,19 @@ export default function UserManagement() {
                 )}
               </div>
               
-              {/* Simple auto-generated password box */}
-              {!selectedUser && (
+              {/* Auto-generated password box — visible until the user changes it themselves */}
+              {(!selectedUser || generatedCredentials.password) && (
                 <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <KeyRound className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Auto-generated password</span>
+                    <span className="text-sm font-medium">
+                      {selectedUser ? 'Initial password' : 'Auto-generated password'}
+                    </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Share this temporary password with the user. They can change it later from their profile.
+                    {selectedUser
+                      ? 'This is the password set by an admin. It stays visible here until the user changes it from their own profile.'
+                      : 'Share this temporary password with the user. They can change it later from their profile.'}
                   </p>
                   <div className="flex items-center gap-2">
                     <Input
