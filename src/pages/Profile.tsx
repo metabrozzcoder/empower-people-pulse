@@ -156,13 +156,13 @@ const Profile = () => {
           {/* Stats Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat, index) => (
-              <Card key={index}>
+              <Card key={index} className="min-w-0">
                 <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <stat.icon className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-2xl font-bold">{stat.value}</p>
-                      <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  <div className="flex items-start gap-3 min-w-0">
+                    <stat.icon className="w-5 h-5 text-muted-foreground shrink-0 mt-1" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-semibold leading-tight break-words">{stat.value}</p>
+                      <p className="text-xs text-muted-foreground mt-1 break-words">{stat.label}</p>
                     </div>
                   </div>
                 </CardContent>
