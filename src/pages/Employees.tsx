@@ -62,6 +62,10 @@ const POSITION_PRESETS = [
   'Sales Representative', 'Director', 'Driver', 'Technician',
 ]
 
+interface CustomRoleLite { id: string; name: string }
+interface DepartmentLite { id: string; name: string }
+interface ProfileLite { id: string; name: string | null; email: string | null; position: string | null; department: string | null }
+
 export default function Employees() {
   const { t } = useTranslation()
   const { toast } = useToast()
@@ -69,12 +73,16 @@ export default function Employees() {
   const canView = currentUser?.role === 'Admin' || currentUser?.role === 'HR'
   const [employees, setEmployees] = useState<EmployeeView[]>([])
   const [organizations, setOrganizations] = useState<OrgLite[]>([])
+  const [customRoles, setCustomRoles] = useState<CustomRoleLite[]>([])
+  const [departmentOptions, setDepartmentOptions] = useState<DepartmentLite[]>([])
+  const [profiles, setProfiles] = useState<ProfileLite[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [orgFilter, setOrgFilter] = useState("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [positionMode, setPositionMode] = useState<'preset' | 'custom'>('preset')
+  const [departmentMode, setDepartmentMode] = useState<'preset' | 'custom'>('preset')
   const [employeeData, setEmployeeData] = useState({
     firstName: '',
     lastName: '',
