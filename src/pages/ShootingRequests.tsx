@@ -186,10 +186,27 @@ export default function ShootingRequests() {
     setHistory((data ?? []) as HistoryRow[])
   }, [])
 
+  const loadVehicles = useCallback(async () => {
+    const { data: vs } = await supabase
+      .from('vehicles')
+      .select('id, plate_number, model, make, status, assigned_driver_id')
+      .order('plate_number', { ascending: true })
+    const list = (vs ?? []) as VehicleOption[]
+    const driverIds = Array.from(new Set(list.map((v) => v.assigned_driver_id).filter(Boolean))) as string[]
+    if (driverIds.length) {
+      const { data: ps } = await supabase.from('profiles_public' as never).select('id,name').in('id', driverIds)
+      const map: Record<string, string> = {}
+      ;(ps ?? []).forEach((p: any) => { map[p.id] = p.name })
+      list.forEach((v) => { if (v.assigned_driver_id) v.driver_name = map[v.assigned_driver_id] })
+    }
+    setVehicles(list)
+  }, [])
+
   useEffect(() => {
     loadRoles()
     loadRequests()
-  }, [loadRoles, loadRequests])
+    loadVehicles()
+  }, [loadRoles, loadRequests, loadVehicles])
 
   useEffect(() => {
     if (selected) loadHistory(selected.id)
