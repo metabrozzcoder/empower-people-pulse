@@ -199,7 +199,12 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
   const submitInterview = async () => {
     if (!selectedCandidate) return
     if (!interviewForm.date) { toast({ title: 'Pick a date', variant: 'destructive' }); return }
-    const note = `Interview scheduled for ${new Date(interviewForm.date).toLocaleString()}${interviewForm.interviewer ? ` with ${interviewForm.interviewer}` : ''}${interviewForm.notes ? ` — ${interviewForm.notes}` : ''}`
+    const dt = interviewForm.time
+      ? new Date(`${interviewForm.date}T${interviewForm.time}`)
+      : new Date(`${interviewForm.date}T00:00`)
+    if (isNaN(dt.getTime())) { toast({ title: 'Invalid date', variant: 'destructive' }); return }
+    const when = interviewForm.time ? dt.toLocaleString() : dt.toLocaleDateString()
+    const note = `Interview scheduled for ${when}${interviewForm.interviewer ? ` with ${interviewForm.interviewer}` : ''}${interviewForm.notes ? ` — ${interviewForm.notes}` : ''}`
     const combinedNotes = [selectedCandidate.notes, note].filter(Boolean).join('\n')
     if (await updateCandidateStatus(selectedCandidate.id, 'Interview Scheduled', { notes: combinedNotes })) {
       toast({ title: 'Interview scheduled', description: `for ${selectedCandidate.name}` })
