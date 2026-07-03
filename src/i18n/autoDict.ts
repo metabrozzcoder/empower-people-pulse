@@ -1313,7 +1313,7 @@ export const uz: Record<string, string> = {
   "Your recent accomplishments and milestones": "So'nggi yutuqlaringiz va bosqichlaringiz", "AI-Enhanced Candidate Management": "AI bilan nomzodlarni boshqarish",
   "Advanced AI screening with comprehensive candidate tracking": "Nomzodlarni to'liq kuzatish bilan AI saralash",
   "Candidate Management": "Nomzodlarni boshqarish", "Track applicants through the hiring pipeline": "Nomzodlarni ishga qabul qilish jarayonida kuzatib boring",
-  "Job Postings Management": "Ish e'lonlarini boshqarish", "Create and manage open positions": "Ochiq lavozimlarni yarating va boshqaring",
+  "Create and manage open positions": "Ochiq lavozimlarni yarating va boshqaring",
   "Recruitment Analytics": "Ishga qabul tahlili", "Insights into your hiring performance": "Ishga qabul samaradorligi bo'yicha tahlil",
   "No candidates yet. Click \"Add Candidate\" to get started.": "Hali nomzodlar yo'q. Boshlash uchun «Nomzod qo'shish» tugmasini bosing.",
   "Payroll & Spend": "Ish haqi va xarajatlar", "Salaries + paid payment commission per department": "Bo'limlar bo'yicha ish haqi + to'langan komissiyalar",
