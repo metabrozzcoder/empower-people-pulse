@@ -22,6 +22,8 @@ type CandidateStatus =
   | 'Applied' | 'Shortlisted' | 'Interview Scheduled' | 'Interview Completed'
   | 'Offered' | 'Hired' | 'Rejected'
 
+interface Attachment { path: string; name: string; type?: string; size?: number }
+
 interface Candidate {
   id: string
   name: string
@@ -36,6 +38,11 @@ interface Candidate {
   applied_date: string
   job_posting_id: string | null
   source: string | null
+  assigned_to: string | null
+  review_decision: string | null
+  review_note: string | null
+  reviewed_at: string | null
+  attachments: Attachment[]
 }
 
 interface JobPosting {
@@ -51,6 +58,8 @@ interface JobPosting {
   applicants?: number
 }
 
+interface ProfileLite { id: string; name: string; position: string | null }
+
 interface RecruitmentEnhancedProps {
   onCandidateAction?: (action: string, candidateId: string) => void
   onJobAction?: (action: string, jobId: string) => void
@@ -60,6 +69,7 @@ const emptyCandidate = {
   name: '', email: '', phone: '', position: '',
   ai_score: 0, status: 'Applied' as CandidateStatus,
   skills: '', experience: '', notes: '', job_posting_id: '' as string,
+  assigned_to: '' as string,
 }
 
 const emptyJob = {
