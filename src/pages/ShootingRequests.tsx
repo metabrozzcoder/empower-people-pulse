@@ -11,10 +11,21 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Camera, Plus, MapPin, Calendar, AlertTriangle, CheckCircle2, XCircle, ArrowRight, Inbox, User as UserIcon, Truck, Package, ShieldCheck, Loader2, History } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { formatDateTime } from '@/lib/date'
+
+interface VehicleOption {
+  id: string
+  plate_number: string
+  model: string | null
+  make: string | null
+  status: string | null
+  assigned_driver_id: string | null
+  driver_name?: string
+}
 
 type WorkflowStatus =
   | 'pending_moderator'
@@ -123,6 +134,8 @@ export default function ShootingRequests() {
   const [vehicleInfo, setVehicleInfo] = useState('')
   const [equipmentNote, setEquipmentNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [vehicles, setVehicles] = useState<VehicleOption[]>([])
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('')
 
   const isAdmin = currentUser?.role === 'Admin' || roles.includes('admin')
   const isModerator = isAdmin || roles.includes('shooting_moderator')
@@ -173,10 +186,27 @@ export default function ShootingRequests() {
     setHistory((data ?? []) as HistoryRow[])
   }, [])
 
+  const loadVehicles = useCallback(async () => {
+    const { data: vs } = await supabase
+      .from('vehicles')
+      .select('id, plate_number, model, make, status, assigned_driver_id')
+      .order('plate_number', { ascending: true })
+    const list = (vs ?? []) as VehicleOption[]
+    const driverIds = Array.from(new Set(list.map((v) => v.assigned_driver_id).filter(Boolean))) as string[]
+    if (driverIds.length) {
+      const { data: ps } = await supabase.from('profiles_public' as never).select('id,name').in('id', driverIds)
+      const map: Record<string, string> = {}
+      ;(ps ?? []).forEach((p: any) => { map[p.id] = p.name })
+      list.forEach((v) => { if (v.assigned_driver_id) v.driver_name = map[v.assigned_driver_id] })
+    }
+    setVehicles(list)
+  }, [])
+
   useEffect(() => {
     loadRoles()
     loadRequests()
-  }, [loadRoles, loadRequests])
+    loadVehicles()
+  }, [loadRoles, loadRequests, loadVehicles])
 
   useEffect(() => {
     if (selected) loadHistory(selected.id)
@@ -496,15 +526,39 @@ export default function ShootingRequests() {
                 </div>
               )}
 
-              {canActOnSelected(selected) && selected.workflow_status === 'pending_driver' && (
-                <div className="space-y-2 border-t pt-3">
-                  <Label className="text-xs">Vehicle / driver info</Label>
-                  <Textarea value={vehicleInfo} onChange={(e) => setVehicleInfo(e.target.value)} placeholder="Plate, vehicle, driver name…" />
-                  <Button size="sm" disabled={submitting || !vehicleInfo.trim()} onClick={() => transition(selected, 'scheduled', { driver_id: userId!, vehicle_info: vehicleInfo, driver_assigned_at: new Date().toISOString() }, 'driver_assigned', vehicleInfo)}>
-                    <Truck className="w-4 h-4 mr-1" />Assign & schedule
-                  </Button>
-                </div>
-              )}
+              {canActOnSelected(selected) && selected.workflow_status === 'pending_driver' && (() => {
+                const availableVehicles = vehicles.filter((v) => v.assigned_driver_id && (v.status ?? 'available').toLowerCase() !== 'maintenance')
+                const chosen = availableVehicles.find((v) => v.id === selectedVehicleId)
+                return (
+                  <div className="space-y-2 border-t pt-3">
+                    <Label className="text-xs">Available vehicle (with bound driver)</Label>
+                    {availableVehicles.length === 0 ? (
+                      <div className="text-xs text-muted-foreground border rounded p-2">No vehicles with an assigned driver. Add one in Drivers & Garage first.</div>
+                    ) : (
+                      <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId}>
+                        <SelectTrigger><SelectValue placeholder="Select vehicle & driver" /></SelectTrigger>
+                        <SelectContent>
+                          {availableVehicles.map((v) => (
+                            <SelectItem key={v.id} value={v.id}>
+                              {v.plate_number} · {[v.make, v.model].filter(Boolean).join(' ') || 'Vehicle'} — {v.driver_name ?? 'Driver'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <Label className="text-xs">Notes (optional)</Label>
+                    <Textarea value={vehicleInfo} onChange={(e) => setVehicleInfo(e.target.value)} placeholder="Pickup time, meeting point…" />
+                    <Button size="sm" disabled={submitting || !chosen} onClick={() => {
+                      if (!chosen) return
+                      const label = `${chosen.plate_number} · ${[chosen.make, chosen.model].filter(Boolean).join(' ')} — ${chosen.driver_name ?? 'Driver'}${vehicleInfo ? ` · ${vehicleInfo}` : ''}`
+                      transition(selected, 'scheduled', { driver_id: chosen.assigned_driver_id!, vehicle_info: label, driver_assigned_at: new Date().toISOString() }, 'driver_assigned', label)
+                      setSelectedVehicleId('')
+                    }}>
+                      <Truck className="w-4 h-4 mr-1" />Assign & schedule
+                    </Button>
+                  </div>
+                )
+              })()}
 
               {canActOnSelected(selected) && selected.workflow_status === 'scheduled' && (
                 <div className="space-y-2 border-t pt-3">
