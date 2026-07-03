@@ -139,6 +139,7 @@ export default function Employees() {
       .filter(p => p.email && !knownEmails.has(String(p.email).toLowerCase()))
       .map((p, i) => ({
         id: fromEmps.length + i + 1,
+        profileId: p.id,
         name: p.name || p.email!,
         email: p.email || '',
         position: p.position || 'Team Member',
