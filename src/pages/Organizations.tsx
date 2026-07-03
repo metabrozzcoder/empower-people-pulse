@@ -97,7 +97,7 @@ export default function Organizations() {
     if (deptErr) toast({ title: 'Failed to load departments', description: deptErr.message, variant: 'destructive' })
     setOrganizations((orgs as Organization[]) ?? [])
     setDepartments((depts as Department[]) ?? [])
-    setProfiles((profs as ProfileLite[]) ?? [])
+    setProfiles((profs as unknown as ProfileLite[])?.map(p => ({ ...p, email: p.email ?? null })) ?? [])
     setEmployees((emps as EmployeeLite[]) ?? [])
     setLoading(false)
   }
