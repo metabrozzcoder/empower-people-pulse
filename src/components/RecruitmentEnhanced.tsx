@@ -531,10 +531,42 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                                   {c.skills.map((s,i) => <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>)}
                                 </div>
                               )}
+                              {(c.assigned_to || c.review_decision) && (
+                                <div className="flex items-center gap-2 flex-wrap text-xs">
+                                  {c.assigned_to && (
+                                    <Badge variant="outline" className="gap-1">
+                                      <UserCircle className="w-3 h-3" />
+                                      Assigned to {profiles.find(p => p.id === c.assigned_to)?.name ?? 'reviewer'}
+                                    </Badge>
+                                  )}
+                                  {c.review_decision === 'approved' && <Badge className="bg-emerald-100 text-emerald-800">Reviewer approved</Badge>}
+                                  {c.review_decision === 'rejected' && <Badge className="bg-red-100 text-red-800">Reviewer rejected</Badge>}
+                                </div>
+                              )}
+                              {c.attachments?.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {c.attachments.map((a, i) => (
+                                    <Button key={i} size="sm" variant="outline" className="h-7 text-xs" onClick={() => downloadAttachment(a)}>
+                                      <FileText className="w-3 h-3 mr-1" />{a.name}
+                                    </Button>
+                                  ))}
+                                </div>
+                              )}
                               {c.notes && <div className="bg-muted/50 p-3 rounded-lg"><p className="text-sm whitespace-pre-wrap">{c.notes}</p></div>}
                             </div>
                           </div>
                           <div className="flex flex-col gap-2 min-w-[180px]">
+                            {c.assigned_to === currentUserId && !isAdminHR && (
+                              <div className="grid grid-cols-2 gap-2">
+                                <Button size="sm" variant="glow" onClick={() => reviewCandidate(c, 'approved')} disabled={c.review_decision==='approved'}>
+                                  <ThumbsUp className="w-4 h-4 mr-1" />Approve
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => reviewCandidate(c, 'rejected')} disabled={c.review_decision==='rejected'}>
+                                  <ThumbsDown className="w-4 h-4 mr-1" />Reject
+                                </Button>
+                              </div>
+                            )}
+                            {isAdminHR && <>
                             <Button size="sm" variant="shimmer" onClick={() => handleCandidateAction('schedule_interview', c)}>
                               <Calendar className="w-4 h-4 mr-1" />Schedule Interview
                             </Button>
@@ -546,6 +578,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                                 Hire
                               </Button>
                             </div>
+                            </>}
                             <div className="flex gap-1 flex-wrap">
                               <Button size="sm" variant="outline" onClick={() => { setSelectedCandidate(c); setIsViewCandidateDialogOpen(true) }} title="View"><Eye className="w-4 h-4" /></Button>
                               <Button size="sm" variant="outline" onClick={() => { setSelectedCandidate(c); setMessageForm({ subject:'', body:'' }); setIsMessageDialogOpen(true) }} title="Message"><MessageSquare className="w-4 h-4" /></Button>
