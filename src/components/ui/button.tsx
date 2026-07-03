@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -18,6 +18,17 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        // shadcn-studio inspired
+        gradient:
+          "text-primary-foreground bg-gradient-primary bg-[length:200%_200%] bg-left hover:bg-right transition-[background-position] duration-500 shadow-md hover:shadow-lg",
+        glow:
+          "bg-primary text-primary-foreground shadow-glow hover:-translate-y-0.5 hover:shadow-[0_15px_40px_-10px_hsl(var(--primary)/0.6)]",
+        shimmer:
+          "overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 before:absolute before:inset-0 before:-translate-x-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:animate-shimmer-slide",
+        soft:
+          "bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 backdrop-blur-sm",
+        glass:
+          "border border-white/20 bg-white/10 text-foreground backdrop-blur-md hover:bg-white/20 shadow-lg dark:bg-white/5 dark:hover:bg-white/10",
       },
       size: {
         default: "h-10 px-4 py-2",
