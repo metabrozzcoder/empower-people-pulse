@@ -1336,6 +1336,14 @@ export const uz: Record<string, string> = {
   "Update your reminder": "Eslatmangizni yangilang", "Create a personal reminder or event": "Shaxsiy eslatma yoki tadbir yarating",
   "Scheduled for": "Rejalashtirilgan vaqt",
 
+  // User Management dialog (uz)
+  "Edit User": "Foydalanuvchini tahrirlash",
+  "Add New User": "Yangi foydalanuvchi qo'shish",
+  "Update user information and section permissions": "Foydalanuvchi ma'lumotlari va bo'lim ruxsatlarini yangilang",
+  "Create a new user account with role and section permissions": "Rol va bo'lim ruxsatlari bilan yangi hisob yarating",
+  "(auto-generated)": "(avtomatik yaratildi)",
+  "Date of Birth": "Tug'ilgan sana",
+
 }
 
 
