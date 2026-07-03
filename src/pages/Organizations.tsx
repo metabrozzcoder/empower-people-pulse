@@ -88,14 +88,16 @@ export default function Organizations() {
     const [{ data: orgs, error: orgErr }, { data: depts, error: deptErr }, { data: profs }, { data: emps }] = await Promise.all([
       supabase.from('organizations').select('*').order('created_at', { ascending: false }),
       supabase.from('departments').select('*').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('id, name, email, department, organization, position').order('name'),
+      (currentUser?.role === 'Admin' || currentUser?.role === 'HR'
+        ? supabase.from('profiles').select('id, name, email, department, organization, position').order('name')
+        : supabase.from('profiles_public').select('id, name, department, organization, position').order('name')),
       supabase.from('employees').select('id, name, position, department, organization_id, email').order('name'),
     ])
     if (orgErr) toast({ title: 'Failed to load organizations', description: orgErr.message, variant: 'destructive' })
     if (deptErr) toast({ title: 'Failed to load departments', description: deptErr.message, variant: 'destructive' })
     setOrganizations((orgs as Organization[]) ?? [])
     setDepartments((depts as Department[]) ?? [])
-    setProfiles((profs as ProfileLite[]) ?? [])
+    setProfiles((profs as unknown as ProfileLite[])?.map(p => ({ ...p, email: p.email ?? null })) ?? [])
     setEmployees((emps as EmployeeLite[]) ?? [])
     setLoading(false)
   }
