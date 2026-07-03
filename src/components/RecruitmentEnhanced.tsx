@@ -85,7 +85,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
   const [isViewJobDialogOpen, setIsViewJobDialogOpen] = useState(false)
   const [isEditJobDialogOpen, setIsEditJobDialogOpen] = useState(false)
 
-  const [interviewForm, setInterviewForm] = useState({ date: '', interviewer: '', notes: '' })
+  const [interviewForm, setInterviewForm] = useState({ date: '', time: '', interviewer: '', notes: '' })
   const [addForm, setAddForm] = useState({ ...emptyCandidate })
   const [editForm, setEditForm] = useState({ ...emptyCandidate })
   const [messageForm, setMessageForm] = useState({ subject: '', body: '' })
