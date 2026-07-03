@@ -284,6 +284,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
 
   const submitAdd = async () => {
     if (!addForm.name.trim()) { toast({ title: 'Name required', variant: 'destructive' }); return }
+    setUploading(true)
     const { data: { user } } = await supabase.auth.getUser()
     const payload = {
       name: addForm.name.trim(),
@@ -296,19 +297,29 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
       experience: addForm.experience.trim() || null,
       notes: addForm.notes.trim() || null,
       job_posting_id: addForm.job_posting_id || null,
+      assigned_to: addForm.assigned_to || null,
       created_by: user?.id ?? null,
     }
-    const { error } = await supabase.from('candidates').insert(payload)
-    if (error) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); return }
+    const { data: inserted, error } = await supabase.from('candidates').insert(payload).select('id').single()
+    if (error || !inserted) { setUploading(false); toast({ title: 'Failed', description: error?.message, variant: 'destructive' }); return }
+    if (addFiles.length) {
+      const uploaded = await uploadFilesForCandidate(inserted.id, addFiles)
+      if (uploaded.length) {
+        await supabase.from('candidates').update({ attachments: uploaded as any }).eq('id', inserted.id)
+      }
+    }
+    setUploading(false)
     toast({ title: 'Candidate added' })
     setAddForm({ ...emptyCandidate })
+    setAddFiles([])
     setIsAddCandidateDialogOpen(false)
     await fetchAll()
   }
 
   const submitEdit = async () => {
     if (!selectedCandidate) return
-    const payload = {
+    setUploading(true)
+    const payload: any = {
       name: editForm.name.trim(),
       email: editForm.email.trim() || null,
       phone: editForm.phone.trim() || null,
@@ -321,12 +332,19 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
       experience: editForm.experience.trim() || null,
       notes: editForm.notes.trim() || null,
       job_posting_id: editForm.job_posting_id || null,
+      assigned_to: editForm.assigned_to || null,
+    }
+    if (editFiles.length) {
+      const uploaded = await uploadFilesForCandidate(selectedCandidate.id, editFiles)
+      payload.attachments = [...(selectedCandidate.attachments || []), ...uploaded]
     }
     const { error } = await supabase.from('candidates').update(payload).eq('id', selectedCandidate.id)
-    if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return }
+    if (error) { setUploading(false); toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return }
     setCandidates(prev => prev.map(candidate => (
       candidate.id === selectedCandidate.id ? { ...candidate, ...payload } as Candidate : candidate
     )))
+    setUploading(false)
+    setEditFiles([])
     toast({ title: 'Candidate updated' })
     setIsEditCandidateDialogOpen(false)
     void fetchAll()
