@@ -508,6 +508,48 @@ export default function Employees() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!createdCreds} onOpenChange={(o) => !o && setCreatedCreds(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Login credentials</DialogTitle>
+            <DialogDescription>
+              Share these credentials with {createdCreds?.name} so they can sign in. This password is only shown once here — copy it now.
+            </DialogDescription>
+          </DialogHeader>
+          {createdCreds && (
+            <div className="space-y-3 py-2">
+              <div className="space-y-1">
+                <Label>Login email</Label>
+                <Input readOnly value={createdCreds.email} onFocus={(e) => e.currentTarget.select()} />
+              </div>
+              {createdCreds.username && (
+                <div className="space-y-1">
+                  <Label>Username</Label>
+                  <Input readOnly value={createdCreds.username} onFocus={(e) => e.currentTarget.select()} />
+                </div>
+              )}
+              <div className="space-y-1">
+                <Label>Temporary password</Label>
+                <Input readOnly value={createdCreds.password} onFocus={(e) => e.currentTarget.select()} />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const text = `Login: ${createdCreds.email}\nPassword: ${createdCreds.password}`
+                    navigator.clipboard.writeText(text)
+                    toast({ title: 'Copied', description: 'Credentials copied to clipboard.' })
+                  }}
+                >
+                  Copy
+                </Button>
+                <Button onClick={() => setCreatedCreds(null)}>Done</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
