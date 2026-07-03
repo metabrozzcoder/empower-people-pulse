@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    let { email, password, name, username, role, phone, department, position, birthday } = body ?? {};
+    let { email, password, name, username, role, phone, department, position, birthday, employee_id } = body ?? {};
     if (!name) {
       return new Response(JSON.stringify({ error: "name is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -133,13 +133,40 @@ Deno.serve(async (req) => {
         birthday: birthday || null,
         status: "Active",
       };
-      const { data: linkedEmployee } = await admin
-        .from("employees")
-        .update(employeePatch)
-        .is("profile_id", null)
-        .eq("name", name)
-        .select("id")
-        .maybeSingle();
+      let linkedEmployee: { id: string } | null = null;
+
+      if (employee_id) {
+        const { data: existingEmployee, error: existingEmployeeErr } = await admin
+          .from("employees")
+          .select("id, profile_id")
+          .eq("id", employee_id)
+          .maybeSingle();
+
+        if (existingEmployeeErr) {
+          return new Response(JSON.stringify({ error: existingEmployeeErr.message || "Failed to find employee" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        if (existingEmployee?.profile_id && existingEmployee.profile_id !== uid) {
+          return new Response(JSON.stringify({ error: "Employee is already linked to another user" }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        if (existingEmployee?.id) {
+          const { data: updatedEmployee } = await admin
+            .from("employees")
+            .update(employeePatch)
+            .eq("id", existingEmployee.id)
+            .select("id")
+            .maybeSingle();
+          linkedEmployee = updatedEmployee;
+        }
+      } else {
+        const { data: updatedEmployee } = await admin
+          .from("employees")
+          .update(employeePatch)
+          .is("profile_id", null)
+          .eq("name", name)
+          .select("id")
+          .maybeSingle();
+        linkedEmployee = updatedEmployee;
+      }
 
       if (!linkedEmployee) {
         const { data: existingEmployee } = await admin
