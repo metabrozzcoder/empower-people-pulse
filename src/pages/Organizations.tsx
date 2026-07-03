@@ -45,6 +45,26 @@ export default function Organizations() {
   const { t } = useTranslation()
   const { toast } = useToast()
   const { currentUser } = useAuth()
+  const navigate = useNavigate()
+
+  const messageMember = (member: EmployeeLite) => {
+    let userId: string | null = null
+    if (member.id.startsWith('profile-')) userId = member.id.replace(/^profile-/, '')
+    else if (member.email) {
+      const p = profiles.find(pr => pr.email && pr.email.toLowerCase() === member.email!.toLowerCase())
+      if (p) userId = p.id
+    }
+    if (!userId) {
+      toast({ title: 'Cannot message user', description: 'This member has no linked account yet.', variant: 'destructive' })
+      return
+    }
+    if (userId === currentUser?.id) {
+      toast({ title: "That's you", description: 'You cannot message yourself.' })
+      return
+    }
+    sessionStorage.setItem('chat.startWithUser', userId)
+    navigate('/chat')
+  }
   const isAdmin = currentUser?.role === 'Admin'
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
