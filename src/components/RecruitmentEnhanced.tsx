@@ -879,10 +879,46 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2"><Label>Assign to (reviewer)</Label>
+                <Select value={editForm.assigned_to || 'none'} onValueChange={val => setEditForm(v => ({ ...v, assigned_to: val === 'none' ? '' : val }))}>
+                  <SelectTrigger><SelectValue placeholder="Pick a person" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Unassigned</SelectItem>
+                    {profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.name}{p.position ? ` — ${p.position}` : ''}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2"><Label>Notes</Label><Textarea value={editForm.notes} onChange={e => setEditForm(v => ({ ...v, notes: e.target.value }))} /></div>
+              {selectedCandidate.attachments?.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Existing attachments</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedCandidate.attachments.map((a, i) => (
+                      <Badge key={i} variant="secondary" className="gap-1">
+                        <FileText className="w-3 h-3" />{a.name}
+                        <button onClick={() => removeAttachment(selectedCandidate, a)} className="ml-1"><X className="w-3 h-3" /></button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>Add attachments</Label>
+                <Input type="file" multiple onChange={e => setEditFiles(Array.from(e.target.files || []))} />
+                {editFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {editFiles.map((f, i) => (
+                      <Badge key={i} variant="secondary" className="gap-1">
+                        <Paperclip className="w-3 h-3" />{f.name}
+                        <button onClick={() => setEditFiles(prev => prev.filter((_, j) => j !== i))} className="ml-1"><X className="w-3 h-3" /></button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsEditCandidateDialogOpen(false)}>Cancel</Button>
-                <Button onClick={submitEdit}>Save</Button>
+                <Button variant="outline" onClick={() => setIsEditCandidateDialogOpen(false)} disabled={uploading}>Cancel</Button>
+                <Button onClick={submitEdit} disabled={uploading}>{uploading ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />Saving</> : 'Save'}</Button>
               </div>
             </div>
           )}
