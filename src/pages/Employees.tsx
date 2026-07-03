@@ -62,6 +62,10 @@ const POSITION_PRESETS = [
   'Sales Representative', 'Director', 'Driver', 'Technician',
 ]
 
+interface CustomRoleLite { id: string; name: string }
+interface DepartmentLite { id: string; name: string }
+interface ProfileLite { id: string; name: string | null; email: string | null; position: string | null; department: string | null }
+
 export default function Employees() {
   const { t } = useTranslation()
   const { toast } = useToast()
@@ -69,12 +73,16 @@ export default function Employees() {
   const canView = currentUser?.role === 'Admin' || currentUser?.role === 'HR'
   const [employees, setEmployees] = useState<EmployeeView[]>([])
   const [organizations, setOrganizations] = useState<OrgLite[]>([])
+  const [customRoles, setCustomRoles] = useState<CustomRoleLite[]>([])
+  const [departmentOptions, setDepartmentOptions] = useState<DepartmentLite[]>([])
+  const [profiles, setProfiles] = useState<ProfileLite[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [orgFilter, setOrgFilter] = useState("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [positionMode, setPositionMode] = useState<'preset' | 'custom'>('preset')
+  const [departmentMode, setDepartmentMode] = useState<'preset' | 'custom'>('preset')
   const [employeeData, setEmployeeData] = useState({
     firstName: '',
     lastName: '',
@@ -90,14 +98,18 @@ export default function Employees() {
   })
 
   const loadEmployees = async () => {
-    const [{ data: emps }, { data: orgs }, { data: profs }, { data: paidOrders }] = await Promise.all([
+    const [{ data: emps }, { data: orgs }, { data: profs }, { data: paidOrders }, { data: roles }, { data: depts }] = await Promise.all([
       supabase.from('employees').select('*').order('created_at', { ascending: false }),
       supabase.from('organizations').select('id, name').order('name'),
       supabase.from('profiles').select('id, name, email, position, department').order('name'),
       supabase.from('payment_orders').select('budget, created_by').eq('status', 'paid'),
+      supabase.from('custom_roles').select('id, name').order('name'),
+      supabase.from('departments').select('id, name').order('name'),
     ])
     const orgList = (orgs ?? []) as OrgLite[]
     setOrganizations(orgList)
+    setCustomRoles((roles ?? []) as CustomRoleLite[])
+    setDepartmentOptions((depts ?? []) as DepartmentLite[])
     const orgMap = new Map(orgList.map(o => [o.id, o.name]))
 
     // Map paid payment totals → user_id → total
@@ -106,7 +118,8 @@ export default function Employees() {
       paidByUser.set(p.created_by, (paidByUser.get(p.created_by) ?? 0) + Number(p.budget ?? 0))
     })
     // Map user_id → email via profiles
-    const profilesList = (profs ?? []) as { id: string; name: string | null; email: string | null; position: string | null; department: string | null }[]
+    const profilesList = (profs ?? []) as ProfileLite[]
+    setProfiles(profilesList)
     const emailToBonus = new Map<string, number>()
     profilesList.forEach(p => {
       const bonus = paidByUser.get(p.id) ?? 0
@@ -196,13 +209,13 @@ export default function Employees() {
   }, [employees, searchTerm, departmentFilter, statusFilter, orgFilter])
 
   const handleAddEmployeeSubmit = async () => {
-    if (!employeeData.firstName || !employeeData.lastName || !employeeData.email || !employeeData.position) {
-      toast({ title: "Validation Error", description: "Please fill in all required fields.", variant: "destructive" })
+    if (!employeeData.firstName || !employeeData.lastName || !employeeData.position) {
+      toast({ title: "Validation Error", description: "Please fill in first name, last name and position.", variant: "destructive" })
       return
     }
     const { error } = await supabase.from('employees').insert({
       name: `${employeeData.firstName} ${employeeData.lastName}`,
-      email: employeeData.email,
+      email: employeeData.email || null,
       position: employeeData.position,
       department: employeeData.department || 'General',
       hire_date: new Date().toISOString().split('T')[0],
@@ -324,7 +337,7 @@ export default function Employees() {
               <Input id="lastName" placeholder="Enter last name" value={employeeData.lastName} onChange={(e) => setEmployeeData({...employeeData, lastName: e.target.value})} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email <span className="text-xs text-muted-foreground">(optional)</span></Label>
               <Input id="email" type="email" placeholder="Enter email address" value={employeeData.email} onChange={(e) => setEmployeeData({...employeeData, email: e.target.value})} />
             </div>
             <div className="space-y-2">
@@ -345,8 +358,17 @@ export default function Employees() {
                     }
                   }}
                 >
-                  <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select position or role" /></SelectTrigger>
                   <SelectContent>
+                    {customRoles.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Custom roles</div>
+                        {customRoles.map(r => (
+                          <SelectItem key={`role-${r.id}`} value={r.name}>{r.name}</SelectItem>
+                        ))}
+                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground border-t mt-1">Positions</div>
+                      </>
+                    )}
                     {POSITION_PRESETS.map(p => (
                       <SelectItem key={p} value={p}>{p}</SelectItem>
                     ))}
@@ -370,7 +392,40 @@ export default function Employees() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              <Input id="department" placeholder="Enter department" value={employeeData.department} onChange={(e) => setEmployeeData({...employeeData, department: e.target.value})} />
+              {departmentMode === 'preset' ? (
+                <Select
+                  value={employeeData.department}
+                  onValueChange={(v) => {
+                    if (v === '__custom__') {
+                      setDepartmentMode('custom')
+                      setEmployeeData({ ...employeeData, department: '' })
+                    } else {
+                      setEmployeeData({ ...employeeData, department: v })
+                    }
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectContent>
+                    {departmentOptions.map(d => (
+                      <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                    ))}
+                    <SelectItem value="__custom__">+ Add custom department…</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    id="department"
+                    placeholder="Enter department"
+                    value={employeeData.department}
+                    onChange={(e) => setEmployeeData({ ...employeeData, department: e.target.value })}
+                    autoFocus
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={() => { setDepartmentMode('preset'); setEmployeeData({ ...employeeData, department: '' }) }}>
+                    Presets
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="salary">Salary</Label>
@@ -397,8 +452,21 @@ export default function Employees() {
               />
             </div>
             <div className="space-y-2 col-span-2">
-              <Label htmlFor="manager">Manager</Label>
-              <Input id="manager" placeholder="Manager name" value={employeeData.manager} onChange={(e) => setEmployeeData({...employeeData, manager: e.target.value})} />
+              <Label htmlFor="manager">Manager <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <Select
+                value={employeeData.manager || '__none__'}
+                onValueChange={(v) => setEmployeeData({ ...employeeData, manager: v === '__none__' ? '' : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Select manager" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— None —</SelectItem>
+                  {profiles.filter(p => p.name).map(p => (
+                    <SelectItem key={p.id} value={p.name as string}>
+                      {p.name}{p.position ? ` — ${p.position}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2 col-span-2">
               <Label htmlFor="organization">Organization</Label>
