@@ -119,16 +119,16 @@ const AccountSettings = () => {
       toast({ title: t('pages.accountSettings.toasts.notSignedIn'), description: t('pages.accountSettings.toasts.signInAgain'), variant: 'destructive' })
       return
     }
-    if (!profile.name.trim()) {
-      toast({ title: t('pages.accountSettings.toasts.nameRequired'), variant: 'destructive' })
-      return
-    }
     const updates: Record<string, unknown> = {
-      name: profile.name,
       phone: profile.phone,
       avatar_url: profile.avatar,
     }
     if (canEditOrg) {
+      if (!profile.name.trim()) {
+        toast({ title: t('pages.accountSettings.toasts.nameRequired'), variant: 'destructive' })
+        return
+      }
+      updates.name = profile.name
       updates.department = profile.department
       updates.position = profile.role
     }
