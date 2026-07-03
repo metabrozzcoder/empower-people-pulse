@@ -358,8 +358,17 @@ export default function Employees() {
                     }
                   }}
                 >
-                  <SelectTrigger><SelectValue placeholder="Select position" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select position or role" /></SelectTrigger>
                   <SelectContent>
+                    {customRoles.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Custom roles</div>
+                        {customRoles.map(r => (
+                          <SelectItem key={`role-${r.id}`} value={r.name}>{r.name}</SelectItem>
+                        ))}
+                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground border-t mt-1">Positions</div>
+                      </>
+                    )}
                     {POSITION_PRESETS.map(p => (
                       <SelectItem key={p} value={p}>{p}</SelectItem>
                     ))}
