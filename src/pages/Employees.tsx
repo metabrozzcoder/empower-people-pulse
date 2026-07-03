@@ -98,14 +98,18 @@ export default function Employees() {
   })
 
   const loadEmployees = async () => {
-    const [{ data: emps }, { data: orgs }, { data: profs }, { data: paidOrders }] = await Promise.all([
+    const [{ data: emps }, { data: orgs }, { data: profs }, { data: paidOrders }, { data: roles }, { data: depts }] = await Promise.all([
       supabase.from('employees').select('*').order('created_at', { ascending: false }),
       supabase.from('organizations').select('id, name').order('name'),
       supabase.from('profiles').select('id, name, email, position, department').order('name'),
       supabase.from('payment_orders').select('budget, created_by').eq('status', 'paid'),
+      supabase.from('custom_roles').select('id, name').order('name'),
+      supabase.from('departments').select('id, name').order('name'),
     ])
     const orgList = (orgs ?? []) as OrgLite[]
     setOrganizations(orgList)
+    setCustomRoles((roles ?? []) as CustomRoleLite[])
+    setDepartmentOptions((depts ?? []) as DepartmentLite[])
     const orgMap = new Map(orgList.map(o => [o.id, o.name]))
 
     // Map paid payment totals → user_id → total
