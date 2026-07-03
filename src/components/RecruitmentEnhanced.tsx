@@ -479,6 +479,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                                   position: c.position ?? '', ai_score: c.ai_score, status: c.status,
                                   skills: c.skills.join(', ') as any, experience: c.experience ?? '',
                                   notes: c.notes ?? '', job_posting_id: c.job_posting_id ?? '',
+                                  assigned_to: c.assigned_to ?? '',
                                 })
                                 setIsEditCandidateDialogOpen(true)
                               }} title="Edit"><Edit className="w-4 h-4" /></Button>
