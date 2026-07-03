@@ -526,15 +526,39 @@ export default function ShootingRequests() {
                 </div>
               )}
 
-              {canActOnSelected(selected) && selected.workflow_status === 'pending_driver' && (
-                <div className="space-y-2 border-t pt-3">
-                  <Label className="text-xs">Vehicle / driver info</Label>
-                  <Textarea value={vehicleInfo} onChange={(e) => setVehicleInfo(e.target.value)} placeholder="Plate, vehicle, driver name…" />
-                  <Button size="sm" disabled={submitting || !vehicleInfo.trim()} onClick={() => transition(selected, 'scheduled', { driver_id: userId!, vehicle_info: vehicleInfo, driver_assigned_at: new Date().toISOString() }, 'driver_assigned', vehicleInfo)}>
-                    <Truck className="w-4 h-4 mr-1" />Assign & schedule
-                  </Button>
-                </div>
-              )}
+              {canActOnSelected(selected) && selected.workflow_status === 'pending_driver' && (() => {
+                const availableVehicles = vehicles.filter((v) => v.assigned_driver_id && (v.status ?? 'available').toLowerCase() !== 'maintenance')
+                const chosen = availableVehicles.find((v) => v.id === selectedVehicleId)
+                return (
+                  <div className="space-y-2 border-t pt-3">
+                    <Label className="text-xs">Available vehicle (with bound driver)</Label>
+                    {availableVehicles.length === 0 ? (
+                      <div className="text-xs text-muted-foreground border rounded p-2">No vehicles with an assigned driver. Add one in Drivers & Garage first.</div>
+                    ) : (
+                      <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId}>
+                        <SelectTrigger><SelectValue placeholder="Select vehicle & driver" /></SelectTrigger>
+                        <SelectContent>
+                          {availableVehicles.map((v) => (
+                            <SelectItem key={v.id} value={v.id}>
+                              {v.plate_number} · {[v.make, v.model].filter(Boolean).join(' ') || 'Vehicle'} — {v.driver_name ?? 'Driver'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <Label className="text-xs">Notes (optional)</Label>
+                    <Textarea value={vehicleInfo} onChange={(e) => setVehicleInfo(e.target.value)} placeholder="Pickup time, meeting point…" />
+                    <Button size="sm" disabled={submitting || !chosen} onClick={() => {
+                      if (!chosen) return
+                      const label = `${chosen.plate_number} · ${[chosen.make, chosen.model].filter(Boolean).join(' ')} — ${chosen.driver_name ?? 'Driver'}${vehicleInfo ? ` · ${vehicleInfo}` : ''}`
+                      transition(selected, 'scheduled', { driver_id: chosen.assigned_driver_id!, vehicle_info: label, driver_assigned_at: new Date().toISOString() }, 'driver_assigned', label)
+                      setSelectedVehicleId('')
+                    }}>
+                      <Truck className="w-4 h-4 mr-1" />Assign & schedule
+                    </Button>
+                  </div>
+                )
+              })()}
 
               {canActOnSelected(selected) && selected.workflow_status === 'scheduled' && (
                 <div className="space-y-2 border-t pt-3">
