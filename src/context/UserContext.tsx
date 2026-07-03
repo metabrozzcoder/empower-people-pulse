@@ -94,7 +94,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       allowedSections: Array.isArray(p.allowed_sections) ? p.allowed_sections : [],
       sectionAccess: Array.isArray(p.section_access) ? p.section_access : [],
       guestId: p.guest_id ?? undefined,
-      username: p.username ?? p.email ?? '',
+      username: p.email ?? p.username ?? '',
       password: '',
       birthday: p.birthday ?? undefined,
     }))

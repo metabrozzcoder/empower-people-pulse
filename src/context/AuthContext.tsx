@@ -46,10 +46,12 @@ async function loadUserProfile(userId: string, email: string): Promise<User | nu
   }
 
 
+  const loginEmail = email || profile.email || ''
+
   return {
     id: profile.id,
     name: profile.name,
-    email: profile.email ?? email,
+    email: loginEmail,
     phone: profile.phone ?? '',
     avatar: profile.avatar_url ?? undefined,
     role: capitalize(dbRole),
@@ -64,7 +66,7 @@ async function loadUserProfile(userId: string, email: string): Promise<User | nu
     sectionAccess: stringArray(profile.section_access),
     guestId: profile.guest_id ?? undefined,
     linkedEmployee: profile.linked_employee ?? undefined,
-    username: profile.username ?? profile.email ?? email,
+    username: loginEmail,
     password: '',
   }
 }
