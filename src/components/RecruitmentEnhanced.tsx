@@ -622,7 +622,10 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Schedule Interview</DialogTitle><DialogDescription>{selectedCandidate?.name}</DialogDescription></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2"><Label>Interview Date</Label><Input type="datetime-local" value={interviewForm.date} onChange={e => setInterviewForm(v => ({ ...v, date: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Date</Label><Input type="date" value={interviewForm.date} onChange={e => setInterviewForm(v => ({ ...v, date: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Time (optional)</Label><Input type="time" value={interviewForm.time} onChange={e => setInterviewForm(v => ({ ...v, time: e.target.value }))} /></div>
+            </div>
             <div className="space-y-2"><Label>Interviewer</Label><Input placeholder="Name of interviewer" value={interviewForm.interviewer} onChange={e => setInterviewForm(v => ({ ...v, interviewer: e.target.value }))} /></div>
             <div className="space-y-2"><Label>Notes</Label><Textarea placeholder="Interview notes..." value={interviewForm.notes} onChange={e => setInterviewForm(v => ({ ...v, notes: e.target.value }))} /></div>
             <div className="flex justify-end gap-2">
