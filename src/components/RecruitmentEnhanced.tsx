@@ -651,7 +651,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
           {selectedCandidate && (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <Avatar className="w-20 h-20"><AvatarFallback>{selectedCandidate.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
+                <Avatar variant="gradient" size="xl"><AvatarFallback>{selectedCandidate.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
                 <div>
                   <h3 className="font-semibold text-lg">{selectedCandidate.name}</h3>
                   {selectedCandidate.position && <p className="text-muted-foreground">{selectedCandidate.position}</p>}
