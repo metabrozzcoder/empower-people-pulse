@@ -249,6 +249,7 @@ export default function Employees() {
         manager: employeeData.manager || null,
         organization_id: employeeData.organizationId || null,
         hire_date: new Date().toISOString().split('T')[0],
+        ...(employeeData.email ? { email: employeeData.email } : {}),
       }).eq('profile_id', res.id)
     }
     setCreatedCreds({ name: fullName, email: res.email, username: res.username, password: res.password })
