@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Brain, Search, Plus, Filter, Star, Clock, Mail, Phone, Calendar,
   Edit, Eye, UserCheck, MessageSquare, Download, Trash2, Loader2,
+  Paperclip, X, FileText, ThumbsUp, ThumbsDown, UserCircle,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
@@ -20,6 +21,8 @@ import { formatDate } from '@/lib/date'
 type CandidateStatus =
   | 'Applied' | 'Shortlisted' | 'Interview Scheduled' | 'Interview Completed'
   | 'Offered' | 'Hired' | 'Rejected'
+
+interface Attachment { path: string; name: string; type?: string; size?: number }
 
 interface Candidate {
   id: string
@@ -35,6 +38,11 @@ interface Candidate {
   applied_date: string
   job_posting_id: string | null
   source: string | null
+  assigned_to: string | null
+  review_decision: string | null
+  review_note: string | null
+  reviewed_at: string | null
+  attachments: Attachment[]
 }
 
 interface JobPosting {
@@ -50,6 +58,8 @@ interface JobPosting {
   applicants?: number
 }
 
+interface ProfileLite { id: string; name: string; position: string | null }
+
 interface RecruitmentEnhancedProps {
   onCandidateAction?: (action: string, candidateId: string) => void
   onJobAction?: (action: string, jobId: string) => void
@@ -59,6 +69,7 @@ const emptyCandidate = {
   name: '', email: '', phone: '', position: '',
   ai_score: 0, status: 'Applied' as CandidateStatus,
   skills: '', experience: '', notes: '', job_posting_id: '' as string,
+  assigned_to: '' as string,
 }
 
 const emptyJob = {
@@ -91,19 +102,36 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
   const [messageForm, setMessageForm] = useState({ subject: '', body: '' })
   const [addJobForm, setAddJobForm] = useState({ ...emptyJob })
   const [editJobForm, setEditJobForm] = useState({ ...emptyJob })
+  const [profiles, setProfiles] = useState<ProfileLite[]>([])
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isAdminHR, setIsAdminHR] = useState(false)
+  const [addFiles, setAddFiles] = useState<File[]>([])
+  const [editFiles, setEditFiles] = useState<File[]>([])
+  const [uploading, setUploading] = useState(false)
 
   const fetchAll = async () => {
     setLoading(true)
-    const [{ data: cands, error: cErr }, { data: jobs, error: jErr }] = await Promise.all([
+    const { data: { user } } = await supabase.auth.getUser()
+    setCurrentUserId(user?.id ?? null)
+    let adminHR = false
+    if (user) {
+      const { data: roleRows } = await supabase.from('user_roles').select('role').eq('user_id', user.id)
+      adminHR = (roleRows || []).some((r: any) => r.role === 'admin' || r.role === 'hr')
+    }
+    setIsAdminHR(adminHR)
+    const [{ data: cands, error: cErr }, { data: jobs, error: jErr }, { data: profs }] = await Promise.all([
       supabase.from('candidates').select('*').order('created_at', { ascending: false }),
       supabase.from('job_postings').select('*').order('created_at', { ascending: false }),
+      supabase.from('profiles').select('id, name, position').order('name'),
     ])
     if (cErr) toast({ title: 'Failed to load candidates', description: cErr.message, variant: 'destructive' })
     if (jErr) toast({ title: 'Failed to load job postings', description: jErr.message, variant: 'destructive' })
     setCandidates((cands as any) || [])
     setJobPostings((jobs as any) || [])
+    setProfiles((profs as any) || [])
     setLoading(false)
   }
+
 
   useEffect(() => { fetchAll() }, [])
 
@@ -146,6 +174,48 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
     void fetchAll()
     return true
   }
+
+  const uploadFilesForCandidate = async (candidateId: string, files: File[]): Promise<Attachment[]> => {
+    const out: Attachment[] = []
+    for (const f of files) {
+      const safe = f.name.replace(/[^\w.\-]+/g, '_')
+      const path = `${candidateId}/${Date.now()}_${safe}`
+      const { error } = await supabase.storage.from('candidate-files').upload(path, f, { upsert: false })
+      if (error) { toast({ title: 'Upload failed', description: `${f.name}: ${error.message}`, variant: 'destructive' }); continue }
+      out.push({ path, name: f.name, type: f.type, size: f.size })
+    }
+    return out
+  }
+
+  const downloadAttachment = async (a: Attachment) => {
+    const { data, error } = await supabase.storage.from('candidate-files').createSignedUrl(a.path, 300)
+    if (error || !data?.signedUrl) { toast({ title: 'Download failed', description: error?.message, variant: 'destructive' }); return }
+    window.open(data.signedUrl, '_blank')
+  }
+
+  const removeAttachment = async (c: Candidate, a: Attachment) => {
+    if (!confirm(`Remove ${a.name}?`)) return
+    await supabase.storage.from('candidate-files').remove([a.path])
+    const remaining = (c.attachments || []).filter(x => x.path !== a.path)
+    const { error } = await supabase.from('candidates').update({ attachments: remaining as any }).eq('id', c.id)
+    if (error) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); return }
+    setCandidates(prev => prev.map(x => x.id === c.id ? { ...x, attachments: remaining } : x))
+    if (selectedCandidate?.id === c.id) setSelectedCandidate({ ...c, attachments: remaining })
+  }
+
+  const reviewCandidate = async (c: Candidate, decision: 'approved' | 'rejected') => {
+    const note = window.prompt(`Optional note for ${decision === 'approved' ? 'approval' : 'rejection'}:`, c.review_note ?? '') ?? ''
+    const { error } = await supabase.from('candidates').update({
+      review_decision: decision,
+      review_note: note || null,
+      reviewed_at: new Date().toISOString(),
+      status: decision === 'rejected' ? 'Rejected' : c.status,
+    }).eq('id', c.id)
+    if (error) { toast({ title: 'Review failed', description: error.message, variant: 'destructive' }); return }
+    toast({ title: decision === 'approved' ? 'Approved' : 'Rejected', description: c.name })
+    void fetchAll()
+  }
+
 
   const handleCandidateAction = async (action: string, c: Candidate) => {
     switch (action) {
@@ -214,6 +284,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
 
   const submitAdd = async () => {
     if (!addForm.name.trim()) { toast({ title: 'Name required', variant: 'destructive' }); return }
+    setUploading(true)
     const { data: { user } } = await supabase.auth.getUser()
     const payload = {
       name: addForm.name.trim(),
@@ -226,19 +297,29 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
       experience: addForm.experience.trim() || null,
       notes: addForm.notes.trim() || null,
       job_posting_id: addForm.job_posting_id || null,
+      assigned_to: addForm.assigned_to || null,
       created_by: user?.id ?? null,
     }
-    const { error } = await supabase.from('candidates').insert(payload)
-    if (error) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); return }
+    const { data: inserted, error } = await supabase.from('candidates').insert(payload).select('id').single()
+    if (error || !inserted) { setUploading(false); toast({ title: 'Failed', description: error?.message, variant: 'destructive' }); return }
+    if (addFiles.length) {
+      const uploaded = await uploadFilesForCandidate(inserted.id, addFiles)
+      if (uploaded.length) {
+        await supabase.from('candidates').update({ attachments: uploaded as any }).eq('id', inserted.id)
+      }
+    }
+    setUploading(false)
     toast({ title: 'Candidate added' })
     setAddForm({ ...emptyCandidate })
+    setAddFiles([])
     setIsAddCandidateDialogOpen(false)
     await fetchAll()
   }
 
   const submitEdit = async () => {
     if (!selectedCandidate) return
-    const payload = {
+    setUploading(true)
+    const payload: any = {
       name: editForm.name.trim(),
       email: editForm.email.trim() || null,
       phone: editForm.phone.trim() || null,
@@ -251,12 +332,19 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
       experience: editForm.experience.trim() || null,
       notes: editForm.notes.trim() || null,
       job_posting_id: editForm.job_posting_id || null,
+      assigned_to: editForm.assigned_to || null,
+    }
+    if (editFiles.length) {
+      const uploaded = await uploadFilesForCandidate(selectedCandidate.id, editFiles)
+      payload.attachments = [...(selectedCandidate.attachments || []), ...uploaded]
     }
     const { error } = await supabase.from('candidates').update(payload).eq('id', selectedCandidate.id)
-    if (error) { toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return }
+    if (error) { setUploading(false); toast({ title: 'Update failed', description: error.message, variant: 'destructive' }); return }
     setCandidates(prev => prev.map(candidate => (
       candidate.id === selectedCandidate.id ? { ...candidate, ...payload } as Candidate : candidate
     )))
+    setUploading(false)
+    setEditFiles([])
     toast({ title: 'Candidate updated' })
     setIsEditCandidateDialogOpen(false)
     void fetchAll()
@@ -397,7 +485,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                     )}
                   </SelectContent>
                 </Select>
-                <Button variant="gradient" onClick={() => { setAddForm({ ...emptyCandidate }); setIsAddCandidateDialogOpen(true) }}>
+                <Button variant="gradient" onClick={() => { setAddForm({ ...emptyCandidate }); setAddFiles([]); setIsAddCandidateDialogOpen(true) }}>
                   <Plus className="h-4 w-4 mr-2" />Add Candidate
                 </Button>
               </div>
@@ -443,10 +531,42 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                                   {c.skills.map((s,i) => <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>)}
                                 </div>
                               )}
+                              {(c.assigned_to || c.review_decision) && (
+                                <div className="flex items-center gap-2 flex-wrap text-xs">
+                                  {c.assigned_to && (
+                                    <Badge variant="outline" className="gap-1">
+                                      <UserCircle className="w-3 h-3" />
+                                      Assigned to {profiles.find(p => p.id === c.assigned_to)?.name ?? 'reviewer'}
+                                    </Badge>
+                                  )}
+                                  {c.review_decision === 'approved' && <Badge className="bg-emerald-100 text-emerald-800">Reviewer approved</Badge>}
+                                  {c.review_decision === 'rejected' && <Badge className="bg-red-100 text-red-800">Reviewer rejected</Badge>}
+                                </div>
+                              )}
+                              {c.attachments?.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {c.attachments.map((a, i) => (
+                                    <Button key={i} size="sm" variant="outline" className="h-7 text-xs" onClick={() => downloadAttachment(a)}>
+                                      <FileText className="w-3 h-3 mr-1" />{a.name}
+                                    </Button>
+                                  ))}
+                                </div>
+                              )}
                               {c.notes && <div className="bg-muted/50 p-3 rounded-lg"><p className="text-sm whitespace-pre-wrap">{c.notes}</p></div>}
                             </div>
                           </div>
                           <div className="flex flex-col gap-2 min-w-[180px]">
+                            {c.assigned_to === currentUserId && !isAdminHR && (
+                              <div className="grid grid-cols-2 gap-2">
+                                <Button size="sm" variant="glow" onClick={() => reviewCandidate(c, 'approved')} disabled={c.review_decision==='approved'}>
+                                  <ThumbsUp className="w-4 h-4 mr-1" />Approve
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => reviewCandidate(c, 'rejected')} disabled={c.review_decision==='rejected'}>
+                                  <ThumbsDown className="w-4 h-4 mr-1" />Reject
+                                </Button>
+                              </div>
+                            )}
+                            {isAdminHR && <>
                             <Button size="sm" variant="shimmer" onClick={() => handleCandidateAction('schedule_interview', c)}>
                               <Calendar className="w-4 h-4 mr-1" />Schedule Interview
                             </Button>
@@ -458,8 +578,10 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                                 Hire
                               </Button>
                             </div>
+                            </>}
                             <div className="flex gap-1 flex-wrap">
                               <Button size="sm" variant="outline" onClick={() => { setSelectedCandidate(c); setIsViewCandidateDialogOpen(true) }} title="View"><Eye className="w-4 h-4" /></Button>
+                              {isAdminHR && <>
                               <Button size="sm" variant="outline" onClick={() => { setSelectedCandidate(c); setMessageForm({ subject:'', body:'' }); setIsMessageDialogOpen(true) }} title="Message"><MessageSquare className="w-4 h-4" /></Button>
                               <Button size="sm" variant="outline" onClick={() => {
                                 setSelectedCandidate(c)
@@ -468,13 +590,16 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                                   position: c.position ?? '', ai_score: c.ai_score, status: c.status,
                                   skills: c.skills.join(', ') as any, experience: c.experience ?? '',
                                   notes: c.notes ?? '', job_posting_id: c.job_posting_id ?? '',
+                                  assigned_to: c.assigned_to ?? '',
                                 })
+                                setEditFiles([])
                                 setIsEditCandidateDialogOpen(true)
                               }} title="Edit"><Edit className="w-4 h-4" /></Button>
                               <Button size="sm" variant="outline" onClick={() => handleCandidateAction('download_resume', c)} title="Download resume"><Download className="w-4 h-4" /></Button>
                               <Button size="sm" variant="outline" onClick={() => handleCandidateAction('send_email', c)} title="Email"><Mail className="w-4 h-4" /></Button>
                               <Button size="sm" variant="outline" onClick={() => handleCandidateAction('reject', c)} disabled={c.status==='Rejected'} title="Reject">Reject</Button>
                               <Button size="sm" variant="outline" onClick={() => handleCandidateAction('delete', c)} title="Delete"><Trash2 className="w-4 h-4" /></Button>
+                              </>}
                             </div>
                           </div>
                         </div>
@@ -665,10 +790,34 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2"><Label>Assign to (reviewer)</Label>
+              <Select value={addForm.assigned_to || 'none'} onValueChange={val => setAddForm(v => ({ ...v, assigned_to: val === 'none' ? '' : val }))}>
+                <SelectTrigger><SelectValue placeholder="Pick a person" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Unassigned</SelectItem>
+                  {profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.name}{p.position ? ` — ${p.position}` : ''}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">The assigned person will be able to view and approve/reject this candidate.</p>
+            </div>
             <div className="space-y-2"><Label>Notes</Label><Textarea value={addForm.notes} onChange={e => setAddForm(v => ({ ...v, notes: e.target.value }))} /></div>
+            <div className="space-y-2">
+              <Label>Attachments (CV & documents)</Label>
+              <Input type="file" multiple onChange={e => setAddFiles(Array.from(e.target.files || []))} />
+              {addFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {addFiles.map((f, i) => (
+                    <Badge key={i} variant="secondary" className="gap-1">
+                      <Paperclip className="w-3 h-3" />{f.name}
+                      <button onClick={() => setAddFiles(prev => prev.filter((_, j) => j !== i))} className="ml-1"><X className="w-3 h-3" /></button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAddCandidateDialogOpen(false)}>Cancel</Button>
-              <Button onClick={submitAdd}>Add</Button>
+              <Button variant="outline" onClick={() => setIsAddCandidateDialogOpen(false)} disabled={uploading}>Cancel</Button>
+              <Button onClick={submitAdd} disabled={uploading}>{uploading ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />Saving</> : 'Add'}</Button>
             </div>
           </div>
         </DialogContent>
@@ -703,6 +852,27 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                 </div>
               )}
               {selectedCandidate.notes && (<div><Label className="font-medium">Notes</Label><p className="text-sm mt-1 whitespace-pre-wrap">{selectedCandidate.notes}</p></div>)}
+              {selectedCandidate.assigned_to && (
+                <div><Label className="font-medium">Assigned reviewer</Label>
+                  <p className="text-sm mt-1">{profiles.find(p => p.id === selectedCandidate.assigned_to)?.name ?? '—'}</p>
+                </div>
+              )}
+              {selectedCandidate.review_decision && (
+                <div><Label className="font-medium">Review</Label>
+                  <p className="text-sm mt-1">{selectedCandidate.review_decision === 'approved' ? '✅ Approved' : '❌ Rejected'}{selectedCandidate.review_note ? ` — ${selectedCandidate.review_note}` : ''}</p>
+                </div>
+              )}
+              {selectedCandidate.attachments?.length > 0 && (
+                <div><Label className="font-medium">Attachments</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedCandidate.attachments.map((a, i) => (
+                      <Button key={i} size="sm" variant="outline" onClick={() => downloadAttachment(a)}>
+                        <FileText className="w-4 h-4 mr-1" />{a.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex justify-end"><Button onClick={() => setIsViewCandidateDialogOpen(false)}>Close</Button></div>
             </div>
           )}
@@ -730,10 +900,46 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2"><Label>Assign to (reviewer)</Label>
+                <Select value={editForm.assigned_to || 'none'} onValueChange={val => setEditForm(v => ({ ...v, assigned_to: val === 'none' ? '' : val }))}>
+                  <SelectTrigger><SelectValue placeholder="Pick a person" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Unassigned</SelectItem>
+                    {profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.name}{p.position ? ` — ${p.position}` : ''}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2"><Label>Notes</Label><Textarea value={editForm.notes} onChange={e => setEditForm(v => ({ ...v, notes: e.target.value }))} /></div>
+              {selectedCandidate.attachments?.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Existing attachments</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedCandidate.attachments.map((a, i) => (
+                      <Badge key={i} variant="secondary" className="gap-1">
+                        <FileText className="w-3 h-3" />{a.name}
+                        <button onClick={() => removeAttachment(selectedCandidate, a)} className="ml-1"><X className="w-3 h-3" /></button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>Add attachments</Label>
+                <Input type="file" multiple onChange={e => setEditFiles(Array.from(e.target.files || []))} />
+                {editFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {editFiles.map((f, i) => (
+                      <Badge key={i} variant="secondary" className="gap-1">
+                        <Paperclip className="w-3 h-3" />{f.name}
+                        <button onClick={() => setEditFiles(prev => prev.filter((_, j) => j !== i))} className="ml-1"><X className="w-3 h-3" /></button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsEditCandidateDialogOpen(false)}>Cancel</Button>
-                <Button onClick={submitEdit}>Save</Button>
+                <Button variant="outline" onClick={() => setIsEditCandidateDialogOpen(false)} disabled={uploading}>Cancel</Button>
+                <Button onClick={submitEdit} disabled={uploading}>{uploading ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />Saving</> : 'Save'}</Button>
               </div>
             </div>
           )}
