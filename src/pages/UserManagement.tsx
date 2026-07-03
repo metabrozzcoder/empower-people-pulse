@@ -681,14 +681,9 @@ export default function UserManagement() {
                       <h3 className="font-medium">{user.name}</h3>
                       <p className="text-sm text-muted-foreground">{user.role} • {user.email}</p>
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {user.sectionAccess?.map((section) => (
-                          <Badge key={section} variant="destructive" className="text-xs">
-                            Restricted: {section}
-                          </Badge>
-                        ))}
-                        {user.allowedSections?.map((section) => (
+                        {Array.from(new Set([...(user.allowedSections ?? []), ...(user.sectionAccess ?? [])])).map((section) => (
                           <Badge key={section} className="bg-green-100 text-green-800 hover:bg-green-200 text-xs">
-                            Allowed: {section}
+                            {section}
                           </Badge>
                         ))}
                       </div>
