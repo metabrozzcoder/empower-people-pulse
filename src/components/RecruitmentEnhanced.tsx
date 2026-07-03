@@ -85,7 +85,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
   const [isViewJobDialogOpen, setIsViewJobDialogOpen] = useState(false)
   const [isEditJobDialogOpen, setIsEditJobDialogOpen] = useState(false)
 
-  const [interviewForm, setInterviewForm] = useState({ date: '', interviewer: '', notes: '' })
+  const [interviewForm, setInterviewForm] = useState({ date: '', time: '', interviewer: '', notes: '' })
   const [addForm, setAddForm] = useState({ ...emptyCandidate })
   const [editForm, setEditForm] = useState({ ...emptyCandidate })
   const [messageForm, setMessageForm] = useState({ subject: '', body: '' })
@@ -151,7 +151,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
     switch (action) {
       case 'schedule_interview':
         setSelectedCandidate(c)
-        setInterviewForm({ date: '', interviewer: '', notes: '' })
+        setInterviewForm({ date: '', time: '', interviewer: '', notes: '' })
         setIsInterviewDialogOpen(true); break
       case 'shortlist':
         if (await updateCandidateStatus(c.id, 'Shortlisted'))
@@ -199,7 +199,12 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
   const submitInterview = async () => {
     if (!selectedCandidate) return
     if (!interviewForm.date) { toast({ title: 'Pick a date', variant: 'destructive' }); return }
-    const note = `Interview scheduled for ${new Date(interviewForm.date).toLocaleString()}${interviewForm.interviewer ? ` with ${interviewForm.interviewer}` : ''}${interviewForm.notes ? ` — ${interviewForm.notes}` : ''}`
+    const dt = interviewForm.time
+      ? new Date(`${interviewForm.date}T${interviewForm.time}`)
+      : new Date(`${interviewForm.date}T00:00`)
+    if (isNaN(dt.getTime())) { toast({ title: 'Invalid date', variant: 'destructive' }); return }
+    const when = interviewForm.time ? dt.toLocaleString() : dt.toLocaleDateString()
+    const note = `Interview scheduled for ${when}${interviewForm.interviewer ? ` with ${interviewForm.interviewer}` : ''}${interviewForm.notes ? ` — ${interviewForm.notes}` : ''}`
     const combinedNotes = [selectedCandidate.notes, note].filter(Boolean).join('\n')
     if (await updateCandidateStatus(selectedCandidate.id, 'Interview Scheduled', { notes: combinedNotes })) {
       toast({ title: 'Interview scheduled', description: `for ${selectedCandidate.name}` })
@@ -617,7 +622,10 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Schedule Interview</DialogTitle><DialogDescription>{selectedCandidate?.name}</DialogDescription></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2"><Label>Interview Date</Label><Input type="datetime-local" value={interviewForm.date} onChange={e => setInterviewForm(v => ({ ...v, date: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Date</Label><Input type="date" value={interviewForm.date} onChange={e => setInterviewForm(v => ({ ...v, date: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Time (optional)</Label><Input type="time" value={interviewForm.time} onChange={e => setInterviewForm(v => ({ ...v, time: e.target.value }))} /></div>
+            </div>
             <div className="space-y-2"><Label>Interviewer</Label><Input placeholder="Name of interviewer" value={interviewForm.interviewer} onChange={e => setInterviewForm(v => ({ ...v, interviewer: e.target.value }))} /></div>
             <div className="space-y-2"><Label>Notes</Label><Textarea placeholder="Interview notes..." value={interviewForm.notes} onChange={e => setInterviewForm(v => ({ ...v, notes: e.target.value }))} /></div>
             <div className="flex justify-end gap-2">
