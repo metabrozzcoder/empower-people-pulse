@@ -195,6 +195,8 @@ export const ru: Record<string, string> = {
   "Planning": "Планирование", "Review": "Проверка", "Critical": "Критический",
   "On Hold": "Приостановлено", "Paused": "Пауза", "Closed": "Закрыто", "Todo": "К выполнению",
   "Not provided": "Не указано", "Not assigned": "Не назначено", "Unknown": "Неизвестно",
+  "Not calculated": "Не рассчитано", "Not evaluated": "Не оценено", "Not tracked": "Не отслеживается",
+  "No achievements recorded": "Достижения не записаны", "No skills recorded": "Навыки не записаны",
   "Unassigned": "Не назначено", "Untitled": "Без названия", "Untitled group": "Группа без названия",
   "User": "Пользователь", "Enter": "Ввод", "Escape": "Отмена", "Signature": "Подпись",
 
@@ -1192,6 +1194,8 @@ export const uz: Record<string, string> = {
   "Planning": "Rejalashtirish", "Review": "Ko'rib chiqish", "Critical": "Muhim",
   "On Hold": "Kutilmoqda", "Paused": "To'xtatilgan", "Closed": "Yopilgan", "Todo": "Bajarish kerak",
   "Not provided": "Ko'rsatilmagan", "Not assigned": "Tayinlanmagan", "Unknown": "Noma'lum",
+  "Not calculated": "Hisoblanmagan", "Not evaluated": "Baholanmagan", "Not tracked": "Kuzatilmayapti",
+  "No skills recorded": "Ko'nikmalar qayd etilmagan",
   "Untitled": "Nomsiz", "Untitled group": "Nomsiz guruh",
   "User": "Foydalanuvchi", "Enter": "Kiritish", "Escape": "Bekor qilish", "Signature": "Imzo",
 
