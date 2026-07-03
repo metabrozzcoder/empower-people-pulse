@@ -264,7 +264,6 @@ export default function Employees() {
       body: {
         employee_id: employee.dbId,
         name: employee.name,
-        email: employee.email || undefined,
         role: 'employee',
         phone: employee.phone || undefined,
         department: employee.department || undefined,
