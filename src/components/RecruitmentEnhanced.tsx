@@ -151,7 +151,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
     switch (action) {
       case 'schedule_interview':
         setSelectedCandidate(c)
-        setInterviewForm({ date: '', interviewer: '', notes: '' })
+        setInterviewForm({ date: '', time: '', interviewer: '', notes: '' })
         setIsInterviewDialogOpen(true); break
       case 'shortlist':
         if (await updateCandidateStatus(c.id, 'Shortlisted'))
