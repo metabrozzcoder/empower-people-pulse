@@ -142,7 +142,17 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!linkedEmployee) {
-        await admin.from("employees").upsert(employeePatch, { onConflict: "profile_id" });
+        const { data: existingEmployee } = await admin
+          .from("employees")
+          .select("id")
+          .eq("profile_id", uid)
+          .maybeSingle();
+
+        if (existingEmployee?.id) {
+          await admin.from("employees").update(employeePatch).eq("id", existingEmployee.id);
+        } else {
+          await admin.from("employees").insert(employeePatch);
+        }
       }
     }
 
