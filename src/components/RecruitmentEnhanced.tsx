@@ -370,7 +370,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                     )}
                   </SelectContent>
                 </Select>
-                <Button onClick={() => { setAddForm({ ...emptyCandidate }); setIsAddCandidateDialogOpen(true) }}>
+                <Button variant="gradient" onClick={() => { setAddForm({ ...emptyCandidate }); setIsAddCandidateDialogOpen(true) }}>
                   <Plus className="h-4 w-4 mr-2" />Add Candidate
                 </Button>
               </div>
@@ -388,7 +388,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between gap-4 flex-wrap">
                           <div className="flex items-start space-x-4 flex-1 min-w-[280px]">
-                            <Avatar className="w-16 h-16">
+                            <Avatar variant="gradient" size="xl">
                               <AvatarFallback>{c.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}</AvatarFallback>
                             </Avatar>
                             <div className="space-y-3 flex-1">
@@ -420,14 +420,14 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                             </div>
                           </div>
                           <div className="flex flex-col gap-2 min-w-[180px]">
-                            <Button size="sm" onClick={() => handleCandidateAction('schedule_interview', c)}>
+                            <Button size="sm" variant="shimmer" onClick={() => handleCandidateAction('schedule_interview', c)}>
                               <Calendar className="w-4 h-4 mr-1" />Schedule Interview
                             </Button>
                             <div className="grid grid-cols-2 gap-2">
-                              <Button size="sm" variant="outline" onClick={() => handleCandidateAction('shortlist', c)} disabled={c.status==='Shortlisted'||c.status==='Hired'}>
+                              <Button size="sm" variant="soft" onClick={() => handleCandidateAction('shortlist', c)} disabled={c.status==='Shortlisted'||c.status==='Hired'}>
                                 <UserCheck className="w-4 h-4 mr-1" />Shortlist
                               </Button>
-                              <Button size="sm" variant="outline" onClick={() => handleCandidateAction('hire', c)} disabled={c.status==='Hired'}>
+                              <Button size="sm" variant="glow" onClick={() => handleCandidateAction('hire', c)} disabled={c.status==='Hired'}>
                                 Hire
                               </Button>
                             </div>
@@ -468,7 +468,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                   <CardTitle>Job Postings Management</CardTitle>
                   <CardDescription>Create and manage job openings</CardDescription>
                 </div>
-                <Button onClick={() => { setAddJobForm({ ...emptyJob }); setIsAddJobDialogOpen(true) }}>
+                <Button variant="gradient" onClick={() => { setAddJobForm({ ...emptyJob }); setIsAddJobDialogOpen(true) }}>
                   <Plus className="h-4 w-4 mr-2" />Post New Job
                 </Button>
               </div>
@@ -651,7 +651,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
           {selectedCandidate && (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <Avatar className="w-20 h-20"><AvatarFallback>{selectedCandidate.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
+                <Avatar variant="gradient" size="xl"><AvatarFallback>{selectedCandidate.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
                 <div>
                   <h3 className="font-semibold text-lg">{selectedCandidate.name}</h3>
                   {selectedCandidate.position && <p className="text-muted-foreground">{selectedCandidate.position}</p>}

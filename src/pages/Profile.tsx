@@ -54,11 +54,13 @@ const Profile = () => {
         <div className="lg:col-span-1">
           <Card>
             <CardHeader className="text-center">
-              <Avatar className="w-24 h-24 mx-auto">
-                <AvatarImage src={currentUser?.avatar} />
-                <AvatarFallback>{currentUser?.name ? currentUser.name.split(' ').map(n => n[0]).join('') : 'U'}</AvatarFallback>
-              </Avatar>
-              <CardTitle>{userProfile.name}</CardTitle>
+              <div className="mx-auto">
+                <Avatar variant="gradient" size="xl" status="online">
+                  <AvatarImage src={currentUser?.avatar} />
+                  <AvatarFallback>{currentUser?.name ? currentUser.name.split(' ').map(n => n[0]).join('') : 'U'}</AvatarFallback>
+                </Avatar>
+              </div>
+              <CardTitle className="mt-3">{userProfile.name}</CardTitle>
               <CardDescription>{userProfile.position}</CardDescription>
               <Badge variant="default" className="w-fit mx-auto">
                 {userProfile.status}
@@ -92,7 +94,7 @@ const Profile = () => {
                 <p className="text-sm text-muted-foreground">Employee ID</p>
                 <p className="font-medium">{userProfile.employeeId}</p>
               </div>
-              <Button className="w-full" variant="outline">
+              <Button className="w-full" variant="soft">
                 Edit Profile
               </Button>
             </CardContent>
