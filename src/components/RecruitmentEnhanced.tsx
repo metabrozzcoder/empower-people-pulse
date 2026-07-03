@@ -468,7 +468,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                   <CardTitle>Job Postings Management</CardTitle>
                   <CardDescription>Create and manage job openings</CardDescription>
                 </div>
-                <Button onClick={() => { setAddJobForm({ ...emptyJob }); setIsAddJobDialogOpen(true) }}>
+                <Button variant="gradient" onClick={() => { setAddJobForm({ ...emptyJob }); setIsAddJobDialogOpen(true) }}>
                   <Plus className="h-4 w-4 mr-2" />Post New Job
                 </Button>
               </div>
