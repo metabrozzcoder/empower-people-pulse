@@ -386,7 +386,7 @@ export default function Chat() {
       const target = users.find(u => u.id === pending)
       if (target) {
         sessionStorage.removeItem('chat.startWithUser')
-        setListTab('users')
+        setListTab('people')
         setSelectedGroupId(null)
         setSelectedUser(target)
         return
