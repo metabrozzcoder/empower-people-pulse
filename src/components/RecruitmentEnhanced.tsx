@@ -596,7 +596,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                                 setIsEditCandidateDialogOpen(true)
                               }} title="Edit"><Edit className="w-4 h-4" /></Button>
                               <Button size="sm" variant="outline" onClick={() => handleCandidateAction('download_resume', c)} title="Download resume"><Download className="w-4 h-4" /></Button>
-                              <Button size="sm" variant="outline" onClick={() => handleCandidateAction('send_email', c)} title="Email"><Mail className="w-4 h-4" /></Button>
+                              
                               <Button size="sm" variant="outline" onClick={() => handleCandidateAction('reject', c)} disabled={c.status==='Rejected'} title="Reject">Reject</Button>
                               <Button size="sm" variant="outline" onClick={() => handleCandidateAction('delete', c)} title="Delete"><Trash2 className="w-4 h-4" /></Button>
                               </>}
