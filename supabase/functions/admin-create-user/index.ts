@@ -100,13 +100,51 @@ Deno.serve(async (req) => {
     } else {
       uid = created.user.id;
     }
-    // Update profile (trigger created it with defaults).
-    await admin.from("profiles").update({ name, phone, department, position, username, birthday: birthday || null }).eq("id", uid);
+    // Ensure profile exists. Some projects do not have an auth trigger installed,
+    // so an update-only path leaves new auth users invisible in User Management.
+    const { error: profileErr } = await admin.from("profiles").upsert({
+      id: uid,
+      name,
+      email,
+      phone: phone ?? null,
+      department: department ?? null,
+      position: position ?? null,
+      username,
+      birthday: birthday || null,
+      status: "Active",
+    }, { onConflict: "id" });
+    if (profileErr) {
+      return new Response(JSON.stringify({ error: profileErr.message || "Failed to create profile" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     // Store the generated password in an admin-only table so admins can retrieve it later.
     await admin.from("admin_user_credentials").upsert({ user_id: uid, generated_password: password });
     // Replace default 'guest' role with chosen role
     await admin.from("user_roles").delete().eq("user_id", uid);
     await admin.from("user_roles").insert({ user_id: uid, role: validRole });
+
+    if (["employee", "hr", "shooting_moderator", "director", "tech_supply", "driver", "accountant"].includes(validRole)) {
+      const employeePatch = {
+        profile_id: uid,
+        name,
+        email,
+        phone: phone ?? null,
+        department: department ?? null,
+        position: position ?? null,
+        birthday: birthday || null,
+        status: "Active",
+      };
+      const { data: linkedEmployee } = await admin
+        .from("employees")
+        .update(employeePatch)
+        .is("profile_id", null)
+        .eq("name", name)
+        .select("id")
+        .maybeSingle();
+
+      if (!linkedEmployee) {
+        await admin.from("employees").upsert(employeePatch, { onConflict: "profile_id" });
+      }
+    }
 
     return new Response(JSON.stringify({ user: { id: uid }, id: uid, email, username, password, name, role: validRole }), {
       status: 200,
