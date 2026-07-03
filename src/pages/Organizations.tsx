@@ -512,16 +512,23 @@ export default function Organizations() {
             {viewDeptMembers?.members.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">No members in this department yet.</p>
             ) : (
-              viewDeptMembers?.members.map((m) => (
-                <div key={m.id} className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{m.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {[m.position, m.email].filter(Boolean).join(' • ') || '—'}
-                    </p>
+              viewDeptMembers?.members.map((m) => {
+                const isMe = m.id === `profile-${currentUser?.id}`
+                return (
+                  <div key={m.id} className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2 gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{m.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{m.position || '—'}</p>
+                    </div>
+                    {!isMe && (
+                      <Button size="sm" variant="outline" onClick={() => messageMember(m)}>
+                        <MessageSquare className="w-4 h-4 mr-1" />
+                        {t('message', 'Message')}
+                      </Button>
+                    )}
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
           <div className="flex justify-end">
