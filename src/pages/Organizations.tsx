@@ -284,7 +284,21 @@ export default function Organizations() {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {orgDepts.map((dept) => {
-                          const deptMembers = orgEmployees.filter(e => (e.department ?? '').toLowerCase() === dept.name.toLowerCase())
+                          const baseMembers = orgEmployees.filter(e => (e.department ?? '').toLowerCase() === dept.name.toLowerCase())
+                          let deptMembers = baseMembers
+                          if (dept.manager_id && !baseMembers.some(m => m.id === dept.manager_id || m.id === `profile-${dept.manager_id}`)) {
+                            const mgrProfile = profiles.find(p => p.id === dept.manager_id)
+                            const mgrEmp = employees.find(e => e.email && mgrProfile?.email && e.email.toLowerCase() === mgrProfile.email.toLowerCase())
+                            const mgrMember: EmployeeLite = mgrEmp ?? {
+                              id: `profile-${dept.manager_id}`,
+                              name: dept.manager_name ?? mgrProfile?.name ?? 'Manager',
+                              position: mgrProfile?.position ?? 'Manager',
+                              department: dept.name,
+                              organization_id: org.id,
+                              email: mgrProfile?.email ?? null,
+                            }
+                            deptMembers = [mgrMember, ...baseMembers]
+                          }
                           return (
                           <Card key={dept.id} className="bg-muted/30">
                             <CardHeader className="pb-2">
