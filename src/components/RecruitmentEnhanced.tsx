@@ -581,6 +581,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                             </>}
                             <div className="flex gap-1 flex-wrap">
                               <Button size="sm" variant="outline" onClick={() => { setSelectedCandidate(c); setIsViewCandidateDialogOpen(true) }} title="View"><Eye className="w-4 h-4" /></Button>
+                              {isAdminHR && <>
                               <Button size="sm" variant="outline" onClick={() => { setSelectedCandidate(c); setMessageForm({ subject:'', body:'' }); setIsMessageDialogOpen(true) }} title="Message"><MessageSquare className="w-4 h-4" /></Button>
                               <Button size="sm" variant="outline" onClick={() => {
                                 setSelectedCandidate(c)
@@ -591,12 +592,14 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                                   notes: c.notes ?? '', job_posting_id: c.job_posting_id ?? '',
                                   assigned_to: c.assigned_to ?? '',
                                 })
+                                setEditFiles([])
                                 setIsEditCandidateDialogOpen(true)
                               }} title="Edit"><Edit className="w-4 h-4" /></Button>
                               <Button size="sm" variant="outline" onClick={() => handleCandidateAction('download_resume', c)} title="Download resume"><Download className="w-4 h-4" /></Button>
                               <Button size="sm" variant="outline" onClick={() => handleCandidateAction('send_email', c)} title="Email"><Mail className="w-4 h-4" /></Button>
                               <Button size="sm" variant="outline" onClick={() => handleCandidateAction('reject', c)} disabled={c.status==='Rejected'} title="Reject">Reject</Button>
                               <Button size="sm" variant="outline" onClick={() => handleCandidateAction('delete', c)} title="Delete"><Trash2 className="w-4 h-4" /></Button>
+                              </>}
                             </div>
                           </div>
                         </div>
