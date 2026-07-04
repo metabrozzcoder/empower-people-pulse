@@ -719,10 +719,20 @@ export default function Chat() {
                   {messages.length === 0 && (
                     <p className="text-center text-sm text-muted-foreground py-12">No messages yet. Say hi 👋</p>
                   )}
-                  {messages.map((m) => {
+                  {messages.map((m, idx) => {
                     const mine = m.sender_id === myId
+                    const prev = idx > 0 ? messages[idx - 1] : null
+                    const showDay = !prev || !isSameDay(prev.created_at, m.created_at)
                     return (
-                      <div key={m.id} className={cn('flex items-end gap-2', mine ? 'justify-end' : 'justify-start')}>
+                      <React.Fragment key={m.id}>
+                        {showDay && (
+                          <div className="flex justify-center my-2">
+                            <span className="text-[11px] px-3 py-1 rounded-full bg-muted text-muted-foreground">
+                              {dayLabel(m.created_at)}
+                            </span>
+                          </div>
+                        )}
+                        <div className={cn('flex items-end gap-2', mine ? 'justify-end' : 'justify-start')}>
                         {!mine && selectedUser && (
                           <Avatar className="w-7 h-7">
                             <AvatarImage src={selectedUser.avatar} />
@@ -782,10 +792,15 @@ export default function Chat() {
                           {m.content && <p className="whitespace-pre-wrap break-words text-sm">{m.content}</p>}
                           <div className="flex items-center gap-1 justify-end">
                             <span className="text-[10px] opacity-70">{fmtTime(m.created_at)}</span>
-                            {mine && <CheckCheck className="w-3.5 h-3.5 opacity-70" />}
+                            {mine && (
+                              m.read_at
+                                ? <CheckCheck className="w-3.5 h-3.5 text-sky-300" />
+                                : <Check className="w-3.5 h-3.5 opacity-70" />
+                            )}
                           </div>
                         </div>
                       </div>
+                      </React.Fragment>
                     )
                   })}
                   <div ref={messagesEndRef} />
