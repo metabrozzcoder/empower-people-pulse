@@ -325,18 +325,19 @@ export default function Chat() {
     ;(async () => {
       const { data } = await supabase
         .from('messages')
-        .select('id, conversation_id, sender_id, content, created_at, edited, attachments')
+        .select('id, conversation_id, sender_id, content, created_at, edited, attachments, read_at')
         .eq('conversation_id', activeConvId)
         .order('created_at', { ascending: true })
         .limit(500)
       if (cancelled) return
-      // Merge: keep any optimistic/realtime messages not yet in DB result
       setMessages(prev => {
         const fetched = ((data ?? []) as any[]).map(r => ({ ...r, attachments: Array.isArray(r.attachments) ? r.attachments : [] })) as Message[]
         const ids = new Set(fetched.map(m => m.id))
         const extras = prev.filter(m => m.conversation_id === activeConvId && !ids.has(m.id))
         return [...fetched, ...extras]
       })
+      // Mark incoming messages as read
+      await supabase.rpc('mark_messages_read' as never, { _conv: activeConvId } as never)
       if (selectedUser) {
         setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, unreadCount: 0 } : u))
       }
@@ -344,7 +345,7 @@ export default function Chat() {
     return () => { cancelled = true }
   }, [activeConvId, myId])
 
-  // Active conversation realtime subscription
+  // Active conversation realtime subscription (INSERT + UPDATE for read receipts)
   useEffect(() => {
     if (!activeConvId || !myId) return
     const channel = supabase
@@ -355,10 +356,21 @@ export default function Chat() {
       }, (payload) => {
         const m = payload.new as Message
         setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m])
+        if (m.sender_id !== myId && document.visibilityState === 'visible') {
+          supabase.rpc('mark_messages_read' as never, { _conv: activeConvId } as never)
+        }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'messages',
+        filter: `conversation_id=eq.${activeConvId}`,
+      }, (payload) => {
+        const m = payload.new as Message
+        setMessages(prev => prev.map(x => x.id === m.id ? { ...x, ...m, attachments: Array.isArray((m as any).attachments) ? (m as any).attachments : x.attachments } : x))
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [activeConvId, myId])
+
 
   // Refresh conv map when I'm added to a new conversation
   useEffect(() => {
