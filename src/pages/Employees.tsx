@@ -84,6 +84,7 @@ export default function Employees() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [orgFilter, setOrgFilter] = useState("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [positionMode, setPositionMode] = useState<'preset' | 'custom'>('preset')
   const [departmentMode, setDepartmentMode] = useState<'preset' | 'custom'>('preset')
   const [employeeData, setEmployeeData] = useState({
