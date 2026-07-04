@@ -28,7 +28,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 import CallDialog from '@/components/CallDialog'
-import { formatTime } from '@/lib/date'
+import { formatTime, formatDate } from '@/lib/date'
 
 
 interface ChatUser {
@@ -37,6 +37,7 @@ interface ChatUser {
   avatar?: string
   role?: string
   unreadCount: number
+  lastSeen?: string | null
 }
 
 interface Attachment {
@@ -54,12 +55,38 @@ interface Message {
   created_at: string
   edited?: boolean
   attachments?: Attachment[]
+  read_at?: string | null
 }
 
 const EMOJIS = ['😊','😂','❤️','👍','🎉','🔥','🙏','👏','😍','🤔','😎','💯','✅','🚀','💡']
 
 const fmtTime = (iso: string) => {
   try { return formatTime(iso) } catch { return '' }
+}
+
+const fmtLastSeen = (iso?: string | null): string => {
+  if (!iso) return 'offline'
+  const d = new Date(iso).getTime()
+  if (isNaN(d)) return 'offline'
+  const diff = Date.now() - d
+  if (diff < 90_000) return 'online'
+  if (diff < 3_600_000) return `last seen ${Math.floor(diff / 60_000)}m ago`
+  if (diff < 86_400_000) return `last seen ${Math.floor(diff / 3_600_000)}h ago`
+  return `last seen ${formatDate(iso)}`
+}
+
+const isSameDay = (a: string, b: string) => {
+  const da = new Date(a), db = new Date(b)
+  return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate()
+}
+
+const dayLabel = (iso: string): string => {
+  const today = new Date().toISOString()
+  const y = new Date(); y.setDate(new Date().getDate() - 1)
+  const yest = y.toISOString()
+  if (isSameDay(iso, today)) return 'Today'
+  if (isSameDay(iso, yest)) return 'Yesterday'
+  return formatDate(iso)
 }
 
 export default function Chat() {
