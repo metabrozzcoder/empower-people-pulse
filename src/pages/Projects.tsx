@@ -149,7 +149,7 @@ const Projects = () => {
     const payload = {
       name: form.name,
       description: form.description || null,
-      status: progress === 100 ? 'Completed' : form.status,
+      status: progress === 100 ? 'Completed' : (form.status === 'Completed' ? 'In Progress' : form.status),
       priority: form.priority,
       department: form.department || null,
       progress,
