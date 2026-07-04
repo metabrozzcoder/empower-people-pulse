@@ -151,25 +151,40 @@ export default function Chat() {
   }, [newChatOpen, newGroupOpen])
 
   // Load users (other profiles)
+  const loadUsers = useCallback(async () => {
+    if (!myId) return
+    const { data } = await supabase
+      .from('profiles_public' as never)
+      .select('id, name, avatar_url, position, last_seen')
+      .order('name')
+    const list: ChatUser[] = (data ?? [])
+      .filter((p: any) => p.id !== myId)
+      .map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        avatar: p.avatar_url ?? undefined,
+        role: p.position ?? undefined,
+        unreadCount: 0,
+        lastSeen: p.last_seen ?? null,
+      }))
+    setUsers(prev => list.map(nu => {
+      const old = prev.find(o => o.id === nu.id)
+      return old ? { ...nu, unreadCount: old.unreadCount } : nu
+    }))
+  }, [myId])
+  useEffect(() => { loadUsers() }, [loadUsers])
+
+  // Heartbeat: refresh my last_seen and refresh peer list periodically
   useEffect(() => {
     if (!myId) return
-    ;(async () => {
-      const { data } = await supabase
-        .from('profiles_public' as never)
-        .select('id, name, avatar_url, position')
-        .order('name')
-      const list: ChatUser[] = (data ?? [])
-        .filter((p: any) => p.id !== myId)
-        .map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          avatar: p.avatar_url ?? undefined,
-          role: p.position ?? undefined,
-          unreadCount: 0,
-        }))
-      setUsers(list)
-    })()
-  }, [myId])
+    const beat = () => { supabase.rpc('touch_last_seen' as never).then(() => loadUsers()) }
+    beat()
+    const iv = setInterval(beat, 45_000)
+    const onVis = () => { if (document.visibilityState === 'visible') beat() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => { clearInterval(iv); document.removeEventListener('visibilitychange', onVis) }
+  }, [myId, loadUsers])
+
 
   // Load existing DM conversations the user is in -> map user->conv
   const refreshConvMap = useCallback(async () => {
