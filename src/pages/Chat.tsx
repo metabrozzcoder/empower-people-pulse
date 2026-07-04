@@ -28,7 +28,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 import CallDialog from '@/components/CallDialog'
-import { formatTime } from '@/lib/date'
+import { formatTime, formatDate } from '@/lib/date'
 
 
 interface ChatUser {
@@ -37,6 +37,7 @@ interface ChatUser {
   avatar?: string
   role?: string
   unreadCount: number
+  lastSeen?: string | null
 }
 
 interface Attachment {
@@ -54,12 +55,38 @@ interface Message {
   created_at: string
   edited?: boolean
   attachments?: Attachment[]
+  read_at?: string | null
 }
 
 const EMOJIS = ['😊','😂','❤️','👍','🎉','🔥','🙏','👏','😍','🤔','😎','💯','✅','🚀','💡']
 
 const fmtTime = (iso: string) => {
   try { return formatTime(iso) } catch { return '' }
+}
+
+const fmtLastSeen = (iso?: string | null): string => {
+  if (!iso) return 'offline'
+  const d = new Date(iso).getTime()
+  if (isNaN(d)) return 'offline'
+  const diff = Date.now() - d
+  if (diff < 90_000) return 'online'
+  if (diff < 3_600_000) return `last seen ${Math.floor(diff / 60_000)}m ago`
+  if (diff < 86_400_000) return `last seen ${Math.floor(diff / 3_600_000)}h ago`
+  return `last seen ${formatDate(iso)}`
+}
+
+const isSameDay = (a: string, b: string) => {
+  const da = new Date(a), db = new Date(b)
+  return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate()
+}
+
+const dayLabel = (iso: string): string => {
+  const today = new Date().toISOString()
+  const y = new Date(); y.setDate(new Date().getDate() - 1)
+  const yest = y.toISOString()
+  if (isSameDay(iso, today)) return 'Today'
+  if (isSameDay(iso, yest)) return 'Yesterday'
+  return formatDate(iso)
 }
 
 export default function Chat() {
@@ -124,25 +151,40 @@ export default function Chat() {
   }, [newChatOpen, newGroupOpen])
 
   // Load users (other profiles)
+  const loadUsers = useCallback(async () => {
+    if (!myId) return
+    const { data } = await supabase
+      .from('profiles_public' as never)
+      .select('id, name, avatar_url, position, last_seen')
+      .order('name')
+    const list: ChatUser[] = (data ?? [])
+      .filter((p: any) => p.id !== myId)
+      .map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        avatar: p.avatar_url ?? undefined,
+        role: p.position ?? undefined,
+        unreadCount: 0,
+        lastSeen: p.last_seen ?? null,
+      }))
+    setUsers(prev => list.map(nu => {
+      const old = prev.find(o => o.id === nu.id)
+      return old ? { ...nu, unreadCount: old.unreadCount } : nu
+    }))
+  }, [myId])
+  useEffect(() => { loadUsers() }, [loadUsers])
+
+  // Heartbeat: refresh my last_seen and refresh peer list periodically
   useEffect(() => {
     if (!myId) return
-    ;(async () => {
-      const { data } = await supabase
-        .from('profiles_public' as never)
-        .select('id, name, avatar_url, position')
-        .order('name')
-      const list: ChatUser[] = (data ?? [])
-        .filter((p: any) => p.id !== myId)
-        .map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          avatar: p.avatar_url ?? undefined,
-          role: p.position ?? undefined,
-          unreadCount: 0,
-        }))
-      setUsers(list)
-    })()
-  }, [myId])
+    const beat = () => { supabase.rpc('touch_last_seen' as never).then(() => loadUsers()) }
+    beat()
+    const iv = setInterval(beat, 45_000)
+    const onVis = () => { if (document.visibilityState === 'visible') beat() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => { clearInterval(iv); document.removeEventListener('visibilitychange', onVis) }
+  }, [myId, loadUsers])
+
 
   // Load existing DM conversations the user is in -> map user->conv
   const refreshConvMap = useCallback(async () => {
@@ -283,18 +325,19 @@ export default function Chat() {
     ;(async () => {
       const { data } = await supabase
         .from('messages')
-        .select('id, conversation_id, sender_id, content, created_at, edited, attachments')
+        .select('id, conversation_id, sender_id, content, created_at, edited, attachments, read_at')
         .eq('conversation_id', activeConvId)
         .order('created_at', { ascending: true })
         .limit(500)
       if (cancelled) return
-      // Merge: keep any optimistic/realtime messages not yet in DB result
       setMessages(prev => {
         const fetched = ((data ?? []) as any[]).map(r => ({ ...r, attachments: Array.isArray(r.attachments) ? r.attachments : [] })) as Message[]
         const ids = new Set(fetched.map(m => m.id))
         const extras = prev.filter(m => m.conversation_id === activeConvId && !ids.has(m.id))
         return [...fetched, ...extras]
       })
+      // Mark incoming messages as read
+      await supabase.rpc('mark_messages_read' as never, { _conv: activeConvId } as never)
       if (selectedUser) {
         setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, unreadCount: 0 } : u))
       }
@@ -302,7 +345,7 @@ export default function Chat() {
     return () => { cancelled = true }
   }, [activeConvId, myId])
 
-  // Active conversation realtime subscription
+  // Active conversation realtime subscription (INSERT + UPDATE for read receipts)
   useEffect(() => {
     if (!activeConvId || !myId) return
     const channel = supabase
@@ -313,10 +356,21 @@ export default function Chat() {
       }, (payload) => {
         const m = payload.new as Message
         setMessages(prev => prev.some(x => x.id === m.id) ? prev : [...prev, m])
+        if (m.sender_id !== myId && document.visibilityState === 'visible') {
+          supabase.rpc('mark_messages_read' as never, { _conv: activeConvId } as never)
+        }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'messages',
+        filter: `conversation_id=eq.${activeConvId}`,
+      }, (payload) => {
+        const m = payload.new as Message
+        setMessages(prev => prev.map(x => x.id === m.id ? { ...x, ...m, attachments: Array.isArray((m as any).attachments) ? (m as any).attachments : x.attachments } : x))
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [activeConvId, myId])
+
 
   // Refresh conv map when I'm added to a new conversation
   useEffect(() => {
@@ -438,7 +492,7 @@ export default function Chat() {
     const { data, error } = await supabase
       .from('messages')
       .insert({ conversation_id: convId, sender_id: myId, content, attachments: attachments as any })
-      .select('id, conversation_id, sender_id, content, created_at, edited, attachments')
+      .select('id, conversation_id, sender_id, content, created_at, edited, attachments, read_at')
       .single()
     if (error) {
       toast({ title: 'Failed to send', description: error.message, variant: 'destructive' })
@@ -645,7 +699,7 @@ export default function Chat() {
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <h3 className="font-semibold truncate">{selectedUser.name}</h3>
-                      <p className="text-sm text-muted-foreground truncate">{selectedUser.role || ''}</p>
+                      <p className="text-sm text-muted-foreground truncate">{fmtLastSeen(selectedUser.lastSeen)}{selectedUser.role ? ` · ${selectedUser.role}` : ''}</p>
                     </div>
                     <Button size="icon" variant="ghost" title="Voice call" onClick={() => startCall('audio')}>
                       <Phone className="w-4 h-4" />
@@ -665,10 +719,20 @@ export default function Chat() {
                   {messages.length === 0 && (
                     <p className="text-center text-sm text-muted-foreground py-12">No messages yet. Say hi 👋</p>
                   )}
-                  {messages.map((m) => {
+                  {messages.map((m, idx) => {
                     const mine = m.sender_id === myId
+                    const prev = idx > 0 ? messages[idx - 1] : null
+                    const showDay = !prev || !isSameDay(prev.created_at, m.created_at)
                     return (
-                      <div key={m.id} className={cn('flex items-end gap-2', mine ? 'justify-end' : 'justify-start')}>
+                      <React.Fragment key={m.id}>
+                        {showDay && (
+                          <div className="flex justify-center my-2">
+                            <span className="text-[11px] px-3 py-1 rounded-full bg-muted text-muted-foreground">
+                              {dayLabel(m.created_at)}
+                            </span>
+                          </div>
+                        )}
+                        <div className={cn('flex items-end gap-2', mine ? 'justify-end' : 'justify-start')}>
                         {!mine && selectedUser && (
                           <Avatar className="w-7 h-7">
                             <AvatarImage src={selectedUser.avatar} />
@@ -728,10 +792,15 @@ export default function Chat() {
                           {m.content && <p className="whitespace-pre-wrap break-words text-sm">{m.content}</p>}
                           <div className="flex items-center gap-1 justify-end">
                             <span className="text-[10px] opacity-70">{fmtTime(m.created_at)}</span>
-                            {mine && <CheckCheck className="w-3.5 h-3.5 opacity-70" />}
+                            {mine && (
+                              m.read_at
+                                ? <CheckCheck className="w-3.5 h-3.5 text-sky-300" />
+                                : <Check className="w-3.5 h-3.5 opacity-70" />
+                            )}
                           </div>
                         </div>
                       </div>
+                      </React.Fragment>
                     )
                   })}
                   <div ref={messagesEndRef} />

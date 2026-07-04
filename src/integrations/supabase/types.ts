@@ -694,6 +694,7 @@ export type Database = {
           edited: boolean
           forwarded: boolean
           id: string
+          read_at: string | null
           reply_to_id: string | null
           sender_id: string
           updated_at: string
@@ -707,6 +708,7 @@ export type Database = {
           edited?: boolean
           forwarded?: boolean
           id?: string
+          read_at?: string | null
           reply_to_id?: string | null
           sender_id: string
           updated_at?: string
@@ -720,6 +722,7 @@ export type Database = {
           edited?: boolean
           forwarded?: boolean
           id?: string
+          read_at?: string | null
           reply_to_id?: string | null
           sender_id?: string
           updated_at?: string
@@ -936,6 +939,7 @@ export type Database = {
           email: string
           guest_id: string | null
           id: string
+          last_seen: string | null
           linked_employee: string | null
           name: string
           organization: string | null
@@ -957,6 +961,7 @@ export type Database = {
           email: string
           guest_id?: string | null
           id: string
+          last_seen?: string | null
           linked_employee?: string | null
           name: string
           organization?: string | null
@@ -978,6 +983,7 @@ export type Database = {
           email?: string
           guest_id?: string | null
           id?: string
+          last_seen?: string | null
           linked_employee?: string | null
           name?: string
           organization?: string | null
@@ -1609,6 +1615,7 @@ export type Database = {
           created_at: string | null
           department: string | null
           id: string | null
+          last_seen: string | null
           name: string | null
           organization: string | null
           position: string | null
@@ -1620,6 +1627,7 @@ export type Database = {
           created_at?: string | null
           department?: string | null
           id?: string | null
+          last_seen?: string | null
           name?: string | null
           organization?: string | null
           position?: string | null
@@ -1631,6 +1639,7 @@ export type Database = {
           created_at?: string | null
           department?: string | null
           id?: string | null
+          last_seen?: string | null
           name?: string | null
           organization?: string | null
           position?: string | null
@@ -1688,6 +1697,7 @@ export type Database = {
         Args: { _order: string; _user: string }
         Returns: boolean
       }
+      mark_messages_read: { Args: { _conv: string }; Returns: undefined }
       profile_privilege_fields_unchanged: {
         Args: {
           _allowed_sections: Json
@@ -1708,6 +1718,7 @@ export type Database = {
         Args: { _profile_id: string }
         Returns: undefined
       }
+      touch_last_seen: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role:
