@@ -1,7 +1,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useTranslation } from 'react-i18next'
-import { Search, Filter, Plus } from "lucide-react"
+import { Search, Filter, Plus, LayoutGrid, List } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
