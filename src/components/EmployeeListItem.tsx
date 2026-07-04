@@ -38,7 +38,7 @@ export function EmployeeListItem({ employee, onCreateLogin }: EmployeeListItemPr
   return (
     <>
       <div
-        className="flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0"
+        className="grid grid-cols-[48px_1fr] sm:grid-cols-[48px_1.5fr_1fr_100px] md:grid-cols-[48px_1.75fr_1.25fr_1fr_110px_120px_auto] gap-4 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0 items-center"
         onClick={() => setIsDetailOpen(true)}
       >
         <Avatar className="w-10 h-10 shrink-0">
@@ -48,43 +48,43 @@ export function EmployeeListItem({ employee, onCreateLogin }: EmployeeListItemPr
           </AvatarFallback>
         </Avatar>
 
-        <div className="min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-[1.5fr_1fr_1fr_100px] md:grid-cols-[1.75fr_1.25fr_1fr_110px_120px] gap-4 items-center">
-          <div className="min-w-0">
-            <p className="font-medium truncate">{employee.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{employee.email}</p>
-          </div>
-          <div className="min-w-0 hidden sm:block">
-            <p className="text-sm truncate">{employee.position}</p>
-          </div>
-          <div className="min-w-0 hidden md:block">
-            <p className="text-sm text-muted-foreground truncate">{employee.department}</p>
-          </div>
-          <div>
-            <Badge className={getStatusColor(employee.status)}>{employee.status}</Badge>
-          </div>
-          <div className="hidden md:flex items-center text-sm">
-            <TrendingUp className="w-4 h-4 mr-1.5 text-muted-foreground" />
-            <span className={`font-medium ${getPerformanceColor(employee.performanceScore)}`}>
-              {employee.performanceScore}%
-            </span>
-          </div>
+        <div className="min-w-0">
+          <p className="font-medium truncate">{employee.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{employee.email}</p>
+        </div>
+        <div className="min-w-0 hidden sm:block">
+          <p className="text-sm truncate">{employee.position}</p>
+        </div>
+        <div className="min-w-0 hidden md:block">
+          <p className="text-sm text-muted-foreground truncate">{employee.department}</p>
+        </div>
+        <div>
+          <Badge className={getStatusColor(employee.status)}>{employee.status}</Badge>
+        </div>
+        <div className="hidden md:flex items-center text-sm">
+          <TrendingUp className="w-4 h-4 mr-1.5 text-muted-foreground" />
+          <span className={`font-medium ${getPerformanceColor(employee.performanceScore)}`}>
+            {employee.performanceScore}%
+          </span>
         </div>
 
-        {onCreateLogin && !employee.profileId && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-            onClick={(event) => {
-              event.stopPropagation()
-              onCreateLogin(employee)
-            }}
-          >
-            <KeyRound className="mr-2 h-4 w-4" />
-            Create login
-          </Button>
-        )}
+        <div className="hidden md:flex justify-end">
+          {onCreateLogin && !employee.profileId && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={(event) => {
+                event.stopPropagation()
+                onCreateLogin(employee)
+              }}
+            >
+              <KeyRound className="mr-2 h-4 w-4" />
+              Create login
+            </Button>
+          )}
+        </div>
       </div>
 
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>

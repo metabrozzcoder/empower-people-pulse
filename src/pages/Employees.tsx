@@ -383,7 +383,8 @@ export default function Employees() {
         </div>
       ) : (
         <div className="border rounded-lg overflow-hidden bg-card">
-          <div className="hidden md:grid md:grid-cols-[1.75fr_1.25fr_1fr_110px_120px_140px] gap-4 px-4 py-2 bg-muted/50 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          <div className="hidden md:grid md:grid-cols-[48px_1.75fr_1.25fr_1fr_110px_120px_auto] gap-4 px-4 py-2 bg-muted/50 text-xs font-medium text-muted-foreground uppercase tracking-wider items-center">
+            <span className="sr-only">Avatar</span>
             <span>Employee</span>
             <span>Position</span>
             <span>Department</span>
