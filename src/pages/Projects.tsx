@@ -176,12 +176,15 @@ const Projects = () => {
       i.id === itemId ? { ...i, done: !i.done } : i
     )
     const progress = computeProgress(list)
+    const newStatus = progress === 100
+      ? 'Completed'
+      : (p.status === 'Completed' ? 'In Progress' : (p.status ?? 'Planning'))
     const { error } = await supabase
       .from('projects')
-      .update({ checklist: list as never, progress, status: progress === 100 ? 'Completed' : p.status })
+      .update({ checklist: list as never, progress, status: newStatus })
       .eq('id', p.id)
     if (error) return toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
-    setProjects(prev => prev.map(x => x.id === p.id ? { ...x, checklist: list, progress, status: progress === 100 ? 'Completed' : x.status } : x))
+    setProjects(prev => prev.map(x => x.id === p.id ? { ...x, checklist: list, progress, status: newStatus } : x))
   }
 
   const remove = async (id: string) => {
