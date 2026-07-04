@@ -351,13 +351,51 @@ export default function Employees() {
         <p className="text-sm text-muted-foreground">
           Showing {filteredEmployees.length} of {employees.length} employees
         </p>
+        <div className="flex items-center gap-1 border rounded-md p-1 bg-muted/30">
+          <Button
+            type="button"
+            variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+            size="sm"
+            className="h-8 w-8 p-0"
+            aria-label="Grid view"
+            onClick={() => setViewMode('grid')}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+            size="sm"
+            className="h-8 w-8 p-0"
+            aria-label="List view"
+            onClick={() => setViewMode('list')}
+          >
+            <List className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredEmployees.map(employee => (
-          <EmployeeCard key={`${employee.dbId ?? employee.id}-${employee.profileId ?? 'unlinked'}`} employee={employee} onCreateLogin={handleCreateLoginForEmployee} />
-        ))}
-      </div>
+      {viewMode === 'grid' ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredEmployees.map(employee => (
+            <EmployeeCard key={`${employee.dbId ?? employee.id}-${employee.profileId ?? 'unlinked'}`} employee={employee} onCreateLogin={handleCreateLoginForEmployee} />
+          ))}
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-hidden bg-card">
+          <div className="hidden md:grid md:grid-cols-[1.75fr_1.25fr_1fr_110px_120px_140px] gap-4 px-4 py-2 bg-muted/50 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <span>Employee</span>
+            <span>Position</span>
+            <span>Department</span>
+            <span>Status</span>
+            <span>Performance</span>
+            <span className="text-right">Action</span>
+          </div>
+          {filteredEmployees.map(employee => (
+            <EmployeeListItem key={`${employee.dbId ?? employee.id}-${employee.profileId ?? 'unlinked'}`} employee={employee} onCreateLogin={handleCreateLoginForEmployee} />
+          ))}
+        </div>
+      )}
 
       {filteredEmployees.length === 0 && (
         <div className="text-center py-12">
