@@ -699,7 +699,7 @@ export default function Chat() {
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <h3 className="font-semibold truncate">{selectedUser.name}</h3>
-                      <p className="text-sm text-muted-foreground truncate">{selectedUser.role || ''}</p>
+                      <p className="text-sm text-muted-foreground truncate">{fmtLastSeen(selectedUser.lastSeen)}{selectedUser.role ? ` · ${selectedUser.role}` : ''}</p>
                     </div>
                     <Button size="icon" variant="ghost" title="Voice call" onClick={() => startCall('audio')}>
                       <Phone className="w-4 h-4" />
