@@ -492,7 +492,7 @@ export default function Chat() {
     const { data, error } = await supabase
       .from('messages')
       .insert({ conversation_id: convId, sender_id: myId, content, attachments: attachments as any })
-      .select('id, conversation_id, sender_id, content, created_at, edited, attachments')
+      .select('id, conversation_id, sender_id, content, created_at, edited, attachments, read_at')
       .single()
     if (error) {
       toast({ title: 'Failed to send', description: error.message, variant: 'destructive' })
