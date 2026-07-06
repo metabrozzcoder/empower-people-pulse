@@ -247,6 +247,35 @@ export default function Chat() {
   }, [myId])
   useEffect(() => { refreshGroups() }, [refreshGroups])
 
+  const loadGroupMembers = useCallback(async (convId: string) => {
+    const { data: mems } = await supabase
+      .from('conversation_members').select('user_id').eq('conversation_id', convId)
+    const ids = (mems ?? []).map(m => m.user_id)
+    if (ids.length === 0) { setGroupMemberProfiles([]); return }
+    const { data: profs } = await supabase
+      .from('profiles_public' as never).select('id, name, avatar_url, position').in('id', ids)
+    setGroupMemberProfiles((profs ?? []).map((p: any) => ({
+      id: p.id, name: p.name, avatar: p.avatar_url ?? undefined, role: p.position ?? undefined,
+    })))
+  }, [])
+
+  const openGroupSettings = async () => {
+    if (!selectedGroupId) return
+    await loadGroupMembers(selectedGroupId)
+    setGroupSettingsOpen(true)
+  }
+
+  const deleteGroup = async () => {
+    if (!selectedGroupId) return
+    const { error } = await supabase.from('conversations').delete().eq('id', selectedGroupId)
+    if (error) { toast({ title: 'Failed to delete group', description: error.message, variant: 'destructive' }); return }
+    toast({ title: 'Group deleted' })
+    setGroupSettingsOpen(false)
+    setSelectedGroupId(null)
+    await refreshGroups()
+  }
+
+
   // Incoming ring channel
   useEffect(() => {
     if (!myId) return
