@@ -723,11 +723,20 @@ export default function Chat() {
               <div className="flex items-center space-x-3">
                 {activeGroup ? (
                   <>
-                    <Avatar className="w-10 h-10"><AvatarFallback><Users className="w-4 h-4" /></AvatarFallback></Avatar>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold truncate">{activeGroup.name}</h3>
-                      <p className="text-sm text-muted-foreground truncate">{activeGroup.memberCount} members</p>
-                    </div>
+                    <button
+                      className="flex items-center space-x-3 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity"
+                      onClick={openGroupSettings}
+                      title="Group settings"
+                    >
+                      <Avatar className="w-10 h-10"><AvatarFallback><Users className="w-4 h-4" /></AvatarFallback></Avatar>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold truncate">{activeGroup.name}</h3>
+                        <p className="text-sm text-muted-foreground truncate">{activeGroup.memberCount} members · tap for info</p>
+                      </div>
+                    </button>
+                    <Button size="icon" variant="ghost" title="Group settings" onClick={openGroupSettings}>
+                      <Settings className="w-4 h-4" />
+                    </Button>
                   </>
                 ) : selectedUser ? (
                   <>
