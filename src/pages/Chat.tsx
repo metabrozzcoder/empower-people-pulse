@@ -1011,8 +1011,7 @@ export default function Chat() {
             </TabsList>
 
             <div className="mt-3">
-              {/* Members */}
-              <div data-tab="members">
+              <TabsContent value="members">
                 <ScrollArea className="h-72">
                   <div className="space-y-1">
                     {groupMemberProfiles.map(p => (
@@ -1026,10 +1025,9 @@ export default function Chat() {
                     ))}
                   </div>
                 </ScrollArea>
-              </div>
+              </TabsContent>
 
-              {/* Media (images/videos) */}
-              <div data-tab="media" className="hidden data-[state=active]:block">
+              <TabsContent value="media">
                 <ScrollArea className="h-72">
                   <div className="grid grid-cols-3 gap-2">
                     {messages.flatMap(m => (m.attachments ?? []).filter(a => a.type.startsWith('image/') || a.type.startsWith('video/'))).map((a, i) => {
@@ -1045,10 +1043,9 @@ export default function Chat() {
                     )}
                   </div>
                 </ScrollArea>
-              </div>
+              </TabsContent>
 
-              {/* Files */}
-              <div data-tab="files" className="hidden data-[state=active]:block">
+              <TabsContent value="files">
                 <ScrollArea className="h-72">
                   <div className="space-y-2">
                     {messages.flatMap(m => (m.attachments ?? []).filter(a => !a.type.startsWith('image/') && !a.type.startsWith('video/'))).map((a, i) => {
@@ -1070,8 +1067,9 @@ export default function Chat() {
                     )}
                   </div>
                 </ScrollArea>
-              </div>
+              </TabsContent>
             </div>
+
           </Tabs>
 
           <DialogFooter className="flex sm:justify-between gap-2">
