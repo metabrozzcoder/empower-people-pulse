@@ -236,14 +236,14 @@ export default function Chat() {
     const convIds = (myMems ?? []).map(m => m.conversation_id)
     if (convIds.length === 0) { setGroups([]); return }
     const { data: convs } = await supabase
-      .from('conversations').select('id, name, is_group').in('id', convIds).eq('is_group', true)
+      .from('conversations').select('id, name, is_group, created_by').in('id', convIds).eq('is_group', true)
     const gIds = (convs ?? []).map(c => c.id)
     if (gIds.length === 0) { setGroups([]); return }
     const { data: allMems } = await supabase
       .from('conversation_members').select('conversation_id, user_id').in('conversation_id', gIds)
     const counts: Record<string, number> = {}
     ;(allMems ?? []).forEach(m => { counts[m.conversation_id] = (counts[m.conversation_id] || 0) + 1 })
-    setGroups((convs ?? []).map((c: any) => ({ id: c.id, name: c.name || 'Untitled group', memberCount: counts[c.id] || 0 })))
+    setGroups((convs ?? []).map((c: any) => ({ id: c.id, name: c.name || 'Untitled group', memberCount: counts[c.id] || 0, created_by: c.created_by ?? null })))
   }, [myId])
   useEffect(() => { refreshGroups() }, [refreshGroups])
 
