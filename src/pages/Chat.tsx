@@ -120,7 +120,7 @@ export default function Chat() {
   const callRef = useRef<any>(null)
 
   // Groups
-  interface GroupConv { id: string; name: string; memberCount: number }
+  interface GroupConv { id: string; name: string; memberCount: number; created_by: string | null }
   const [groups, setGroups] = useState<GroupConv[]>([])
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const [listTab, setListTab] = useState<'people' | 'groups'>('people')
@@ -130,6 +130,10 @@ export default function Chat() {
   const [newGroupOpen, setNewGroupOpen] = useState(false)
   const [groupName, setGroupName] = useState('')
   const [groupMembers, setGroupMembers] = useState<Set<string>>(new Set())
+
+  // Group settings
+  const [groupSettingsOpen, setGroupSettingsOpen] = useState(false)
+  const [groupMemberProfiles, setGroupMemberProfiles] = useState<Array<{ id: string; name: string; avatar?: string; role?: string }>>([])
 
   // Calls
   const [call, _setCall] = useState<null | { mode: 'audio' | 'video'; role: 'caller' | 'callee'; conversationId: string; peer: { id: string; name: string; avatar?: string } }>(null)
