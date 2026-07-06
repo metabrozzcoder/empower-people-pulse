@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   MessageSquare, Send, Search, Smile, Check, CheckCheck, Bell, BellOff,
@@ -19,10 +19,15 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { Trash2, Settings } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
@@ -115,7 +120,7 @@ export default function Chat() {
   const callRef = useRef<any>(null)
 
   // Groups
-  interface GroupConv { id: string; name: string; memberCount: number }
+  interface GroupConv { id: string; name: string; memberCount: number; created_by: string | null }
   const [groups, setGroups] = useState<GroupConv[]>([])
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const [listTab, setListTab] = useState<'people' | 'groups'>('people')
@@ -125,6 +130,10 @@ export default function Chat() {
   const [newGroupOpen, setNewGroupOpen] = useState(false)
   const [groupName, setGroupName] = useState('')
   const [groupMembers, setGroupMembers] = useState<Set<string>>(new Set())
+
+  // Group settings
+  const [groupSettingsOpen, setGroupSettingsOpen] = useState(false)
+  const [groupMemberProfiles, setGroupMemberProfiles] = useState<Array<{ id: string; name: string; avatar?: string; role?: string }>>([])
 
   // Calls
   const [call, _setCall] = useState<null | { mode: 'audio' | 'video'; role: 'caller' | 'callee'; conversationId: string; peer: { id: string; name: string; avatar?: string } }>(null)
@@ -227,16 +236,45 @@ export default function Chat() {
     const convIds = (myMems ?? []).map(m => m.conversation_id)
     if (convIds.length === 0) { setGroups([]); return }
     const { data: convs } = await supabase
-      .from('conversations').select('id, name, is_group').in('id', convIds).eq('is_group', true)
+      .from('conversations').select('id, name, is_group, created_by').in('id', convIds).eq('is_group', true)
     const gIds = (convs ?? []).map(c => c.id)
     if (gIds.length === 0) { setGroups([]); return }
     const { data: allMems } = await supabase
       .from('conversation_members').select('conversation_id, user_id').in('conversation_id', gIds)
     const counts: Record<string, number> = {}
     ;(allMems ?? []).forEach(m => { counts[m.conversation_id] = (counts[m.conversation_id] || 0) + 1 })
-    setGroups((convs ?? []).map((c: any) => ({ id: c.id, name: c.name || 'Untitled group', memberCount: counts[c.id] || 0 })))
+    setGroups((convs ?? []).map((c: any) => ({ id: c.id, name: c.name || 'Untitled group', memberCount: counts[c.id] || 0, created_by: c.created_by ?? null })))
   }, [myId])
   useEffect(() => { refreshGroups() }, [refreshGroups])
+
+  const loadGroupMembers = useCallback(async (convId: string) => {
+    const { data: mems } = await supabase
+      .from('conversation_members').select('user_id').eq('conversation_id', convId)
+    const ids = (mems ?? []).map(m => m.user_id)
+    if (ids.length === 0) { setGroupMemberProfiles([]); return }
+    const { data: profs } = await supabase
+      .from('profiles_public' as never).select('id, name, avatar_url, position').in('id', ids)
+    setGroupMemberProfiles((profs ?? []).map((p: any) => ({
+      id: p.id, name: p.name, avatar: p.avatar_url ?? undefined, role: p.position ?? undefined,
+    })))
+  }, [])
+
+  const openGroupSettings = async () => {
+    if (!selectedGroupId) return
+    await loadGroupMembers(selectedGroupId)
+    setGroupSettingsOpen(true)
+  }
+
+  const deleteGroup = async () => {
+    if (!selectedGroupId) return
+    const { error } = await supabase.from('conversations').delete().eq('id', selectedGroupId)
+    if (error) { toast({ title: 'Failed to delete group', description: error.message, variant: 'destructive' }); return }
+    toast({ title: 'Group deleted' })
+    setGroupSettingsOpen(false)
+    setSelectedGroupId(null)
+    await refreshGroups()
+  }
+
 
   // Incoming ring channel
   useEffect(() => {
@@ -685,11 +723,20 @@ export default function Chat() {
               <div className="flex items-center space-x-3">
                 {activeGroup ? (
                   <>
-                    <Avatar className="w-10 h-10"><AvatarFallback><Users className="w-4 h-4" /></AvatarFallback></Avatar>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold truncate">{activeGroup.name}</h3>
-                      <p className="text-sm text-muted-foreground truncate">{activeGroup.memberCount} members</p>
-                    </div>
+                    <button
+                      className="flex items-center space-x-3 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity"
+                      onClick={openGroupSettings}
+                      title="Group settings"
+                    >
+                      <Avatar className="w-10 h-10"><AvatarFallback><Users className="w-4 h-4" /></AvatarFallback></Avatar>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold truncate">{activeGroup.name}</h3>
+                        <p className="text-sm text-muted-foreground truncate">{activeGroup.memberCount} members · tap for info</p>
+                      </div>
+                    </button>
+                    <Button size="icon" variant="ghost" title="Group settings" onClick={openGroupSettings}>
+                      <Settings className="w-4 h-4" />
+                    </Button>
                   </>
                 ) : selectedUser ? (
                   <>
@@ -943,6 +990,114 @@ export default function Chat() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Group settings dialog */}
+      <Dialog open={groupSettingsOpen} onOpenChange={setGroupSettingsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" /> {activeGroup?.name || 'Group'}
+            </DialogTitle>
+            <DialogDescription>
+              {groupMemberProfiles.length} members
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs defaultValue="members">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="members">Members</TabsTrigger>
+              <TabsTrigger value="media">Media</TabsTrigger>
+              <TabsTrigger value="files">Files</TabsTrigger>
+            </TabsList>
+
+            <div className="mt-3">
+              <TabsContent value="members">
+                <ScrollArea className="h-72">
+                  <div className="space-y-1">
+                    {groupMemberProfiles.map(p => (
+                      <div key={p.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-accent">
+                        <Avatar className="w-9 h-9"><AvatarImage src={p.avatar} /><AvatarFallback>{p.name.slice(0,2)}</AvatarFallback></Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{p.name}{p.id === activeGroup?.created_by && <span className="ml-2 text-[10px] text-muted-foreground">(creator)</span>}</p>
+                          <p className="text-xs text-muted-foreground truncate">{p.role || '—'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="media">
+                <ScrollArea className="h-72">
+                  <div className="grid grid-cols-3 gap-2">
+                    {messages.flatMap(m => (m.attachments ?? []).filter(a => a.type.startsWith('image/') || a.type.startsWith('video/'))).map((a, i) => {
+                      const url = signedUrls[a.path]
+                      if (!url) return null
+                      if (a.type.startsWith('image/')) {
+                        return <a key={i} href={url} target="_blank" rel="noreferrer"><img src={url} alt={a.name} className="w-full h-24 object-cover rounded-md" /></a>
+                      }
+                      return <video key={i} src={url} className="w-full h-24 object-cover rounded-md" />
+                    })}
+                    {messages.flatMap(m => (m.attachments ?? []).filter(a => a.type.startsWith('image/') || a.type.startsWith('video/'))).length === 0 && (
+                      <p className="col-span-3 text-center text-sm text-muted-foreground py-8">No media shared</p>
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="files">
+                <ScrollArea className="h-72">
+                  <div className="space-y-2">
+                    {messages.flatMap(m => (m.attachments ?? []).filter(a => !a.type.startsWith('image/') && !a.type.startsWith('video/'))).map((a, i) => {
+                      const url = signedUrls[a.path]
+                      return (
+                        <a key={i} href={url || '#'} target="_blank" rel="noreferrer" download={a.name}
+                          className="flex items-center gap-2 p-2 rounded-md border hover:bg-accent">
+                          {fileIcon(a.type)}
+                          <div className="flex-1 min-w-0">
+                            <p className="truncate text-sm font-medium">{a.name}</p>
+                            <p className="text-xs text-muted-foreground">{fmtSize(a.size)}</p>
+                          </div>
+                          <Download className="w-4 h-4 opacity-70" />
+                        </a>
+                      )
+                    })}
+                    {messages.flatMap(m => (m.attachments ?? []).filter(a => !a.type.startsWith('image/') && !a.type.startsWith('video/'))).length === 0 && (
+                      <p className="text-center text-sm text-muted-foreground py-8">No files shared</p>
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            </div>
+
+          </Tabs>
+
+          <DialogFooter className="flex sm:justify-between gap-2">
+            {activeGroup?.created_by === myId ? (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive"><Trash2 className="w-4 h-4 mr-2" /> Delete group</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this group?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      All messages and files shared in this group will be permanently removed. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={deleteGroup} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : <span />}
+            <Button variant="outline" onClick={() => setGroupSettingsOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
       {call && myId && (
         <CallDialog
