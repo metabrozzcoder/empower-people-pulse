@@ -80,6 +80,7 @@ const emptyJob = {
 
 export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: RecruitmentEnhancedProps) {
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
