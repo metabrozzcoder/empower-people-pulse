@@ -210,6 +210,7 @@ export const ru: Record<string, string> = {
   "HR Manager": "HR менеджер", "HR Department": "Отдел HR", "HR Request": "HR запрос",
   "Software Engineer": "Программист", "Product Manager": "Продукт менеджер",
   "Designer": "Дизайнер", "Sales Rep": "Менеджер по продажам", "Server Room": "Серверная",
+  "Lead Specialist": "Ведущий специалист", "Senior Specialist": "Старший специалист", "Specialist": "Специалист",
   "Main Entrance": "Главный вход", "Executive Offices": "Кабинеты руководства",
   "Fingerprint": "Отпечаток пальца", "Face": "Лицо",
 
@@ -283,6 +284,7 @@ export const ru: Record<string, string> = {
   // Chat misc
   "Someone": "Кто-то", "Caller": "Звонящий",
   "Send messages to your team in real time": "Отправляйте сообщения вашей команде в реальном времени",
+  "tap for info": "нажмите для информации", "Group settings": "Настройки группы",
 
   // Broad UI/button coverage
   "Actions": "Действия", "Members": "Участники", "Security": "Безопасность", "Appearance": "Внешний вид",
@@ -1212,6 +1214,8 @@ export const uz: Record<string, string> = {
   "HR Manager": "HR menejer", "HR Department": "HR bo'limi", "HR Request": "HR so'rov",
   "Software Engineer": "Dasturchi", "Product Manager": "Mahsulot menejeri",
   "Designer": "Dizayner", "Sales Rep": "Sotuv menejeri", "Server Room": "Server xonasi",
+  "Lead Specialist": "Yetakchi mutaxassis", "Ведущий специалист": "Yetakchi mutaxassis",
+  "Senior Specialist": "Katta mutaxassis", "Старший специалист": "Katta mutaxassis", "Specialist": "Mutaxassis", "Специалист": "Mutaxassis",
   "Main Entrance": "Asosiy kirish", "Executive Offices": "Rahbariyat xonalari",
   "Fingerprint": "Barmoq izi", "Face": "Yuz",
 
@@ -1285,6 +1289,7 @@ export const uz: Record<string, string> = {
   // Chat misc
   "Someone": "Kimdir", "Caller": "Qo'ng'iroq qiluvchi",
   "Send messages to your team in real time": "Jamoangizga real vaqt rejimida xabar yuboring",
+  "tap for info": "ma'lumot uchun bosing", "Group settings": "Guruh sozlamalari",
 
   // Broad UI/button coverage
   "Actions": "Amallar", "Members": "A'zolar", "Security": "Xavfsizlik", "Appearance": "Ko'rinish",

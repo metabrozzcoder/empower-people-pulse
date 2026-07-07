@@ -94,11 +94,80 @@ const dayLabel = (iso: string): string => {
   return formatDate(iso)
 }
 
+type ChatLang = 'en' | 'ru' | 'uz'
+
+const getChatLang = (lng?: string): ChatLang => {
+  const base = lng?.split('-')[0]
+  return base === 'ru' || base === 'uz' ? base : 'en'
+}
+
+const POSITION_TRANSLATIONS: Array<Record<ChatLang, string> & { aliases?: string[] }> = [
+  { en: 'Lead Specialist', ru: 'Ведущий специалист', uz: 'Yetakchi mutaxassis', aliases: ['Leading Specialist', 'Главный специалист', 'Bosh mutaxassis'] },
+  { en: 'Senior Specialist', ru: 'Старший специалист', uz: 'Katta mutaxassis' },
+  { en: 'Specialist', ru: 'Специалист', uz: 'Mutaxassis' },
+  { en: 'Reporter', ru: 'Репортёр', uz: 'Reportyor' },
+  { en: 'Admin', ru: 'Администратор', uz: 'Administrator' },
+  { en: 'Head of Reporters', ru: 'Руководитель репортёров', uz: 'Reportyorlar rahbari' },
+  { en: 'Driver', ru: 'Водитель', uz: 'Haydovchi' },
+  { en: 'Equipment Department', ru: 'Отдел оборудования', uz: "Uskunalar bo'limi" },
+  { en: 'Initiator', ru: 'Инициатор', uz: 'Tashabbuskor' },
+  { en: 'Employee', ru: 'Сотрудник', uz: 'Xodim' },
+  { en: 'HR Manager', ru: 'HR менеджер', uz: 'HR menejer' },
+  { en: 'Accountant', ru: 'Бухгалтер', uz: 'Buxgalter' },
+  { en: 'Software Engineer', ru: 'Программист', uz: 'Dasturchi' },
+  { en: 'Product Manager', ru: 'Продукт менеджер', uz: 'Mahsulot menejeri' },
+  { en: 'Designer', ru: 'Дизайнер', uz: 'Dizayner' },
+  { en: 'Sales Rep', ru: 'Менеджер по продажам', uz: 'Sotuv menejeri' },
+]
+
+const normalizePosition = (value: string) => value.trim().replace(/\s+/g, ' ').toLocaleLowerCase()
+
+const translatePosition = (value: string | undefined | null, lang: ChatLang) => {
+  if (!value) return ''
+  const normalized = normalizePosition(value)
+  const match = POSITION_TRANSLATIONS.find(item => {
+    const candidates = [item.en, item.ru, item.uz, ...(item.aliases ?? [])]
+    return candidates.some(candidate => normalizePosition(candidate) === normalized)
+  })
+  return match?.[lang] ?? value
+}
+
+const ruPlural = (count: number, one: string, few: string, many: string) => {
+  const mod10 = count % 10
+  const mod100 = count % 100
+  if (mod10 === 1 && mod100 !== 11) return one
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few
+  return many
+}
+
+const formatMemberCount = (count: number, lang: ChatLang) => {
+  if (lang === 'ru') return `${count} ${ruPlural(count, 'участник', 'участника', 'участников')}`
+  if (lang === 'uz') return `${count} a'zo`
+  return `${count} ${count === 1 ? 'member' : 'members'}`
+}
+
+const formatLastSeen = (iso: string | null | undefined, lang: ChatLang): string => {
+  const labels = {
+    en: { offline: 'offline', online: 'online', minute: 'last seen {n}m ago', hour: 'last seen {n}h ago', day: 'last seen' },
+    ru: { offline: 'не в сети', online: 'в сети', minute: 'был(а) {n} мин назад', hour: 'был(а) {n} ч назад', day: 'был(а)' },
+    uz: { offline: 'oflayn', online: 'onlayn', minute: '{n} daqiqa oldin ko‘rilgan', hour: '{n} soat oldin ko‘rilgan', day: 'oxirgi marta' },
+  }[lang]
+  if (!iso) return labels.offline
+  const d = new Date(iso).getTime()
+  if (isNaN(d)) return labels.offline
+  const diff = Date.now() - d
+  if (diff < 90_000) return labels.online
+  if (diff < 3_600_000) return labels.minute.replace('{n}', String(Math.floor(diff / 60_000)))
+  if (diff < 86_400_000) return labels.hour.replace('{n}', String(Math.floor(diff / 3_600_000)))
+  return `${labels.day} ${formatDate(iso)}`
+}
+
 export default function Chat() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { toast } = useToast()
   const { currentUser, session } = useAuth()
   const myId = session?.user.id
+  const chatLang = getChatLang(i18n.language)
 
   const [users, setUsers] = useState<ChatUser[]>([])
   const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null)
@@ -683,7 +752,7 @@ export default function Chat() {
                               <Badge variant="destructive" className="text-xs">{u.unreadCount}</Badge>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground truncate">{u.role || '—'}</p>
+                          <p className="text-xs text-muted-foreground truncate">{translatePosition(u.role, chatLang) || '—'}</p>
                         </div>
                       </div>
                     ))}
@@ -705,7 +774,7 @@ export default function Chat() {
                         <Avatar className="w-10 h-10"><AvatarFallback><Users className="w-4 h-4" /></AvatarFallback></Avatar>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{g.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{g.memberCount} members</p>
+                          <p className="text-xs text-muted-foreground truncate">{formatMemberCount(g.memberCount, chatLang)}</p>
                         </div>
                       </div>
                     ))}
@@ -731,7 +800,9 @@ export default function Chat() {
                       <Avatar className="w-10 h-10"><AvatarFallback><Users className="w-4 h-4" /></AvatarFallback></Avatar>
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold truncate">{activeGroup.name}</h3>
-                        <p className="text-sm text-muted-foreground truncate">{activeGroup.memberCount} members · tap for info</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {formatMemberCount(activeGroup.memberCount, chatLang)} · {chatLang === 'ru' ? 'нажмите для информации' : chatLang === 'uz' ? "ma'lumot uchun bosing" : 'tap for info'}
+                        </p>
                       </div>
                     </button>
                     <Button size="icon" variant="ghost" title="Group settings" onClick={openGroupSettings}>
@@ -746,7 +817,9 @@ export default function Chat() {
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <h3 className="font-semibold truncate">{selectedUser.name}</h3>
-                      <p className="text-sm text-muted-foreground truncate">{fmtLastSeen(selectedUser.lastSeen)}{selectedUser.role ? ` · ${selectedUser.role}` : ''}</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {formatLastSeen(selectedUser.lastSeen, chatLang)}{selectedUser.role ? ` · ${translatePosition(selectedUser.role, chatLang)}` : ''}
+                      </p>
                     </div>
                     <Button size="icon" variant="ghost" title="Voice call" onClick={() => startCall('audio')}>
                       <Phone className="w-4 h-4" />
@@ -999,7 +1072,7 @@ export default function Chat() {
               <Users className="w-5 h-5" /> {activeGroup?.name || 'Group'}
             </DialogTitle>
             <DialogDescription>
-              {groupMemberProfiles.length} members
+              {formatMemberCount(groupMemberProfiles.length, chatLang)}
             </DialogDescription>
           </DialogHeader>
 
@@ -1018,8 +1091,8 @@ export default function Chat() {
                       <div key={p.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-accent">
                         <Avatar className="w-9 h-9"><AvatarImage src={p.avatar} /><AvatarFallback>{p.name.slice(0,2)}</AvatarFallback></Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{p.name}{p.id === activeGroup?.created_by && <span className="ml-2 text-[10px] text-muted-foreground">(creator)</span>}</p>
-                          <p className="text-xs text-muted-foreground truncate">{p.role || '—'}</p>
+                          <p className="text-sm font-medium truncate">{p.name}{p.id === activeGroup?.created_by && <span className="ml-2 text-[10px] text-muted-foreground">{chatLang === 'ru' ? '(создатель)' : chatLang === 'uz' ? '(yaratuvchi)' : '(creator)'}</span>}</p>
+                          <p className="text-xs text-muted-foreground truncate">{translatePosition(p.role, chatLang) || '—'}</p>
                         </div>
                       </div>
                     ))}
