@@ -255,6 +255,9 @@ export const ru: Record<string, string> = {
   "Shortlist": "Шортлист", "Hire": "Нанять", "LinkedIn": "LinkedIn", "Company Website": "Сайт компании",
   "Referrals": "Рекомендации", "Job Boards": "Сайты вакансий",
 
+  // Notifications
+  "Enable notifications": "Включить уведомления", "Notifications on": "Уведомления включены",
+
   // Uploads / async
   "Uploading…": "Загрузка…", "Updating…": "Обновление…",
   "Passwords don't match": "Пароли не совпадают",
@@ -1253,6 +1256,9 @@ export const uz: Record<string, string> = {
   // Recruitment
   "Shortlist": "Qisqa ro'yxat", "Hire": "Ishga olish", "LinkedIn": "LinkedIn", "Company Website": "Kompaniya sayti",
   "Referrals": "Tavsiyalar", "Job Boards": "Ish e'lonlari saytlari",
+
+  // Notifications
+  "Enable notifications": "Bildirishnomalarni yoqish", "Notifications on": "Bildirishnomalar yoqilgan",
 
   // Uploads / async
   "Uploading…": "Yuklanmoqda…", "Updating…": "Yangilanmoqda…",
