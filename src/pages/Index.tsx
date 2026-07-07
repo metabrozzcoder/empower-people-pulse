@@ -203,7 +203,7 @@ const Index = () => {
           <Card 
             key={index} 
             className="relative hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => navigate(action.href)}
+            onClick={() => ackAndGo(action.key, action.rawCount, action.href)}
           >
             {action.count > 0 && (
               <Badge
