@@ -252,7 +252,7 @@ export const ru: Record<string, string> = {
   "Security & Settings": "Безопасность и настройки",
 
   // Feedback / recruitment
-  "Shortlist": "Шортлист", "LinkedIn": "LinkedIn", "Company Website": "Сайт компании",
+  "Shortlist": "Шортлист", "Hire": "Нанять", "LinkedIn": "LinkedIn", "Company Website": "Сайт компании",
   "Referrals": "Рекомендации", "Job Boards": "Сайты вакансий",
 
   // Uploads / async
@@ -1251,7 +1251,7 @@ export const uz: Record<string, string> = {
   "Security & Settings": "Xavfsizlik va sozlamalar",
 
   // Recruitment
-  "Shortlist": "Qisqa ro'yxat", "LinkedIn": "LinkedIn", "Company Website": "Kompaniya sayti",
+  "Shortlist": "Qisqa ro'yxat", "Hire": "Ishga olish", "LinkedIn": "LinkedIn", "Company Website": "Kompaniya sayti",
   "Referrals": "Tavsiyalar", "Job Boards": "Ish e'lonlari saytlari",
 
   // Uploads / async
