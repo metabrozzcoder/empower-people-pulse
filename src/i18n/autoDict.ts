@@ -1257,6 +1257,9 @@ export const uz: Record<string, string> = {
   "Shortlist": "Qisqa ro'yxat", "Hire": "Ishga olish", "LinkedIn": "LinkedIn", "Company Website": "Kompaniya sayti",
   "Referrals": "Tavsiyalar", "Job Boards": "Ish e'lonlari saytlari",
 
+  // Notifications
+  "Enable notifications": "Bildirishnomalarni yoqish", "Notifications on": "Bildirishnomalar yoqilgan",
+
   // Uploads / async
   "Uploading…": "Yuklanmoqda…", "Updating…": "Yangilanmoqda…",
   "Passwords don't match": "Parollar mos kelmadi",
