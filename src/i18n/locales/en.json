@@ -1,4 +1,8 @@
 {
+  "calendar": {
+    "months": ["January","February","March","April","May","June","July","August","September","October","November","December"],
+    "weekdaysShort": ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
+  },
   "common": {
     "logout": "Logout",
     "login": "Login",
