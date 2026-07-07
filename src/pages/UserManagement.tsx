@@ -142,6 +142,8 @@ export default function UserManagement() {
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [selectedAccessRules, setSelectedAccessRules] = useState<string[]>([])
   const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
+  const [avatarUrl, setAvatarUrl] = useState<string>('')
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(true)
   const [orgOptions, setOrgOptions] = useState<string[]>([])
