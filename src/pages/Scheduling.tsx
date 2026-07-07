@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns'
 import { formatDate, formatMonthYear } from '@/lib/date'
 
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const MONTH_KEYS = [0,1,2,3,4,5,6,7,8,9,10,11]
 
 interface Reminder {
   id: string
@@ -57,7 +57,25 @@ const emptyForm = {
 }
 
 const Scheduling = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const locale = (i18n.language ?? 'en').split('-')[0]
+  const monthNames = useMemo(() => {
+    try {
+      const fmt = new Intl.DateTimeFormat(locale, { month: 'long' })
+      return MONTH_KEYS.map(i => fmt.format(new Date(2020, i, 1)))
+    } catch {
+      return ['January','February','March','April','May','June','July','August','September','October','November','December']
+    }
+  }, [locale])
+  const weekdayNames = useMemo(() => {
+    try {
+      const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short' })
+      // Monday..Sunday
+      return [1,2,3,4,5,6,7].map(d => fmt.format(new Date(2024, 0, d)))
+    } catch {
+      return ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+    }
+  }, [locale])
   const { toast } = useToast()
   const [items, setItems] = useState<Reminder[]>([])
   const [loading, setLoading] = useState(true)
@@ -208,7 +226,7 @@ const Scheduling = () => {
   )
   const dayItems = (byDate.get(selected) ?? []).sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''))
 
-  const monthLabel = formatMonthYear(cursor)
+  const monthLabel = formatMonthYear(cursor, locale)
 
   return (
     <div className="space-y-6">
@@ -247,7 +265,7 @@ const Scheduling = () => {
               <Select value={String(cursor.getMonth())} onValueChange={(v) => setCursor(new Date(cursor.getFullYear(), Number(v), 1))}>
                 <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {MONTHS.map((m, i) => <SelectItem key={m} value={String(i)}>{m}</SelectItem>)}
+                  {monthNames.map((m, i) => <SelectItem key={m} value={String(i)}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={String(cursor.getFullYear())} onValueChange={(v) => setCursor(new Date(Number(v), cursor.getMonth(), 1))}>
@@ -269,7 +287,7 @@ const Scheduling = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-7 text-xs text-muted-foreground mb-2">
-              {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => <div key={d} className="text-center py-1">{d}</div>)}
+              {weekdayNames.map(d => <div key={d} className="text-center py-1">{d}</div>)}
             </div>
             <div className="grid grid-cols-7 gap-1">
               {grid.map((d, idx) => {
