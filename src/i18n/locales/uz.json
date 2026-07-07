@@ -320,7 +320,7 @@
       }
     },
     "shootingRequests": { "title": "Suratga olish so'rovlari", "subtitle": "Media suratga olish so'rovlarini boshqaring." },
-    "recruitment": { "title": "AI yordamida ishga qabul", "subtitle": "Aqlli nomzodlarni tanlash bilan ishga qabul jarayonini optimallashtiring." },
+    "recruitment": { "title": "AI yordamida ishga qabul", "subtitle": "Aqlli nomzodlarni tanlash bilan ishga qabul jarayonini optimallashtiring.", "sourceBreakdown": "Manbalar tahlili", "sourceBreakdownDesc": "Nomzodlar qayerdan kelmoqda", "noCandidatesYet": "Hozircha nomzodlar yo'q." },
     "garage": {
       "title": "Haydovchilar va garaj",
       "subtitle": "Avtomobillarni boshqaring, sayohatlarni qayd eting va suratga olish so'rovlariga bog'lang",
