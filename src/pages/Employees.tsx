@@ -269,6 +269,7 @@ export default function Employees() {
           status: 'Active',
         })
       }
+    }
     setCreatedCreds({ name: fullName, email: res.email, username: res.username, password: res.password })
     toast({ title: "Employee Added", description: `${fullName} has been created with login credentials.` })
     setIsAddDialogOpen(false)
