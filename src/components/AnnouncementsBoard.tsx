@@ -159,27 +159,43 @@ export function AnnouncementsBoard() {
         ) : (
           <div className="space-y-3">
             {items.map((a) => (
-              <div key={a.id} className="p-4 rounded-lg border bg-card/50">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {a.pinned && (
-                      <Badge variant="secondary">
-                        <Pin className="h-3 w-3 mr-1" />
-                        {t("pages.dashboard.announcements.pinned", "Pinned")}
-                      </Badge>
-                    )}
-                    <h4 className="font-semibold">{a.title}</h4>
+              <div
+                key={a.id}
+                className="group relative overflow-hidden rounded-xl border border-white/10 bg-announcement-gradient p-5 shadow-2xl transition-all hover:border-blue-500/50 hover:shadow-blue-500/10"
+              >
+                <div className="absolute left-0 top-0 h-full w-1 announcement-accent" />
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.05),transparent_50%)]" />
+                <div className="relative flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {a.pinned && (
+                        <Badge variant="secondary">
+                          <Pin className="h-3 w-3 mr-1" />
+                          {t("pages.dashboard.announcements.pinned", "Pinned")}
+                        </Badge>
+                      )}
+                      <h4 className="text-sm font-bold tracking-wider uppercase text-primary-foreground">
+                        {a.title}
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-4 shrink-0">
+                      <span className="text-xs font-medium text-muted-foreground tabular-nums">
+                        {formatDate(a.created_at)}
+                      </span>
+                      {isAdmin && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setPendingDelete(a.id)}
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-muted-foreground">{formatDate(a.created_at)}</span>
-                    {isAdmin && (
-                      <Button size="icon" variant="ghost" onClick={() => setPendingDelete(a.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                  <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{a.body}</p>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{a.body}</p>
               </div>
             ))}
           </div>
