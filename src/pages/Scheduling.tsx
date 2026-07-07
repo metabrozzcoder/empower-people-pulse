@@ -60,22 +60,17 @@ const Scheduling = () => {
   const { t, i18n } = useTranslation()
   const locale = (i18n.language ?? 'en').split('-')[0]
   const monthNames = useMemo(() => {
-    try {
-      const fmt = new Intl.DateTimeFormat(locale, { month: 'long' })
-      return MONTH_KEYS.map(i => fmt.format(new Date(2020, i, 1)))
-    } catch {
-      return ['January','February','March','April','May','June','July','August','September','October','November','December']
-    }
-  }, [locale])
+    const arr = t('calendar.months', { returnObjects: true }) as unknown
+    return Array.isArray(arr) && arr.length === 12
+      ? (arr as string[])
+      : ['January','February','March','April','May','June','July','August','September','October','November','December']
+  }, [t, locale])
   const weekdayNames = useMemo(() => {
-    try {
-      const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short' })
-      // Monday..Sunday
-      return [1,2,3,4,5,6,7].map(d => fmt.format(new Date(2024, 0, d)))
-    } catch {
-      return ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-    }
-  }, [locale])
+    const arr = t('calendar.weekdaysShort', { returnObjects: true }) as unknown
+    return Array.isArray(arr) && arr.length === 7
+      ? (arr as string[])
+      : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+  }, [t, locale])
   const { toast } = useToast()
   const [items, setItems] = useState<Reminder[]>([])
   const [loading, setLoading] = useState(true)
@@ -226,7 +221,7 @@ const Scheduling = () => {
   )
   const dayItems = (byDate.get(selected) ?? []).sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''))
 
-  const monthLabel = formatMonthYear(cursor, locale)
+  const monthLabel = `${monthNames[cursor.getMonth()]} ${cursor.getFullYear()}`
 
   return (
     <div className="space-y-6">
