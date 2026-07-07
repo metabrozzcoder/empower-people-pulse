@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '@/integrations/supabase/client'
 import { formatDate } from '@/lib/date'
 
