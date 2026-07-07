@@ -450,6 +450,7 @@ export default function UserManagement() {
           allowedSections: selectedSections,
           sectionAccess: [],
           birthday: formData.birthday || undefined,
+          avatar: avatarUrl || undefined,
         } as any)
         toast({
           title: "User Updated Successfully",
