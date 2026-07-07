@@ -53,9 +53,9 @@ const Index = () => {
   }
 
   const quickActions = [
-    { key: 'chat' as const, title: t('pages.dashboard.quickActions.chat'), description: t('pages.dashboard.quickActions.chatDesc'), icon: MessageCircle, href: '/chat', color: 'bg-blue-50 text-blue-600 border-blue-200', count: Math.max(0, chatUnread - seenChat), rawCount: chatUnread },
-    { key: 'cal' as const, title: t('pages.dashboard.quickActions.calendar'), description: t('pages.dashboard.quickActions.calendarDesc'), icon: Calendar, href: '/scheduling', color: 'bg-green-50 text-green-600 border-green-200', count: Math.max(0, calendarCount - seenCal), rawCount: calendarCount },
-    { key: 'tasks' as const, title: t('pages.dashboard.quickActions.tasks'), description: t('pages.dashboard.quickActions.tasksDesc'), icon: CheckSquare, href: '/tasks', color: 'bg-purple-50 text-purple-600 border-purple-200', count: Math.max(0, tasksOpen - seenTasks), rawCount: tasksOpen },
+    { key: 'chat' as const, title: t('pages.dashboard.quickActions.chat'), description: t('pages.dashboard.quickActions.chatDesc'), icon: MessageCircle, href: '/chat', color: 'bg-blue-500/10 text-blue-400 ring-blue-500/20', glow: 'from-blue-500 to-indigo-600', count: Math.max(0, chatUnread - seenChat), rawCount: chatUnread },
+    { key: 'cal' as const, title: t('pages.dashboard.quickActions.calendar'), description: t('pages.dashboard.quickActions.calendarDesc'), icon: Calendar, href: '/scheduling', color: 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20', glow: 'from-emerald-500 to-teal-600', count: Math.max(0, calendarCount - seenCal), rawCount: calendarCount },
+    { key: 'tasks' as const, title: t('pages.dashboard.quickActions.tasks'), description: t('pages.dashboard.quickActions.tasksDesc'), icon: CheckSquare, href: '/tasks', color: 'bg-purple-500/10 text-purple-400 ring-purple-500/20', glow: 'from-purple-500 to-pink-600', count: Math.max(0, tasksOpen - seenTasks), rawCount: tasksOpen },
   ]
 
   useEffect(() => {
@@ -200,29 +200,41 @@ const Index = () => {
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-3">
         {quickActions.map((action, index) => (
-          <Card 
-            key={index} 
-            className="relative hover:shadow-md transition-shadow cursor-pointer"
+          <button
+            key={index}
+            className="group relative w-full text-left outline-none"
             onClick={() => ackAndGo(action.key, action.rawCount, action.href)}
           >
-            {action.count > 0 && (
-              <Badge
-                variant="destructive"
-                className="absolute top-2 right-2 min-w-[1.5rem] h-6 px-1.5 flex items-center justify-center rounded-full text-xs font-semibold shadow-md"
-              >
-                {action.count > 99 ? '99+' : action.count}
-              </Badge>
-            )}
-            <CardContent className="flex items-center p-6">
-              <div className={`p-3 rounded-lg ${action.color} mr-4`}>
-                <action.icon className="h-6 w-6" />
+            {/* Outer glow */}
+            <div className={`absolute -inset-0.5 rounded-3xl bg-gradient-to-r ${action.glow} opacity-0 blur-xl transition duration-500 group-hover:opacity-30 group-focus:opacity-30`} />
+            {/* Card body */}
+            <div className="relative flex items-center gap-5 rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-2xl transition-all duration-300 group-hover:border-white/20 group-hover:bg-white/[0.08] group-active:scale-[0.98]">
+              {action.count > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute top-3 right-3 min-w-[1.5rem] h-6 px-1.5 flex items-center justify-center rounded-full text-xs font-semibold shadow-md z-20"
+                >
+                  {action.count > 99 ? '99+' : action.count}
+                </Badge>
+              )}
+              {/* Icon container */}
+              <div className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${action.color} ring-1 ring-white/10`}>
+                <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${action.glow} opacity-10 blur-md transition-opacity group-hover:opacity-20`} />
+                <action.icon className="relative h-7 w-7 transition-transform duration-300 group-hover:scale-110" />
               </div>
-              <div>
-                <h3 className="font-semibold">{action.title}</h3>
-                <p className="text-sm text-muted-foreground">{action.description}</p>
+              {/* Text content */}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground">{action.title}</h3>
+                <p className="text-sm text-muted-foreground transition-colors group-hover:text-foreground/80">{action.description}</p>
               </div>
-            </CardContent>
-          </Card>
+              {/* Hover arrow */}
+              <div className="opacity-0 transition-all duration-300 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0">
+                <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          </button>
         ))}
       </div>
 
