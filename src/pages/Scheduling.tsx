@@ -287,7 +287,7 @@ const Scheduling = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-7 text-xs text-muted-foreground mb-2">
-              {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => <div key={d} className="text-center py-1">{d}</div>)}
+              {weekdayNames.map(d => <div key={d} className="text-center py-1">{d}</div>)}
             </div>
             <div className="grid grid-cols-7 gap-1">
               {grid.map((d, idx) => {
