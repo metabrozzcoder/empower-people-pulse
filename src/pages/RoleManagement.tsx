@@ -176,7 +176,16 @@ export default function RoleManagement() {
                   <div>
                     <CardTitle>{r.name}</CardTitle>
                     <div className="flex gap-2 mt-1 flex-wrap">
-                      <Badge variant="outline"><Users className="w-3 h-3 mr-1" />{(assignments.get(r.id) ?? []).length}</Badge>
+                      <Badge
+                        variant="outline"
+                        className="cursor-pointer hover:bg-accent"
+                        onClick={(e) => { e.stopPropagation(); setViewRole(r.id) }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViewRole(r.id) } }}
+                      >
+                        <Users className="w-3 h-3 mr-1" />{(assignments.get(r.id) ?? []).length}
+                      </Badge>
                       {r.workflow_slot && <Badge variant="secondary">{r.workflow_slot}</Badge>}
                     </div>
                   </div>
