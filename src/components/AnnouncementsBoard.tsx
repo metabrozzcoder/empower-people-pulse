@@ -161,10 +161,10 @@ export function AnnouncementsBoard() {
             {items.map((a) => (
               <div
                 key={a.id}
-                className="group relative overflow-hidden rounded-xl border border-white/10 bg-announcement-gradient p-5 shadow-2xl transition-all hover:border-blue-500/50 hover:shadow-blue-500/10"
+                className="group relative overflow-hidden rounded-xl border border-primary/10 bg-announcement-gradient p-5 shadow-2xl transition-all hover:border-primary/50 hover:shadow-primary/10"
               >
                 <div className="absolute left-0 top-0 h-full w-1 announcement-accent" />
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.05),transparent_50%)]" />
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.05),transparent_50%)]" />
                 <div className="relative flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -174,7 +174,7 @@ export function AnnouncementsBoard() {
                           {t("pages.dashboard.announcements.pinned", "Pinned")}
                         </Badge>
                       )}
-                      <h4 className="text-sm font-bold tracking-wider uppercase bg-gradient-to-r from-blue-300 via-white to-blue-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]">
+                      <h4 className="text-sm font-bold tracking-wider uppercase bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent dark:drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]">
                         {a.title}
                       </h4>
                     </div>
