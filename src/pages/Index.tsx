@@ -53,9 +53,9 @@ const Index = () => {
   }
 
   const quickActions = [
-    { key: 'chat' as const, title: t('pages.dashboard.quickActions.chat'), description: t('pages.dashboard.quickActions.chatDesc'), icon: MessageCircle, href: '/chat', color: 'bg-blue-50 text-blue-600 border-blue-200', count: Math.max(0, chatUnread - seenChat), rawCount: chatUnread },
-    { key: 'cal' as const, title: t('pages.dashboard.quickActions.calendar'), description: t('pages.dashboard.quickActions.calendarDesc'), icon: Calendar, href: '/scheduling', color: 'bg-green-50 text-green-600 border-green-200', count: Math.max(0, calendarCount - seenCal), rawCount: calendarCount },
-    { key: 'tasks' as const, title: t('pages.dashboard.quickActions.tasks'), description: t('pages.dashboard.quickActions.tasksDesc'), icon: CheckSquare, href: '/tasks', color: 'bg-purple-50 text-purple-600 border-purple-200', count: Math.max(0, tasksOpen - seenTasks), rawCount: tasksOpen },
+    { key: 'chat' as const, title: t('pages.dashboard.quickActions.chat'), description: t('pages.dashboard.quickActions.chatDesc'), icon: MessageCircle, href: '/chat', color: 'bg-blue-500/10 text-blue-400 ring-blue-500/20', glow: 'from-blue-500 to-indigo-600', count: Math.max(0, chatUnread - seenChat), rawCount: chatUnread },
+    { key: 'cal' as const, title: t('pages.dashboard.quickActions.calendar'), description: t('pages.dashboard.quickActions.calendarDesc'), icon: Calendar, href: '/scheduling', color: 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20', glow: 'from-emerald-500 to-teal-600', count: Math.max(0, calendarCount - seenCal), rawCount: calendarCount },
+    { key: 'tasks' as const, title: t('pages.dashboard.quickActions.tasks'), description: t('pages.dashboard.quickActions.tasksDesc'), icon: CheckSquare, href: '/tasks', color: 'bg-purple-500/10 text-purple-400 ring-purple-500/20', glow: 'from-purple-500 to-pink-600', count: Math.max(0, tasksOpen - seenTasks), rawCount: tasksOpen },
   ]
 
   useEffect(() => {
