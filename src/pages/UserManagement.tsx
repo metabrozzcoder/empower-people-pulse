@@ -142,6 +142,8 @@ export default function UserManagement() {
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [selectedAccessRules, setSelectedAccessRules] = useState<string[]>([])
   const [generatedCredentials, setGeneratedCredentials] = useState({ username: '', password: '', guestId: '' })
+  const [avatarUrl, setAvatarUrl] = useState<string>('')
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(true)
   const [orgOptions, setOrgOptions] = useState<string[]>([])
@@ -362,6 +364,7 @@ export default function UserManagement() {
     })
     setSelectedSections(user.allowedSections || [])
     setGeneratedCredentials({ username: user.email || user.username, password: user.generatedPassword || '', guestId: user.guestId || '' })
+    setAvatarUrl((user as any).avatar || '')
     // Load any existing custom role assignment for this user
     supabase.from('user_custom_roles').select('custom_role_id').eq('user_id', user.id).maybeSingle()
       .then(({ data }) => setCustomRoleId((data as any)?.custom_role_id ?? ''))
@@ -447,6 +450,7 @@ export default function UserManagement() {
           allowedSections: selectedSections,
           sectionAccess: [],
           birthday: formData.birthday || undefined,
+          avatar: avatarUrl || undefined,
         } as any)
         toast({
           title: "User Updated Successfully",
@@ -477,6 +481,7 @@ export default function UserManagement() {
         sectionAccess: [], // No restrictions by default
         allowedSections: selectedSections, // Granted sections
         birthday: formData.birthday || undefined,
+        avatar: avatarUrl || undefined,
       } as any
 
       try {
@@ -525,6 +530,29 @@ export default function UserManagement() {
     setSelectedSections([])
     setGeneratedCredentials({ username: '', password: '', guestId: '' })
     setCustomRoleId('')
+    setAvatarUrl('')
+  }
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Max 5MB.', variant: 'destructive' })
+      return
+    }
+    setUploadingAvatar(true)
+    try {
+      const ext = file.name.split('.').pop() || 'png'
+      const path = `${selectedUser?.id ?? 'new'}/${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type })
+      if (upErr) throw upErr
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      setAvatarUrl(data.publicUrl)
+      toast({ title: 'Avatar uploaded' })
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e?.message || 'Try again', variant: 'destructive' })
+    } finally {
+      setUploadingAvatar(false)
+    }
   }
 
   const exportUserList = () => {
@@ -889,6 +917,47 @@ export default function UserManagement() {
           </DialogHeader>
           
           <div className="space-y-6">
+            {/* Avatar */}
+            <div className="flex items-center gap-4">
+              <Avatar className="w-20 h-20">
+                <AvatarImage src={avatarUrl} />
+                <AvatarFallback className="text-lg">
+                  {(formData.name?.[0] || '?') + (formData.surname?.[0] || '')}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col gap-2">
+                <Label>Profile Picture</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) handleAvatarUpload(f)
+                      e.target.value = ''
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={uploadingAvatar}
+                    onClick={() => document.getElementById('avatar-upload')?.click()}
+                  >
+                    {uploadingAvatar ? 'Uploading…' : avatarUrl ? 'Change photo' : 'Upload photo'}
+                  </Button>
+                  {avatarUrl && (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setAvatarUrl('')}>
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">PNG or JPG, up to 5MB.</p>
+              </div>
+            </div>
+
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Basic Information</h3>
