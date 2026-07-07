@@ -98,12 +98,12 @@ const Index = () => {
       })
       setUpcomingEvents(list)
     })()
-    ;(async () => {
+    const loadCounts = async () => {
       const { data: auth } = await supabase.auth.getUser()
       const uid = auth.user?.id
       if (!uid) return
 
-      // Chat unread: messages in my conversations not sent by me and not read
+      // Chat unread
       const { data: mems } = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid)
       const convIds = (mems ?? []).map((m: any) => m.conversation_id)
       if (convIds.length > 0) {
@@ -114,14 +114,16 @@ const Index = () => {
           .neq('sender_id', uid)
           .is('read_at', null)
         setChatUnread(count ?? 0)
+      } else {
+        setChatUnread(0)
       }
 
-      // Tasks: open (not done) assigned to me OR created by me
+      // Tasks: open assigned to me OR created by me
       const { count: tCount } = await supabase
         .from('tasks')
         .select('id', { count: 'exact', head: true })
         .neq('status', 'done')
-        .or(`assigned_to.eq.${uid},created_by.eq.${uid}`)
+        .or(`assignee_id.eq.${uid},created_by.eq.${uid}`)
       setTasksOpen(tCount ?? 0)
 
       // Calendar: upcoming reminders (today onwards)
@@ -132,8 +134,36 @@ const Index = () => {
         .eq('user_id', uid)
         .gte('date', today)
       setCalendarCount(rCount ?? 0)
+    }
+    loadCounts()
+
+    // Refresh on focus / visibility change so counts update after returning from Chat/Tasks
+    const onFocus = () => loadCounts()
+    const onVisibility = () => { if (document.visibilityState === 'visible') loadCounts() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisibility)
+
+    // Realtime: listen for message read/insert + task changes
+    let channel: any
+    ;(async () => {
+      const { data: auth } = await supabase.auth.getUser()
+      const uid = auth.user?.id
+      if (!uid) return
+      channel = supabase
+        .channel(`dashboard-counts-${uid}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => loadCounts())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadCounts())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, () => loadCounts())
+        .subscribe()
     })()
+
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisibility)
+      if (channel) supabase.removeChannel(channel)
+    }
   }, [t])
+
 
 
   
