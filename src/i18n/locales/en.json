@@ -320,7 +320,7 @@
       }
     },
     "shootingRequests": { "title": "Shooting Requests", "subtitle": "Manage media shooting requests." },
-    "recruitment": { "title": "AI-Powered Recruitment", "subtitle": "Streamline your hiring process with intelligent candidate screening and comprehensive management." },
+    "recruitment": { "title": "AI-Powered Recruitment", "subtitle": "Streamline your hiring process with intelligent candidate screening and comprehensive management.", "sourceBreakdown": "Source Breakdown", "sourceBreakdownDesc": "Where candidates come from", "noCandidatesYet": "No candidates yet." },
     "garage": {
       "title": "Drivers & Garage",
       "subtitle": "Manage vehicles, log trips and bind to shooting requests",
