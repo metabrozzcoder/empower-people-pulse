@@ -69,7 +69,23 @@ export function formatTime(v?: unknown): string {
   return `${String(h).padStart(2, '0')}:${mi}`
 }
 
-export function formatMonthYear(v?: unknown): string {
+export function getCurrentLocale(): string {
+  if (typeof document !== 'undefined') {
+    const l = document.documentElement.getAttribute('lang')
+    if (l) return l
+  }
+  if (typeof window !== 'undefined') {
+    const l = window.localStorage.getItem('app_language')
+    if (l) return l
+  }
+  return 'en'
+}
+
+export function formatMonthYear(v?: unknown, locale: string = getCurrentLocale()): string {
   const d = toDate(v); if (!d) return '—'
-  return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+  try {
+    return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(d)
+  } catch {
+    return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+  }
 }
