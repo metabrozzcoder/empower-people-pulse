@@ -412,7 +412,10 @@
       "slotShootingModerator": "Shooting Moderator",
       "slotDirector": "Director",
       "slotTechSupply": "Tech Supply",
-      "slotDriver": "Driver"
+      "slotDriver": "Driver",
+      "viewAssigners": "Assigners",
+      "assignersDescription": "Users assigned to this custom role.",
+      "noAssigners": "No users assigned."
     }
   },
   "languages": {

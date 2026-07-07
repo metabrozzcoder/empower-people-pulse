@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Shield, Plus, Search, Edit, Trash2, Users, Settings } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -68,6 +69,7 @@ export default function CustomRolesBox() {
   const [perms, setPerms] = useState<string[]>([])
   const [sections, setSections] = useState<string[]>([])
   const [selUsers, setSelUsers] = useState<string[]>([])
+  const [viewRole, setViewRole] = useState<string | null>(null)
 
   const load = async () => {
     const [{ data: r }, { data: ucr }] = await Promise.all([
@@ -195,7 +197,16 @@ export default function CustomRolesBox() {
                     <div>
                       <CardTitle className="text-base">{r.name}</CardTitle>
                       <div className="flex gap-2 mt-1 flex-wrap">
-                        <Badge variant="outline" className="text-xs"><Users className="w-3 h-3 mr-1" />{(assignments.get(r.id) ?? []).length}</Badge>
+                        <Badge
+                          variant="outline"
+                          className="text-xs cursor-pointer hover:bg-accent"
+                          onClick={(e) => { e.stopPropagation(); setViewRole(r.id) }}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViewRole(r.id) } }}
+                        >
+                          <Users className="w-3 h-3 mr-1" />{(assignments.get(r.id) ?? []).length}
+                        </Badge>
                         {r.workflow_slot && <Badge variant="secondary" className="text-xs">{r.workflow_slot}</Badge>}
                       </div>
                     </div>
@@ -276,6 +287,33 @@ export default function CustomRolesBox() {
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={() => setOpen(false)}>{t('pages.customRoles.cancel')}</Button>
             <Button onClick={save}>{editing ? t('pages.customRoles.update') : t('pages.customRoles.create')}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewRole} onOpenChange={(open) => { if (!open) setViewRole(null) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('pages.customRoles.viewAssigners')} — {roles.find(r => r.id === viewRole)?.name}</DialogTitle>
+            <DialogDescription>{t('pages.customRoles.assignersDescription')}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto py-2">
+            {(() => {
+              const role = roles.find(r => r.id === viewRole)
+              const assigned = role ? (assignments.get(role.id) ?? []).map(uid => users.find(u => u.id === uid)).filter((u): u is typeof users[0] => !!u) : []
+              return assigned.length ? assigned.map(u => (
+                <div key={u.id} className="flex items-center gap-3 p-2 rounded-lg border">
+                  <Avatar className="w-9 h-9">
+                    <AvatarImage src={u.avatar} alt={u.name} />
+                    <AvatarFallback>{u.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{u.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                  </div>
+                </div>
+              )) : <p className="text-sm text-muted-foreground text-center py-6">{t('pages.customRoles.noAssigners')}</p>
+            })()}
           </div>
         </DialogContent>
       </Dialog>
