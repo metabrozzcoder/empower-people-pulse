@@ -254,6 +254,21 @@ export default function Employees() {
         ...(employeeData.email ? { email: employeeData.email } : {}),
       }).eq('profile_id', res.id)
     }
+    // Ensure the department exists under the selected organization so it shows up on Organizations page
+    if (employeeData.department && employeeData.organizationId) {
+      const { data: existingDept } = await supabase
+        .from('departments')
+        .select('id')
+        .eq('organization_id', employeeData.organizationId)
+        .ilike('name', employeeData.department.trim())
+        .maybeSingle()
+      if (!existingDept) {
+        await supabase.from('departments').insert({
+          name: employeeData.department.trim(),
+          organization_id: employeeData.organizationId,
+          status: 'Active',
+        })
+      }
     setCreatedCreds({ name: fullName, email: res.email, username: res.username, password: res.password })
     toast({ title: "Employee Added", description: `${fullName} has been created with login credentials.` })
     setIsAddDialogOpen(false)
