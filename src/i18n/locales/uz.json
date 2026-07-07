@@ -412,7 +412,10 @@
       "slotShootingModerator": "Suratga olish moderatori",
       "slotDirector": "Rejissyor",
       "slotTechSupply": "Texnik ta'minot",
-      "slotDriver": "Haydovchi"
+      "slotDriver": "Haydovchi",
+      "viewAssigners": "Tayinlanganlar",
+      "assignersDescription": "Ushbu maxsus roldagi foydalanuvchilar.",
+      "noAssigners": "Tayinlangan foydalanuvchilar yo'q."
     }
   },
   "languages": {

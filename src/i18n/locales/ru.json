@@ -412,7 +412,10 @@
       "slotShootingModerator": "Модератор съёмки",
       "slotDirector": "Режиссёр",
       "slotTechSupply": "Тех. снабжение",
-      "slotDriver": "Водитель"
+      "slotDriver": "Водитель",
+      "viewAssigners": "Назначенные",
+      "assignersDescription": "Пользователи, назначенные на эту роль.",
+      "noAssigners": "Нет назначенных пользователей."
     }
   },
   "languages": {
