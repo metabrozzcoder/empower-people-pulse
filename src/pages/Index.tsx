@@ -32,11 +32,14 @@ const Index = () => {
   const { t } = useTranslation()
   const [birthdayEmployees, setBirthdayEmployees] = useState<BirthdayEmp[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([])
+  const [chatUnread, setChatUnread] = useState(0)
+  const [tasksOpen, setTasksOpen] = useState(0)
+  const [calendarCount, setCalendarCount] = useState(0)
 
   const quickActions = [
-    { title: t('pages.dashboard.quickActions.chat'), description: t('pages.dashboard.quickActions.chatDesc'), icon: MessageCircle, href: '/chat', color: 'bg-blue-50 text-blue-600 border-blue-200' },
-    { title: t('pages.dashboard.quickActions.calendar'), description: t('pages.dashboard.quickActions.calendarDesc'), icon: Calendar, href: '/scheduling', color: 'bg-green-50 text-green-600 border-green-200' },
-    { title: t('pages.dashboard.quickActions.tasks'), description: t('pages.dashboard.quickActions.tasksDesc'), icon: CheckSquare, href: '/tasks', color: 'bg-purple-50 text-purple-600 border-purple-200' },
+    { title: t('pages.dashboard.quickActions.chat'), description: t('pages.dashboard.quickActions.chatDesc'), icon: MessageCircle, href: '/chat', color: 'bg-blue-50 text-blue-600 border-blue-200', count: chatUnread },
+    { title: t('pages.dashboard.quickActions.calendar'), description: t('pages.dashboard.quickActions.calendarDesc'), icon: Calendar, href: '/scheduling', color: 'bg-green-50 text-green-600 border-green-200', count: calendarCount },
+    { title: t('pages.dashboard.quickActions.tasks'), description: t('pages.dashboard.quickActions.tasksDesc'), icon: CheckSquare, href: '/tasks', color: 'bg-purple-50 text-purple-600 border-purple-200', count: tasksOpen },
   ]
 
   useEffect(() => {
@@ -95,7 +98,46 @@ const Index = () => {
       })
       setUpcomingEvents(list)
     })()
+    ;(async () => {
+      const { data: auth } = await supabase.auth.getUser()
+      const uid = auth.user?.id
+      if (!uid) return
+
+      // Chat unread: messages in my conversations not sent by me and not read
+      const { data: mems } = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid)
+      const convIds = (mems ?? []).map((m: any) => m.conversation_id)
+      if (convIds.length > 0) {
+        const { count } = await supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .in('conversation_id', convIds)
+          .neq('sender_id', uid)
+          .is('read_at', null)
+        setChatUnread(count ?? 0)
+      }
+
+      // Tasks: open (not done) assigned to me OR created by me
+      const { count: tCount } = await supabase
+        .from('tasks')
+        .select('id', { count: 'exact', head: true })
+        .neq('status', 'done')
+        .or(`assigned_to.eq.${uid},created_by.eq.${uid}`)
+      setTasksOpen(tCount ?? 0)
+
+      // Calendar: upcoming reminders (today onwards)
+      const today = format(new Date(), 'yyyy-MM-dd')
+      const { count: rCount } = await (supabase as any)
+        .from('reminders')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', uid)
+        .gte('date', today)
+      setCalendarCount(rCount ?? 0)
+    })()
   }, [t])
+
+
+  
+
 
 
   
@@ -114,9 +156,17 @@ const Index = () => {
         {quickActions.map((action, index) => (
           <Card 
             key={index} 
-            className="hover:shadow-md transition-shadow cursor-pointer"
+            className="relative hover:shadow-md transition-shadow cursor-pointer"
             onClick={() => navigate(action.href)}
           >
+            {action.count > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute top-2 right-2 min-w-[1.5rem] h-6 px-1.5 flex items-center justify-center rounded-full text-xs font-semibold shadow-md"
+              >
+                {action.count > 99 ? '99+' : action.count}
+              </Badge>
+            )}
             <CardContent className="flex items-center p-6">
               <div className={`p-3 rounded-lg ${action.color} mr-4`}>
                 <action.icon className="h-6 w-6" />
