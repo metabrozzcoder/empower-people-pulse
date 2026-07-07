@@ -133,6 +133,9 @@ const Index = () => {
         .gte('date', today)
       setCalendarCount(rCount ?? 0)
     })()
+  }, [t])
+
+
   
 
 
