@@ -98,7 +98,43 @@ const Index = () => {
       })
       setUpcomingEvents(list)
     })()
-  }, [t])
+    ;(async () => {
+      const { data: auth } = await supabase.auth.getUser()
+      const uid = auth.user?.id
+      if (!uid) return
+
+      // Chat unread: messages in my conversations not sent by me and not read
+      const { data: mems } = await supabase.from('conversation_members').select('conversation_id').eq('user_id', uid)
+      const convIds = (mems ?? []).map((m: any) => m.conversation_id)
+      if (convIds.length > 0) {
+        const { count } = await supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .in('conversation_id', convIds)
+          .neq('sender_id', uid)
+          .is('read_at', null)
+        setChatUnread(count ?? 0)
+      }
+
+      // Tasks: open (not done) assigned to me OR created by me
+      const { count: tCount } = await supabase
+        .from('tasks')
+        .select('id', { count: 'exact', head: true })
+        .neq('status', 'done')
+        .or(`assigned_to.eq.${uid},created_by.eq.${uid}`)
+      setTasksOpen(tCount ?? 0)
+
+      // Calendar: upcoming reminders (today onwards)
+      const today = format(new Date(), 'yyyy-MM-dd')
+      const { count: rCount } = await (supabase as any)
+        .from('reminders')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', uid)
+        .gte('date', today)
+      setCalendarCount(rCount ?? 0)
+    })()
+  
+
 
 
   
