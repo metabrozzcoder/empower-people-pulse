@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '@/integrations/supabase/client'
 import { formatDate } from '@/lib/date'
 
@@ -79,6 +80,7 @@ const emptyJob = {
 
 export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: RecruitmentEnhancedProps) {
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
@@ -725,10 +727,10 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
             </Card>
           </div>
           <Card>
-            <CardHeader><CardTitle>Source Breakdown</CardTitle><CardDescription>Where candidates come from</CardDescription></CardHeader>
+            <CardHeader><CardTitle>{t('pages.recruitment.sourceBreakdown')}</CardTitle><CardDescription>{t('pages.recruitment.sourceBreakdownDesc')}</CardDescription></CardHeader>
             <CardContent>
               {sourceStats.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No candidates yet.</p>
+                <p className="text-sm text-muted-foreground">{t('pages.recruitment.noCandidatesYet')}</p>
               ) : (
                 <div className="space-y-4">
                   {sourceStats.map(i => (
