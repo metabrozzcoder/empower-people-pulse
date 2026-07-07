@@ -255,6 +255,9 @@ export const ru: Record<string, string> = {
   "Shortlist": "Шортлист", "Hire": "Нанять", "LinkedIn": "LinkedIn", "Company Website": "Сайт компании",
   "Referrals": "Рекомендации", "Job Boards": "Сайты вакансий",
 
+  // Notifications
+  "Enable notifications": "Включить уведомления", "Notifications on": "Уведомления включены",
+
   // Uploads / async
   "Uploading…": "Загрузка…", "Updating…": "Обновление…",
   "Passwords don't match": "Пароли не совпадают",
