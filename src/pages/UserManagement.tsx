@@ -917,6 +917,47 @@ export default function UserManagement() {
           </DialogHeader>
           
           <div className="space-y-6">
+            {/* Avatar */}
+            <div className="flex items-center gap-4">
+              <Avatar className="w-20 h-20">
+                <AvatarImage src={avatarUrl} />
+                <AvatarFallback className="text-lg">
+                  {(formData.name?.[0] || '?') + (formData.surname?.[0] || '')}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col gap-2">
+                <Label>Profile Picture</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) handleAvatarUpload(f)
+                      e.target.value = ''
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={uploadingAvatar}
+                    onClick={() => document.getElementById('avatar-upload')?.click()}
+                  >
+                    {uploadingAvatar ? 'Uploading…' : avatarUrl ? 'Change photo' : 'Upload photo'}
+                  </Button>
+                  {avatarUrl && (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setAvatarUrl('')}>
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">PNG or JPG, up to 5MB.</p>
+              </div>
+            </div>
+
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Basic Information</h3>
