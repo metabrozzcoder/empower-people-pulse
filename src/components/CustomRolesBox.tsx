@@ -69,6 +69,7 @@ export default function CustomRolesBox() {
   const [perms, setPerms] = useState<string[]>([])
   const [sections, setSections] = useState<string[]>([])
   const [selUsers, setSelUsers] = useState<string[]>([])
+  const [viewRole, setViewRole] = useState<string | null>(null)
 
   const load = async () => {
     const [{ data: r }, { data: ucr }] = await Promise.all([
