@@ -364,6 +364,7 @@ export default function UserManagement() {
     })
     setSelectedSections(user.allowedSections || [])
     setGeneratedCredentials({ username: user.email || user.username, password: user.generatedPassword || '', guestId: user.guestId || '' })
+    setAvatarUrl((user as any).avatar || '')
     // Load any existing custom role assignment for this user
     supabase.from('user_custom_roles').select('custom_role_id').eq('user_id', user.id).maybeSingle()
       .then(({ data }) => setCustomRoleId((data as any)?.custom_role_id ?? ''))
