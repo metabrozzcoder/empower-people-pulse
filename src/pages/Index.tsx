@@ -32,11 +32,14 @@ const Index = () => {
   const { t } = useTranslation()
   const [birthdayEmployees, setBirthdayEmployees] = useState<BirthdayEmp[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([])
+  const [chatUnread, setChatUnread] = useState(0)
+  const [tasksOpen, setTasksOpen] = useState(0)
+  const [calendarCount, setCalendarCount] = useState(0)
 
   const quickActions = [
-    { title: t('pages.dashboard.quickActions.chat'), description: t('pages.dashboard.quickActions.chatDesc'), icon: MessageCircle, href: '/chat', color: 'bg-blue-50 text-blue-600 border-blue-200' },
-    { title: t('pages.dashboard.quickActions.calendar'), description: t('pages.dashboard.quickActions.calendarDesc'), icon: Calendar, href: '/scheduling', color: 'bg-green-50 text-green-600 border-green-200' },
-    { title: t('pages.dashboard.quickActions.tasks'), description: t('pages.dashboard.quickActions.tasksDesc'), icon: CheckSquare, href: '/tasks', color: 'bg-purple-50 text-purple-600 border-purple-200' },
+    { title: t('pages.dashboard.quickActions.chat'), description: t('pages.dashboard.quickActions.chatDesc'), icon: MessageCircle, href: '/chat', color: 'bg-blue-50 text-blue-600 border-blue-200', count: chatUnread },
+    { title: t('pages.dashboard.quickActions.calendar'), description: t('pages.dashboard.quickActions.calendarDesc'), icon: Calendar, href: '/scheduling', color: 'bg-green-50 text-green-600 border-green-200', count: calendarCount },
+    { title: t('pages.dashboard.quickActions.tasks'), description: t('pages.dashboard.quickActions.tasksDesc'), icon: CheckSquare, href: '/tasks', color: 'bg-purple-50 text-purple-600 border-purple-200', count: tasksOpen },
   ]
 
   useEffect(() => {
