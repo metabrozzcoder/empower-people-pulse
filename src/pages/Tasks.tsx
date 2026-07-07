@@ -214,7 +214,38 @@ const Tasks = () => {
                 <Badge className={statusColor(t.status)}>{labelize(t.status ?? 'todo')}</Badge>
                 <Badge variant="outline">{labelize(t.priority ?? 'medium')}</Badge>
                 {projectName(t.project_id) && <Badge variant="secondary">{projectName(t.project_id)}</Badge>}
-                {profileName(t.assignee_id) && <span className="text-muted-foreground">@{profileName(t.assignee_id)}</span>}
+                {profileName(t.assignee_id) && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="rounded-full ring-1 ring-border hover:ring-primary transition"
+                        aria-label={`Assignee ${profileName(t.assignee_id)}`}
+                      >
+                        <Avatar className="w-6 h-6">
+                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                            {profileName(t.assignee_id)!.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-3" align="start">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {profileName(t.assignee_id)!.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <div className="text-xs text-muted-foreground flex items-center gap-1">
+                            <User className="w-3 h-3" /> Assignee
+                          </div>
+                          <div className="text-sm font-medium truncate">{profileName(t.assignee_id)}</div>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
                 {t.due_date && <span className="flex items-center gap-1 text-muted-foreground"><Calendar className="w-3 h-3" />{formatDate(t.due_date)}</span>}
                 {t.tags?.map((tag, i) => <span key={i} className="px-2 py-0.5 bg-muted rounded">{tag}</span>)}
               </CardContent>
