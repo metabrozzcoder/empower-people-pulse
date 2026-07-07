@@ -530,6 +530,29 @@ export default function UserManagement() {
     setSelectedSections([])
     setGeneratedCredentials({ username: '', password: '', guestId: '' })
     setCustomRoleId('')
+    setAvatarUrl('')
+  }
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Max 5MB.', variant: 'destructive' })
+      return
+    }
+    setUploadingAvatar(true)
+    try {
+      const ext = file.name.split('.').pop() || 'png'
+      const path = `${selectedUser?.id ?? 'new'}/${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type })
+      if (upErr) throw upErr
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      setAvatarUrl(data.publicUrl)
+      toast({ title: 'Avatar uploaded' })
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e?.message || 'Try again', variant: 'destructive' })
+    } finally {
+      setUploadingAvatar(false)
+    }
   }
 
   const exportUserList = () => {
