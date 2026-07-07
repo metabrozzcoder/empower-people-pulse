@@ -118,6 +118,13 @@ All colors MUST be HSL.
   .shadow-glow {
     box-shadow: 0 0 0 1px hsl(var(--primary) / 0.1), 0 10px 30px -10px hsl(var(--primary) / 0.5);
   }
+  .bg-announcement-gradient {
+    background-image: linear-gradient(to bottom right, hsl(222 47% 11%), hsl(222 84% 5%), hsl(222 47% 11%));
+  }
+  .announcement-accent {
+    background-color: hsl(217 91% 60%);
+    box-shadow: 0 0 15px hsl(217 91% 60% / 0.5);
+  }
 
   @keyframes shimmer-slide {
     0% { transform: translateX(-100%); }
