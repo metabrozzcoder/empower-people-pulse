@@ -156,9 +156,17 @@ const Index = () => {
         {quickActions.map((action, index) => (
           <Card 
             key={index} 
-            className="hover:shadow-md transition-shadow cursor-pointer"
+            className="relative hover:shadow-md transition-shadow cursor-pointer"
             onClick={() => navigate(action.href)}
           >
+            {action.count > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute top-2 right-2 min-w-[1.5rem] h-6 px-1.5 flex items-center justify-center rounded-full text-xs font-semibold shadow-md"
+              >
+                {action.count > 99 ? '99+' : action.count}
+              </Badge>
+            )}
             <CardContent className="flex items-center p-6">
               <div className={`p-3 rounded-lg ${action.color} mr-4`}>
                 <action.icon className="h-6 w-6" />
