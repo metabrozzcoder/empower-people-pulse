@@ -727,10 +727,10 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
             </Card>
           </div>
           <Card>
-            <CardHeader><CardTitle>Source Breakdown</CardTitle><CardDescription>Where candidates come from</CardDescription></CardHeader>
+            <CardHeader><CardTitle>{t('pages.recruitment.sourceBreakdown')}</CardTitle><CardDescription>{t('pages.recruitment.sourceBreakdownDesc')}</CardDescription></CardHeader>
             <CardContent>
               {sourceStats.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No candidates yet.</p>
+                <p className="text-sm text-muted-foreground">{t('pages.recruitment.noCandidatesYet')}</p>
               ) : (
                 <div className="space-y-4">
                   {sourceStats.map(i => (
