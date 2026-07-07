@@ -174,7 +174,7 @@ export function AnnouncementsBoard() {
                           {t("pages.dashboard.announcements.pinned", "Pinned")}
                         </Badge>
                       )}
-                      <h4 className="text-sm font-bold tracking-wider uppercase text-primary-foreground">
+                      <h4 className="text-sm font-bold tracking-wider uppercase bg-gradient-to-r from-blue-300 via-white to-blue-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]">
                         {a.title}
                       </h4>
                     </div>
