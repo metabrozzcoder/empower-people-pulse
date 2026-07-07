@@ -481,6 +481,7 @@ export default function UserManagement() {
         sectionAccess: [], // No restrictions by default
         allowedSections: selectedSections, // Granted sections
         birthday: formData.birthday || undefined,
+        avatar: avatarUrl || undefined,
       } as any
 
       try {
