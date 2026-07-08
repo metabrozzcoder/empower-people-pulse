@@ -546,7 +546,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                               </div>
                               {c.skills.length > 0 && (
                                 <div className="flex flex-wrap gap-2">
-                                  {c.skills.map((s,i) => <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>)}
+                                  {c.skills.map((s,i) => <Badge key={i} variant="secondary" className="text-xs rounded-full px-2.5 py-0.5 font-medium shadow-sm">{s}</Badge>)}
                                 </div>
                               )}
                               {(c.assigned_to || c.review_decision) && (
