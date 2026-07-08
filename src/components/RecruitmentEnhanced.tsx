@@ -667,7 +667,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                             </div>
                             {job.requirements.length > 0 && (
                               <div className="flex flex-wrap gap-1">
-                                {job.requirements.map((r,i) => <Badge key={i} variant="outline" className="text-xs">{r}</Badge>)}
+                                {job.requirements.map((r,i) => <Badge key={i} variant="outline" className="text-xs rounded-full px-2.5 py-0.5 font-medium shadow-sm">{r}</Badge>)}
                               </div>
                             )}
                           </div>
