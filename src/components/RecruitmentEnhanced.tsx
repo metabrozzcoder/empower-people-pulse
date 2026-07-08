@@ -552,13 +552,13 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                               {(c.assigned_to || c.review_decision) && (
                                 <div className="flex items-center gap-2 flex-wrap text-xs">
                                   {c.assigned_to && (
-                                    <Badge variant="outline" className="gap-1">
+                                    <Badge variant="outline" className="gap-1 rounded-full px-2.5 py-0.5 font-medium shadow-sm">
                                       <UserCircle className="w-3 h-3" />
                                       Assigned to {profiles.find(p => p.id === c.assigned_to)?.name ?? 'reviewer'}
                                     </Badge>
                                   )}
-                                  {c.review_decision === 'approved' && <Badge className="bg-emerald-100 text-emerald-800">Reviewer approved</Badge>}
-                                  {c.review_decision === 'rejected' && <Badge className="bg-red-100 text-red-800">Reviewer rejected</Badge>}
+                                  {c.review_decision === 'approved' && <Badge className="bg-emerald-100 text-emerald-800 ring-1 ring-emerald-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm">Reviewer approved</Badge>}
+                                  {c.review_decision === 'rejected' && <Badge className="bg-red-100 text-red-800 ring-1 ring-red-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm">Reviewer rejected</Badge>}
                                 </div>
                               )}
                               {c.attachments?.length > 0 && (
