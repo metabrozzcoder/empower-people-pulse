@@ -100,11 +100,23 @@ const Profile = () => {
     performanceScore: 0
   }
 
+  const yearsOfService = (() => {
+    if (!currentUser?.createdDate) return "—"
+    const start = new Date(currentUser.createdDate)
+    if (isNaN(start.getTime())) return "—"
+    const diffMs = Date.now() - start.getTime()
+    const years = diffMs / (1000 * 60 * 60 * 24 * 365.25)
+    if (years >= 1) return `${years.toFixed(1)} yr`
+    const months = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30)))
+    return `${months} mo`
+  })()
+  const perfPct = liveStats.tasksTotal > 0 ? Math.round((liveStats.tasksDone / liveStats.tasksTotal) * 100) : 0
+
   const stats = [
-    { label: "Years of Service", value: "Not calculated", icon: Clock },
-    { label: "Performance Score", value: userProfile.performanceScore > 0 ? `${userProfile.performanceScore}%` : "Not evaluated", icon: TrendingUp },
-    { label: "Team Size", value: "Not assigned", icon: User },
-    { label: "Projects Completed", value: "Not tracked", icon: Award }
+    { label: "Years of Service", value: yearsOfService, icon: Clock },
+    { label: "Performance Score", value: liveStats.tasksTotal > 0 ? `${perfPct}%` : "—", icon: TrendingUp },
+    { label: "Team Size", value: currentUser?.department ? String(liveStats.team) : "—", icon: User },
+    { label: "Tasks Completed", value: `${liveStats.tasksDone}/${liveStats.tasksTotal}`, icon: Award }
   ]
 
   const recentAchievements = [
