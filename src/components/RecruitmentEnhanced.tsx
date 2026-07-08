@@ -156,14 +156,23 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
   const getScoreColor = (s: number) => s >= 90 ? 'text-green-600' : s >= 70 ? 'text-yellow-600' : 'text-red-600'
   const getStatusColor = (s: CandidateStatus) => {
     switch (s) {
-      case 'Applied': return 'bg-blue-100 text-blue-800'
-      case 'Shortlisted': return 'bg-green-100 text-green-800'
-      case 'Interview Scheduled': return 'bg-purple-100 text-purple-800'
-      case 'Interview Completed': return 'bg-yellow-100 text-yellow-800'
-      case 'Offered': return 'bg-orange-100 text-orange-800'
-      case 'Hired': return 'bg-emerald-100 text-emerald-800'
-      case 'Rejected': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'Applied': return 'bg-blue-100 text-blue-800 ring-1 ring-blue-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm'
+      case 'Shortlisted': return 'bg-green-100 text-green-800 ring-1 ring-green-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm'
+      case 'Interview Scheduled': return 'bg-purple-100 text-purple-800 ring-1 ring-purple-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm'
+      case 'Interview Completed': return 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm'
+      case 'Offered': return 'bg-orange-100 text-orange-800 ring-1 ring-orange-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm'
+      case 'Hired': return 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm'
+      case 'Rejected': return 'bg-red-100 text-red-800 ring-1 ring-red-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm'
+      default: return 'bg-gray-100 text-gray-800 ring-1 ring-gray-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm'
+    }
+  }
+
+  const getJobStatusColor = (s: string) => {
+    switch (s) {
+      case 'Active': return 'bg-green-100 text-green-800 ring-1 ring-green-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm'
+      case 'Paused': return 'bg-amber-100 text-amber-800 ring-1 ring-amber-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm'
+      case 'Closed': return 'bg-slate-100 text-slate-800 ring-1 ring-slate-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm'
+      default: return 'bg-gray-100 text-gray-800 ring-1 ring-gray-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm'
     }
   }
 
@@ -537,19 +546,19 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                               </div>
                               {c.skills.length > 0 && (
                                 <div className="flex flex-wrap gap-2">
-                                  {c.skills.map((s,i) => <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>)}
+                                  {c.skills.map((s,i) => <Badge key={i} variant="secondary" className="text-xs rounded-full px-2.5 py-0.5 font-medium shadow-sm">{s}</Badge>)}
                                 </div>
                               )}
                               {(c.assigned_to || c.review_decision) && (
                                 <div className="flex items-center gap-2 flex-wrap text-xs">
                                   {c.assigned_to && (
-                                    <Badge variant="outline" className="gap-1">
+                                    <Badge variant="outline" className="gap-1 rounded-full px-2.5 py-0.5 font-medium shadow-sm">
                                       <UserCircle className="w-3 h-3" />
                                       Assigned to {profiles.find(p => p.id === c.assigned_to)?.name ?? 'reviewer'}
                                     </Badge>
                                   )}
-                                  {c.review_decision === 'approved' && <Badge className="bg-emerald-100 text-emerald-800">Reviewer approved</Badge>}
-                                  {c.review_decision === 'rejected' && <Badge className="bg-red-100 text-red-800">Reviewer rejected</Badge>}
+                                  {c.review_decision === 'approved' && <Badge className="bg-emerald-100 text-emerald-800 ring-1 ring-emerald-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm">Reviewer approved</Badge>}
+                                  {c.review_decision === 'rejected' && <Badge className="bg-red-100 text-red-800 ring-1 ring-red-600/20 border-transparent rounded-full px-2.5 py-0.5 font-medium shadow-sm">Reviewer rejected</Badge>}
                                 </div>
                               )}
                               {c.attachments?.length > 0 && (
@@ -648,7 +657,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                           <div className="space-y-2 flex-1 min-w-[260px]">
                             <div className="flex items-center gap-3 flex-wrap">
                               <h3 className="font-semibold text-lg">{job.title}</h3>
-                              <Badge variant={job.status === 'Active' ? 'default' : 'secondary'}>{job.status}</Badge>
+                              <Badge className={getJobStatusColor(job.status)}>{job.status}</Badge>
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                               {job.department && <><span>{job.department}</span><span>•</span></>}
@@ -658,7 +667,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                             </div>
                             {job.requirements.length > 0 && (
                               <div className="flex flex-wrap gap-1">
-                                {job.requirements.map((r,i) => <Badge key={i} variant="outline" className="text-xs">{r}</Badge>)}
+                                {job.requirements.map((r,i) => <Badge key={i} variant="outline" className="text-xs rounded-full px-2.5 py-0.5 font-medium shadow-sm">{r}</Badge>)}
                               </div>
                             )}
                           </div>
