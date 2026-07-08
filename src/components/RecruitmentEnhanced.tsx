@@ -657,7 +657,7 @@ export function RecruitmentEnhanced({ onCandidateAction, onJobAction }: Recruitm
                           <div className="space-y-2 flex-1 min-w-[260px]">
                             <div className="flex items-center gap-3 flex-wrap">
                               <h3 className="font-semibold text-lg">{job.title}</h3>
-                              <Badge variant={job.status === 'Active' ? 'default' : 'secondary'}>{job.status}</Badge>
+                              <Badge className={getJobStatusColor(job.status)}>{job.status}</Badge>
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                               {job.department && <><span>{job.department}</span><span>•</span></>}
