@@ -1,5 +1,5 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useTranslation } from 'react-i18next'
 import { Badge } from "@/components/ui/badge"
@@ -28,6 +28,29 @@ const Profile = () => {
     department: '',
     avatar_url: '',
   })
+  const [liveStats, setLiveStats] = useState<{ team: number; tasksDone: number; tasksTotal: number }>({ team: 0, tasksDone: 0, tasksTotal: 0 })
+
+  useEffect(() => {
+    if (!currentUser?.id) return
+    let cancelled = false
+    ;(async () => {
+      const [teamRes, tasksRes] = await Promise.all([
+        currentUser.department
+          ? supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('department', currentUser.department)
+          : Promise.resolve({ count: 0 } as { count: number | null }),
+        supabase.from('tasks').select('status', { count: 'exact' }).eq('assignee_id', currentUser.id),
+      ])
+      if (cancelled) return
+      const tasks = (tasksRes as { data: { status: string | null }[] | null }).data ?? []
+      const done = tasks.filter(t => (t.status || '').toLowerCase() === 'done' || (t.status || '').toLowerCase() === 'completed').length
+      setLiveStats({
+        team: Math.max(0, ((teamRes as { count: number | null }).count ?? 0) - 1),
+        tasksDone: done,
+        tasksTotal: tasks.length,
+      })
+    })()
+    return () => { cancelled = true }
+  }, [currentUser?.id, currentUser?.department])
 
   const openEdit = () => {
     setForm({
@@ -77,11 +100,23 @@ const Profile = () => {
     performanceScore: 0
   }
 
+  const yearsOfService = (() => {
+    if (!currentUser?.createdDate) return "—"
+    const start = new Date(currentUser.createdDate)
+    if (isNaN(start.getTime())) return "—"
+    const diffMs = Date.now() - start.getTime()
+    const years = diffMs / (1000 * 60 * 60 * 24 * 365.25)
+    if (years >= 1) return `${years.toFixed(1)} yr`
+    const months = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30)))
+    return `${months} mo`
+  })()
+  const perfPct = liveStats.tasksTotal > 0 ? Math.round((liveStats.tasksDone / liveStats.tasksTotal) * 100) : 0
+
   const stats = [
-    { label: "Years of Service", value: "Not calculated", icon: Clock },
-    { label: "Performance Score", value: userProfile.performanceScore > 0 ? `${userProfile.performanceScore}%` : "Not evaluated", icon: TrendingUp },
-    { label: "Team Size", value: "Not assigned", icon: User },
-    { label: "Projects Completed", value: "Not tracked", icon: Award }
+    { label: "Years of Service", value: yearsOfService, icon: Clock },
+    { label: "Performance Score", value: liveStats.tasksTotal > 0 ? `${perfPct}%` : "—", icon: TrendingUp },
+    { label: "Team Size", value: currentUser?.department ? String(liveStats.team) : "—", icon: User },
+    { label: "Tasks Completed", value: `${liveStats.tasksDone}/${liveStats.tasksTotal}`, icon: Award }
   ]
 
   const recentAchievements = [
