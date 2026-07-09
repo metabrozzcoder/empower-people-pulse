@@ -38,7 +38,7 @@ export function EmployeeListItem({ employee, onCreateLogin }: EmployeeListItemPr
   return (
     <>
       <div
-        className="grid grid-cols-[48px_1fr] sm:grid-cols-[48px_1.5fr_1fr_100px] md:grid-cols-[48px_1.75fr_1.25fr_1fr_110px_120px_auto] gap-4 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0 items-center"
+        className="grid grid-cols-[48px_1fr] sm:grid-cols-[48px_1.5fr_1fr_130px] md:grid-cols-[48px_1.75fr_1.25fr_1fr_130px_140px_140px] gap-4 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0 items-center"
         onClick={() => setIsDetailOpen(true)}
       >
         <Avatar className="w-10 h-10 shrink-0">
