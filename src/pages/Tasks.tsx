@@ -158,6 +158,21 @@ const Tasks = () => {
     await load()
   }
 
+  const updateStatus = async (id: string, status: string) => {
+    setTasks(prev => prev.map(x => x.id === id ? { ...x, status } : x))
+    const { error } = await supabase.from('tasks').update({ status }).eq('id', id)
+    if (error) {
+      toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
+      await load()
+    } else {
+      toast({ title: `Moved to ${labelize(status)}` })
+    }
+  }
+  const nextStatus = (s: string | null) => {
+    const i = STATUSES.indexOf(s ?? 'todo')
+    return STATUSES[Math.min(i + 1, STATUSES.length - 1)]
+  }
+
   const projectName = (id: string | null) => projects.find(p => p.id === id)?.name
   const profileName = (id: string | null) => profiles.find(p => p.id === id)?.name
 
