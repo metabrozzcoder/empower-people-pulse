@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Plus, Edit, Trash2, Calendar, User } from 'lucide-react'
+import { Plus, Edit, Trash2, Calendar, User, Check, ChevronDown } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useToast } from '@/hooks/use-toast'
@@ -157,6 +158,21 @@ const Tasks = () => {
     await load()
   }
 
+  const updateStatus = async (id: string, status: string) => {
+    setTasks(prev => prev.map(x => x.id === id ? { ...x, status } : x))
+    const { error } = await supabase.from('tasks').update({ status }).eq('id', id)
+    if (error) {
+      toast({ title: 'Update failed', description: error.message, variant: 'destructive' })
+      await load()
+    } else {
+      toast({ title: `Moved to ${labelize(status)}` })
+    }
+  }
+  const nextStatus = (s: string | null) => {
+    const i = STATUSES.indexOf(s ?? 'todo')
+    return STATUSES[Math.min(i + 1, STATUSES.length - 1)]
+  }
+
   const projectName = (id: string | null) => projects.find(p => p.id === id)?.name
   const profileName = (id: string | null) => profiles.find(p => p.id === id)?.name
 
@@ -211,7 +227,34 @@ const Tasks = () => {
                 </div>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2 items-center text-xs">
-                <Badge className={statusColor(t.status)}>{labelize(t.status ?? 'todo')}</Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button type="button" className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium hover:opacity-80 transition ${statusColor(t.status)}`}>
+                      {labelize(t.status ?? 'todo')}
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {STATUSES.map(s => (
+                      <DropdownMenuItem key={s} onClick={() => updateStatus(t.id, s)}>
+                        <span className={`w-2 h-2 rounded-full mr-2 ${statusColor(s).split(' ')[0]}`} />
+                        {labelize(s)}
+                        {t.status === s && <Check className="w-3 h-3 ml-auto" />}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {t.status !== 'done' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 px-2 text-xs gap-1 border-green-500/40 text-green-700 hover:bg-green-500/10"
+                    onClick={() => updateStatus(t.id, nextStatus(t.status))}
+                  >
+                    <Check className="w-3 h-3" />
+                    {nextStatus(t.status) === 'done' ? 'Mark Done' : `→ ${labelize(nextStatus(t.status))}`}
+                  </Button>
+                )}
                 <Badge variant="outline">{labelize(t.priority ?? 'medium')}</Badge>
                 {projectName(t.project_id) && <Badge variant="secondary">{projectName(t.project_id)}</Badge>}
                 {profileName(t.assignee_id) && (
