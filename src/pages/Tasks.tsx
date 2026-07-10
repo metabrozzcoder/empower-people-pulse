@@ -227,7 +227,34 @@ const Tasks = () => {
                 </div>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2 items-center text-xs">
-                <Badge className={statusColor(t.status)}>{labelize(t.status ?? 'todo')}</Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button type="button" className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium hover:opacity-80 transition ${statusColor(t.status)}`}>
+                      {labelize(t.status ?? 'todo')}
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {STATUSES.map(s => (
+                      <DropdownMenuItem key={s} onClick={() => updateStatus(t.id, s)}>
+                        <span className={`w-2 h-2 rounded-full mr-2 ${statusColor(s).split(' ')[0]}`} />
+                        {labelize(s)}
+                        {t.status === s && <Check className="w-3 h-3 ml-auto" />}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {t.status !== 'done' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 px-2 text-xs gap-1 border-green-500/40 text-green-700 hover:bg-green-500/10"
+                    onClick={() => updateStatus(t.id, nextStatus(t.status))}
+                  >
+                    <Check className="w-3 h-3" />
+                    {nextStatus(t.status) === 'done' ? 'Mark Done' : `→ ${labelize(nextStatus(t.status))}`}
+                  </Button>
+                )}
                 <Badge variant="outline">{labelize(t.priority ?? 'medium')}</Badge>
                 {projectName(t.project_id) && <Badge variant="secondary">{projectName(t.project_id)}</Badge>}
                 {profileName(t.assignee_id) && (
