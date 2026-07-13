@@ -812,25 +812,49 @@ function FilePreview({ url, fileType, fileName }: { url: string | null; fileType
   const isPdf = ft === 'application/pdf' || name.endsWith('.pdf')
   const isOffice = /(word|excel|powerpoint|officedocument|msword|ms-excel|ms-powerpoint)/.test(ft) || /\.(docx?|xlsx?|pptx?)$/i.test(name)
 
+  const OpenInTab = (
+    <div className="mt-2 flex justify-end">
+      <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline underline-offset-2">
+        Open in new tab
+      </a>
+    </div>
+  )
+
   if (isImage) {
     return (
-      <div className="overflow-hidden rounded-md border bg-muted/30">
-        <img src={url} alt={fileName} className="mx-auto max-h-[500px] w-auto object-contain" />
+      <div>
+        <div className="overflow-hidden rounded-md border bg-muted/30">
+          <img src={url} alt={fileName} className="mx-auto max-h-[500px] w-auto object-contain" />
+        </div>
+        {OpenInTab}
       </div>
     )
   }
   if (isPdf) {
     return (
-      <div className="overflow-hidden rounded-md border bg-muted/30">
-        <iframe src={url} title={fileName} className="h-[500px] w-full" />
+      <div>
+        <div className="overflow-hidden rounded-md border bg-muted/30">
+          <object data={url} type="application/pdf" className="h-[500px] w-full">
+            <iframe src={url} title={fileName} className="h-[500px] w-full" />
+          </object>
+        </div>
+        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+          <span>If the preview is blocked by the browser, open it in a new tab.</span>
+          <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+            Open in new tab
+          </a>
+        </div>
       </div>
     )
   }
   if (isOffice) {
-    const viewer = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`
+    const viewer = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`
     return (
-      <div className="overflow-hidden rounded-md border bg-muted/30">
-        <iframe src={viewer} title={fileName} className="h-[500px] w-full" />
+      <div>
+        <div className="overflow-hidden rounded-md border bg-muted/30">
+          <iframe src={viewer} title={fileName} className="h-[500px] w-full" />
+        </div>
+        {OpenInTab}
       </div>
     )
   }
