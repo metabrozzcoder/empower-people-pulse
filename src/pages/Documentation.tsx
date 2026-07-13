@@ -113,13 +113,19 @@ export default function Documentation() {
 
   useEffect(() => {
     let cancelled = false
+    let objectUrl: string | null = null
     setPreviewUrl(null)
     if (viewing?.file_path) {
-      supabase.storage.from('documents').createSignedUrl(viewing.file_path, 300).then(({ data }) => {
-        if (!cancelled && data?.signedUrl) setPreviewUrl(data.signedUrl)
+      supabase.storage.from('documents').download(viewing.file_path).then(({ data, error }) => {
+        if (cancelled || error || !data) return
+        objectUrl = URL.createObjectURL(data)
+        setPreviewUrl(objectUrl)
       })
     }
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
   }, [viewing?.id, viewing?.file_path])
 
   // ---------- Load assigners (admin + hr users) ----------
