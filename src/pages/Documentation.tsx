@@ -850,7 +850,7 @@ function PdfCanvasPreview({ url, fileName }: { url: string; fileName: string }) 
         if (cancelled) return
         const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise
         if (cancelled) {
-          await pdf.destroy()
+          await pdf.cleanup()
           return
         }
         pdfRef.current = pdf
@@ -865,7 +865,7 @@ function PdfCanvasPreview({ url, fileName }: { url: string; fileName: string }) 
       cancelled = true
       renderTaskRef.current?.cancel()
       renderTaskRef.current = null
-      pdfRef.current?.destroy()
+      pdfRef.current?.cleanup()
       pdfRef.current = null
     }
   }, [url])
