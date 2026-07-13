@@ -113,14 +113,31 @@ export default function Documentation() {
 
   useEffect(() => {
     let cancelled = false
+    let objectUrl: string | null = null
     setPreviewUrl(null)
     if (viewing?.file_path) {
-      supabase.storage.from('documents').createSignedUrl(viewing.file_path, 300).then(({ data }) => {
-        if (!cancelled && data?.signedUrl) setPreviewUrl(data.signedUrl)
-      })
+      const ft = (viewing.file_type || '').toLowerCase()
+      const name = viewing.file_path.toLowerCase()
+      const isOffice = /(word|excel|powerpoint|officedocument|msword|ms-excel|ms-powerpoint)/.test(ft) || /\.(docx?|xlsx?|pptx?)$/i.test(name)
+      if (isOffice) {
+        // Office viewer needs a publicly reachable URL; use signed URL.
+        supabase.storage.from('documents').createSignedUrl(viewing.file_path, 600).then(({ data }) => {
+          if (!cancelled && data?.signedUrl) setPreviewUrl(data.signedUrl)
+        })
+      } else {
+        // For pdf/image: download as blob to avoid cross-origin iframe/popup issues.
+        supabase.storage.from('documents').download(viewing.file_path).then(({ data, error }) => {
+          if (cancelled || error || !data) return
+          objectUrl = URL.createObjectURL(data)
+          setPreviewUrl(objectUrl)
+        })
+      }
     }
-    return () => { cancelled = true }
-  }, [viewing?.id, viewing?.file_path])
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [viewing?.id, viewing?.file_path, viewing?.file_type])
 
   // ---------- Load assigners (admin + hr users) ----------
   const loadAssigners = useCallback(async () => {
@@ -365,9 +382,22 @@ export default function Documentation() {
 
   const downloadAttachment = async (d: DocRow) => {
     if (!d.file_path) return
-    const { data, error } = await supabase.storage.from('documents').createSignedUrl(d.file_path, 60)
-    if (error || !data?.signedUrl) { toast({ title: 'Download failed', description: error?.message, variant: 'destructive' }); return }
-    window.open(data.signedUrl, '_blank')
+    try {
+      const { data, error } = await supabase.storage.from('documents').download(d.file_path)
+      if (error || !data) throw error ?? new Error('No data')
+      const filename = d.file_path.split('/').pop() || 'document'
+      const url = URL.createObjectURL(data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Download failed'
+      toast({ title: 'Download failed', description: msg, variant: 'destructive' })
+    }
   }
 
   const statusBadge = (s: ApprovalStatus) => {
