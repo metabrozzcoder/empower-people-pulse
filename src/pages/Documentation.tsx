@@ -116,17 +116,28 @@ export default function Documentation() {
     let objectUrl: string | null = null
     setPreviewUrl(null)
     if (viewing?.file_path) {
-      supabase.storage.from('documents').download(viewing.file_path).then(({ data, error }) => {
-        if (cancelled || error || !data) return
-        objectUrl = URL.createObjectURL(data)
-        setPreviewUrl(objectUrl)
-      })
+      const ft = (viewing.file_type || '').toLowerCase()
+      const name = viewing.file_path.toLowerCase()
+      const isOffice = /(word|excel|powerpoint|officedocument|msword|ms-excel|ms-powerpoint)/.test(ft) || /\.(docx?|xlsx?|pptx?)$/i.test(name)
+      if (isOffice) {
+        // Office viewer needs a publicly reachable URL; use signed URL.
+        supabase.storage.from('documents').createSignedUrl(viewing.file_path, 600).then(({ data }) => {
+          if (!cancelled && data?.signedUrl) setPreviewUrl(data.signedUrl)
+        })
+      } else {
+        // For pdf/image: download as blob to avoid cross-origin iframe/popup issues.
+        supabase.storage.from('documents').download(viewing.file_path).then(({ data, error }) => {
+          if (cancelled || error || !data) return
+          objectUrl = URL.createObjectURL(data)
+          setPreviewUrl(objectUrl)
+        })
+      }
     }
     return () => {
       cancelled = true
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [viewing?.id, viewing?.file_path])
+  }, [viewing?.id, viewing?.file_path, viewing?.file_type])
 
   // ---------- Load assigners (admin + hr users) ----------
   const loadAssigners = useCallback(async () => {
