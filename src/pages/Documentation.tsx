@@ -34,6 +34,10 @@ import { useAuth } from '@/context/AuthContext'
 import { DocumentEditor } from '@/components/DocumentEditor'
 import { QRCodeSVG } from 'qrcode.react'
 import { formatDate, formatDateTime } from '@/lib/date'
+import * as pdfjsLib from 'pdfjs-dist'
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker
 
 type ApprovalStatus = 'Draft' | 'Pending' | 'Approved' | 'Rejected'
 type Priority = 'Low' | 'Normal' | 'High' | 'Urgent'
@@ -116,22 +120,11 @@ export default function Documentation() {
     let objectUrl: string | null = null
     setPreviewUrl(null)
     if (viewing?.file_path) {
-      const ft = (viewing.file_type || '').toLowerCase()
-      const name = viewing.file_path.toLowerCase()
-      const isOffice = /(word|excel|powerpoint|officedocument|msword|ms-excel|ms-powerpoint)/.test(ft) || /\.(docx?|xlsx?|pptx?)$/i.test(name)
-      if (isOffice) {
-        // Office viewer needs a publicly reachable URL; use signed URL.
-        supabase.storage.from('documents').createSignedUrl(viewing.file_path, 600).then(({ data }) => {
-          if (!cancelled && data?.signedUrl) setPreviewUrl(data.signedUrl)
-        })
-      } else {
-        // For pdf/image: download as blob to avoid cross-origin iframe/popup issues.
-        supabase.storage.from('documents').download(viewing.file_path).then(({ data, error }) => {
-          if (cancelled || error || !data) return
-          objectUrl = URL.createObjectURL(data)
-          setPreviewUrl(objectUrl)
-        })
-      }
+      supabase.storage.from('documents').download(viewing.file_path).then(({ data, error }) => {
+        if (cancelled || error || !data) return
+        objectUrl = URL.createObjectURL(data)
+        setPreviewUrl(objectUrl)
+      })
     }
     return () => {
       cancelled = true
@@ -812,55 +805,131 @@ function FilePreview({ url, fileType, fileName }: { url: string | null; fileType
   const isPdf = ft === 'application/pdf' || name.endsWith('.pdf')
   const isOffice = /(word|excel|powerpoint|officedocument|msword|ms-excel|ms-powerpoint)/.test(ft) || /\.(docx?|xlsx?|pptx?)$/i.test(name)
 
-  const OpenInTab = (
-    <div className="mt-2 flex justify-end">
-      <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline underline-offset-2">
-        Open in new tab
-      </a>
-    </div>
-  )
-
   if (isImage) {
     return (
-      <div>
-        <div className="overflow-hidden rounded-md border bg-muted/30">
-          <img src={url} alt={fileName} className="mx-auto max-h-[500px] w-auto object-contain" />
-        </div>
-        {OpenInTab}
+      <div className="overflow-hidden rounded-md border bg-muted/30">
+        <img src={url} alt={fileName} className="mx-auto max-h-[500px] w-auto object-contain" />
       </div>
     )
   }
   if (isPdf) {
-    return (
-      <div>
-        <div className="overflow-hidden rounded-md border bg-muted/30">
-          <object data={url} type="application/pdf" className="h-[500px] w-full">
-            <iframe src={url} title={fileName} className="h-[500px] w-full" />
-          </object>
-        </div>
-        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-          <span>If the preview is blocked by the browser, open it in a new tab.</span>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
-            Open in new tab
-          </a>
-        </div>
-      </div>
-    )
+    return <PdfCanvasPreview url={url} fileName={fileName} />
   }
   if (isOffice) {
-    const viewer = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`
     return (
-      <div>
-        <div className="overflow-hidden rounded-md border bg-muted/30">
-          <iframe src={viewer} title={fileName} className="h-[500px] w-full" />
-        </div>
-        {OpenInTab}
+      <div className="rounded-md border bg-muted/30 p-4 text-center text-xs text-muted-foreground">
+        Preview for Office documents is blocked by browser security. Use Download below to open this file.
       </div>
     )
   }
   return (
     <div className="rounded-md border bg-muted/30 p-4 text-center text-xs text-muted-foreground">
       Inline preview is not available for this file type. Use Download below.
+    </div>
+  )
+}
+
+function PdfCanvasPreview({ url, fileName }: { url: string; fileName: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const pdfRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null)
+  const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null)
+  const [page, setPage] = useState(1)
+  const [pages, setPages] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      setError(null)
+      setPage(1)
+      setPages(0)
+      try {
+        const buf = await fetch(url).then((res) => res.arrayBuffer())
+        if (cancelled) return
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise
+        if (cancelled) {
+          await pdf.destroy()
+          return
+        }
+        pdfRef.current = pdf
+        setPages(pdf.numPages)
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Preview failed')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+      renderTaskRef.current?.cancel()
+      renderTaskRef.current = null
+      pdfRef.current?.destroy()
+      pdfRef.current = null
+    }
+  }, [url])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      if (!pdfRef.current || !canvasRef.current) return
+      try {
+        renderTaskRef.current?.cancel()
+        const pdfPage = await pdfRef.current.getPage(page)
+        if (cancelled || !canvasRef.current) return
+        const containerWidth = Math.min(860, canvasRef.current.parentElement?.clientWidth || 860)
+        const baseViewport = pdfPage.getViewport({ scale: 1 })
+        const scale = Math.max(0.8, Math.min(1.6, containerWidth / baseViewport.width))
+        const viewport = pdfPage.getViewport({ scale })
+        const canvas = canvasRef.current
+        const context = canvas.getContext('2d')
+        if (!context) return
+        canvas.width = Math.floor(viewport.width)
+        canvas.height = Math.floor(viewport.height)
+        renderTaskRef.current = pdfPage.render({ canvas, canvasContext: context, viewport })
+        await renderTaskRef.current.promise
+      } catch (err) {
+        if (!cancelled && !(err instanceof Error && err.name === 'RenderingCancelledException')) {
+          setError(err instanceof Error ? err.message : 'Preview failed')
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [page, pages])
+
+  if (loading) {
+    return (
+      <div className="flex h-40 items-center justify-center rounded-md border bg-muted/30 text-sm text-muted-foreground">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading PDF preview…
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-md border bg-muted/30 p-4 text-center text-xs text-muted-foreground">
+        PDF preview is unavailable. Use Download below to open {fileName}.
+      </div>
+    )
+  }
+
+  return (
+    <div className="overflow-hidden rounded-md border bg-muted/30">
+      <div className="flex items-center justify-between border-b bg-background px-3 py-2 text-xs text-muted-foreground">
+        <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+          Previous
+        </Button>
+        <span>Page {page} of {pages || 1}</span>
+        <Button variant="ghost" size="sm" disabled={page >= pages} onClick={() => setPage((p) => Math.min(pages, p + 1))}>
+          Next
+        </Button>
+      </div>
+      <div className="max-h-[560px] overflow-auto p-3">
+        <canvas ref={canvasRef} aria-label={`Preview of ${fileName}`} className="mx-auto max-w-full rounded-sm bg-background shadow-sm" />
+      </div>
     </div>
   )
 }
