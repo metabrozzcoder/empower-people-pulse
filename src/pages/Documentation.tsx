@@ -365,9 +365,22 @@ export default function Documentation() {
 
   const downloadAttachment = async (d: DocRow) => {
     if (!d.file_path) return
-    const { data, error } = await supabase.storage.from('documents').createSignedUrl(d.file_path, 60)
-    if (error || !data?.signedUrl) { toast({ title: 'Download failed', description: error?.message, variant: 'destructive' }); return }
-    window.open(data.signedUrl, '_blank')
+    try {
+      const { data, error } = await supabase.storage.from('documents').download(d.file_path)
+      if (error || !data) throw error ?? new Error('No data')
+      const filename = d.file_path.split('/').pop() || 'document'
+      const url = URL.createObjectURL(data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Download failed'
+      toast({ title: 'Download failed', description: msg, variant: 'destructive' })
+    }
   }
 
   const statusBadge = (s: ApprovalStatus) => {
