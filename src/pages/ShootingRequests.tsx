@@ -239,6 +239,48 @@ export default function ShootingRequests() {
     })
   }, [requests, isAdmin, isModerator, isDirector, isTechSupply, isDriver])
 
+  type PersonStat = {
+    id: string
+    name: string
+    total: number
+    completed: number
+    scheduled: number
+    inProgress: number
+    requests: ShootingRow[]
+  }
+
+  const peopleByRole = useMemo(() => {
+    const build = (key: 'requester_id' | 'tech_supply_id' | 'driver_id' | 'moderator_id' | 'director_id') => {
+      const map = new Map<string, PersonStat>()
+      for (const r of requests) {
+        const uid = r[key]
+        if (!uid) continue
+        const cur = map.get(uid) ?? {
+          id: uid,
+          name: profiles[uid]?.name ?? 'Unknown',
+          total: 0, completed: 0, scheduled: 0, inProgress: 0,
+          requests: [],
+        }
+        cur.total += 1
+        if (r.workflow_status === 'completed') cur.completed += 1
+        else if (r.workflow_status === 'scheduled') cur.scheduled += 1
+        else if (r.workflow_status.startsWith('pending_')) cur.inProgress += 1
+        cur.requests.push(r)
+        map.set(uid, cur)
+      }
+      return Array.from(map.values()).sort((a, b) => b.total - a.total)
+    }
+    return {
+      reporters: build('requester_id'),
+      operators: build('tech_supply_id'),
+      drivers: build('driver_id'),
+      moderators: build('moderator_id'),
+      directors: build('director_id'),
+    }
+  }, [requests, profiles])
+
+  const [personDetail, setPersonDetail] = useState<{ role: string; person: PersonStat } | null>(null)
+
   const handleCreate = async () => {
     if (!userId) {
       toast({ title: 'Sign in required', variant: 'destructive' })
