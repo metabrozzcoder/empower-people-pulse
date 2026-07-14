@@ -46,6 +46,7 @@
     "items": {
       "dashboard": "Boshqaruv paneli",
       "shootingRequests": "Suratga olish so'rovlari",
+      "rideOrders": "Yo'l buyurtmalari",
       "employees": "Xodimlar",
       "recruitment": "Ishga qabul",
       "scheduling": "Jadval",
