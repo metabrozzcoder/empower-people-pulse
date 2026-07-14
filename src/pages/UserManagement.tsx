@@ -45,6 +45,7 @@ const JOB_POSITIONS = [
   'Admin',
   'Head of Reporters',
   'Driver',
+  'Head of Drivers',
   'Equipment Department',
   'Initiator',
   'Employee'
@@ -68,6 +69,8 @@ const ALL_SECTIONS = [
   'Access Control',
   'Documentation',
   'Security System',
+  'Garage',
+  'Ride Orders',
   'Payment Commission',
   'Settings'
 ]

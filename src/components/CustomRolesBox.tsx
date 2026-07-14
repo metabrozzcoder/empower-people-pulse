@@ -20,7 +20,7 @@ const ALL_SECTIONS = [
   'Dashboard', 'Shooting Requests', 'Employees', 'Projects', 'Recruitment', 'Tasks',
   'Scheduling', 'Attendance', 'Analytics', 'Organizations', 'Chat', 'User Management',
   'Role Management', 'Access Control', 'Documentation', 'Security System', 'Garage',
-  'Payment Commission', 'Settings'
+  'Ride Orders', 'Payment Commission', 'Settings'
 ]
 
 const ALL_PERMISSIONS = [
