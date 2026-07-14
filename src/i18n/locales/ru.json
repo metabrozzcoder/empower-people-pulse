@@ -46,6 +46,7 @@
     "items": {
       "dashboard": "Панель управления",
       "shootingRequests": "Заявки на съёмку",
+      "rideOrders": "Заказы поездок",
       "employees": "Сотрудники",
       "recruitment": "Рекрутинг",
       "scheduling": "Расписание",
