@@ -37,6 +37,7 @@ import DeviceDetail from "./pages/security/DeviceDetail"
 import BiometricConfig from "./pages/security/BiometricConfig"
 import Documentation from "./pages/Documentation"
 import Garage from "./pages/Garage"
+import RideOrders from "./pages/RideOrders"
 import Assistant from "./pages/Assistant"
 import Settings from "./pages/Settings"
 import NotFound from "./pages/NotFound"
@@ -92,6 +93,7 @@ function AppContent() {
               <Route path="/" element={<ProtectedRoute sectionName="Dashboard"><Index /></ProtectedRoute>} />
               
               <Route path="/shooting-requests" element={<ProtectedRoute sectionName="Shooting Requests"><ShootingRequests /></ProtectedRoute>} />
+              <Route path="/ride-orders" element={<ProtectedRoute sectionName="Ride Orders"><RideOrders /></ProtectedRoute>} />
               <Route path="/employees" element={<ProtectedRoute sectionName="Employees"><Employees /></ProtectedRoute>} />
               <Route path="/projects" element={<ProtectedRoute sectionName="Projects"><Projects /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
