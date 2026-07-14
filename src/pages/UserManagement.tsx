@@ -69,6 +69,8 @@ const ALL_SECTIONS = [
   'Access Control',
   'Documentation',
   'Security System',
+  'Garage',
+  'Ride Orders',
   'Payment Commission',
   'Settings'
 ]
