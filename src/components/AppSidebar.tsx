@@ -71,6 +71,7 @@ const sidebarSections = [
     items: [
       { title: "Dashboard", titleKey: "sidebar.items.dashboard", url: "/", icon: LayoutDashboard, sectionName: "Dashboard" },
       { title: "Shooting Requests", titleKey: "sidebar.items.shootingRequests", url: "/shooting-requests", icon: Camera, sectionName: "Shooting Requests" },
+      { title: "Ride Orders", titleKey: "sidebar.items.rideOrders", url: "/ride-orders", icon: Car, sectionName: "Ride Orders" },
     ]
   },
   {
