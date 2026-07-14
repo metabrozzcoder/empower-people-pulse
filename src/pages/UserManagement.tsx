@@ -45,6 +45,7 @@ const JOB_POSITIONS = [
   'Admin',
   'Head of Reporters',
   'Driver',
+  'Head of Drivers',
   'Equipment Department',
   'Initiator',
   'Employee'
