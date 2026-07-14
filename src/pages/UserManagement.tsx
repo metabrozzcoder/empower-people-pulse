@@ -1015,36 +1015,22 @@ export default function UserManagement() {
                 <div className="space-y-2">
                   <Label htmlFor="role">Role *</Label>
                   <Select 
-                    value={customRoleId ? `custom:${customRoleId}` : formData.role}
+                    value={formData.role}
                     onValueChange={(value) => handleFormChange('role', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>System Roles</SelectLabel>
-                        <SelectItem value="Admin">Admin</SelectItem>
-                        <SelectItem value="HR">HR</SelectItem>
-                        <SelectItem value="Guest">Guest</SelectItem>
-                        <SelectItem value="Employee">Employee</SelectItem>
-                      </SelectGroup>
-                      {customRoles.length > 0 && (
-                        <>
-                          <SelectSeparator />
-                          <SelectGroup>
-                            <SelectLabel>Custom Roles</SelectLabel>
-                            {customRoles.map(cr => (
-                              <SelectItem key={cr.id} value={`custom:${cr.id}`}>{cr.name}</SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </>
-                      )}
+                      <SelectItem value="Admin">Admin</SelectItem>
+                      <SelectItem value="HR">HR</SelectItem>
+                      <SelectItem value="Guest">Guest</SelectItem>
+                      <SelectItem value="Employee">Employee</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="position">Job Position</Label>
+                  <Label htmlFor="position">Job Position <span className="text-xs text-muted-foreground">(assigning any position counts the user as an Employee)</span></Label>
                   <Select
                     value={JOB_POSITIONS.includes(formData.position) ? formData.position : (formData.position ? '__custom__' : '')}
                     onValueChange={(value) => handleFormChange('position', value === '__custom__' ? '' : value)}
@@ -1067,6 +1053,24 @@ export default function UserManagement() {
                     />
                   )}
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="customRole">Custom Role <span className="text-xs text-muted-foreground">(optional — created by Admins)</span></Label>
+                  <Select
+                    value={customRoleId || '__none__'}
+                    onValueChange={handleCustomRoleChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select custom role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {customRoles.map(cr => (
+                        <SelectItem key={cr.id} value={cr.id}>{cr.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="organization">Organization</Label>
                   <Select
