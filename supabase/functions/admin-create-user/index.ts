@@ -15,18 +15,23 @@ Deno.serve(async (req) => {
     const ANON_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
 
     const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     const userClient = createClient(SUPABASE_URL, ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
+      global: { headers: { Authorization: `Bearer ${token}` } },
     });
-    const { data: userData, error: userErr } = await userClient.auth.getUser();
-    if (userErr || !userData.user) {
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
+    const callerId = claimsData?.claims?.sub as string | undefined;
+    if (claimsErr || !callerId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const [{ data: isAdmin }, { data: isHr }] = await Promise.all([
-      admin.rpc("has_role", { _user_id: userData.user.id, _role: "admin" }),
-      admin.rpc("has_role", { _user_id: userData.user.id, _role: "hr" }),
+      admin.rpc("has_role", { _user_id: callerId, _role: "admin" }),
+      admin.rpc("has_role", { _user_id: callerId, _role: "hr" }),
     ]);
     if (!isAdmin && !isHr) {
       return new Response(JSON.stringify({ error: "Forbidden: admin or HR only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
