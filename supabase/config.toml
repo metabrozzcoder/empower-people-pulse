@@ -10,3 +10,6 @@ double_confirm_changes = false
 
 [functions.assistant-chat]
 verify_jwt = true
+
+[functions.admin-create-user]
+verify_jwt = false
