@@ -219,10 +219,9 @@ export default function Garage() {
         <TabsList>
           <TabsTrigger value="vehicles">{t('pages.garage.vehicles')}</TabsTrigger>
           <TabsTrigger value="trips">{t('pages.garage.tripLog')}</TabsTrigger>
-          <TabsTrigger value="rides">Ride Orders</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="rides"><RideOrdersPanel /></TabsContent>
+
 
 
 
