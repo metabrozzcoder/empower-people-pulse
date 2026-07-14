@@ -298,6 +298,28 @@ export default function Chat() {
 
   useEffect(() => { refreshConvMap() }, [refreshConvMap])
 
+  // Compute unread message counts per DM peer
+  const refreshUnread = useCallback(async () => {
+    if (!myId) return
+    const entries = Object.entries(convByUser)
+    if (entries.length === 0) return
+    const convIds = entries.map(([, cid]) => cid)
+    const { data } = await supabase
+      .from('messages')
+      .select('conversation_id, sender_id, read_at')
+      .in('conversation_id', convIds)
+      .is('read_at', null)
+      .neq('sender_id', myId)
+    const counts: Record<string, number> = {}
+    ;(data ?? []).forEach((m: any) => {
+      const uid = entries.find(([, cid]) => cid === m.conversation_id)?.[0]
+      if (uid) counts[uid] = (counts[uid] || 0) + 1
+    })
+    setUsers(prev => prev.map(u => ({ ...u, unreadCount: counts[u.id] || 0 })))
+  }, [myId, convByUser])
+
+  useEffect(() => { refreshUnread() }, [refreshUnread])
+
   // Load groups
   const refreshGroups = useCallback(async () => {
     if (!myId) return
