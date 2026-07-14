@@ -407,6 +407,7 @@ export default function ShootingRequests() {
           <TabsTrigger value="inbox"><Inbox className="w-4 h-4 mr-2" />{t('Inbox')} ({inbox.length})</TabsTrigger>
           <TabsTrigger value="mine"><UserIcon className="w-4 h-4 mr-2" />{t('My requests')} ({myRequests.length})</TabsTrigger>
           <TabsTrigger value="all">{t('All')} ({requests.length})</TabsTrigger>
+          <TabsTrigger value="people"><Users className="w-4 h-4 mr-2" />{t('People')}</TabsTrigger>
         </TabsList>
         <TabsContent value="inbox" className="space-y-3 mt-4">
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : inbox.length === 0 ? (
@@ -425,7 +426,85 @@ export default function ShootingRequests() {
         <TabsContent value="all" className="space-y-3 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{requests.map(renderCard)}</div>
         </TabsContent>
+        <TabsContent value="people" className="space-y-6 mt-4">
+          {([
+            { key: 'reporters', label: 'Reporters (requesters)', icon: UserIcon, list: peopleByRole.reporters },
+            { key: 'operators', label: 'Operators / Cameramen', icon: Video, list: peopleByRole.operators },
+            { key: 'drivers', label: 'Drivers', icon: Truck, list: peopleByRole.drivers },
+            { key: 'moderators', label: 'Moderators', icon: ClipboardCheck, list: peopleByRole.moderators },
+            { key: 'directors', label: 'Directors', icon: Gavel, list: peopleByRole.directors },
+          ] as const).map((group) => {
+            const Icon = group.icon
+            return (
+              <div key={group.key} className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Icon className="w-4 h-4" />{group.label}
+                  <Badge variant="secondary">{group.list.length}</Badge>
+                </div>
+                {group.list.length === 0 ? (
+                  <Card><CardContent className="p-4 text-xs text-muted-foreground">No records yet.</CardContent></Card>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {group.list.map((p) => (
+                      <Card key={p.id} className="cursor-pointer hover:shadow-md transition" onClick={() => setPersonDetail({ role: group.label, person: p })}>
+                        <CardContent className="p-4 flex items-center gap-3">
+                          <Avatar className="w-10 h-10"><AvatarFallback>{initials(p.name)}</AvatarFallback></Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{p.name}</div>
+                            <div className="text-xs text-muted-foreground flex gap-2 flex-wrap mt-0.5">
+                              <span>Total <b className="text-foreground">{p.total}</b></span>
+                              <span className="text-emerald-600">✓ {p.completed}</span>
+                              <span className="text-cyan-600">◷ {p.scheduled}</span>
+                              {p.inProgress > 0 && <span className="text-amber-600">… {p.inProgress}</span>}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </TabsContent>
       </Tabs>
+
+      {/* Person history dialog */}
+      <Dialog open={!!personDetail} onOpenChange={(o) => !o && setPersonDetail(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {personDetail && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Avatar className="w-8 h-8"><AvatarFallback>{initials(personDetail.person.name)}</AvatarFallback></Avatar>
+                  {personDetail.person.name}
+                </DialogTitle>
+                <DialogDescription>{personDetail.role} · {personDetail.person.total} shootings</DialogDescription>
+              </DialogHeader>
+              <div className="flex gap-2 text-xs flex-wrap">
+                <Badge variant="outline">Total {personDetail.person.total}</Badge>
+                <Badge variant="outline" className="text-emerald-600">Completed {personDetail.person.completed}</Badge>
+                <Badge variant="outline" className="text-cyan-600">Scheduled {personDetail.person.scheduled}</Badge>
+                <Badge variant="outline" className="text-amber-600">In progress {personDetail.person.inProgress}</Badge>
+              </div>
+              <div className="space-y-2 mt-2">
+                {personDetail.person.requests.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between gap-2 border rounded-md p-2 hover:bg-accent cursor-pointer" onClick={() => { setPersonDetail(null); setSelected(r) }}>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{r.title}</div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                        {r.scheduled_date && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{r.scheduled_date}</span>}
+                        {r.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{r.location}</span>}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className={STATUS_TONE[r.workflow_status]}>{STATUS_LABEL[r.workflow_status]}</Badge>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
