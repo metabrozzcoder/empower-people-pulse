@@ -41,6 +41,7 @@ const WORKFLOW_SLOTS = [
   { value: 'director', label: 'Director' },
   { value: 'tech_supply', label: 'Tech Supply' },
   { value: 'driver', label: 'Driver' },
+  { value: 'head_of_drivers', label: 'Head of Drivers' },
 ]
 
 interface CustomRole {
