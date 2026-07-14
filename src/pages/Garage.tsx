@@ -203,7 +203,6 @@ export default function Garage() {
         </div>
         <div className="flex gap-2">
           {isAdmin && <Button onClick={openVehicleNew}><Plus className="w-4 h-4 mr-2" />{t('pages.garage.vehicle')}</Button>}
-          <Button variant="secondary" onClick={() => openTripNew()}><Plus className="w-4 h-4 mr-2" />{t('pages.garage.logTrip')}</Button>
         </div>
       </div>
 
