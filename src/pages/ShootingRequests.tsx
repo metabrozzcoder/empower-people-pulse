@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Camera, Plus, MapPin, Calendar, AlertTriangle, CheckCircle2, XCircle, ArrowRight, Inbox, User as UserIcon, Truck, Package, ShieldCheck, Loader2, History } from 'lucide-react'
+import { Camera, Plus, MapPin, Calendar, AlertTriangle, CheckCircle2, XCircle, ArrowRight, Inbox, User as UserIcon, Truck, Package, ShieldCheck, Loader2, History, Users, Video, ClipboardCheck, Gavel } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/context/AuthContext'
@@ -239,6 +239,48 @@ export default function ShootingRequests() {
     })
   }, [requests, isAdmin, isModerator, isDirector, isTechSupply, isDriver])
 
+  type PersonStat = {
+    id: string
+    name: string
+    total: number
+    completed: number
+    scheduled: number
+    inProgress: number
+    requests: ShootingRow[]
+  }
+
+  const peopleByRole = useMemo(() => {
+    const build = (key: 'requester_id' | 'tech_supply_id' | 'driver_id' | 'moderator_id' | 'director_id') => {
+      const map = new Map<string, PersonStat>()
+      for (const r of requests) {
+        const uid = r[key]
+        if (!uid) continue
+        const cur = map.get(uid) ?? {
+          id: uid,
+          name: profiles[uid]?.name ?? 'Unknown',
+          total: 0, completed: 0, scheduled: 0, inProgress: 0,
+          requests: [],
+        }
+        cur.total += 1
+        if (r.workflow_status === 'completed') cur.completed += 1
+        else if (r.workflow_status === 'scheduled') cur.scheduled += 1
+        else if (r.workflow_status.startsWith('pending_')) cur.inProgress += 1
+        cur.requests.push(r)
+        map.set(uid, cur)
+      }
+      return Array.from(map.values()).sort((a, b) => b.total - a.total)
+    }
+    return {
+      reporters: build('requester_id'),
+      operators: build('tech_supply_id'),
+      drivers: build('driver_id'),
+      moderators: build('moderator_id'),
+      directors: build('director_id'),
+    }
+  }, [requests, profiles])
+
+  const [personDetail, setPersonDetail] = useState<{ role: string; person: PersonStat } | null>(null)
+
   const handleCreate = async () => {
     if (!userId) {
       toast({ title: 'Sign in required', variant: 'destructive' })
@@ -365,6 +407,7 @@ export default function ShootingRequests() {
           <TabsTrigger value="inbox"><Inbox className="w-4 h-4 mr-2" />{t('Inbox')} ({inbox.length})</TabsTrigger>
           <TabsTrigger value="mine"><UserIcon className="w-4 h-4 mr-2" />{t('My requests')} ({myRequests.length})</TabsTrigger>
           <TabsTrigger value="all">{t('All')} ({requests.length})</TabsTrigger>
+          <TabsTrigger value="people"><Users className="w-4 h-4 mr-2" />{t('People')}</TabsTrigger>
         </TabsList>
         <TabsContent value="inbox" className="space-y-3 mt-4">
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : inbox.length === 0 ? (
@@ -383,7 +426,85 @@ export default function ShootingRequests() {
         <TabsContent value="all" className="space-y-3 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{requests.map(renderCard)}</div>
         </TabsContent>
+        <TabsContent value="people" className="space-y-6 mt-4">
+          {([
+            { key: 'reporters', label: 'Reporters (requesters)', icon: UserIcon, list: peopleByRole.reporters },
+            { key: 'operators', label: 'Operators / Cameramen', icon: Video, list: peopleByRole.operators },
+            { key: 'drivers', label: 'Drivers', icon: Truck, list: peopleByRole.drivers },
+            { key: 'moderators', label: 'Moderators', icon: ClipboardCheck, list: peopleByRole.moderators },
+            { key: 'directors', label: 'Directors', icon: Gavel, list: peopleByRole.directors },
+          ] as const).map((group) => {
+            const Icon = group.icon
+            return (
+              <div key={group.key} className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Icon className="w-4 h-4" />{group.label}
+                  <Badge variant="secondary">{group.list.length}</Badge>
+                </div>
+                {group.list.length === 0 ? (
+                  <Card><CardContent className="p-4 text-xs text-muted-foreground">No records yet.</CardContent></Card>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {group.list.map((p) => (
+                      <Card key={p.id} className="cursor-pointer hover:shadow-md transition" onClick={() => setPersonDetail({ role: group.label, person: p })}>
+                        <CardContent className="p-4 flex items-center gap-3">
+                          <Avatar className="w-10 h-10"><AvatarFallback>{initials(p.name)}</AvatarFallback></Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{p.name}</div>
+                            <div className="text-xs text-muted-foreground flex gap-2 flex-wrap mt-0.5">
+                              <span>Total <b className="text-foreground">{p.total}</b></span>
+                              <span className="text-emerald-600">✓ {p.completed}</span>
+                              <span className="text-cyan-600">◷ {p.scheduled}</span>
+                              {p.inProgress > 0 && <span className="text-amber-600">… {p.inProgress}</span>}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </TabsContent>
       </Tabs>
+
+      {/* Person history dialog */}
+      <Dialog open={!!personDetail} onOpenChange={(o) => !o && setPersonDetail(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {personDetail && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Avatar className="w-8 h-8"><AvatarFallback>{initials(personDetail.person.name)}</AvatarFallback></Avatar>
+                  {personDetail.person.name}
+                </DialogTitle>
+                <DialogDescription>{personDetail.role} · {personDetail.person.total} shootings</DialogDescription>
+              </DialogHeader>
+              <div className="flex gap-2 text-xs flex-wrap">
+                <Badge variant="outline">Total {personDetail.person.total}</Badge>
+                <Badge variant="outline" className="text-emerald-600">Completed {personDetail.person.completed}</Badge>
+                <Badge variant="outline" className="text-cyan-600">Scheduled {personDetail.person.scheduled}</Badge>
+                <Badge variant="outline" className="text-amber-600">In progress {personDetail.person.inProgress}</Badge>
+              </div>
+              <div className="space-y-2 mt-2">
+                {personDetail.person.requests.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between gap-2 border rounded-md p-2 hover:bg-accent cursor-pointer" onClick={() => { setPersonDetail(null); setSelected(r) }}>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{r.title}</div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                        {r.scheduled_date && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{r.scheduled_date}</span>}
+                        {r.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{r.location}</span>}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className={STATUS_TONE[r.workflow_status]}>{STATUS_LABEL[r.workflow_status]}</Badge>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
