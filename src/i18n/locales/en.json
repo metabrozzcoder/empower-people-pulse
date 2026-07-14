@@ -46,6 +46,7 @@
     "items": {
       "dashboard": "Dashboard",
       "shootingRequests": "Shooting Requests",
+      "rideOrders": "Ride Orders",
       "employees": "Employees",
       "recruitment": "Recruitment",
       "scheduling": "Scheduling",
