@@ -38,6 +38,7 @@ export function NotificationBell() {
   useEffect(() => {
     if (!currentUser) return
     load()
+    const seen = new Set<string>()
     const channel = supabase
       .channel(`notifications:${currentUser.id}`)
       .on(
@@ -45,7 +46,9 @@ export function NotificationBell() {
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` },
         (payload) => {
           const n = payload.new as Notification
-          setItems((prev) => [n, ...prev].slice(0, 30))
+          if (seen.has(n.id)) return
+          seen.add(n.id)
+          setItems((prev) => (prev.some((x) => x.id === n.id) ? prev : [n, ...prev]).slice(0, 30))
           toast(n.title, { description: n.body ?? undefined })
         }
       )
@@ -66,10 +69,21 @@ export function NotificationBell() {
         }
       )
       .subscribe()
+
+    // Fallback polling in case realtime delivery is dropped
+    const interval = window.setInterval(() => {
+      load()
+    }, 15000)
+    const onVisible = () => { if (document.visibilityState === 'visible') load() }
+    document.addEventListener('visibilitychange', onVisible)
+
     return () => {
       supabase.removeChannel(channel)
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [currentUser, load])
+
 
   const unread = items.filter((i) => !i.read).length
 
