@@ -30,8 +30,8 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const [{ data: isAdmin }, { data: isHr }] = await Promise.all([
-      admin.rpc("has_role", { _user_id: userData.user.id, _role: "admin" }),
-      admin.rpc("has_role", { _user_id: userData.user.id, _role: "hr" }),
+      admin.rpc("has_role", { _user_id: callerId, _role: "admin" }),
+      admin.rpc("has_role", { _user_id: callerId, _role: "hr" }),
     ]);
     if (!isAdmin && !isHr) {
       return new Response(JSON.stringify({ error: "Forbidden: admin or HR only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
