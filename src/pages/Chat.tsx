@@ -448,22 +448,46 @@ export default function Chat() {
 
   // Load messages whenever the active conversation id is known/changes
   const activeConvId = selectedGroupId ?? (selectedUser ? convByUser[selectedUser.id] : undefined)
+  const lastLoadedConvIdRef = useRef<string | null>(null)
   useEffect(() => {
-    if (!activeConvId || !myId) { setMessages([]); return }
+    if (!myId) return
+    if (!activeConvId) {
+      // Only clear when the user actually deselected a conversation, not on transient recomputes
+      if (!selectedUser && !selectedGroupId) {
+        lastLoadedConvIdRef.current = null
+        setMessages([])
+      }
+      return
+    }
+    const convChanged = lastLoadedConvIdRef.current !== activeConvId
+    lastLoadedConvIdRef.current = activeConvId
     let cancelled = false
     ;(async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('messages')
         .select('id, conversation_id, sender_id, content, created_at, edited, attachments, read_at')
         .eq('conversation_id', activeConvId)
         .order('created_at', { ascending: true })
         .limit(500)
       if (cancelled) return
+      if (error) {
+        console.error('[chat] load messages failed', error)
+        return
+      }
       setMessages(prev => {
         const fetched = ((data ?? []) as any[]).map(r => ({ ...r, attachments: Array.isArray(r.attachments) ? r.attachments : [] })) as Message[]
         const ids = new Set(fetched.map(m => m.id))
+        // Preserve any local (optimistic or realtime) messages for the current conv that the fetch missed
         const extras = prev.filter(m => m.conversation_id === activeConvId && !ids.has(m.id))
-        return [...fetched, ...extras]
+        // On conv switch we replace; on refetch for the same conv we merge without losing local state
+        if (convChanged) return [...fetched, ...extras]
+        // Same-conv refetch: keep local ordering, only add fetched rows we don't yet have
+        const existingIds = new Set(prev.filter(m => m.conversation_id === activeConvId).map(m => m.id))
+        const additions = fetched.filter(m => !existingIds.has(m.id))
+        if (additions.length === 0) return prev
+        const merged = [...prev.filter(m => m.conversation_id === activeConvId), ...additions]
+          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        return merged
       })
       // Mark incoming messages as read
       await supabase.rpc('mark_messages_read' as never, { _conv: activeConvId } as never)
@@ -472,7 +496,8 @@ export default function Chat() {
       }
     })()
     return () => { cancelled = true }
-  }, [activeConvId, myId])
+  }, [activeConvId, myId, selectedUser, selectedGroupId])
+
 
   // Active conversation realtime subscription (INSERT + UPDATE for read receipts)
   useEffect(() => {
