@@ -1091,6 +1091,68 @@ export type Database = {
         }
         Relationships: []
       }
+      ride_orders: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          completed_at: string | null
+          created_at: string
+          driver_id: string | null
+          dropoff_location: string
+          id: string
+          notes: string | null
+          pickup_location: string
+          pickup_time: string
+          purpose: string | null
+          requester_id: string
+          status: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          driver_id?: string | null
+          dropoff_location: string
+          id?: string
+          notes?: string | null
+          pickup_location: string
+          pickup_time: string
+          purpose?: string | null
+          requester_id: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          driver_id?: string | null
+          dropoff_location?: string
+          id?: string
+          notes?: string | null
+          pickup_location?: string
+          pickup_time?: string
+          purpose?: string | null
+          requester_id?: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_orders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shifts: {
         Row: {
           created_at: string
