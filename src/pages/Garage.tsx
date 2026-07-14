@@ -219,7 +219,12 @@ export default function Garage() {
         <TabsList>
           <TabsTrigger value="vehicles">{t('pages.garage.vehicles')}</TabsTrigger>
           <TabsTrigger value="trips">{t('pages.garage.tripLog')}</TabsTrigger>
+          <TabsTrigger value="rides">Ride Orders</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="rides"><RideOrdersPanel /></TabsContent>
+
+
 
         <TabsContent value="vehicles" className="space-y-4 pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
