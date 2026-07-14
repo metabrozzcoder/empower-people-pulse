@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Car, Plus, Camera, Edit, Trash2, Gauge, MapPin, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
+import RideOrdersPanel from '@/components/RideOrdersPanel'
 
 interface Vehicle {
   id: string
