@@ -306,26 +306,27 @@ export default function UserManagement() {
     )
   }
 
-  const handleFormChange = (field: string, value: string) => {
-    // Custom role chosen from the same Role dropdown
-    if (field === 'role' && value.startsWith('custom:')) {
-      const id = value.slice('custom:'.length)
+  const handleCustomRoleChange = (value: string) => {
+    const id = value === '__none__' ? '' : value
+    setCustomRoleId(id)
+    if (id) {
       const cr = customRoles.find(c => c.id === id)
-      setCustomRoleId(id)
-      const newFormData = { ...formData, role: 'Employee' }
-      setFormData(newFormData)
-      setSelectedSections(cr?.allowed_sections?.length ? cr.allowed_sections : ROLE_DEFAULT_SECTIONS.Employee)
-      setGeneratedCredentials(prev => ({
-        username: prev.username || buildLoginEmail(newFormData.name, newFormData.surname),
-        password: prev.password || generateStrongPassword(),
-        guestId: '',
-      }))
-      return
+      // Any custom role assignment implies Employee system role
+      setFormData(prev => ({ ...prev, role: prev.role && prev.role !== 'Guest' ? prev.role : 'Employee' }))
+      if (cr?.allowed_sections?.length) setSelectedSections(cr.allowed_sections)
     }
+  }
 
-    if (field === 'role') setCustomRoleId('')
+  const handleFormChange = (field: string, value: string) => {
+    if (field === 'role') setCustomRoleId(prev => prev) // keep custom role assignment
 
     const newFormData = { ...formData, [field]: value }
+
+    // Any job position selection implies the user is an Employee (unless Admin/HR/Guest already chosen)
+    if (field === 'position' && value && !['Admin', 'HR', 'Guest'].includes(newFormData.role)) {
+      newFormData.role = 'Employee'
+    }
+
     setFormData(newFormData)
 
     // Re-generate login email when name/surname changes; keep password unless none.
@@ -342,9 +343,11 @@ export default function UserManagement() {
     }
 
     // Auto-select sections based on role
-    if (field === 'role' && value) {
-      const defaultSections = ROLE_DEFAULT_SECTIONS[value as keyof typeof ROLE_DEFAULT_SECTIONS] || []
-      setSelectedSections(defaultSections)
+    if (field === 'role' && value && ROLE_DEFAULT_SECTIONS[value as keyof typeof ROLE_DEFAULT_SECTIONS]) {
+      setSelectedSections(ROLE_DEFAULT_SECTIONS[value as keyof typeof ROLE_DEFAULT_SECTIONS])
+    }
+    if (field === 'position' && newFormData.role === 'Employee' && !customRoleId) {
+      setSelectedSections(prev => prev.length ? prev : ROLE_DEFAULT_SECTIONS.Employee)
     }
   }
 
