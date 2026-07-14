@@ -490,8 +490,6 @@ export const ru: Record<string, string> = {
   "Available vehicles": "Доступные автомобили",
   "Available drivers": "Доступные водители",
   "Select vehicle": "Выберите автомобиль",
-  "Select driver": "Выберите водителя",
-  "Ride requested": "Поездка запрошена",
   "When": "Когда",
   "Route": "Маршрут",
   "Vehicle / Driver": "Автомобиль / Водитель",
