@@ -1,10 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -23,17 +18,19 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
     const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
-    const callerId = claimsData?.claims?.sub as string | undefined;
+    const claims = claimsData?.claims as { sub?: string; app_metadata?: { role?: string } } | undefined;
+    const callerId = claims?.sub;
     if (claimsErr || !callerId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+    const isTokenAdmin = claims?.app_metadata?.role === "admin";
     const [{ data: isAdmin }, { data: isHr }] = await Promise.all([
       admin.rpc("has_role", { _user_id: callerId, _role: "admin" }),
       admin.rpc("has_role", { _user_id: callerId, _role: "hr" }),
     ]);
-    if (!isAdmin && !isHr) {
+    if (!isTokenAdmin && !isAdmin && !isHr) {
       return new Response(JSON.stringify({ error: "Forbidden: admin or HR only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
