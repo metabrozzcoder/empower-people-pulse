@@ -539,8 +539,6 @@ export const ru: Record<string, string> = {
   "Reporter": "Репортёр",
   "Operator": "Оператор",
   "Editor": "Монтажёр",
-  "Director": "Режиссёр",
-  "Driver": "Водитель",
   "Initial password": "Первоначальный пароль",
   "This is the password set by an admin. It stays visible here until the user changes it from their own profile.": "Это пароль, установленный администратором. Он остаётся видимым здесь, пока пользователь не изменит его в своём профиле.",
   "Office IP Only": "Только офисный IP",
