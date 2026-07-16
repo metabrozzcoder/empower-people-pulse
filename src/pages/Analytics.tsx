@@ -255,7 +255,7 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{taskStats.open}</div>
-            <p className="text-xs text-muted-foreground">{taskStats.critical} critical · {taskStats.done} done</p>
+            <p className="text-xs text-muted-foreground">{taskStats.critical} <span>critical</span> · {taskStats.done} <span>done</span></p>
           </CardContent>
         </Card>
         <Card>
