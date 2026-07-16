@@ -555,19 +555,10 @@ export const ru: Record<string, string> = {
   "Profile Picture": "Аватар пользователя",
   "Upload photo": "Загрузить фото",
   "Change photo": "Изменить фото",
-  "Uploading…": "Загрузка…",
   "PNG or JPG, up to 5MB.": "PNG или JPG, до 5МБ.",
   "Edit User": "Редактировать пользователя",
   "Update user information and section permissions": "Обновить информацию о пользователе и права доступа к разделам",
   "Create a new user account with role and section permissions": "Создать новую учётную запись с ролью и правами доступа к разделам",
-  "Enter phone number": "Введите номер телефона",
-  "Select role": "Выберите роль",
-  "Select job position": "Выберите должность",
-  "Admin": "Администратор",
-  "HR": "HR",
-  "Guest": "Гость",
-  "Employee": "Сотрудник",
-  "Remove": "Удалить",
 }
 
 
