@@ -215,7 +215,7 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalEmployees}</div>
-            <p className="text-xs text-muted-foreground">{employees.length} employees · {profiles.length} accounts</p>
+            <p className="text-xs text-muted-foreground">{employees.length} <span>employees</span> · {profiles.length} <span>accounts</span></p>
           </CardContent>
         </Card>
         <Card>
@@ -235,7 +235,7 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{attendanceRate}%</div>
-            <p className="text-xs text-muted-foreground">{attendance.length} records</p>
+            <p className="text-xs text-muted-foreground">{attendance.length} <span>records</span></p>
           </CardContent>
         </Card>
         <Card>
@@ -245,7 +245,7 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{projectStats.inProgress}</div>
-            <p className="text-xs text-muted-foreground">{projectStats.total} total · {projectStats.avgProgress}% avg progress</p>
+            <p className="text-xs text-muted-foreground">{projectStats.total} <span>total</span> · {projectStats.avgProgress}% <span>avg progress</span></p>
           </CardContent>
         </Card>
         <Card>
@@ -255,7 +255,7 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{taskStats.open}</div>
-            <p className="text-xs text-muted-foreground">{taskStats.critical} critical · {taskStats.done} done</p>
+            <p className="text-xs text-muted-foreground">{taskStats.critical} <span>critical</span> · {taskStats.done} <span>done</span></p>
           </CardContent>
         </Card>
         <Card>
