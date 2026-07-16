@@ -550,6 +550,15 @@ export const ru: Record<string, string> = {
   "Trusted Devices Only": "Только доверенные устройства",
   "Allow access only from registered devices": "Разрешить доступ только с зарегистрированных устройств",
   "Role: Default sections have been automatically selected. You can manually adjust permissions by checking/unchecking sections below.": "Роль: разделы по умолчанию выбраны автоматически. Вы можете вручную настроить права, отмечая или снимая отметки с разделов ниже.",
+  "(assigning any position counts the user as an Employee)": "(при назначении любой должности пользователь считается Сотрудником)",
+  "age": "возраст",
+  "Profile Picture": "Аватар пользователя",
+  "Upload photo": "Загрузить фото",
+  "Change photo": "Изменить фото",
+  "PNG or JPG, up to 5MB.": "PNG или JPG, до 5МБ.",
+  "Edit User": "Редактировать пользователя",
+  "Update user information and section permissions": "Обновить информацию о пользователе и права доступа к разделам",
+  "Create a new user account with role and section permissions": "Создать новую учётную запись с ролью и правами доступа к разделам",
 }
 
 

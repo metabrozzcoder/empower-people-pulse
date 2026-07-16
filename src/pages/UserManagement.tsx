@@ -1006,7 +1006,7 @@ export default function UserManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="birthday">Date of Birth {formData.birthday && (<span className="text-xs text-muted-foreground">(age {Math.max(0, Math.floor((Date.now() - new Date(formData.birthday).getTime())/(365.25*24*3600*1000)))})</span>)}</Label>
+                  <Label htmlFor="birthday">Date of Birth {formData.birthday && (<span className="text-xs text-muted-foreground">(<span>age</span> {Math.max(0, Math.floor((Date.now() - new Date(formData.birthday).getTime())/(365.25*24*3600*1000)))})</span>)}</Label>
                   <Input
                     id="birthday"
                     type="date"
