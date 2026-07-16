@@ -514,7 +514,6 @@ export const ru: Record<string, string> = {
   "Avg Performance": "Средняя эффективность",
   "Attendance Rate": "Посещаемость",
   "Open Tasks": "Открытые задачи",
-  "Across scored employees": "По оценённым сотрудникам",
   "employees": "сотрудников",
   "accounts": "аккаунтов",
   "records": "записей",
@@ -524,7 +523,6 @@ export const ru: Record<string, string> = {
   "done": "выполнено",
   "Critical priority": "Критический приоритет",
   "Counts of attendance records by weekday": "Количество записей посещаемости по дням недели",
-  "No attendance records yet.": "Пока нет записей посещаемости.",
 }
 
 
