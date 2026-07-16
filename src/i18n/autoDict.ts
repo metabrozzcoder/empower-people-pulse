@@ -523,6 +523,33 @@ export const ru: Record<string, string> = {
   "done": "выполнено",
   "Critical priority": "Критический приоритет",
   "Counts of attendance records by weekday": "Количество записей посещаемости по дням недели",
+
+  // User Management create dialog
+  "Surname *": "Фамилия *",
+  "Date of Birth": "Дата рождения",
+  "Job Position": "Должность",
+  "Job Position (assigning any position counts the user as an Employee)": "Должность (при назначении любой должности пользователь считается Сотрудником)",
+  "Custom Role (optional — created by Admins)": "Пользовательская роль (необязательно — создаётся администраторами)",
+  "Organization": "Организация",
+  "Head of Reporters": "Начальник репортёров",
+  "Head of Drivers": "Начальник водителей",
+  "Head of Operators": "Начальник операторов",
+  "Head of Editors": "Начальник монтажёров",
+  "Head of Directors": "Начальник режиссёров",
+  "Reporter": "Репортёр",
+  "Operator": "Оператор",
+  "Editor": "Монтажёр",
+  "Initial password": "Первоначальный пароль",
+  "This is the password set by an admin. It stays visible here until the user changes it from their own profile.": "Это пароль, установленный администратором. Он остаётся видимым здесь, пока пользователь не изменит его в своём профиле.",
+  "Office IP Only": "Только офисный IP",
+  "Allow access only from office IP addresses": "Разрешить доступ только с офисных IP-адресов",
+  "Business Hours Only": "Только рабочие часы",
+  "Restrict access to business hours only": "Ограничить доступ только рабочими часами",
+  "Secure Location Access": "Доступ по безопасной локации",
+  "Allow access only from specific geographic locations": "Разрешить доступ только из определённых географических локаций",
+  "Trusted Devices Only": "Только доверенные устройства",
+  "Allow access only from registered devices": "Разрешить доступ только с зарегистрированных устройств",
+  "Role: Default sections have been automatically selected. You can manually adjust permissions by checking/unchecking sections below.": "Роль: разделы по умолчанию выбраны автоматически. Вы можете вручную настроить права, отмечая или снимая отметки с разделов ниже.",
 }
 
 
