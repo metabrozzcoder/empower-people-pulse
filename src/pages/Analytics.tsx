@@ -245,7 +245,7 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{projectStats.inProgress}</div>
-            <p className="text-xs text-muted-foreground">{projectStats.total} total · {projectStats.avgProgress}% avg progress</p>
+            <p className="text-xs text-muted-foreground">{projectStats.total} <span>total</span> · {projectStats.avgProgress}% <span>avg progress</span></p>
           </CardContent>
         </Card>
         <Card>
