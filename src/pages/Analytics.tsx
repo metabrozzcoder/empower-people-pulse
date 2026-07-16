@@ -215,7 +215,7 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalEmployees}</div>
-            <p className="text-xs text-muted-foreground">{employees.length} employees · {profiles.length} accounts</p>
+            <p className="text-xs text-muted-foreground">{employees.length} <span>employees</span> · {profiles.length} <span>accounts</span></p>
           </CardContent>
         </Card>
         <Card>
