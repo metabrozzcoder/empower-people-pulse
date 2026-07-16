@@ -503,6 +503,9 @@ export const ru: Record<string, string> = {
   "completed": "завершено",
   "cancelled": "отменено",
   "rejected": "отклонено",
+  "Department Comparison": "Сравнение отделов",
+  "Average performance per department": "Средняя эффективность по отделам",
+  "Headcount": "Численность",
 }
 
 
