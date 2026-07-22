@@ -38,7 +38,7 @@ export function EmployeeListItem({ employee, onCreateLogin }: EmployeeListItemPr
   return (
     <>
       <div
-        className="grid grid-cols-[48px_1fr] sm:grid-cols-[48px_1.5fr_1fr_130px] md:grid-cols-[48px_1.75fr_1.25fr_1fr_130px_140px_140px] gap-4 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0 items-center"
+        className="grid grid-cols-[48px_1fr] sm:grid-cols-[48px_1.5fr_1fr_130px] md:grid-cols-[48px_1.75fr_1.25fr_1fr_130px_140px_140px] gap-4 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0 items-center overflow-hidden"
         onClick={() => setIsDetailOpen(true)}
       >
         <Avatar className="w-10 h-10 shrink-0">
@@ -58,30 +58,30 @@ export function EmployeeListItem({ employee, onCreateLogin }: EmployeeListItemPr
         <div className="min-w-0 hidden md:block">
           <p className="text-sm text-muted-foreground truncate">{employee.department}</p>
         </div>
-        <div>
-          <Badge className={getStatusColor(employee.status)}>{employee.status}</Badge>
+        <div className="min-w-0">
+          <Badge className={`${getStatusColor(employee.status)} max-w-full truncate inline-block`}>{employee.status}</Badge>
         </div>
-        <div className="hidden md:flex items-center text-sm">
-          <TrendingUp className="w-4 h-4 mr-1.5 text-muted-foreground" />
-          <span className={`font-medium ${getPerformanceColor(employee.performanceScore)}`}>
+        <div className="hidden md:flex items-center text-sm min-w-0">
+          <TrendingUp className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
+          <span className={`font-medium truncate ${getPerformanceColor(employee.performanceScore)}`}>
             {employee.performanceScore}%
           </span>
         </div>
 
-        <div className="hidden md:flex justify-end">
+        <div className="hidden md:flex justify-end min-w-0">
           {onCreateLogin && !employee.profileId && (
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="shrink-0"
+              className="shrink-0 max-w-full"
               onClick={(event) => {
                 event.stopPropagation()
                 onCreateLogin(employee)
               }}
             >
-              <KeyRound className="mr-2 h-4 w-4" />
-              Create login
+              <KeyRound className="mr-2 h-4 w-4 shrink-0" />
+              <span className="truncate">Create login</span>
             </Button>
           )}
         </div>
