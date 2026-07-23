@@ -732,10 +732,10 @@ export default function Chat() {
         </Button>
       </div>
 
-      <div className="flex h-[calc(100vh-13rem)] min-h-0 space-x-4 overflow-hidden">
+      <div className="flex h-[calc(100vh-13rem)] min-h-[28rem] space-x-4 overflow-hidden">
         {/* List */}
-        <Card className="w-80 shrink-0 flex flex-col overflow-hidden">
-          <CardHeader className="pb-3 space-y-3">
+        <Card className="w-80 shrink-0 flex h-full min-h-0 flex-col overflow-hidden">
+          <CardHeader className="shrink-0 pb-3 space-y-3">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <MessageSquare className="w-5 h-5" />
@@ -771,9 +771,9 @@ export default function Chat() {
               </TabsList>
             </Tabs>
           </CardHeader>
-          <CardContent className="flex-1 min-h-0 p-0 overflow-hidden">
-            <ScrollArea className="h-full">
-              <div className="min-w-0 space-y-1 p-2">
+          <CardContent className="flex min-h-0 flex-1 p-0 overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pr-1">
+              <div className="min-w-0 space-y-1 p-2 pr-1">
                 {listTab === 'people' ? (
                   <>
                     {filteredUsers.length === 0 && (
@@ -828,7 +828,7 @@ export default function Chat() {
                   </>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </CardContent>
         </Card>
 
