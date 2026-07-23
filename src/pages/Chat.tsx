@@ -710,15 +710,18 @@ export default function Chat() {
     return <FileText className="w-4 h-4" />
   }
 
-  return (
-    <div className="space-y-6">
+    <div className="chat-surface -m-4 md:-m-6 p-4 md:p-6 min-h-[calc(100vh-4rem)] space-y-6">
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold">{t('pages.chat.title', 'Chat')}</h1>
-          <p className="text-muted-foreground">{t('pages.chat.subtitle', 'Send messages to your team in real time')}</p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            {t('pages.chat.subtitle', 'Send messages to your team in real time')}
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{t('pages.chat.title', 'Chat')}</h1>
         </div>
         <Button
           variant="outline"
+          className="rounded-full backdrop-blur bg-background/70"
           onClick={() => {
             if (typeof Notification === 'undefined') return
             Notification.requestPermission().then(p => {
@@ -732,9 +735,9 @@ export default function Chat() {
         </Button>
       </div>
 
-      <div className="flex h-[calc(100vh-13rem)] min-h-[28rem] space-x-4 overflow-hidden">
+      <div className="flex h-[calc(100vh-13rem)] min-h-[28rem] gap-4 overflow-hidden">
         {/* List */}
-        <Card className="w-80 shrink-0 flex h-full min-h-0 flex-col overflow-hidden">
+        <Card className="chat-card w-80 shrink-0 flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border-0">
           <CardHeader className="shrink-0 pb-3 space-y-3">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
