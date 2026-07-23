@@ -603,7 +603,14 @@ export default function Chat() {
     return users
       .filter(u => u.name.toLowerCase().includes(searchTerm.toLowerCase()))
       .filter(u => filter === 'unread' ? u.unreadCount > 0 : true)
-  }, [users, searchTerm, filter])
+      .slice()
+      .sort((a, b) => {
+        const ta = lastMsgByUser[a.id] ? new Date(lastMsgByUser[a.id]).getTime() : 0
+        const tb = lastMsgByUser[b.id] ? new Date(lastMsgByUser[b.id]).getTime() : 0
+        if (ta !== tb) return tb - ta
+        return a.name.localeCompare(b.name)
+      })
+  }, [users, searchTerm, filter, lastMsgByUser])
 
   // Auto-select first, or a user requested via sessionStorage (e.g. from Organizations "Message" button)
   useEffect(() => {
