@@ -783,30 +783,35 @@ export default function Chat() {
                     {filteredUsers.length === 0 && (
                       <p className="text-center text-sm text-muted-foreground py-8">No users</p>
                     )}
-                    {filteredUsers.map((u) => (
+                    {filteredUsers.map((u) => {
+                      const isOnline = u.lastSeen && (Date.now() - new Date(u.lastSeen).getTime()) < 90_000
+                      return (
                       <div
                         key={u.id}
                         className={cn(
-                          'flex min-w-0 items-center gap-3 overflow-hidden p-3 rounded-lg cursor-pointer transition-colors',
-                          selectedUser?.id === u.id && !selectedGroupId ? 'bg-accent' : 'hover:bg-accent/50'
+                          'flex min-w-0 items-center gap-3 overflow-hidden p-2.5 rounded-xl cursor-pointer transition-all',
+                          selectedUser?.id === u.id && !selectedGroupId ? 'chat-row-active' : 'hover:bg-accent/60'
                         )}
                         onClick={() => { setSelectedGroupId(null); setSelectedUser(u) }}
                       >
-                        <Avatar className="w-10 h-10 shrink-0">
-                          <AvatarImage src={u.avatar} />
-                          <AvatarFallback>{u.name.split(' ').map(n => n[0]).join('').slice(0,2)}</AvatarFallback>
-                        </Avatar>
+                        <div className="relative shrink-0">
+                          <Avatar className="w-11 h-11 ring-2 ring-background">
+                            <AvatarImage src={u.avatar} />
+                            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-semibold">{u.name.split(' ').map(n => n[0]).join('').slice(0,2)}</AvatarFallback>
+                          </Avatar>
+                          {isOnline && <span className="online-dot absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full" />}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex min-w-0 items-center justify-between gap-2">
-                            <p className="min-w-0 flex-1 truncate font-medium">{u.name}</p>
+                            <p className="min-w-0 flex-1 truncate font-semibold text-sm">{u.name}</p>
                             {u.unreadCount > 0 && (
-                              <Badge variant="destructive" className="shrink-0 text-xs">{u.unreadCount}</Badge>
+                              <Badge className="shrink-0 text-[10px] h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground border-0">{u.unreadCount}</Badge>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground truncate">{translatePosition(u.role, chatLang) || '—'}</p>
                         </div>
                       </div>
-                    ))}
+                    )})}
                   </>
                 ) : (
                   <>
