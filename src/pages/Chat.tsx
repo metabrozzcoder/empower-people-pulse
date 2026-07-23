@@ -732,9 +732,9 @@ export default function Chat() {
         </Button>
       </div>
 
-      <div className="flex h-[calc(100vh-13rem)] space-x-4">
+      <div className="flex h-[calc(100vh-13rem)] min-h-0 space-x-4 overflow-hidden">
         {/* List */}
-        <Card className="w-80 flex flex-col">
+        <Card className="w-80 shrink-0 flex flex-col overflow-hidden">
           <CardHeader className="pb-3 space-y-3">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -771,9 +771,9 @@ export default function Chat() {
               </TabsList>
             </Tabs>
           </CardHeader>
-          <CardContent className="flex-1 p-0">
+          <CardContent className="flex-1 min-h-0 p-0 overflow-hidden">
             <ScrollArea className="h-full">
-              <div className="space-y-1 p-2">
+              <div className="min-w-0 space-y-1 p-2">
                 {listTab === 'people' ? (
                   <>
                     {filteredUsers.length === 0 && (
@@ -783,20 +783,20 @@ export default function Chat() {
                       <div
                         key={u.id}
                         className={cn(
-                          'flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors',
+                          'flex min-w-0 items-center gap-3 overflow-hidden p-3 rounded-lg cursor-pointer transition-colors',
                           selectedUser?.id === u.id && !selectedGroupId ? 'bg-accent' : 'hover:bg-accent/50'
                         )}
                         onClick={() => { setSelectedGroupId(null); setSelectedUser(u) }}
                       >
-                        <Avatar className="w-10 h-10">
+                        <Avatar className="w-10 h-10 shrink-0">
                           <AvatarImage src={u.avatar} />
                           <AvatarFallback>{u.name.split(' ').map(n => n[0]).join('').slice(0,2)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="font-medium truncate">{u.name}</p>
+                          <div className="flex min-w-0 items-center justify-between gap-2">
+                            <p className="min-w-0 flex-1 truncate font-medium">{u.name}</p>
                             {u.unreadCount > 0 && (
-                              <Badge variant="destructive" className="text-xs">{u.unreadCount}</Badge>
+                              <Badge variant="destructive" className="shrink-0 text-xs">{u.unreadCount}</Badge>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground truncate">{translatePosition(u.role, chatLang) || '—'}</p>
@@ -813,12 +813,12 @@ export default function Chat() {
                       <div
                         key={g.id}
                         className={cn(
-                          'flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors',
+                          'flex min-w-0 items-center gap-3 overflow-hidden p-3 rounded-lg cursor-pointer transition-colors',
                           selectedGroupId === g.id ? 'bg-accent' : 'hover:bg-accent/50'
                         )}
                         onClick={() => { setSelectedUser(null); setSelectedGroupId(g.id) }}
                       >
-                        <Avatar className="w-10 h-10"><AvatarFallback><Users className="w-4 h-4" /></AvatarFallback></Avatar>
+                        <Avatar className="w-10 h-10 shrink-0"><AvatarFallback><Users className="w-4 h-4" /></AvatarFallback></Avatar>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{g.name}</p>
                           <p className="text-xs text-muted-foreground truncate">{formatMemberCount(g.memberCount, chatLang)}</p>
