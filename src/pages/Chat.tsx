@@ -922,8 +922,8 @@ export default function Chat() {
                         )}
 
                         <div className={cn(
-                          'max-w-xs lg:max-w-md px-3 py-2 rounded-2xl shadow-sm space-y-2',
-                          mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm'
+                          'max-w-xs lg:max-w-md px-3.5 py-2.5 rounded-2xl space-y-2',
+                          mine ? 'chat-bubble-mine rounded-br-md' : 'chat-bubble-theirs rounded-bl-md'
                         )}>
                           {(m.attachments ?? []).length > 0 && (
                             <div className="space-y-2">
