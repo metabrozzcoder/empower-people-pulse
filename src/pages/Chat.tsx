@@ -710,6 +710,7 @@ export default function Chat() {
     return <FileText className="w-4 h-4" />
   }
 
+  return (
     <div className="chat-surface -m-4 md:-m-6 p-4 md:p-6 min-h-[calc(100vh-4rem)] space-y-6">
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
