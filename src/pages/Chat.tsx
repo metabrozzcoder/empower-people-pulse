@@ -298,24 +298,43 @@ export default function Chat() {
 
   useEffect(() => { refreshConvMap() }, [refreshConvMap])
 
-  // Compute unread message counts per DM peer
+  // Last message time per DM peer (for sorting recent conversations to top)
+  const [lastMsgByUser, setLastMsgByUser] = useState<Record<string, string>>({})
+
+  // Compute unread counts + latest message time per DM peer
   const refreshUnread = useCallback(async () => {
     if (!myId) return
     const entries = Object.entries(convByUser)
     if (entries.length === 0) return
     const convIds = entries.map(([, cid]) => cid)
-    const { data } = await supabase
+    const convToUser: Record<string, string> = {}
+    entries.forEach(([uid, cid]) => { convToUser[cid] = uid })
+
+    const { data: unreadData } = await supabase
       .from('messages')
       .select('conversation_id, sender_id, read_at')
       .in('conversation_id', convIds)
       .is('read_at', null)
       .neq('sender_id', myId)
     const counts: Record<string, number> = {}
-    ;(data ?? []).forEach((m: any) => {
-      const uid = entries.find(([, cid]) => cid === m.conversation_id)?.[0]
+    ;(unreadData ?? []).forEach((m: any) => {
+      const uid = convToUser[m.conversation_id]
       if (uid) counts[uid] = (counts[uid] || 0) + 1
     })
     setUsers(prev => prev.map(u => ({ ...u, unreadCount: counts[u.id] || 0 })))
+
+    const { data: recentData } = await supabase
+      .from('messages')
+      .select('conversation_id, created_at')
+      .in('conversation_id', convIds)
+      .order('created_at', { ascending: false })
+      .limit(500)
+    const latest: Record<string, string> = {}
+    ;(recentData ?? []).forEach((m: any) => {
+      const uid = convToUser[m.conversation_id]
+      if (uid && !latest[uid]) latest[uid] = m.created_at
+    })
+    setLastMsgByUser(latest)
   }, [myId, convByUser])
 
   useEffect(() => { refreshUnread() }, [refreshUnread])
