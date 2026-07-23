@@ -1004,7 +1004,7 @@ export default function Chat() {
                 </div>
               )}
               <div
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 rounded-2xl border border-border bg-background/70 backdrop-blur px-2 py-1.5"
                 onDragOver={(e) => { e.preventDefault() }}
                 onDrop={(e) => { e.preventDefault(); onFilesPicked(e.dataTransfer.files) }}
               >
@@ -1015,12 +1015,12 @@ export default function Chat() {
                   className="hidden"
                   onChange={(e) => { onFilesPicked(e.target.files); if (fileInputRef.current) fileInputRef.current.value = '' }}
                 />
-                <Button variant="ghost" size="sm" title="Attach files" onClick={() => fileInputRef.current?.click()}>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full shrink-0" title="Attach files" onClick={() => fileInputRef.current?.click()}>
                   <Paperclip className="w-4 h-4" />
                 </Button>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm"><Smile className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full shrink-0"><Smile className="w-4 h-4" /></Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-64">
                     <div className="grid grid-cols-8 gap-1">
@@ -1036,10 +1036,10 @@ export default function Chat() {
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
                   onPaste={handlePaste}
                   placeholder={pendingFiles.length ? 'Add a caption...' : 'Type a message, drop files, or paste an image...'}
-                  className="flex-1"
+                  className="flex-1 border-0 bg-transparent focus-visible:ring-0 shadow-none px-1"
                   disabled={uploading}
                 />
-                <Button onClick={handleSend} disabled={uploading || (!draft.trim() && pendingFiles.length === 0)}>
+                <Button onClick={handleSend} disabled={uploading || (!draft.trim() && pendingFiles.length === 0)} size="icon" className="h-9 w-9 rounded-full shrink-0 bg-gradient-to-br from-primary to-primary/80 shadow-md">
                   {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
