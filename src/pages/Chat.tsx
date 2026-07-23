@@ -711,14 +711,18 @@ export default function Chat() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="chat-surface -m-4 md:-m-6 p-4 md:p-6 min-h-[calc(100vh-4rem)] space-y-6">
       <div className="flex items-end justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold">{t('pages.chat.title', 'Chat')}</h1>
-          <p className="text-muted-foreground">{t('pages.chat.subtitle', 'Send messages to your team in real time')}</p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            {t('pages.chat.subtitle', 'Send messages to your team in real time')}
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{t('pages.chat.title', 'Chat')}</h1>
         </div>
         <Button
           variant="outline"
+          className="rounded-full backdrop-blur bg-background/70"
           onClick={() => {
             if (typeof Notification === 'undefined') return
             Notification.requestPermission().then(p => {
@@ -732,9 +736,9 @@ export default function Chat() {
         </Button>
       </div>
 
-      <div className="flex h-[calc(100vh-13rem)] min-h-[28rem] space-x-4 overflow-hidden">
+      <div className="flex h-[calc(100vh-13rem)] min-h-[28rem] gap-4 overflow-hidden">
         {/* List */}
-        <Card className="w-80 shrink-0 flex h-full min-h-0 flex-col overflow-hidden">
+        <Card className="chat-card w-80 shrink-0 flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border-0">
           <CardHeader className="shrink-0 pb-3 space-y-3">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -779,30 +783,35 @@ export default function Chat() {
                     {filteredUsers.length === 0 && (
                       <p className="text-center text-sm text-muted-foreground py-8">No users</p>
                     )}
-                    {filteredUsers.map((u) => (
+                    {filteredUsers.map((u) => {
+                      const isOnline = u.lastSeen && (Date.now() - new Date(u.lastSeen).getTime()) < 90_000
+                      return (
                       <div
                         key={u.id}
                         className={cn(
-                          'flex min-w-0 items-center gap-3 overflow-hidden p-3 rounded-lg cursor-pointer transition-colors',
-                          selectedUser?.id === u.id && !selectedGroupId ? 'bg-accent' : 'hover:bg-accent/50'
+                          'flex min-w-0 items-center gap-3 overflow-hidden p-2.5 rounded-xl cursor-pointer transition-all',
+                          selectedUser?.id === u.id && !selectedGroupId ? 'chat-row-active' : 'hover:bg-accent/60'
                         )}
                         onClick={() => { setSelectedGroupId(null); setSelectedUser(u) }}
                       >
-                        <Avatar className="w-10 h-10 shrink-0">
-                          <AvatarImage src={u.avatar} />
-                          <AvatarFallback>{u.name.split(' ').map(n => n[0]).join('').slice(0,2)}</AvatarFallback>
-                        </Avatar>
+                        <div className="relative shrink-0">
+                          <Avatar className="w-11 h-11 ring-2 ring-background">
+                            <AvatarImage src={u.avatar} />
+                            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-semibold">{u.name.split(' ').map(n => n[0]).join('').slice(0,2)}</AvatarFallback>
+                          </Avatar>
+                          {isOnline && <span className="online-dot absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full" />}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex min-w-0 items-center justify-between gap-2">
-                            <p className="min-w-0 flex-1 truncate font-medium">{u.name}</p>
+                            <p className="min-w-0 flex-1 truncate font-semibold text-sm">{u.name}</p>
                             {u.unreadCount > 0 && (
-                              <Badge variant="destructive" className="shrink-0 text-xs">{u.unreadCount}</Badge>
+                              <Badge className="shrink-0 text-[10px] h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground border-0">{u.unreadCount}</Badge>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground truncate">{translatePosition(u.role, chatLang) || '—'}</p>
                         </div>
                       </div>
-                    ))}
+                    )})}
                   </>
                 ) : (
                   <>
@@ -834,7 +843,7 @@ export default function Chat() {
 
         {/* Chat Window */}
         {(selectedUser || activeGroup) ? (
-          <Card className="flex-1 flex flex-col min-w-0">
+          <Card className="chat-card flex-1 flex flex-col min-w-0 rounded-2xl border-0 overflow-hidden">
             <CardHeader className="pb-3 border-b">
               <div className="flex items-center space-x-3">
                 {activeGroup ? (
@@ -913,8 +922,8 @@ export default function Chat() {
                         )}
 
                         <div className={cn(
-                          'max-w-xs lg:max-w-md px-3 py-2 rounded-2xl shadow-sm space-y-2',
-                          mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-accent rounded-bl-sm'
+                          'max-w-xs lg:max-w-md px-3.5 py-2.5 rounded-2xl space-y-2',
+                          mine ? 'chat-bubble-mine rounded-br-md' : 'chat-bubble-theirs rounded-bl-md'
                         )}>
                           {(m.attachments ?? []).length > 0 && (
                             <div className="space-y-2">
@@ -995,7 +1004,7 @@ export default function Chat() {
                 </div>
               )}
               <div
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 rounded-2xl border border-border bg-background/70 backdrop-blur px-2 py-1.5"
                 onDragOver={(e) => { e.preventDefault() }}
                 onDrop={(e) => { e.preventDefault(); onFilesPicked(e.dataTransfer.files) }}
               >
@@ -1006,12 +1015,12 @@ export default function Chat() {
                   className="hidden"
                   onChange={(e) => { onFilesPicked(e.target.files); if (fileInputRef.current) fileInputRef.current.value = '' }}
                 />
-                <Button variant="ghost" size="sm" title="Attach files" onClick={() => fileInputRef.current?.click()}>
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full shrink-0" title="Attach files" onClick={() => fileInputRef.current?.click()}>
                   <Paperclip className="w-4 h-4" />
                 </Button>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm"><Smile className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full shrink-0"><Smile className="w-4 h-4" /></Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-64">
                     <div className="grid grid-cols-8 gap-1">
@@ -1027,10 +1036,10 @@ export default function Chat() {
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
                   onPaste={handlePaste}
                   placeholder={pendingFiles.length ? 'Add a caption...' : 'Type a message, drop files, or paste an image...'}
-                  className="flex-1"
+                  className="flex-1 border-0 bg-transparent focus-visible:ring-0 shadow-none px-1"
                   disabled={uploading}
                 />
-                <Button onClick={handleSend} disabled={uploading || (!draft.trim() && pendingFiles.length === 0)}>
+                <Button onClick={handleSend} disabled={uploading || (!draft.trim() && pendingFiles.length === 0)} size="icon" className="h-9 w-9 rounded-full shrink-0 bg-gradient-to-br from-primary to-primary/80 shadow-md">
                   {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
@@ -1038,8 +1047,11 @@ export default function Chat() {
 
           </Card>
         ) : (
-          <Card className="flex-1 flex items-center justify-center">
-            <p className="text-muted-foreground">Select a person to start chatting</p>
+          <Card className="chat-card flex-1 flex flex-col items-center justify-center rounded-2xl border-0 gap-3">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <MessageSquare className="w-7 h-7 text-primary" />
+            </div>
+            <p className="text-muted-foreground text-sm">Select a person to start chatting</p>
           </Card>
         )}
       </div>
