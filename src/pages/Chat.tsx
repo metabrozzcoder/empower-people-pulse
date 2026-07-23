@@ -1047,8 +1047,11 @@ export default function Chat() {
 
           </Card>
         ) : (
-          <Card className="flex-1 flex items-center justify-center">
-            <p className="text-muted-foreground">Select a person to start chatting</p>
+          <Card className="chat-card flex-1 flex flex-col items-center justify-center rounded-2xl border-0 gap-3">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <MessageSquare className="w-7 h-7 text-primary" />
+            </div>
+            <p className="text-muted-foreground text-sm">Select a person to start chatting</p>
           </Card>
         )}
       </div>
