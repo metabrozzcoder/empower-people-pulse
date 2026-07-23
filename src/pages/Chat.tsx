@@ -843,7 +843,7 @@ export default function Chat() {
 
         {/* Chat Window */}
         {(selectedUser || activeGroup) ? (
-          <Card className="flex-1 flex flex-col min-w-0">
+          <Card className="chat-card flex-1 flex flex-col min-w-0 rounded-2xl border-0 overflow-hidden">
             <CardHeader className="pb-3 border-b">
               <div className="flex items-center space-x-3">
                 {activeGroup ? (
