@@ -576,6 +576,7 @@ export default function Chat() {
           }
           return
         }
+        setLastMsgByUser(prev => ({ ...prev, [userId]: m.created_at }))
         const sender = users.find(u => u.id === userId)
         const isActive = selectedUserRef.current?.id === userId
         if (isActive) {
