@@ -200,7 +200,7 @@ export default function RideOrdersPanel() {
       )}
 
       <section className="space-y-3">
-        <h3 className="font-semibold flex items-center gap-2"><Car className="w-4 h-4" />{`Active rides (${active.length})`}</h3>
+        <h3 className="font-semibold flex items-center gap-2"><Car className="w-4 h-4" />{`${tr(lang, 'Active rides')} (${active.length})`}</h3>
         <div className="space-y-2">
           {active.map(o => {
             const isDriver = o.driver_id === myId
