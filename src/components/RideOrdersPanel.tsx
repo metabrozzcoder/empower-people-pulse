@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { useUsers } from '@/context/UserContext'
@@ -12,6 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Car, MapPin, Clock, X, Check } from 'lucide-react'
 import { toast } from 'sonner'
+import { getDict } from '@/i18n/autoDict'
+
+const tr = (lang: string, en: string): string => {
+  const d = getDict(lang.split('-')[0])
+  return (d && d[en]) || en
+}
 
 interface RideOrder {
   id: string
@@ -42,6 +49,8 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function RideOrdersPanel() {
+  const { i18n } = useTranslation()
+  const lang = i18n.language
   const { currentUser } = useAuth()
   const { users } = useUsers()
   const [orders, setOrders] = useState<RideOrder[]>([])
@@ -177,7 +186,7 @@ export default function RideOrdersPanel() {
 
       {isDispatcher && (
         <section className="space-y-3">
-          <h3 className="font-semibold flex items-center gap-2"><Clock className="w-4 h-4" />{`Pending requests (${toDispatch.length})`}</h3>
+          <h3 className="font-semibold flex items-center gap-2"><Clock className="w-4 h-4" />{`${tr(lang, 'Pending requests')} (${toDispatch.length})`}</h3>
           <div className="space-y-2">
             {toDispatch.map(o => (
               <RideRow key={o.id} order={o} nameOf={nameOf} vehicleLabel={vehicleLabel}>
@@ -191,7 +200,7 @@ export default function RideOrdersPanel() {
       )}
 
       <section className="space-y-3">
-        <h3 className="font-semibold flex items-center gap-2"><Car className="w-4 h-4" />{`Active rides (${active.length})`}</h3>
+        <h3 className="font-semibold flex items-center gap-2"><Car className="w-4 h-4" />{`${tr(lang, 'Active rides')} (${active.length})`}</h3>
         <div className="space-y-2">
           {active.map(o => {
             const isDriver = o.driver_id === myId
@@ -214,7 +223,7 @@ export default function RideOrdersPanel() {
       </section>
 
       <section className="space-y-3">
-        <h3 className="font-semibold flex items-center gap-2"><MapPin className="w-4 h-4" />{`My ride orders (${mine.length})`}</h3>
+        <h3 className="font-semibold flex items-center gap-2"><MapPin className="w-4 h-4" />{`${tr(lang, 'My ride orders')} (${mine.length})`}</h3>
         <div className="space-y-2">
           {mine.map(o => (
             <RideRow key={o.id} order={o} nameOf={nameOf} vehicleLabel={vehicleLabel}>
