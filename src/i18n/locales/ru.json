@@ -28,7 +28,8 @@
     "tomorrow": "Завтра",
     "close": "Закрыть",
     "confirm": "Подтвердить",
-    "back": "Назад"
+    "back": "Назад",
+    "submit": "Отправить"
   },
   "sidebar": {
     "groups": {
@@ -379,6 +380,49 @@
       "deleted": "Удалено",
       "plateRequired": "Гос. номер обязателен",
       "chooseVehicleError": "Выберите автомобиль"
+    },
+    "rideOrders": {
+      "title": "Заказы поездок",
+      "subtitle": "Закажите поездку — диспетчер назначит свободного водителя.",
+      "orderRide": "Заказать поездку",
+      "pendingRequestsCount": "Ожидающие запросы ({{count}})",
+      "activeRidesCount": "Активные поездки ({{count}})",
+      "myOrdersCount": "Мои заказы поездок ({{count}})",
+      "noPending": "Нет ожидающих запросов на поездку.",
+      "noActive": "Нет активных поездок.",
+      "noMine": "Вы ещё не заказывали поездки.",
+      "pickupLocation": "Место подачи *",
+      "dropoffLocation": "Место назначения *",
+      "pickupTime": "Время подачи *",
+      "purpose": "Цель",
+      "notes": "Заметки",
+      "assign": "Назначить",
+      "reassign": "Переназначить",
+      "start": "Начать",
+      "complete": "Завершить",
+      "assignVehicleDriver": "Назначить машину и водителя",
+      "availableVehicles": "Доступные автомобили",
+      "availableDrivers": "Доступные водители",
+      "selectVehicle": "Выберите автомобиль",
+      "selectDriver": "Выберите водителя",
+      "requester": "Заявитель",
+      "when": "Когда",
+      "route": "Маршрут",
+      "vehicleDriver": "Автомобиль / Водитель",
+      "rideRequested": "Поездка запрошена",
+      "rideAssigned": "Поездка назначена",
+      "requiredFields": "Место подачи, назначения и время обязательны",
+      "selectVehicleAndDriver": "Выберите автомобиль и водителя",
+      "notSignedIn": "Вы не вошли в систему",
+      "updated": "Обновлено",
+      "status": {
+        "pending": "ожидание",
+        "assigned": "назначено",
+        "inprogress": "в процессе",
+        "completed": "завершено",
+        "cancelled": "отменено",
+        "rejected": "отклонено"
+      }
     },
     "customRoles": {
       "title": "Пользовательские роли",

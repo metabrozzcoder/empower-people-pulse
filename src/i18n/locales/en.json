@@ -28,7 +28,8 @@
     "tomorrow": "Tomorrow",
     "close": "Close",
     "confirm": "Confirm",
-    "back": "Back"
+    "back": "Back",
+    "submit": "Submit"
   },
   "sidebar": {
     "groups": {
@@ -379,6 +380,49 @@
       "deleted": "Deleted",
       "plateRequired": "Plate number required",
       "chooseVehicleError": "Choose a vehicle"
+    },
+    "rideOrders": {
+      "title": "Ride Orders",
+      "subtitle": "Order a ride and let dispatchers assign an available driver.",
+      "orderRide": "Order a Ride",
+      "pendingRequestsCount": "Pending requests ({{count}})",
+      "activeRidesCount": "Active rides ({{count}})",
+      "myOrdersCount": "My ride orders ({{count}})",
+      "noPending": "No pending ride requests.",
+      "noActive": "No active rides.",
+      "noMine": "You haven't ordered any rides yet.",
+      "pickupLocation": "Pickup location *",
+      "dropoffLocation": "Drop-off location *",
+      "pickupTime": "Pickup time *",
+      "purpose": "Purpose",
+      "notes": "Notes",
+      "assign": "Assign",
+      "reassign": "Reassign",
+      "start": "Start",
+      "complete": "Complete",
+      "assignVehicleDriver": "Assign vehicle & driver",
+      "availableVehicles": "Available vehicles",
+      "availableDrivers": "Available drivers",
+      "selectVehicle": "Select vehicle",
+      "selectDriver": "Select driver",
+      "requester": "Requester",
+      "when": "When",
+      "route": "Route",
+      "vehicleDriver": "Vehicle / Driver",
+      "rideRequested": "Ride requested",
+      "rideAssigned": "Ride assigned",
+      "requiredFields": "Pickup, drop-off and time are required",
+      "selectVehicleAndDriver": "Select vehicle and driver",
+      "notSignedIn": "Not signed in",
+      "updated": "Updated",
+      "status": {
+        "pending": "pending",
+        "assigned": "assigned",
+        "inprogress": "in progress",
+        "completed": "completed",
+        "cancelled": "cancelled",
+        "rejected": "rejected"
+      }
     },
     "customRoles": {
       "title": "Custom Roles",
