@@ -177,7 +177,7 @@ export default function RideOrdersPanel() {
 
       {isDispatcher && (
         <section className="space-y-3">
-          <h3 className="font-semibold flex items-center gap-2"><Clock className="w-4 h-4" />Pending requests ({toDispatch.length})</h3>
+          <h3 className="font-semibold flex items-center gap-2"><Clock className="w-4 h-4" />{`Pending requests (${toDispatch.length})`}</h3>
           <div className="space-y-2">
             {toDispatch.map(o => (
               <RideRow key={o.id} order={o} nameOf={nameOf} vehicleLabel={vehicleLabel}>
