@@ -49,7 +49,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function RideOrdersPanel() {
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation()
   const lang = i18n.language
   const { currentUser } = useAuth()
   const { users } = useUsers()
@@ -101,9 +101,9 @@ export default function RideOrdersPanel() {
   }
 
   const submitOrder = async () => {
-    if (!currentUser?.id) { toast.error('Not signed in'); return }
+    if (!currentUser?.id) { toast.error(t('pages.rideOrders.notSignedIn')); return }
     if (!oForm.pickup_location.trim() || !oForm.dropoff_location.trim() || !oForm.pickup_time) {
-      toast.error('Pickup, drop-off and time are required'); return
+      toast.error(t('pages.rideOrders.requiredFields')); return
     }
     const { error } = await supabase.from('ride_orders').insert({
       requester_id: currentUser.id,
@@ -115,7 +115,7 @@ export default function RideOrdersPanel() {
       status: 'pending',
     })
     if (error) { toast.error(error.message); return }
-    toast.success('Ride requested')
+    toast.success(t('pages.rideOrders.rideRequested'))
     setOrderOpen(false); await load()
   }
 
@@ -148,7 +148,7 @@ export default function RideOrdersPanel() {
 
   const saveAssign = async () => {
     if (!assignRow || !currentUser?.id) return
-    if (!aVehicleId || !aDriverId) { toast.error('Select vehicle and driver'); return }
+    if (!aVehicleId || !aDriverId) { toast.error(t('pages.rideOrders.selectVehicleAndDriver')); return }
     const { error } = await supabase.from('ride_orders').update({
       vehicle_id: aVehicleId,
       driver_id: aDriverId,
@@ -157,14 +157,14 @@ export default function RideOrdersPanel() {
       status: 'assigned',
     }).eq('id', assignRow.id)
     if (error) { toast.error(error.message); return }
-    toast.success('Ride assigned')
+    toast.success(t('pages.rideOrders.rideAssigned'))
     setAssignOpen(false); setAssignRow(null); await load()
   }
 
   const updateStatus = async (id: string, status: string, extra: Record<string, any> = {}) => {
     const { error } = await supabase.from('ride_orders').update({ status, ...extra }).eq('id', id)
     if (error) { toast.error(error.message); return }
-    toast.success('Updated'); await load()
+    toast.success(t('pages.rideOrders.updated')); await load()
   }
 
   const nameOf = (id?: string | null) => users.find(u => u.id === id)?.name ?? '—'
@@ -181,75 +181,75 @@ export default function RideOrdersPanel() {
   return (
     <div className="space-y-6 pt-4">
       <div className="flex justify-end">
-        <Button onClick={openNewOrder}><Plus className="w-4 h-4 mr-2" />Order a Ride</Button>
+        <Button onClick={openNewOrder}><Plus className="w-4 h-4 mr-2" />{t('pages.rideOrders.orderRide')}</Button>
       </div>
 
       {isDispatcher && (
         <section className="space-y-3">
-          <h3 className="font-semibold flex items-center gap-2"><Clock className="w-4 h-4" />{`${tr(lang, 'Pending requests')} (${toDispatch.length})`}</h3>
+          <h3 className="font-semibold flex items-center gap-2"><Clock className="w-4 h-4" />{t('pages.rideOrders.pendingRequestsCount', { count: toDispatch.length })}</h3>
           <div className="space-y-2">
             {toDispatch.map(o => (
               <RideRow key={o.id} order={o} nameOf={nameOf} vehicleLabel={vehicleLabel}>
-                <Button size="sm" onClick={() => openAssign(o)}>Assign</Button>
+                <Button size="sm" onClick={() => openAssign(o)}>{t('pages.rideOrders.assign')}</Button>
                 <Button size="sm" variant="ghost" onClick={() => updateStatus(o.id, 'rejected')}><X className="w-4 h-4" /></Button>
               </RideRow>
             ))}
-            {toDispatch.length === 0 && <p className="text-sm text-muted-foreground">No pending ride requests.</p>}
+            {toDispatch.length === 0 && <p className="text-sm text-muted-foreground">{t('pages.rideOrders.noPending')}</p>}
           </div>
         </section>
       )}
 
       <section className="space-y-3">
-        <h3 className="font-semibold flex items-center gap-2"><Car className="w-4 h-4" />{`${tr(lang, 'Active rides')} (${active.length})`}</h3>
+        <h3 className="font-semibold flex items-center gap-2"><Car className="w-4 h-4" />{t('pages.rideOrders.activeRidesCount', { count: active.length })}</h3>
         <div className="space-y-2">
           {active.map(o => {
             const isDriver = o.driver_id === myId
             return (
               <RideRow key={o.id} order={o} nameOf={nameOf} vehicleLabel={vehicleLabel}>
-                {isDispatcher && <Button size="sm" variant="outline" onClick={() => openAssign(o)}>Reassign</Button>}
+                {isDispatcher && <Button size="sm" variant="outline" onClick={() => openAssign(o)}>{t('pages.rideOrders.reassign')}</Button>}
                 {isDriver && o.status === 'assigned' && (
-                  <Button size="sm" onClick={() => updateStatus(o.id, 'in_progress')}>Start</Button>
+                  <Button size="sm" onClick={() => updateStatus(o.id, 'in_progress')}>{t('pages.rideOrders.start')}</Button>
                 )}
                 {(isDriver || isDispatcher) && o.status === 'in_progress' && (
                   <Button size="sm" onClick={() => updateStatus(o.id, 'completed', { completed_at: new Date().toISOString() })}>
-                    <Check className="w-4 h-4 mr-1" />Complete
+                    <Check className="w-4 h-4 mr-1" />{t('pages.rideOrders.complete')}
                   </Button>
                 )}
               </RideRow>
             )
           })}
-          {active.length === 0 && <p className="text-sm text-muted-foreground">No active rides.</p>}
+          {active.length === 0 && <p className="text-sm text-muted-foreground">{t('pages.rideOrders.noActive')}</p>}
         </div>
       </section>
 
       <section className="space-y-3">
-        <h3 className="font-semibold flex items-center gap-2"><MapPin className="w-4 h-4" />{`${tr(lang, 'My ride orders')} (${mine.length})`}</h3>
+        <h3 className="font-semibold flex items-center gap-2"><MapPin className="w-4 h-4" />{t('pages.rideOrders.myOrdersCount', { count: mine.length })}</h3>
         <div className="space-y-2">
           {mine.map(o => (
             <RideRow key={o.id} order={o} nameOf={nameOf} vehicleLabel={vehicleLabel}>
               {['pending', 'assigned'].includes(o.status) && o.requester_id === myId && (
-                <Button size="sm" variant="ghost" onClick={() => updateStatus(o.id, 'cancelled')}>Cancel</Button>
+                <Button size="sm" variant="ghost" onClick={() => updateStatus(o.id, 'cancelled')}>{t('common.cancel')}</Button>
               )}
             </RideRow>
           ))}
-          {mine.length === 0 && <p className="text-sm text-muted-foreground">You haven't ordered any rides yet.</p>}
+          {mine.length === 0 && <p className="text-sm text-muted-foreground">{t('pages.rideOrders.noMine')}</p>}
         </div>
       </section>
 
       {/* Order dialog */}
       <Dialog open={orderOpen} onOpenChange={setOrderOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Order a Ride</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('pages.rideOrders.orderRide')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-2"><Label>Pickup location *</Label><Input value={oForm.pickup_location} onChange={e => setOForm({ ...oForm, pickup_location: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Drop-off location *</Label><Input value={oForm.dropoff_location} onChange={e => setOForm({ ...oForm, dropoff_location: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Pickup time *</Label><Input type="datetime-local" value={oForm.pickup_time} onChange={e => setOForm({ ...oForm, pickup_time: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Purpose</Label><Input value={oForm.purpose} onChange={e => setOForm({ ...oForm, purpose: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Notes</Label><Textarea value={oForm.notes} onChange={e => setOForm({ ...oForm, notes: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.rideOrders.pickupLocation')}</Label><Input value={oForm.pickup_location} onChange={e => setOForm({ ...oForm, pickup_location: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.rideOrders.dropoffLocation')}</Label><Input value={oForm.dropoff_location} onChange={e => setOForm({ ...oForm, dropoff_location: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.rideOrders.pickupTime')}</Label><Input type="datetime-local" value={oForm.pickup_time} onChange={e => setOForm({ ...oForm, pickup_time: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.rideOrders.purpose')}</Label><Input value={oForm.purpose} onChange={e => setOForm({ ...oForm, purpose: e.target.value })} /></div>
+            <div className="space-y-2"><Label>{t('pages.rideOrders.notes')}</Label><Textarea value={oForm.notes} onChange={e => setOForm({ ...oForm, notes: e.target.value })} /></div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setOrderOpen(false)}>Cancel</Button>
-            <Button onClick={submitOrder}>Submit</Button>
+            <Button variant="outline" onClick={() => setOrderOpen(false)}>{t('common.cancel')}</Button>
+            <Button onClick={submitOrder}>{t('common.submit', 'Submit')}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -257,16 +257,16 @@ export default function RideOrdersPanel() {
       {/* Assign dialog */}
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Assign vehicle & driver</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('pages.rideOrders.assignVehicleDriver')}</DialogTitle></DialogHeader>
           {assignRow && (
             <div className="space-y-3">
               <div className="text-sm text-muted-foreground">
                 {new Date(assignRow.pickup_time).toLocaleString()} · {assignRow.pickup_location} → {assignRow.dropoff_location}
               </div>
               <div className="space-y-2">
-                <Label>Available vehicles</Label>
+                <Label>{t('pages.rideOrders.availableVehicles')}</Label>
                 <Select value={aVehicleId} onValueChange={setAVehicleId}>
-                  <SelectTrigger><SelectValue placeholder="Select vehicle" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t('pages.rideOrders.selectVehicle')} /></SelectTrigger>
                   <SelectContent>
                     {availableVehiclesForTime(assignRow.pickup_time).map(v => (
                       <SelectItem key={v.id} value={v.id}>{v.plate_number} · {[v.make, v.model].filter(Boolean).join(' ')}</SelectItem>
@@ -275,9 +275,9 @@ export default function RideOrdersPanel() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Available drivers</Label>
+                <Label>{t('pages.rideOrders.availableDrivers')}</Label>
                 <Select value={aDriverId} onValueChange={setADriverId}>
-                  <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t('pages.rideOrders.selectDriver')} /></SelectTrigger>
                   <SelectContent>
                     {availableDriversForTime(assignRow.pickup_time).map(u => (
                       <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
@@ -288,8 +288,8 @@ export default function RideOrdersPanel() {
             </div>
           )}
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setAssignOpen(false)}>Cancel</Button>
-            <Button onClick={saveAssign}>Assign</Button>
+            <Button variant="outline" onClick={() => setAssignOpen(false)}>{t('common.cancel')}</Button>
+            <Button onClick={saveAssign}>{t('pages.rideOrders.assign')}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -303,16 +303,18 @@ function RideRow({ order, nameOf, vehicleLabel, children }: {
   vehicleLabel: (id?: string | null) => string
   children?: React.ReactNode
 }) {
+  const { t } = useTranslation()
+  const statusKey = order.status.replace('_', '')
   return (
     <Card>
       <CardContent className="p-4 flex items-center gap-4 flex-wrap">
         <div className="flex-1 min-w-[240px] grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-          <div><p className="text-muted-foreground text-xs">Requester</p><p className="font-medium">{nameOf(order.requester_id)}</p></div>
-          <div><p className="text-muted-foreground text-xs">When</p><p className="font-medium">{new Date(order.pickup_time).toLocaleString()}</p></div>
-          <div className="md:col-span-2"><p className="text-muted-foreground text-xs">Route</p><p className="font-medium truncate">{order.pickup_location} → {order.dropoff_location}</p></div>
-          <div><p className="text-muted-foreground text-xs">Vehicle / Driver</p><p className="font-medium truncate">{vehicleLabel(order.vehicle_id)}{order.driver_id ? ` · ${nameOf(order.driver_id)}` : ''}</p></div>
+          <div><p className="text-muted-foreground text-xs">{t('pages.rideOrders.requester')}</p><p className="font-medium">{nameOf(order.requester_id)}</p></div>
+          <div><p className="text-muted-foreground text-xs">{t('pages.rideOrders.when')}</p><p className="font-medium">{new Date(order.pickup_time).toLocaleString()}</p></div>
+          <div className="md:col-span-2"><p className="text-muted-foreground text-xs">{t('pages.rideOrders.route')}</p><p className="font-medium truncate">{order.pickup_location} → {order.dropoff_location}</p></div>
+          <div><p className="text-muted-foreground text-xs">{t('pages.rideOrders.vehicleDriver')}</p><p className="font-medium truncate">{vehicleLabel(order.vehicle_id)}{order.driver_id ? ` · ${nameOf(order.driver_id)}` : ''}</p></div>
         </div>
-        <Badge className={STATUS_COLORS[order.status] ?? ''} variant="outline">{order.status.replace('_', ' ')}</Badge>
+        <Badge className={STATUS_COLORS[order.status] ?? ''} variant="outline">{t(`pages.rideOrders.status.${statusKey}`, order.status.replace('_', ' '))}</Badge>
         <div className="flex gap-1">{children}</div>
       </CardContent>
     </Card>
