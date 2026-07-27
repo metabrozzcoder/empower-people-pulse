@@ -28,7 +28,8 @@
     "tomorrow": "Ertaga",
     "close": "Yopish",
     "confirm": "Tasdiqlash",
-    "back": "Orqaga"
+    "back": "Orqaga",
+    "submit": "Yuborish"
   },
   "sidebar": {
     "groups": {
@@ -379,6 +380,49 @@
       "deleted": "O'chirildi",
       "plateRequired": "Davlat raqami kerak",
       "chooseVehicleError": "Avtomobilni tanlang"
+    },
+    "rideOrders": {
+      "title": "Yo'l buyurtmalari",
+      "subtitle": "Poyezdka buyurtma qiling — dispetcher bo'sh haydovchini tayinlaydi.",
+      "orderRide": "Poyezdka buyurtma qilish",
+      "pendingRequestsCount": "Kutilayotgan so'rovlar ({{count}})",
+      "activeRidesCount": "Faol poyezdalar ({{count}})",
+      "myOrdersCount": "Mening buyurtmalarim ({{count}})",
+      "noPending": "Kutilayotgan so'rovlar yo'q.",
+      "noActive": "Faol poyezdalar yo'q.",
+      "noMine": "Siz hali poyezdka buyurtma qilmadingiz.",
+      "pickupLocation": "Olib ketish joyi *",
+      "dropoffLocation": "Yetkazish joyi *",
+      "pickupTime": "Olib ketish vaqti *",
+      "purpose": "Maqsad",
+      "notes": "Eslatmalar",
+      "assign": "Tayinlash",
+      "reassign": "Qayta tayinlash",
+      "start": "Boshlash",
+      "complete": "Yakunlash",
+      "assignVehicleDriver": "Avtomobil va haydovchi tayinlash",
+      "availableVehicles": "Bo'sh avtomobillar",
+      "availableDrivers": "Bo'sh haydovchilar",
+      "selectVehicle": "Avtomobilni tanlang",
+      "selectDriver": "Haydovchini tanlang",
+      "requester": "So'rovchi",
+      "when": "Qachon",
+      "route": "Yo'nalish",
+      "vehicleDriver": "Avtomobil / Haydovchi",
+      "rideRequested": "Poyezdka so'raldi",
+      "rideAssigned": "Poyezdka tayinlandi",
+      "requiredFields": "Olib ketish, yetkazish joyi va vaqt majburiy",
+      "selectVehicleAndDriver": "Avtomobil va haydovchini tanlang",
+      "notSignedIn": "Tizimga kirmagansiz",
+      "updated": "Yangilandi",
+      "status": {
+        "pending": "kutilmoqda",
+        "assigned": "tayinlandi",
+        "inprogress": "jarayonda",
+        "completed": "yakunlandi",
+        "cancelled": "bekor qilindi",
+        "rejected": "rad etildi"
+      }
     },
     "customRoles": {
       "title": "Maxsus rollar",
