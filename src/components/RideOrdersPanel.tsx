@@ -177,7 +177,7 @@ export default function RideOrdersPanel() {
 
       {isDispatcher && (
         <section className="space-y-3">
-          <h3 className="font-semibold flex items-center gap-2"><Clock className="w-4 h-4" />Pending requests ({toDispatch.length})</h3>
+          <h3 className="font-semibold flex items-center gap-2"><Clock className="w-4 h-4" />{`Pending requests (${toDispatch.length})`}</h3>
           <div className="space-y-2">
             {toDispatch.map(o => (
               <RideRow key={o.id} order={o} nameOf={nameOf} vehicleLabel={vehicleLabel}>
@@ -191,7 +191,7 @@ export default function RideOrdersPanel() {
       )}
 
       <section className="space-y-3">
-        <h3 className="font-semibold flex items-center gap-2"><Car className="w-4 h-4" />Active rides ({active.length})</h3>
+        <h3 className="font-semibold flex items-center gap-2"><Car className="w-4 h-4" />{`Active rides (${active.length})`}</h3>
         <div className="space-y-2">
           {active.map(o => {
             const isDriver = o.driver_id === myId
@@ -214,7 +214,7 @@ export default function RideOrdersPanel() {
       </section>
 
       <section className="space-y-3">
-        <h3 className="font-semibold flex items-center gap-2"><MapPin className="w-4 h-4" />My ride orders ({mine.length})</h3>
+        <h3 className="font-semibold flex items-center gap-2"><MapPin className="w-4 h-4" />{`My ride orders (${mine.length})`}</h3>
         <div className="space-y-2">
           {mine.map(o => (
             <RideRow key={o.id} order={o} nameOf={nameOf} vehicleLabel={vehicleLabel}>
