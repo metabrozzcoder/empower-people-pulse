@@ -49,6 +49,8 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function RideOrdersPanel() {
+  const { i18n } = useTranslation()
+  const lang = i18n.language
   const { currentUser } = useAuth()
   const { users } = useUsers()
   const [orders, setOrders] = useState<RideOrder[]>([])
