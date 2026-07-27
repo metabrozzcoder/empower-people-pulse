@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { useUsers } from '@/context/UserContext'
@@ -12,6 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Car, MapPin, Clock, X, Check } from 'lucide-react'
 import { toast } from 'sonner'
+import { getDict } from '@/i18n/autoDict'
+
+const tr = (lang: string, en: string): string => {
+  const d = getDict(lang.split('-')[0])
+  return (d && d[en]) || en
+}
 
 interface RideOrder {
   id: string
