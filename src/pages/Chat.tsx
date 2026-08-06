@@ -513,6 +513,12 @@ export default function Chat() {
           .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
         return merged
       })
+      if (convChanged) {
+        const rows = (data ?? []) as any[]
+        const unread = rows.filter(r => r.sender_id !== myId && !r.read_at)
+        setUnreadStartId(unread.length > 0 ? unread[0].id : null)
+        setUnreadStartCount(unread.length)
+      }
       // Mark incoming messages as read
       await supabase.rpc('mark_messages_read' as never, { _conv: activeConvId } as never)
       if (selectedUser) {
