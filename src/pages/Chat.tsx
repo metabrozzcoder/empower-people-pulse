@@ -182,6 +182,11 @@ export default function Chat() {
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({})
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const unreadDividerRef = useRef<HTMLDivElement | null>(null)
+  // First unread message of the conversation being opened (kept visible until you leave the chat)
+  const [unreadStartId, setUnreadStartId] = useState<string | null>(null)
+  const [unreadStartCount, setUnreadStartCount] = useState(0)
+  const jumpToUnreadRef = useRef(false)
   const selectedUserRef = useRef<ChatUser | null>(null)
   useEffect(() => { selectedUserRef.current = selectedUser }, [selectedUser])
   const usersRef = useRef<ChatUser[]>([])
@@ -475,11 +480,14 @@ export default function Chat() {
       if (!selectedUser && !selectedGroupId) {
         lastLoadedConvIdRef.current = null
         setMessages([])
+        setUnreadStartId(null)
+        setUnreadStartCount(0)
       }
       return
     }
     const convChanged = lastLoadedConvIdRef.current !== activeConvId
     lastLoadedConvIdRef.current = activeConvId
+    if (convChanged) { setUnreadStartId(null); setUnreadStartCount(0) }
     let cancelled = false
     ;(async () => {
       const { data, error } = await supabase
@@ -508,6 +516,12 @@ export default function Chat() {
           .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
         return merged
       })
+      if (convChanged) {
+        const rows = (data ?? []) as any[]
+        const unread = rows.filter(r => r.sender_id !== myId && !r.read_at)
+        setUnreadStartId(unread.length > 0 ? unread[0].id : null)
+        setUnreadStartCount(unread.length)
+      }
       // Mark incoming messages as read
       await supabase.rpc('mark_messages_read' as never, { _conv: activeConvId } as never)
       if (selectedUser) {
@@ -595,10 +609,15 @@ export default function Chat() {
     return () => { supabase.removeChannel(channel) }
   }, [myId, convByUser, users, notifEnabled, toast, refreshConvMap])
 
-  // Auto-scroll
+  // Auto-scroll (jump to the first unread message when opening a chat from its unread badge)
   useEffect(() => {
+    if (jumpToUnreadRef.current && unreadDividerRef.current) {
+      unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      jumpToUnreadRef.current = false
+      return
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages.length, selectedUser?.id])
+  }, [messages.length, selectedUser?.id, unreadStartId])
 
   const filteredUsers = useMemo(() => {
     return users
@@ -832,7 +851,17 @@ export default function Chat() {
                           <div className="flex min-w-0 items-center justify-between gap-2">
                             <p className="min-w-0 flex-1 truncate font-semibold text-sm">{u.name}</p>
                             {u.unreadCount > 0 && (
-                              <Badge className="shrink-0 text-[10px] h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground border-0">{u.unreadCount}</Badge>
+                              <Badge
+                                role="button"
+                                title={`${u.unreadCount} unread`}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  jumpToUnreadRef.current = true
+                                  setSelectedGroupId(null)
+                                  setSelectedUser(u)
+                                }}
+                                className="shrink-0 cursor-pointer text-[10px] h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground border-0 hover:opacity-80"
+                              >{u.unreadCount}</Badge>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground truncate">{translatePosition(u.role, chatLang) || '—'}</p>
@@ -933,6 +962,15 @@ export default function Chat() {
                             <span className="text-[11px] px-3 py-1 rounded-full bg-muted text-muted-foreground">
                               {dayLabel(m.created_at)}
                             </span>
+                          </div>
+                        )}
+                        {unreadStartId === m.id && (
+                          <div ref={unreadDividerRef} className="flex items-center gap-3 my-3">
+                            <span className="h-px flex-1 bg-destructive/40" />
+                            <span className="text-[11px] font-semibold uppercase tracking-wide px-3 py-1 rounded-full bg-destructive/10 text-destructive">
+                              {unreadStartCount} {unreadStartCount === 1 ? 'unread message' : 'unread messages'}
+                            </span>
+                            <span className="h-px flex-1 bg-destructive/40" />
                           </div>
                         )}
                         <div className={cn('flex items-end gap-2', mine ? 'justify-end' : 'justify-start')}>
