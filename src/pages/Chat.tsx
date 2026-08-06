@@ -609,10 +609,15 @@ export default function Chat() {
     return () => { supabase.removeChannel(channel) }
   }, [myId, convByUser, users, notifEnabled, toast, refreshConvMap])
 
-  // Auto-scroll
+  // Auto-scroll (jump to the first unread message when opening a chat from its unread badge)
   useEffect(() => {
+    if (jumpToUnreadRef.current && unreadDividerRef.current) {
+      unreadDividerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      jumpToUnreadRef.current = false
+      return
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages.length, selectedUser?.id])
+  }, [messages.length, selectedUser?.id, unreadStartId])
 
   const filteredUsers = useMemo(() => {
     return users
