@@ -24,6 +24,7 @@ Capabilities:
   library to a specific person as approver), update_document, delete_document.
 - Library: search_items, list_recent, save_note, save_bookmark.
 - Profile: get_my_profile, update_my_profile.
+- Statistics: get_user_stats — task/project history and counts for a specific person (resolve them with search_people first, or pass their name). Use it whenever asked how many tasks someone has done, their progress, or their history.
 - Vehicles/Garage: create_vehicle (add a car), list_vehicles. To assign a driver by name, call search_people first to get assigned_driver_id.
 
 Rules:
@@ -437,10 +438,72 @@ const tools = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_user_stats",
+      description: "Get task and project statistics/history for a specific person: total tasks, done, in progress, todo, overdue, completion rate, projects owned/member, and recent task list. Pass user_id (from search_people) or a name.",
+      parameters: {
+        type: "object",
+        properties: {
+          user_id: { type: "string", description: "UUID of the person" },
+          name: { type: "string", description: "Person's name if user_id is unknown" },
+        },
+      },
+    },
+  },
 ];
 
 
 async function runTool(name: string, args: any, supabase: any, userId: string) {
+  if (name === "get_user_stats") {
+    let target = args.user_id as string | undefined;
+    let profile: any = null;
+    if (target) {
+      const { data } = await supabase.from("profiles").select("id,name,email,position,department").eq("id", target).maybeSingle();
+      profile = data;
+    } else if (args.name) {
+      const { data } = await supabase.from("profiles").select("id,name,email,position,department").ilike("name", `%${String(args.name).trim()}%`).limit(1);
+      profile = data?.[0] ?? null;
+      target = profile?.id;
+    }
+    if (!target || !profile) return { error: "Person not found" };
+
+    const { data: tasks, error: tErr } = await supabase
+      .from("tasks")
+      .select("id,title,status,priority,due_date,updated_at,created_by")
+      .eq("assignee_id", target);
+    if (tErr) return { error: tErr.message };
+    const { data: created } = await supabase.from("tasks").select("id", { count: "exact", head: false }).eq("created_by", target);
+    const { data: projects } = await supabase.from("projects").select("id,name,status,progress,owner_id,team");
+
+    const norm = (x: any) => String(x ?? "").toLowerCase();
+    const list = tasks ?? [];
+    const done = list.filter((x: any) => ["done", "completed"].includes(norm(x.status)));
+    const inProgress = list.filter((x: any) => ["in_progress", "in progress", "review"].includes(norm(x.status)));
+    const today = new Date().toISOString().slice(0, 10);
+    const overdue = list.filter((x: any) => !["done", "completed"].includes(norm(x.status)) && x.due_date && x.due_date < today);
+    const owned = (projects ?? []).filter((p: any) => p.owner_id === target);
+    const member = (projects ?? []).filter((p: any) => Array.isArray(p.team) && p.team.some((m: any) => m?.id === target));
+
+    return {
+      person: profile,
+      tasks_total: list.length,
+      tasks_done: done.length,
+      tasks_in_progress: inProgress.length,
+      tasks_todo: Math.max(0, list.length - done.length - inProgress.length),
+      tasks_overdue: overdue.length,
+      tasks_created_by_them: (created ?? []).length,
+      completion_rate: list.length ? Math.round((done.length / list.length) * 100) : 0,
+      projects_owned: owned.map((p: any) => ({ id: p.id, name: p.name, status: p.status, progress: p.progress })),
+      projects_member: member.map((p: any) => ({ id: p.id, name: p.name, status: p.status, progress: p.progress })),
+      recent_tasks: list
+        .slice()
+        .sort((a: any, b: any) => String(b.updated_at).localeCompare(String(a.updated_at)))
+        .slice(0, 20)
+        .map((x: any) => ({ title: x.title, status: x.status, priority: x.priority, due_date: x.due_date })),
+    };
+  }
   if (name === "search_items") {
     const q = String(args.query || "").trim();
     let query = supabase
