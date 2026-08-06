@@ -964,6 +964,15 @@ export default function Chat() {
                             </span>
                           </div>
                         )}
+                        {unreadStartId === m.id && (
+                          <div ref={unreadDividerRef} className="flex items-center gap-3 my-3">
+                            <span className="h-px flex-1 bg-destructive/40" />
+                            <span className="text-[11px] font-semibold uppercase tracking-wide px-3 py-1 rounded-full bg-destructive/10 text-destructive">
+                              {unreadStartCount} {unreadStartCount === 1 ? 'unread message' : 'unread messages'}
+                            </span>
+                            <span className="h-px flex-1 bg-destructive/40" />
+                          </div>
+                        )}
                         <div className={cn('flex items-end gap-2', mine ? 'justify-end' : 'justify-start')}>
                         {!mine && selectedUser && (
                           <Avatar className="w-7 h-7">
