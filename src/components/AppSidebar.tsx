@@ -110,6 +110,7 @@ const sidebarSections = [
       { title: "User Management", titleKey: "sidebar.items.userManagement", url: "/user-management", icon: UserCheck, sectionName: "User Management", allowedRoles: ["Admin"] },
       { title: "Access Control", titleKey: "sidebar.items.accessControl", url: "/access-control", icon: Shield, sectionName: "Access Control", allowedRoles: ["Admin"] },
       { title: "Role Management", titleKey: "sidebar.items.roleManagement", url: "/role-management", icon: Shield, sectionName: "Role Management", allowedRoles: ["Admin"] },
+      { title: "User Statistics", titleKey: "sidebar.items.userStatistics", url: "/user-statistics", icon: TrendingUp, allowedRoles: ["Admin"] },
       { title: "Analytics", titleKey: "sidebar.items.analytics", url: "/analytics", icon: BarChart3, sectionName: "Analytics" },
     ]
   },

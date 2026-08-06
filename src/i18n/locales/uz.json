@@ -1,7 +1,28 @@
 {
   "calendar": {
-    "months": ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"],
-    "weekdaysShort": ["Dush","Sesh","Chor","Pay","Jum","Shan","Yak"]
+    "months": [
+      "Yanvar",
+      "Fevral",
+      "Mart",
+      "Aprel",
+      "May",
+      "Iyun",
+      "Iyul",
+      "Avgust",
+      "Sentabr",
+      "Oktabr",
+      "Noyabr",
+      "Dekabr"
+    ],
+    "weekdaysShort": [
+      "Dush",
+      "Sesh",
+      "Chor",
+      "Pay",
+      "Jum",
+      "Shan",
+      "Yak"
+    ]
   },
   "common": {
     "logout": "Chiqish",
@@ -63,7 +84,8 @@
       "garage": "Garaj",
       "documentation": "Hujjatlar",
       "securitySystem": "Xavfsizlik tizimi",
-      "assistant": "AI Yordamchi"
+      "assistant": "AI Yordamchi",
+      "userStatistics": "Foydalanuvchi statistikasi"
     }
   },
   "assistant": {
@@ -126,17 +148,50 @@
         "messagePlaceholder": "Xabaringizni yozing…"
       }
     },
-    "employees": { "title": "Xodimlar", "subtitle": "Jamoangiz va ularning ma'lumotlarini boshqaring." },
-    "projects": { "title": "Loyihalar", "subtitle": "Barcha loyihalarni kuzating va boshqaring." },
-    "tasks": { "title": "Vazifalar", "subtitle": "Ish elementlarini tashkil eting va kuzating." },
-    "scheduling": { "title": "Jadval", "subtitle": "Smenalarni rejalashtiring va jadvalni boshqaring." },
-    "attendance": { "title": "Davomat", "subtitle": "Davomat va ish vaqtini kuzating." },
-    "analytics": { "title": "Tahlil", "subtitle": "Tashkilot bo'ylab tahlillar va hisobotlar." },
-    "organizations": { "title": "Tashkilotlar", "subtitle": "Tashkilotlar va bo'limlarni boshqaring." },
-    "departments": { "title": "Bo'limlar", "subtitle": "Bo'limlarni boshqaring." },
-    "chat": { "title": "Chat", "subtitle": "Ichki aloqa." },
-    "userManagement": { "title": "Foydalanuvchilarni boshqarish", "subtitle": "Foydalanuvchi hisoblarini yarating va boshqaring." },
-    "roleManagement": { "title": "Rollarni boshqarish", "subtitle": "Rollar va ruxsatlarni belgilang." },
+    "employees": {
+      "title": "Xodimlar",
+      "subtitle": "Jamoangiz va ularning ma'lumotlarini boshqaring."
+    },
+    "projects": {
+      "title": "Loyihalar",
+      "subtitle": "Barcha loyihalarni kuzating va boshqaring."
+    },
+    "tasks": {
+      "title": "Vazifalar",
+      "subtitle": "Ish elementlarini tashkil eting va kuzating."
+    },
+    "scheduling": {
+      "title": "Jadval",
+      "subtitle": "Smenalarni rejalashtiring va jadvalni boshqaring."
+    },
+    "attendance": {
+      "title": "Davomat",
+      "subtitle": "Davomat va ish vaqtini kuzating."
+    },
+    "analytics": {
+      "title": "Tahlil",
+      "subtitle": "Tashkilot bo'ylab tahlillar va hisobotlar."
+    },
+    "organizations": {
+      "title": "Tashkilotlar",
+      "subtitle": "Tashkilotlar va bo'limlarni boshqaring."
+    },
+    "departments": {
+      "title": "Bo'limlar",
+      "subtitle": "Bo'limlarni boshqaring."
+    },
+    "chat": {
+      "title": "Chat",
+      "subtitle": "Ichki aloqa."
+    },
+    "userManagement": {
+      "title": "Foydalanuvchilarni boshqarish",
+      "subtitle": "Foydalanuvchi hisoblarini yarating va boshqaring."
+    },
+    "roleManagement": {
+      "title": "Rollarni boshqarish",
+      "subtitle": "Rollar va ruxsatlarni belgilang."
+    },
     "accessControl": {
       "title": "Kirish nazorati",
       "subtitle": "Bo'lim darajasidagi kirishni sozlang.",
@@ -186,10 +241,22 @@
       "statusUpdatedTitle": "Qoida holati yangilandi",
       "statusUpdatedDesc": "Kirish nazorati qoidasi holati yangilandi."
     },
-    "securitySystem": { "title": "Xavfsizlik tizimi", "subtitle": "Qurilmalar va biometrik ro'yxatga olishni kuzating." },
-    "documentation": { "title": "Hujjatlar", "subtitle": "Bilimlar bazasi va hujjat pochta qutisi." },
-    "settings": { "title": "Sozlamalar", "subtitle": "Ilova sozlamalari." },
-    "profile": { "title": "Profil", "subtitle": "Shaxsiy ma'lumotlaringiz." },
+    "securitySystem": {
+      "title": "Xavfsizlik tizimi",
+      "subtitle": "Qurilmalar va biometrik ro'yxatga olishni kuzating."
+    },
+    "documentation": {
+      "title": "Hujjatlar",
+      "subtitle": "Bilimlar bazasi va hujjat pochta qutisi."
+    },
+    "settings": {
+      "title": "Sozlamalar",
+      "subtitle": "Ilova sozlamalari."
+    },
+    "profile": {
+      "title": "Profil",
+      "subtitle": "Shaxsiy ma'lumotlaringiz."
+    },
     "accountSettings": {
       "title": "Hisob sozlamalari",
       "subtitle": "Hisobingizni boshqaring.",
@@ -321,8 +388,17 @@
         "passwordChangedDesc": "Parolingiz muvaffaqiyatli yangilandi."
       }
     },
-    "shootingRequests": { "title": "Suratga olish so'rovlari", "subtitle": "Media suratga olish so'rovlarini boshqaring." },
-    "recruitment": { "title": "AI yordamida ishga qabul", "subtitle": "Aqlli nomzodlarni tanlash bilan ishga qabul jarayonini optimallashtiring.", "sourceBreakdown": "Manbalar tahlili", "sourceBreakdownDesc": "Nomzodlar qayerdan kelmoqda", "noCandidatesYet": "Hozircha nomzodlar yo'q." },
+    "shootingRequests": {
+      "title": "Suratga olish so'rovlari",
+      "subtitle": "Media suratga olish so'rovlarini boshqaring."
+    },
+    "recruitment": {
+      "title": "AI yordamida ishga qabul",
+      "subtitle": "Aqlli nomzodlarni tanlash bilan ishga qabul jarayonini optimallashtiring.",
+      "sourceBreakdown": "Manbalar tahlili",
+      "sourceBreakdownDesc": "Nomzodlar qayerdan kelmoqda",
+      "noCandidatesYet": "Hozircha nomzodlar yo'q."
+    },
     "garage": {
       "title": "Haydovchilar va garaj",
       "subtitle": "Avtomobillarni boshqaring, sayohatlarni qayd eting va suratga olish so'rovlariga bog'lang",
@@ -432,7 +508,12 @@
       "newCustomRole": "Yangi maxsus rol",
       "dialogDesc": "Ruxsatlar, bo'limlarni belgilang va foydalanuvchilarni tayinlang.",
       "searchPlaceholder": "Rollarni qidirish...",
-      "stats": { "roles": "Maxsus rollar", "assignments": "Tayinlovlar", "permissions": "Ruxsatlar", "sections": "Bo'limlar" },
+      "stats": {
+        "roles": "Maxsus rollar",
+        "assignments": "Tayinlovlar",
+        "permissions": "Ruxsatlar",
+        "sections": "Bo'limlar"
+      },
       "tabGeneral": "Umumiy",
       "tabSections": "Bo'limlar",
       "tabPermissions": "Ruxsatlar",
@@ -461,6 +542,32 @@
       "viewAssigners": "Tayinlanganlar",
       "assignersDescription": "Ushbu maxsus roldagi foydalanuvchilar.",
       "noAssigners": "Tayinlangan foydalanuvchilar yo'q."
+    },
+    "userStatistics": {
+      "title": "Foydalanuvchi statistikasi",
+      "subtitle": "Har bir foydalanuvchi bo‘yicha vazifa va loyiha tarixi (faqat admin).",
+      "totalTasks": "Jami vazifalar",
+      "completedTasks": "Bajarilgan vazifalar",
+      "projects": "Loyihalar",
+      "people": "Xodimlar",
+      "perUser": "Foydalanuvchilar bo‘yicha progress",
+      "perUserHint": "Foydalanuvchining barcha vazifa va loyihalarini ko‘rish uchun «Tarix» tugmasini bosing.",
+      "searchPlaceholder": "Ism, email yoki bo‘lim bo‘yicha qidirish…",
+      "noData": "Foydalanuvchi topilmadi.",
+      "user": "Foydalanuvchi",
+      "tasks": "Vazifalar",
+      "done": "Bajarilgan",
+      "inProgress": "Jarayonda",
+      "todo": "Bajarilishi kerak",
+      "overdue": "Muddati o‘tgan",
+      "completion": "Bajarilish",
+      "history": "Tarix",
+      "historyHint": "Ushbu foydalanuvchining to‘liq vazifa va loyiha tarixi.",
+      "createdByUser": "Yaratgan",
+      "taskHistory": "Vazifalar tarixi",
+      "projectHistory": "Loyihalar tarixi",
+      "noTasks": "Vazifalar yo‘q.",
+      "noProjects": "Loyihalar yo‘q."
     }
   },
   "languages": {
