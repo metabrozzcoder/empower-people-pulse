@@ -480,11 +480,14 @@ export default function Chat() {
       if (!selectedUser && !selectedGroupId) {
         lastLoadedConvIdRef.current = null
         setMessages([])
+        setUnreadStartId(null)
+        setUnreadStartCount(0)
       }
       return
     }
     const convChanged = lastLoadedConvIdRef.current !== activeConvId
     lastLoadedConvIdRef.current = activeConvId
+    if (convChanged) { setUnreadStartId(null); setUnreadStartCount(0) }
     let cancelled = false
     ;(async () => {
       const { data, error } = await supabase
