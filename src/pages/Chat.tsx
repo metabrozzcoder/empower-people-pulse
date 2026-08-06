@@ -851,7 +851,17 @@ export default function Chat() {
                           <div className="flex min-w-0 items-center justify-between gap-2">
                             <p className="min-w-0 flex-1 truncate font-semibold text-sm">{u.name}</p>
                             {u.unreadCount > 0 && (
-                              <Badge className="shrink-0 text-[10px] h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground border-0">{u.unreadCount}</Badge>
+                              <Badge
+                                role="button"
+                                title={`${u.unreadCount} unread`}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  jumpToUnreadRef.current = true
+                                  setSelectedGroupId(null)
+                                  setSelectedUser(u)
+                                }}
+                                className="shrink-0 cursor-pointer text-[10px] h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground border-0 hover:opacity-80"
+                              >{u.unreadCount}</Badge>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground truncate">{translatePosition(u.role, chatLang) || '—'}</p>
