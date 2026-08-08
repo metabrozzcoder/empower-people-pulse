@@ -192,12 +192,26 @@ export async function fileToHtml(file: File): Promise<{ title: string; html: str
 
 /* ---------------- Export ---------------- */
 
-interface Block { type: 'h1' | 'h2' | 'h3' | 'p' | 'li'; text: string }
+interface Block { type: 'h1' | 'h2' | 'h3' | 'p' | 'li' | 'img'; text: string; src?: string; w?: number; h?: number }
 
 function htmlToBlocks(html: string): Block[] {
   const root = document.createElement('div')
   root.innerHTML = html
   const blocks: Block[] = []
+  const pushImages = (el: Element) => {
+    for (const im of Array.from(el.querySelectorAll('img'))) {
+      const src = im.getAttribute('src') ?? ''
+      if (src.startsWith('data:image/')) {
+        blocks.push({
+          type: 'img',
+          text: im.getAttribute('alt') ?? '',
+          src,
+          w: (im as HTMLImageElement).naturalWidth || undefined,
+          h: (im as HTMLImageElement).naturalHeight || undefined,
+        })
+      }
+    }
+  }
   const walk = (el: Element) => {
     for (const child of Array.from(el.children)) {
       const tag = child.tagName.toLowerCase()
@@ -205,6 +219,7 @@ function htmlToBlocks(html: string): Block[] {
         walk(child)
         continue
       }
+      if (tag === 'img' || child.querySelector('img')) pushImages(child.tagName.toLowerCase() === 'img' ? child.parentElement ?? child : child)
       const text = (child.textContent ?? '').trim()
       if (!text) continue
       if (tag === 'h1') blocks.push({ type: 'h1', text })
@@ -213,6 +228,7 @@ function htmlToBlocks(html: string): Block[] {
       else if (tag === 'li') blocks.push({ type: 'li', text })
       else blocks.push({ type: 'p', text })
     }
+
   }
   walk(root)
   if (!blocks.length) {
