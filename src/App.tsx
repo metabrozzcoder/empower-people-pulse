@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ThemeProvider } from "next-themes"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { HashRouter, Routes, Route } from "react-router-dom"
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { AppSidebar } from "@/components/AppSidebar"
@@ -20,9 +20,9 @@ import Profile from "./pages/Profile"
 import AccountSettings from "./pages/AccountSettings"
 
 import ShootingRequests from "./pages/ShootingRequests"
-import Projects from "./pages/Projects"
+import Work from "./pages/Work"
 import Recruitment from "./pages/Recruitment"
-import Tasks from "./pages/Tasks"
+
 import Scheduling from "./pages/Scheduling"
 import Attendance from "./pages/Attendance"
 import Analytics from "./pages/Analytics"
@@ -96,13 +96,13 @@ function AppContent() {
               <Route path="/shooting-requests" element={<ProtectedRoute sectionName="Shooting Requests"><ShootingRequests /></ProtectedRoute>} />
               <Route path="/ride-orders" element={<ProtectedRoute sectionName="Ride Orders"><RideOrders /></ProtectedRoute>} />
               <Route path="/employees" element={<ProtectedRoute sectionName="Employees"><Employees /></ProtectedRoute>} />
-              <Route path="/projects" element={<ProtectedRoute sectionName="Projects"><Projects /></ProtectedRoute>} />
+              <Route path="/projects" element={<ProtectedRoute sectionName="Projects"><Work /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
               
               {/* Fully functional HR pages */}
               <Route path="/recruitment" element={<ProtectedRoute sectionName="Recruitment"><Recruitment /></ProtectedRoute>} />
-              <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+              <Route path="/tasks" element={<Navigate to="/projects" replace />} />
               <Route path="/scheduling" element={<ProtectedRoute sectionName="Scheduling"><Scheduling /></ProtectedRoute>} />
               <Route path="/attendance" element={<ProtectedRoute sectionName="Attendance"><Attendance /></ProtectedRoute>} />
               <Route path="/analytics" element={<ProtectedRoute sectionName="Analytics"><Analytics /></ProtectedRoute>} />
