@@ -166,19 +166,19 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
           text += it.str
           prevEnd = x + (it.width ?? 0)
         }
-        return text.replace(/\s+/g, ' ').trim()
+        return { text: text.replace(/\s+/g, ' ').trim(), y: r.y }
       })
-      .filter(Boolean)
+      .filter((l) => l.text)
 
     // Merge wrapped lines into paragraphs: a new paragraph starts after a line
     // that ends a sentence, or on a blank/short line.
-    const paragraphs: string[] = []
+    const paragraphs: { text: string; y: number }[] = []
     for (const line of lines) {
       const prev = paragraphs[paragraphs.length - 1]
-      if (prev && !/[.!?:;]$/.test(prev) && /^[a-zа-яёA-ZА-ЯЁ0-9(«"']/.test(line) && prev.length > 40) {
-        paragraphs[paragraphs.length - 1] = `${prev} ${line}`
+      if (prev && !/[.!?:;]$/.test(prev.text) && /^[a-zа-яёA-ZА-ЯЁ0-9(«"']/.test(line.text) && prev.text.length > 40) {
+        prev.text = `${prev.text} ${line.text}`
       } else {
-        paragraphs.push(line)
+        paragraphs.push({ text: line.text, y: line.y })
       }
     }
 
@@ -200,12 +200,27 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
       img = ''
     }
 
+    // Interleave text and pictures in their original top-to-bottom order.
+    const pageW = page.getViewport({ scale: 1 }).width || 612
+    const blocks: { y: number; html: string }[] = [
+      ...paragraphs.map((p) => ({ y: p.y, html: `<p>${esc(p.text)}</p>` })),
+      ...(withImages
+        ? []
+        : embedded.map((im) => ({
+            y: im.y,
+            html: `<p><img src="${im.src}" alt="Image" style="max-width:100%;width:${Math.max(
+              10,
+              Math.min(100, Math.round(((im.w || pageW) / pageW) * 100)),
+            )}%" /></p>`,
+          }))),
+    ].sort((a, b) => b.y - a.y)
+
     parts.push(
-      `<div class="ws-page-anchor" data-page="${i}" data-oh="${textHash(paragraphs.join(' '))}"></div>` +
+      `<div class="ws-page-anchor" data-page="${i}" data-oh="${textHash(paragraphs.map((p) => p.text).join(' '))}"></div>` +
         img +
-        (paragraphs.length ? paragraphs.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>') +
-        (withImages ? '' : embedded.map((src) => `<p><img src="${src}" alt="Image" style="max-width:100%" /></p>`).join('')),
+        (blocks.length ? blocks.map((b) => b.html).join('') : '<p></p>'),
     )
+
 
   }
   return parts.join('') || '<p></p>'
