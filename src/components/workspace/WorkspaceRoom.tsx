@@ -19,6 +19,7 @@ import {
 import {
   ArrowLeft, Plus, Trash2, FileText, Table as TableIcon, KanbanSquare,
   MessageSquare, Loader2, Send, UserPlus, Save, Upload, Download, ChevronLeft, ChevronRight,
+  ImagePlus,
 } from 'lucide-react'
 import { fileToHtml, exportHtmlAsDocx, exportHtmlAsPptx, exportHtmlAsPdf, exportEditedOriginal, renderPdfPreview, extractPptxImages, type DocFormat } from '@/lib/docFormats'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -83,6 +84,42 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
   const lastSavedRef = useRef<string | null>(null)
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null)
+
+  /** Rich-text command on the document editor. */
+  const exec = (cmd: string, value?: string) => {
+    editorRef.current?.focus()
+    editingRef.current = true
+    document.execCommand(cmd, false, value)
+    scheduleDocSave()
+  }
+
+  const onInsertImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    const dataUrl = await new Promise<string>((res, rej) => {
+      const r = new FileReader()
+      r.onload = () => res(String(r.result))
+      r.onerror = () => rej(new Error('Could not read image'))
+      r.readAsDataURL(file)
+    })
+    exec('insertHTML', `<p><img src="${dataUrl}" alt="${file.name}" style="max-width:100%" /></p>`)
+  }
+
+  const deleteSelectedImage = () => {
+    if (!selectedImage) {
+      toast({ title: t('workspace.selectImageFirst', 'Click an image in the document first') as string })
+      return
+    }
+    const p = selectedImage.parentElement
+    selectedImage.remove()
+    if (p && p.tagName === 'P' && !p.textContent?.trim() && !p.querySelector('img')) p.remove()
+    setSelectedImage(null)
+    editingRef.current = true
+    scheduleDocSave()
+  }
 
   const nameById = useMemo(() => {
     const m = new Map<string, Person>()
@@ -478,11 +515,40 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
                       </div>
                     )}
 
+                    <div className="flex flex-wrap items-center gap-1 rounded-md border bg-muted/40 p-1.5">
+                      {([
+                        ['bold', 'B', 'font-bold'],
+                        ['italic', 'I', 'italic'],
+                        ['underline', 'U', 'underline'],
+                      ] as const).map(([cmd, label, cls]) => (
+                        <Button key={cmd} type="button" variant="ghost" size="sm" className={`h-7 w-8 p-0 ${cls}`}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => exec(cmd)}>{label}</Button>
+                      ))}
+                      <span className="mx-1 h-5 w-px bg-border" />
+                      <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('formatBlock', 'H1')}>H1</Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('formatBlock', 'H2')}>H2</Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('formatBlock', 'P')}>P</Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('insertUnorderedList')}>• {`${t('workspace.list', 'List')}`}</Button>
+                      <span className="mx-1 h-5 w-px bg-border" />
+                      <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onMouseDown={(e) => e.preventDefault()} onClick={() => imageInputRef.current?.click()}>
+                        <ImagePlus className="h-3.5 w-3.5" /> {`${t('workspace.insertImage', 'Image')}`}
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onMouseDown={(e) => e.preventDefault()} onClick={deleteSelectedImage}>
+                        <Trash2 className="h-3.5 w-3.5" /> {`${t('workspace.removeImage', 'Remove image')}`}
+                      </Button>
+                      <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={onInsertImage} />
+                    </div>
+
                     <div
                       ref={editorRef}
                       contentEditable
                       suppressContentEditableWarning
                       onInput={scheduleDocSave}
+                      onClick={(e) => {
+                        const el = e.target as HTMLElement
+                        setSelectedImage(el?.tagName === 'IMG' ? (el as HTMLImageElement) : null)
+                      }}
                       onBlur={() => { if (idleTimer.current) clearTimeout(idleTimer.current); editingRef.current = false }}
                       className="workspace-doc-editor max-h-[70vh] overflow-y-auto min-h-[320px] rounded-md border bg-background p-4 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring"
                     />

@@ -182,7 +182,11 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
       }
     }
 
-    // Render the page itself so pictures, charts and layout survive the import.
+    // Pull the real pictures embedded in the page so they stay as editable
+    // <img> elements next to the text (instead of flattening the whole page).
+    const embedded = await pdfPageImages(page)
+
+    // Optional: a full-page raster for pixel-perfect layout fidelity.
     let img = ''
     if (withImages) try {
       const viewport = page.getViewport({ scale: 1.4 })
@@ -199,11 +203,65 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
     parts.push(
       `<h2 data-page="${i}" data-oh="${textHash(paragraphs.join(' '))}">Page ${i}</h2>` +
         img +
-        (paragraphs.length ? paragraphs.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>'),
+        (paragraphs.length ? paragraphs.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>') +
+        (withImages ? '' : embedded.map((src) => `<p><img src="${src}" alt="Image" style="max-width:100%" /></p>`).join('')),
     )
 
   }
   return parts.join('') || '<p></p>'
+}
+
+/** Extracts the raster images embedded in a PDF page as data URLs. */
+async function pdfPageImages(page: any, max = 8): Promise<string[]> {
+  const out: string[] = []
+  try {
+    const ops = await page.getOperatorList()
+    const names: string[] = []
+    for (let i = 0; i < ops.fnArray.length; i++) {
+      const fn = ops.fnArray[i]
+      if (fn === pdfjsLib.OPS.paintImageXObject || fn === (pdfjsLib.OPS as any).paintJpegXObject) {
+        const n = ops.argsArray[i]?.[0]
+        if (typeof n === 'string' && !names.includes(n)) names.push(n)
+      }
+    }
+    for (const name of names.slice(0, max)) {
+      const obj: any = await new Promise((res) => {
+        try {
+          const done = (v: unknown) => res(v)
+          if (page.objs.has?.(name)) res(page.objs.get(name))
+          else page.objs.get(name, done)
+        } catch { res(null) }
+      })
+      const w = obj?.width, h = obj?.height
+      if (!obj || !w || !h || w < 48 || h < 48) continue
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')!
+      if (obj.bitmap) {
+        ctx.drawImage(obj.bitmap, 0, 0)
+      } else if (obj.data) {
+        const src = obj.data as Uint8ClampedArray
+        const comps = Math.round(src.length / (w * h))
+        if (comps < 1) continue
+        const out2 = ctx.createImageData(w, h)
+        for (let p = 0, q = 0; p < w * h; p++) {
+          if (comps >= 3) {
+            out2.data[q++] = src[p * comps]
+            out2.data[q++] = src[p * comps + 1]
+            out2.data[q++] = src[p * comps + 2]
+            out2.data[q++] = comps === 4 ? src[p * comps + 3] : 255
+          } else {
+            const v = src[p * comps]
+            out2.data[q++] = v; out2.data[q++] = v; out2.data[q++] = v; out2.data[q++] = 255
+          }
+        }
+        ctx.putImageData(out2, 0, 0)
+      } else continue
+      out.push(canvas.toDataURL('image/jpeg', 0.8))
+    }
+  } catch { /* images are best-effort */ }
+  return out
 }
 
 
