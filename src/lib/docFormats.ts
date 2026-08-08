@@ -211,29 +211,51 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
   return parts.join('') || '<p></p>'
 }
 
-/** Extracts the raster images embedded in a PDF page as data URLs. */
-async function pdfPageImages(page: any, max = 8): Promise<string[]> {
-  const out: string[] = []
+/** Extracts the raster images embedded in a PDF page, with their placement. */
+type PdfImage = { src: string; y: number; w: number; h: number }
+async function pdfPageImages(page: any, max = 12): Promise<PdfImage[]> {
+  const out: PdfImage[] = []
   try {
     const ops = await page.getOperatorList()
-    const names: string[] = []
+    const OPS: any = pdfjsLib.OPS
+    // Track the current transformation matrix so each image keeps its position.
+    const mul = (m: number[], n: number[]) => [
+      m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1],
+      m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3],
+      m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5],
+    ]
+    let ctm = [1, 0, 0, 1, 0, 0]
+    const stack: number[][] = []
+    const found: { name: string; y: number; w: number; h: number }[] = []
     for (let i = 0; i < ops.fnArray.length; i++) {
       const fn = ops.fnArray[i]
-      if (fn === pdfjsLib.OPS.paintImageXObject || fn === (pdfjsLib.OPS as any).paintJpegXObject) {
-        const n = ops.argsArray[i]?.[0]
-        if (typeof n === 'string' && !names.includes(n)) names.push(n)
+      const args = ops.argsArray[i]
+      if (fn === OPS.save) stack.push(ctm.slice())
+      else if (fn === OPS.restore) ctm = stack.pop() || [1, 0, 0, 1, 0, 0]
+      else if (fn === OPS.transform) ctm = mul(ctm, args as number[])
+      else if (fn === OPS.paintImageXObject || fn === OPS.paintJpegXObject || fn === OPS.paintInlineImageXObject) {
+        const n = args?.[0]
+        if (typeof n === 'string' && found.length < max) {
+          const w = Math.abs(ctm[0]) || Math.abs(ctm[1])
+          const h = Math.abs(ctm[3]) || Math.abs(ctm[2])
+          found.push({ name: n, y: ctm[5] + h, w, h })
+        }
       }
     }
-    for (const name of names.slice(0, max)) {
+    const seen = new Set<string>()
+    for (const hit of found) {
+      const key = `${hit.name}@${Math.round(hit.y)}`
+      if (seen.has(key)) continue
+      seen.add(key)
       const obj: any = await new Promise((res) => {
         try {
           const done = (v: unknown) => res(v)
-          if (page.objs.has?.(name)) res(page.objs.get(name))
-          else page.objs.get(name, done)
+          if (page.objs.has?.(hit.name)) res(page.objs.get(hit.name))
+          else page.objs.get(hit.name, done)
         } catch { res(null) }
       })
       const w = obj?.width, h = obj?.height
-      if (!obj || !w || !h || w < 48 || h < 48) continue
+      if (!obj || !w || !h || w < 24 || h < 24) continue
       const canvas = document.createElement('canvas')
       canvas.width = w
       canvas.height = h
@@ -258,11 +280,12 @@ async function pdfPageImages(page: any, max = 8): Promise<string[]> {
         }
         ctx.putImageData(out2, 0, 0)
       } else continue
-      out.push(canvas.toDataURL('image/jpeg', 0.8))
+      out.push({ src: canvas.toDataURL('image/jpeg', 0.82), y: hit.y, w: hit.w, h: hit.h })
     }
   } catch { /* images are best-effort */ }
   return out
 }
+
 
 
 
