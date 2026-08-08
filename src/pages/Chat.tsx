@@ -344,6 +344,21 @@ export default function Chat() {
 
   useEffect(() => { refreshUnread() }, [refreshUnread])
 
+  // Keep unread badges fresh (polling + on tab focus), so counts show even if realtime drops
+  useEffect(() => {
+    if (!myId) return
+    const iv = window.setInterval(() => { refreshUnread() }, 10000)
+    const onVis = () => { if (document.visibilityState === 'visible') refreshUnread() }
+    document.addEventListener('visibilitychange', onVis)
+    window.addEventListener('focus', onVis)
+    return () => {
+      window.clearInterval(iv)
+      document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('focus', onVis)
+    }
+  }, [myId, refreshUnread])
+
+
   // Load groups
   const refreshGroups = useCallback(async () => {
     if (!myId) return
