@@ -758,8 +758,31 @@ async function exportEditedPptx(source: Blob, html: string, title: string) {
   download(blob, `${title || 'presentation'} (edited).pptx`)
 }
 
-/** Draws edited page text (and its images) onto a canvas the size of the page. */
-async function renderTextPage(width: number, height: number, lines: string[], images: string[] = []): Promise<string> {
+type Run = { text: string; bold: boolean; italic: boolean }
+type PageBlock =
+  | { kind: 'text'; runs: Run[]; size: number; align: 'left' | 'center' }
+  | { kind: 'image'; src: string; widthPct: number }
+
+/** Flattens an element into styled runs (bold/italic preserved). */
+function elementRuns(el: Node, bold = false, italic = false, acc: Run[] = []): Run[] {
+  for (const n of Array.from(el.childNodes)) {
+    if (n.nodeType === Node.TEXT_NODE) {
+      const text = (n.textContent ?? '').replace(/\s+/g, ' ')
+      if (text) acc.push({ text, bold, italic })
+    } else if (n.nodeType === Node.ELEMENT_NODE) {
+      const e = n as HTMLElement
+      const tag = e.tagName.toLowerCase()
+      const st = (e.getAttribute('style') || '').toLowerCase()
+      const b = bold || tag === 'strong' || tag === 'b' || tag === 'h1' || tag === 'h2' || /font-weight:\s*(bold|[6-9]00)/.test(st)
+      const it = italic || tag === 'em' || tag === 'i' || /font-style:\s*italic/.test(st)
+      elementRuns(e, b, it, acc)
+    }
+  }
+  return acc
+}
+
+/** Draws edited page blocks onto a canvas the size of the page, keeping styles. */
+async function renderTextPage(width: number, height: number, blocks: PageBlock[]): Promise<string> {
   const scale = 2
   const canvas = document.createElement('canvas')
   canvas.width = Math.ceil(width * scale)
@@ -768,44 +791,70 @@ async function renderTextPage(width: number, height: number, lines: string[], im
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
   ctx.fillStyle = '#111111'
-  const fs = 13 * scale
-  ctx.font = `${fs}px Helvetica, Arial, sans-serif`
   ctx.textBaseline = 'top'
   const margin = 48 * scale
   const maxW = canvas.width - margin * 2
   let y = margin
-  for (const line of lines) {
-    const words = line.split(' ')
-    let buf = ''
-    for (const w of words) {
-      const test = buf ? `${buf} ${w}` : w
-      if (ctx.measureText(test).width > maxW && buf) {
-        if (y < canvas.height - margin) ctx.fillText(buf, margin, y)
-        y += fs * 1.45
-        buf = w
-      } else buf = test
-    }
-    if (buf && y < canvas.height - margin) ctx.fillText(buf, margin, y)
-    y += fs * 1.9
+
+  const setFont = (run: Run, size: number) => {
+    ctx.font = `${run.italic ? 'italic ' : ''}${run.bold ? '600 ' : ''}${size}px Helvetica, Arial, sans-serif`
   }
-  // Keep the pictures that belong to this page below the text.
-  for (const src of images) {
-    if (y > canvas.height - margin) break
-    try {
-      const im = await new Promise<HTMLImageElement>((res, rej) => {
-        const el = new Image()
-        el.onload = () => res(el)
-        el.onerror = () => rej(new Error('img'))
-        el.src = src
-      })
-      const w = Math.min(maxW, im.width * scale)
-      const h = (im.height / im.width) * w
-      const avail = canvas.height - margin - y
-      const drawH = Math.min(h, avail)
-      const drawW = (drawH / h) * w
-      ctx.drawImage(im, margin, y, drawW, drawH)
-      y += drawH + fs
-    } catch { /* skip unreadable image */ }
+
+  for (const block of blocks) {
+    if (block.kind === 'image') {
+      if (y > canvas.height - margin) break
+      try {
+        const im = await new Promise<HTMLImageElement>((res, rej) => {
+          const el = new Image()
+          el.onload = () => res(el)
+          el.onerror = () => rej(new Error('img'))
+          el.src = block.src
+        })
+        const w = Math.min(maxW, maxW * (block.widthPct / 100))
+        const h = (im.height / im.width) * w
+        const avail = canvas.height - margin - y
+        const drawH = Math.min(h, avail)
+        const drawW = (drawH / h) * w
+        ctx.drawImage(im, margin, y, drawW, drawH)
+        y += drawH + 12 * scale
+      } catch { /* skip unreadable image */ }
+      continue
+    }
+
+    const fs = block.size * scale
+    // Word-wrap the styled runs into lines.
+    const lines: Run[][] = [[]]
+    let lineW = 0
+    for (const run of block.runs) {
+      setFont(run, fs)
+      for (const word of run.text.split(/(\s+)/)) {
+        if (!word) continue
+        const w = ctx.measureText(word).width
+        if (lineW + w > maxW && lineW > 0 && word.trim()) {
+          lines.push([])
+          lineW = 0
+        }
+        if (!word.trim() && lineW === 0) continue
+        lines[lines.length - 1].push({ ...run, text: word })
+        lineW += w
+      }
+    }
+    for (const line of lines) {
+      if (y > canvas.height - margin) break
+      let total = 0
+      for (const run of line) {
+        setFont(run, fs)
+        total += ctx.measureText(run.text).width
+      }
+      let x = block.align === 'center' ? margin + (maxW - total) / 2 : margin
+      for (const run of line) {
+        setFont(run, fs)
+        ctx.fillText(run.text, x, y)
+        x += ctx.measureText(run.text).width
+      }
+      y += fs * 1.4
+    }
+    y += fs * 0.5
   }
   return canvas.toDataURL('image/png')
 }
@@ -819,30 +868,41 @@ async function exportEditedPdf(source: Blob, html: string, title: string) {
   // Split the editor content into page sections (as created on import).
   const root = document.createElement('div')
   root.innerHTML = html
-  const sections: { page: number; hash: string | null; lines: string[]; images: string[] }[] = []
+  const sections: { page: number; hash: string | null; text: string[]; blocks: PageBlock[] }[] = []
   for (const el of Array.from(root.children) as HTMLElement[]) {
     if (el.hasAttribute('data-page')) {
       sections.push({
         page: Number(el.getAttribute('data-page')),
         hash: el.getAttribute('data-oh'),
-        lines: [],
-        images: [],
+        text: [],
+        blocks: [],
       })
       continue
     }
     if (!sections.length) continue
     const current = sections[sections.length - 1]
-    for (const im of Array.from(el.querySelectorAll('img')) as HTMLImageElement[]) {
-      if (im.src) current.images.push(im.src)
+    const tag = el.tagName.toLowerCase()
+    const style = el.getAttribute('style') || ''
+    const imgs = Array.from(el.querySelectorAll('img')) as HTMLImageElement[]
+    for (const im of imgs) {
+      if (!im.getAttribute('src')) continue
+      const pct = /width:\s*(\d+)%/.exec(im.getAttribute('style') || '')?.[1]
+      current.blocks.push({ kind: 'image', src: im.getAttribute('src')!, widthPct: pct ? Number(pct) : 100 })
     }
     const text = (el.textContent ?? '').replace(/\s+/g, ' ').trim()
-    if (text) current.lines.push(text)
+    if (!text) continue
+    current.text.push(text)
+    const declared = Number(el.getAttribute('data-fs') || 0)
+    const size = declared || (tag === 'h1' ? 20 : tag === 'h2' ? 16 : 12)
+    const align: 'left' | 'center' =
+      el.getAttribute('data-align') === 'center' || /text-align:\s*center/.test(style) ? 'center' : 'left'
+    current.blocks.push({ kind: 'text', runs: elementRuns(el), size: Math.max(7, Math.min(36, size)), align })
   }
 
   const total = original.getPageCount()
   for (let i = 0; i < total; i++) {
     const section = sections.find((s) => s.page === i + 1)
-    const edited = section && section.hash && textHash(section.lines.join(' ')) !== section.hash
+    const edited = section && section.hash && textHash(section.text.join(' ')) !== section.hash
     if (!edited) {
       const [copied] = await out.copyPages(original, [i])
       out.addPage(copied)
@@ -850,7 +910,7 @@ async function exportEditedPdf(source: Blob, html: string, title: string) {
     }
     const src = original.getPage(i)
     const { width, height } = src.getSize()
-    const png = await out.embedPng(await renderTextPage(width, height, section!.lines, section!.images))
+    const png = await out.embedPng(await renderTextPage(width, height, section!.blocks))
     const page = out.addPage([width, height])
     page.drawImage(png, { x: 0, y: 0, width, height })
   }
@@ -858,6 +918,7 @@ async function exportEditedPdf(source: Blob, html: string, title: string) {
   const bytes = await out.save()
   download(new Blob([bytes as unknown as BlobPart], { type: 'application/pdf' }), `${title || 'document'} (edited).pdf`)
 }
+
 
 /** Exports a NEW file that is the original uploaded document with the edits applied. */
 export async function exportEditedOriginal(
