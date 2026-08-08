@@ -139,9 +139,35 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
     }
   }, [activeDoc?.id, activeDoc?.content_html, activeDoc])
 
+  // Detect page / slide sections (from imported PDF & PPTX) for navigation
+  const refreshPages = useCallback(() => {
+    const el = editorRef.current
+    if (!el) return setPages([])
+    const heads = Array.from(el.querySelectorAll('h1,h2')) as HTMLElement[]
+    const found = heads.map((h, i) => {
+      const num = h.getAttribute('data-page') ?? h.getAttribute('data-slide') ?? String(i + 1)
+      const kind = h.hasAttribute('data-slide') ? t('workspace.slide', 'Slide') : t('workspace.page', 'Page')
+      if (!h.id) h.id = `wsp-sec-${i}`
+      h.dataset.sectionIndex = String(i)
+      return { id: h.id, label: h.hasAttribute('data-page') || h.hasAttribute('data-slide') ? `${kind} ${num}` : (h.textContent || `${kind} ${i + 1}`).slice(0, 24) }
+    })
+    setPages(found)
+  }, [t])
+
+  useEffect(() => { refreshPages(); setActivePage(0) }, [activeDoc?.id, activeDoc?.content_html, refreshPages])
+
+  const goToPage = (idx: number) => {
+    const el = editorRef.current
+    const target = el?.querySelector(`#${CSS.escape(pages[idx]?.id ?? '')}`) as HTMLElement | null
+    if (!target) return
+    setActivePage(idx)
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const scheduleDocSave = () => {
     if (!activeDocId) return
     editingRef.current = true
+    refreshPages()
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
       const html = editorRef.current?.innerHTML ?? ''
