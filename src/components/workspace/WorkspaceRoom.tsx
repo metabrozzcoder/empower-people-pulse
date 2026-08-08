@@ -234,7 +234,7 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
     try {
       if (format === 'docx') await exportHtmlAsDocx(html, title)
       else if (format === 'pptx') await exportHtmlAsPptx(html, title)
-      else exportHtmlAsPdf(html, title)
+      else await exportHtmlAsPdf(html, title)
     } catch (e) {
       toast({ title: (e as Error).message, variant: 'destructive' })
     } finally {

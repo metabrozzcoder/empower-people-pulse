@@ -3,7 +3,7 @@
    in the workspace editor, and exported back to the original formats. */
 import mammoth from 'mammoth'
 import JSZip from 'jszip'
-import { Document, Packer, Paragraph, HeadingLevel, TextRun } from 'docx'
+import { Document, Packer, Paragraph, HeadingLevel, TextRun, ImageRun } from 'docx'
 import PptxGenJS from 'pptxgenjs'
 import { jsPDF } from 'jspdf'
 import * as pdfjsLib from 'pdfjs-dist'
@@ -154,13 +154,29 @@ async function pdfToHtml(file: File): Promise<string> {
       }
     }
 
+    // Render the page itself so pictures, charts and layout survive the import.
+    let img = ''
+    try {
+      const viewport = page.getViewport({ scale: 1.4 })
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.ceil(viewport.width)
+      canvas.height = Math.ceil(viewport.height)
+      const ctx = canvas.getContext('2d')!
+      await page.render({ canvas, canvasContext: ctx, viewport }).promise
+      img = `<p><img src="${canvas.toDataURL('image/jpeg', 0.72)}" alt="Page ${i}" style="max-width:100%" /></p>`
+    } catch {
+      img = ''
+    }
+
     parts.push(
       `<h2 data-page="${i}">Page ${i}</h2>` +
+        img +
         (paragraphs.length ? paragraphs.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>'),
     )
   }
   return parts.join('') || '<p></p>'
 }
+
 
 
 /** Converts an uploaded .docx/.pptx/.pdf into editable HTML. */
@@ -176,12 +192,26 @@ export async function fileToHtml(file: File): Promise<{ title: string; html: str
 
 /* ---------------- Export ---------------- */
 
-interface Block { type: 'h1' | 'h2' | 'h3' | 'p' | 'li'; text: string }
+interface Block { type: 'h1' | 'h2' | 'h3' | 'p' | 'li' | 'img'; text: string; src?: string; w?: number; h?: number }
 
 function htmlToBlocks(html: string): Block[] {
   const root = document.createElement('div')
   root.innerHTML = html
   const blocks: Block[] = []
+  const pushImage = (im: Element) => {
+    const src = im.getAttribute('src') ?? ''
+    if (!src.startsWith('data:image/')) return
+    blocks.push({
+      type: 'img',
+      text: im.getAttribute('alt') ?? '',
+      src,
+      w: Number(im.getAttribute('width')) || undefined,
+      h: Number(im.getAttribute('height')) || undefined,
+    })
+  }
+  const pushImages = (el: Element) => {
+    for (const im of Array.from(el.querySelectorAll('img'))) pushImage(im)
+  }
   const walk = (el: Element) => {
     for (const child of Array.from(el.children)) {
       const tag = child.tagName.toLowerCase()
@@ -189,6 +219,8 @@ function htmlToBlocks(html: string): Block[] {
         walk(child)
         continue
       }
+      if (tag === 'img') { pushImage(child); continue }
+      if (child.querySelector('img')) pushImages(child)
       const text = (child.textContent ?? '').trim()
       if (!text) continue
       if (tag === 'h1') blocks.push({ type: 'h1', text })
@@ -197,6 +229,7 @@ function htmlToBlocks(html: string): Block[] {
       else if (tag === 'li') blocks.push({ type: 'li', text })
       else blocks.push({ type: 'p', text })
     }
+
   }
   walk(root)
   if (!blocks.length) {
@@ -204,6 +237,27 @@ function htmlToBlocks(html: string): Block[] {
     if (text) blocks.push({ type: 'p', text })
   }
   return blocks
+}
+
+function dataUrlType(src: string): 'png' | 'jpg' {
+  return src.startsWith('data:image/png') ? 'png' : 'jpg'
+}
+
+function dataUrlToBytes(src: string): Uint8Array {
+  const b64 = src.split(',')[1] ?? ''
+  const bin = atob(b64)
+  const out = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+  return out
+}
+
+function loadImageSize(src: string): Promise<{ w: number; h: number }> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve({ w: img.naturalWidth || 600, h: img.naturalHeight || 400 })
+    img.onerror = () => resolve({ w: 600, h: 400 })
+    img.src = src
+  })
 }
 
 function download(blob: Blob, filename: string) {
@@ -219,29 +273,52 @@ function download(blob: Blob, filename: string) {
 
 export async function exportHtmlAsDocx(html: string, title: string) {
   const blocks = htmlToBlocks(html)
+  const children: Paragraph[] = [
+    new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: title, bold: true })] }),
+  ]
+  for (const b of blocks) {
+    if (b.type === 'img' && b.src) {
+      const { w, h } = await loadImageSize(b.src)
+      const maxW = 600
+      const scale = Math.min(1, maxW / w)
+      children.push(
+        new Paragraph({
+          children: [
+            new ImageRun({
+              type: dataUrlType(b.src) === 'png' ? 'png' : 'jpg',
+              data: dataUrlToBytes(b.src),
+              transformation: { width: Math.round(w * scale), height: Math.round(h * scale) },
+              altText: { title: b.text || 'Image', description: b.text || 'Image', name: b.text || 'Image' },
+            }),
+          ],
+        }),
+      )
+    } else if (b.type === 'p' || b.type === 'li') {
+      children.push(
+        new Paragraph({
+          bullet: b.type === 'li' ? { level: 0 } : undefined,
+          children: [new TextRun({ text: b.text, font: 'Arial', size: 24 })],
+        }),
+      )
+    } else {
+      children.push(
+        new Paragraph({
+          heading:
+            b.type === 'h1' ? HeadingLevel.HEADING_1
+            : b.type === 'h2' ? HeadingLevel.HEADING_2
+            : HeadingLevel.HEADING_3,
+          children: [new TextRun({ text: b.text, bold: true, font: 'Arial' })],
+        }),
+      )
+    }
+  }
   const doc = new Document({
     sections: [
       {
         properties: {
           page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } },
         },
-        children: [
-          new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: title, bold: true })] }),
-          ...blocks.map((b) =>
-            b.type === 'p' || b.type === 'li'
-              ? new Paragraph({
-                  bullet: b.type === 'li' ? { level: 0 } : undefined,
-                  children: [new TextRun({ text: b.text, font: 'Arial', size: 24 })],
-                })
-              : new Paragraph({
-                  heading:
-                    b.type === 'h1' ? HeadingLevel.HEADING_1
-                    : b.type === 'h2' ? HeadingLevel.HEADING_2
-                    : HeadingLevel.HEADING_3,
-                  children: [new TextRun({ text: b.text, bold: true, font: 'Arial' })],
-                }),
-          ),
-        ],
+        children,
       },
     ],
   })
@@ -254,12 +331,14 @@ export async function exportHtmlAsPptx(html: string, title: string) {
   pptx.layout = 'LAYOUT_16x9'
 
   // Split into slides on headings; everything before the first heading is the title slide body.
-  const slides: { title: string; body: string[] }[] = []
-  let current: { title: string; body: string[] } = { title, body: [] }
+  const slides: { title: string; body: string[]; images: string[] }[] = []
+  let current = { title, body: [] as string[], images: [] as string[] }
   for (const b of blocks) {
     if (b.type === 'h1' || b.type === 'h2') {
-      if (current.body.length || current.title !== title) slides.push(current)
-      current = { title: b.text, body: [] }
+      if (current.body.length || current.images.length || current.title !== title) slides.push(current)
+      current = { title: b.text, body: [], images: [] }
+    } else if (b.type === 'img' && b.src) {
+      current.images.push(b.src)
     } else {
       current.body.push(b.text)
     }
@@ -270,11 +349,27 @@ export async function exportHtmlAsPptx(html: string, title: string) {
     const slide = pptx.addSlide()
     slide.background = { color: 'FFFFFF' }
     slide.addText(s.title || title, {
-      x: 0.6, y: 0.5, w: 8.8, h: 1, fontSize: 32, bold: true, color: '1E2761', fontFace: 'Arial',
+      x: 0.6, y: 0.4, w: 8.8, h: 0.8, fontSize: 28, bold: true, color: '1E2761', fontFace: 'Arial',
     })
-    if (s.body.length) {
+    if (s.images.length) {
+      const src = s.images[0]
+      const { w, h } = await loadImageSize(src)
+      const maxW = 8.6
+      const maxH = 3.9
+      const ratio = Math.min(maxW / (w / 96), maxH / (h / 96))
+      const iw = (w / 96) * ratio
+      const ih = (h / 96) * ratio
+      slide.addImage({ data: src, x: (10 - iw) / 2, y: 1.3, w: iw, h: ih })
+      for (const extra of s.images.slice(1)) {
+        const ex = pptx.addSlide()
+        ex.background = { color: 'FFFFFF' }
+        const size = await loadImageSize(extra)
+        const r = Math.min(maxW / (size.w / 96), 4.6 / (size.h / 96))
+        ex.addImage({ data: extra, x: (10 - (size.w / 96) * r) / 2, y: 0.5, w: (size.w / 96) * r, h: (size.h / 96) * r })
+      }
+    } else if (s.body.length) {
       slide.addText(s.body.map((text) => ({ text, options: { bullet: true, breakLine: true } })), {
-        x: 0.7, y: 1.7, w: 8.6, h: 3.4, fontSize: 20, color: '36454F', fontFace: 'Arial',
+        x: 0.7, y: 1.5, w: 8.6, h: 3.6, fontSize: 18, color: '36454F', fontFace: 'Arial',
       })
     }
   }
@@ -282,7 +377,7 @@ export async function exportHtmlAsPptx(html: string, title: string) {
   download(blob, `${title || 'presentation'}.pptx`)
 }
 
-export function exportHtmlAsPdf(html: string, title: string) {
+export async function exportHtmlAsPdf(html: string, title: string) {
   const blocks = htmlToBlocks(html)
   const pdf = new jsPDF({ unit: 'pt', format: 'letter' })
   const margin = 56
@@ -304,6 +399,15 @@ export function exportHtmlAsPdf(html: string, title: string) {
 
   write(title || 'Document', 20, true)
   for (const b of blocks) {
+    if (b.type === 'img' && b.src) {
+      const size = await loadImageSize(b.src)
+      const iw = width
+      const ih = (size.h / size.w) * iw
+      if (y + ih > pageHeight - margin) { pdf.addPage(); y = margin }
+      pdf.addImage(b.src, dataUrlType(b.src) === 'png' ? 'PNG' : 'JPEG', margin, y, iw, ih)
+      y += ih + 12
+      continue
+    }
     if (b.type === 'h1') write(b.text, 18, true)
     else if (b.type === 'h2') write(b.text, 16, true)
     else if (b.type === 'h3') write(b.text, 14, true)
