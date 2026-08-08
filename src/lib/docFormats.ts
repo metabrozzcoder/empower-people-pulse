@@ -198,19 +198,19 @@ function htmlToBlocks(html: string): Block[] {
   const root = document.createElement('div')
   root.innerHTML = html
   const blocks: Block[] = []
+  const pushImage = (im: Element) => {
+    const src = im.getAttribute('src') ?? ''
+    if (!src.startsWith('data:image/')) return
+    blocks.push({
+      type: 'img',
+      text: im.getAttribute('alt') ?? '',
+      src,
+      w: Number(im.getAttribute('width')) || undefined,
+      h: Number(im.getAttribute('height')) || undefined,
+    })
+  }
   const pushImages = (el: Element) => {
-    for (const im of Array.from(el.querySelectorAll('img'))) {
-      const src = im.getAttribute('src') ?? ''
-      if (src.startsWith('data:image/')) {
-        blocks.push({
-          type: 'img',
-          text: im.getAttribute('alt') ?? '',
-          src,
-          w: (im as HTMLImageElement).naturalWidth || undefined,
-          h: (im as HTMLImageElement).naturalHeight || undefined,
-        })
-      }
-    }
+    for (const im of Array.from(el.querySelectorAll('img'))) pushImage(im)
   }
   const walk = (el: Element) => {
     for (const child of Array.from(el.children)) {
@@ -219,7 +219,8 @@ function htmlToBlocks(html: string): Block[] {
         walk(child)
         continue
       }
-      if (tag === 'img' || child.querySelector('img')) pushImages(child.tagName.toLowerCase() === 'img' ? child.parentElement ?? child : child)
+      if (tag === 'img') { pushImage(child); continue }
+      if (child.querySelector('img')) pushImages(child)
       const text = (child.textContent ?? '').trim()
       if (!text) continue
       if (tag === 'h1') blocks.push({ type: 'h1', text })
