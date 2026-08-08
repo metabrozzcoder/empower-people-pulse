@@ -455,7 +455,9 @@ export default function Documentation() {
             <TabsTrigger value="inbox" className="gap-2"><Inbox className="h-4 w-4" /> Approval Inbox</TabsTrigger>
             <TabsTrigger value="drafts" className="gap-2"><Edit className="h-4 w-4" /> Drafts</TabsTrigger>
             <TabsTrigger value="all" className="gap-2"><FileText className="h-4 w-4" /> All</TabsTrigger>
+            <TabsTrigger value="workspace" className="gap-2"><Users className="h-4 w-4" /> {`${t('workspace.tab', 'Workspace')}`}</TabsTrigger>
           </TabsList>
+          {tab !== 'workspace' && (
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
