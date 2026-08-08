@@ -20,7 +20,8 @@ import {
   ArrowLeft, Plus, Trash2, FileText, Table as TableIcon, KanbanSquare,
   MessageSquare, Loader2, Send, UserPlus, Save, Upload, Download, ChevronLeft, ChevronRight,
 } from 'lucide-react'
-import { fileToHtml, exportHtmlAsDocx, exportHtmlAsPptx, exportHtmlAsPdf } from '@/lib/docFormats'
+import { fileToHtml, exportHtmlAsDocx, exportHtmlAsPptx, exportHtmlAsPdf, renderPdfPreview, extractPptxImages, type DocFormat } from '@/lib/docFormats'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -72,6 +73,7 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
   const [exporting, setExporting] = useState(false)
   const [pages, setPages] = useState<{ id: string; label: string }[]>([])
   const [activePage, setActivePage] = useState(0)
+  const [preview, setPreview] = useState<{ title: string; html: string; format: DocFormat; images: string[] } | null>(null)
   const importInputRef = useRef<HTMLInputElement>(null)
 
 
@@ -358,7 +360,7 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
                   type="file"
                   accept=".docx,.pptx,.pdf"
                   className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) importDoc(f); e.target.value = '' }}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) previewFile(f); e.target.value = '' }}
                 />
                 {docs.map((d) => (
                   <button
