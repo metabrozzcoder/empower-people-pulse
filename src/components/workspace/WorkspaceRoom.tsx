@@ -70,6 +70,8 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
   const [savingDoc, setSavingDoc] = useState(false)
   const [importing, setImporting] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [pages, setPages] = useState<{ id: string; label: string }[]>([])
+  const [activePage, setActivePage] = useState(0)
   const importInputRef = useRef<HTMLInputElement>(null)
 
 
