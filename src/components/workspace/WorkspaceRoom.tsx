@@ -713,12 +713,26 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="sm:justify-between">
+            {preview?.format === 'pdf' ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={importing}
+                onClick={() => { if (pendingFile.current) previewFile(pendingFile.current, !preview.withImages) }}
+              >
+                {preview.withImages
+                  ? `${t('workspace.importTextOnly', 'Import as text only (fully editable)')}`
+                  : `${t('workspace.importWithImages', 'Keep original page images')}`}
+              </Button>
+            ) : <span />}
+            <div className="flex gap-2">
             <Button variant="outline" onClick={() => setPreview(null)}>{`${t('common.cancel', 'Cancel')}`}</Button>
             <Button onClick={confirmImport} disabled={importing} className="gap-2">
               {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               {`${t('workspace.import', 'Import')}`}
             </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
