@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   ArrowLeft, Plus, Trash2, FileText, Table as TableIcon, KanbanSquare,
-  MessageSquare, Loader2, Send, UserPlus, Save, Upload, Download,
+  MessageSquare, Loader2, Send, UserPlus, Save, Upload, Download, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { fileToHtml, exportHtmlAsDocx, exportHtmlAsPptx, exportHtmlAsPdf } from '@/lib/docFormats'
 
@@ -70,6 +70,8 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
   const [savingDoc, setSavingDoc] = useState(false)
   const [importing, setImporting] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [pages, setPages] = useState<{ id: string; label: string }[]>([])
+  const [activePage, setActivePage] = useState(0)
   const importInputRef = useRef<HTMLInputElement>(null)
 
 
@@ -137,9 +139,35 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
     }
   }, [activeDoc?.id, activeDoc?.content_html, activeDoc])
 
+  // Detect page / slide sections (from imported PDF & PPTX) for navigation
+  const refreshPages = useCallback(() => {
+    const el = editorRef.current
+    if (!el) return setPages([])
+    const heads = Array.from(el.querySelectorAll('h1,h2')) as HTMLElement[]
+    const found = heads.map((h, i) => {
+      const num = h.getAttribute('data-page') ?? h.getAttribute('data-slide') ?? String(i + 1)
+      const kind = h.hasAttribute('data-slide') ? t('workspace.slide', 'Slide') : t('workspace.page', 'Page')
+      if (!h.id) h.id = `wsp-sec-${i}`
+      h.dataset.sectionIndex = String(i)
+      return { id: h.id, label: h.hasAttribute('data-page') || h.hasAttribute('data-slide') ? `${kind} ${num}` : (h.textContent || `${kind} ${i + 1}`).slice(0, 24) }
+    })
+    setPages(found)
+  }, [t])
+
+  useEffect(() => { refreshPages(); setActivePage(0) }, [activeDoc?.id, activeDoc?.content_html, refreshPages])
+
+  const goToPage = (idx: number) => {
+    const el = editorRef.current
+    const target = el?.querySelector(`#${CSS.escape(pages[idx]?.id ?? '')}`) as HTMLElement | null
+    if (!target) return
+    setActivePage(idx)
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const scheduleDocSave = () => {
     if (!activeDocId) return
     editingRef.current = true
+    refreshPages()
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
       const html = editorRef.current?.innerHTML ?? ''
@@ -366,14 +394,41 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
                         setActiveDocId(null); load()
                       }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
+
+                    {pages.length > 1 && (
+                      <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-2">
+                        <Button variant="outline" size="sm" className="h-7 px-2" onClick={() => goToPage(Math.max(0, activePage - 1))} disabled={activePage === 0}>
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <div className="flex-1 overflow-x-auto">
+                          <div className="flex gap-1.5 w-max">
+                            {pages.map((p, i) => (
+                              <button
+                                key={p.id}
+                                onClick={() => goToPage(i)}
+                                className={`px-2.5 py-1 rounded-full text-xs whitespace-nowrap border transition-colors ${i === activePage ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted'}`}
+                              >
+                                {p.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" className="h-7 px-2" onClick={() => goToPage(Math.min(pages.length - 1, activePage + 1))} disabled={activePage >= pages.length - 1}>
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">{`${activePage + 1} / ${pages.length}`}</span>
+                      </div>
+                    )}
+
                     <div
                       ref={editorRef}
                       contentEditable
                       suppressContentEditableWarning
                       onInput={scheduleDocSave}
                       onBlur={() => { editingRef.current = false }}
-                      className="min-h-[320px] rounded-md border bg-background p-4 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="workspace-doc-editor max-h-[70vh] overflow-y-auto min-h-[320px] rounded-md border bg-background p-4 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring"
                     />
+
                     <p className="text-xs text-muted-foreground">
                       {`${t('workspace.liveHint', 'Changes save automatically and sync live to everyone in this workspace.')}`}
                     </p>
