@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   ArrowLeft, Plus, Trash2, FileText, Table as TableIcon, KanbanSquare,
-  MessageSquare, Loader2, Send, UserPlus, Save, Upload, Download,
+  MessageSquare, Loader2, Send, UserPlus, Save, Upload, Download, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { fileToHtml, exportHtmlAsDocx, exportHtmlAsPptx, exportHtmlAsPdf } from '@/lib/docFormats'
 
