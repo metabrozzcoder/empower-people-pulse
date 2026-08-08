@@ -478,11 +478,40 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
                       </div>
                     )}
 
+                    <div className="flex flex-wrap items-center gap-1 rounded-md border bg-muted/40 p-1.5">
+                      {([
+                        ['bold', 'B', 'font-bold'],
+                        ['italic', 'I', 'italic'],
+                        ['underline', 'U', 'underline'],
+                      ] as const).map(([cmd, label, cls]) => (
+                        <Button key={cmd} type="button" variant="ghost" size="sm" className={`h-7 w-8 p-0 ${cls}`}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => exec(cmd)}>{label}</Button>
+                      ))}
+                      <span className="mx-1 h-5 w-px bg-border" />
+                      <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('formatBlock', 'H1')}>H1</Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('formatBlock', 'H2')}>H2</Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('formatBlock', 'P')}>P</Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onMouseDown={(e) => e.preventDefault()} onClick={() => exec('insertUnorderedList')}>• {`${t('workspace.list', 'List')}`}</Button>
+                      <span className="mx-1 h-5 w-px bg-border" />
+                      <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onMouseDown={(e) => e.preventDefault()} onClick={() => imageInputRef.current?.click()}>
+                        <ImagePlus className="h-3.5 w-3.5" /> {`${t('workspace.insertImage', 'Image')}`}
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onMouseDown={(e) => e.preventDefault()} onClick={deleteSelectedImage}>
+                        <Trash2 className="h-3.5 w-3.5" /> {`${t('workspace.removeImage', 'Remove image')}`}
+                      </Button>
+                      <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={onInsertImage} />
+                    </div>
+
                     <div
                       ref={editorRef}
                       contentEditable
                       suppressContentEditableWarning
                       onInput={scheduleDocSave}
+                      onClick={(e) => {
+                        const el = e.target as HTMLElement
+                        setSelectedImage(el?.tagName === 'IMG' ? (el as HTMLImageElement) : null)
+                      }}
                       onBlur={() => { if (idleTimer.current) clearTimeout(idleTimer.current); editingRef.current = false }}
                       className="workspace-doc-editor max-h-[70vh] overflow-y-auto min-h-[320px] rounded-md border bg-background p-4 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring"
                     />
