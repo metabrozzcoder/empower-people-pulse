@@ -2,6 +2,11 @@
 // Used by <AutoTranslate /> to translate text nodes and attribute values at runtime.
 
 export const ru: Record<string, string> = {
+  // Projects dialog
+  "Checklist (progress is calculated from checked items)": "Чек-лист (прогресс считается по отмеченным пунктам)",
+  "Add a task…": "Добавить задачу…",
+  "Create Project": "Создать проект", "Update Project": "Обновить проект",
+
   // Common
   "Active": "Активный", "Inactive": "Неактивный", "All": "Все", "All Status": "Все статусы", "All Statuses": "Все статусы",
   "All Roles": "Все роли", "All Priorities": "Все приоритеты", "All Shifts": "Все смены", "All Requests": "Все запросы",
@@ -565,6 +570,8 @@ export const ru: Record<string, string> = {
 
 
 export const uz: Record<string, string> = {
+  "Create Project": "Loyiha yaratish", "Update Project": "Loyihani yangilash",
+
   "Active": "Faol", "Inactive": "Nofaol", "All": "Hammasi", "All Status": "Barcha holatlar", "All Statuses": "Barcha holatlar",
   "All Roles": "Barcha rollar", "All Priorities": "Barcha ustuvorliklar", "All Shifts": "Barcha smenalar",
   "All Requests": "Barcha so'rovlar", "All Users": "Barcha foydalanuvchilar",
