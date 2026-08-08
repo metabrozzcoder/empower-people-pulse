@@ -74,56 +74,61 @@ async function docxToHtml(file: File): Promise<string> {
 }
 
 
-async function pptxToHtml(file: File): Promise<string> {
-  const zip = await JSZip.loadAsync(await file.arrayBuffer())
-  const slideFiles = Object.keys(zip.files)
+export function pptxSlidePaths(zip: JSZip): string[] {
+  return Object.keys(zip.files)
     .filter((p) => /^ppt\/slides\/slide\d+\.xml$/.test(p))
     .sort((a, b) => {
       const num = (s: string) => parseInt(s.match(/slide(\d+)\.xml/)![1], 10)
       return num(a) - num(b)
     })
+}
+
+/** Text of a pptx paragraph (<a:p>), keeping <a:br/> as newlines. */
+function pptxParagraphText(p: Element): string {
+  let line = ''
+  for (const node of Array.from(p.childNodes)) {
+    const name = (node as Element).nodeName
+    if (name === 'a:r' || name === 'a:fld') line += (node as Element).textContent ?? ''
+    else if (name === 'a:br') line += '\n'
+  }
+  return line
+}
+
+async function pptxToHtml(file: File): Promise<string> {
+  const zip = await JSZip.loadAsync(await file.arrayBuffer())
+  const slideFiles = pptxSlidePaths(zip)
 
   const parts: string[] = []
+  let si = 0
   for (let i = 0; i < slideFiles.length; i++) {
     const xml = await zip.file(slideFiles[i])!.async('string')
     const doc = new DOMParser().parseFromString(xml, 'application/xml')
 
-    // Walk shapes in document order; keep each shape's paragraphs together and
-    // preserve line breaks (<a:br/>) inside a paragraph.
-    const shapes = Array.from(doc.getElementsByTagName('p:sp'))
-    const blocks: { title: boolean; lines: string[] }[] = []
-    for (const sp of shapes) {
+    // Walk shapes and paragraphs in document order so every block keeps a
+    // pointer (data-si) back to the paragraph it came from in the .pptx.
+    let html = ''
+    let heading = ''
+    for (const sp of Array.from(doc.getElementsByTagName('p:sp'))) {
       const isTitle = Array.from(sp.getElementsByTagName('p:ph')).some((ph) =>
         /title/i.test(ph.getAttribute('type') ?? ''),
       )
-      const lines: string[] = []
       for (const p of Array.from(sp.getElementsByTagName('a:p'))) {
-        let line = ''
-        for (const node of Array.from(p.childNodes)) {
-          const name = (node as Element).nodeName
-          if (name === 'a:r') line += (node as Element).textContent ?? ''
-          else if (name === 'a:br') line += '\n'
-          else if (name === 'a:fld') line += (node as Element).textContent ?? ''
+        const text = pptxParagraphText(p).replace(/\s+/g, ' ').trim()
+        if (!text) continue
+        const idx = si++
+        if (isTitle && !heading) {
+          heading = text
+          html = `<h2 data-slide="${i + 1}" data-si="${idx}">${esc(text)}</h2>` + html
+        } else {
+          html += `<p data-si="${idx}">${esc(text)}</p>`
         }
-        for (const l of line.split('\n')) if (l.trim()) lines.push(l.trim())
       }
-      if (lines.length) blocks.push({ title: isTitle, lines })
     }
-
-    const titleBlock = blocks.find((b) => b.title)
-    const heading = titleBlock?.lines[0]?.trim()
-    const body = blocks
-      .filter((b) => b !== titleBlock)
-      .map((b) => b.lines)
-      .concat(titleBlock ? [titleBlock.lines.slice(1)] : [])
-      .flat()
-
-    parts.push(
-      `<h2 data-slide="${i + 1}">${esc(heading || `Slide ${i + 1}`)}</h2>` +
-        (body.length ? body.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>'),
-    )
+    if (!heading) html = `<h2 data-slide="${i + 1}">Slide ${i + 1}</h2>` + html
+    parts.push(html || `<h2 data-slide="${i + 1}">Slide ${i + 1}</h2><p></p>`)
   }
   return parts.join('') || '<p></p>'
+
 }
 
 async function pdfToHtml(file: File, withImages = true): Promise<string> {
