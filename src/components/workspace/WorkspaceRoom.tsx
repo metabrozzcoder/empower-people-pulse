@@ -68,6 +68,10 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
   const [newCardColumn, setNewCardColumn] = useState('todo')
   const [inviteId, setInviteId] = useState('')
   const [savingDoc, setSavingDoc] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const importInputRef = useRef<HTMLInputElement>(null)
+
 
   const editorRef = useRef<HTMLDivElement>(null)
   const editingRef = useRef(false)
