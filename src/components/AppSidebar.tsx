@@ -126,7 +126,7 @@ const sidebarSections = [
     collapsible: true,
     items: [
       { title: "Garage", titleKey: "sidebar.items.garage", url: "/garage", icon: Car, sectionName: "Garage" },
-      { title: "Ride Orders", titleKey: "sidebar.items.rideOrders", url: "/ride-orders", icon: Car, sectionName: "Ride Orders" },
+      
     ]
   },
   {
