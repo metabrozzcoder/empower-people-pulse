@@ -79,6 +79,8 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
 
   const editorRef = useRef<HTMLDivElement>(null)
   const editingRef = useRef(false)
+  const lastSavedRef = useRef<string | null>(null)
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const nameById = useMemo(() => {
@@ -136,6 +138,8 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
   useEffect(() => {
     if (!editorRef.current || !activeDoc) return
     if (editingRef.current) return
+    // Ignore the echo of our own save so the caret is never reset mid-edit
+    if ((activeDoc.content_html ?? '') === lastSavedRef.current) return
     if (editorRef.current.innerHTML !== (activeDoc.content_html ?? '')) {
       editorRef.current.innerHTML = activeDoc.content_html ?? ''
     }
@@ -170,14 +174,18 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
     if (!activeDocId) return
     editingRef.current = true
     refreshPages()
+    if (idleTimer.current) clearTimeout(idleTimer.current)
+    // Stay in "editing" mode for a while after the last keystroke so incoming
+    // remote updates can't wipe the caret while the user is still working.
+    idleTimer.current = setTimeout(() => { editingRef.current = false }, 4000)
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
       const html = editorRef.current?.innerHTML ?? ''
+      lastSavedRef.current = html
       setSavingDoc(true)
       await db.from('workspace_docs').update({ content_html: html, updated_by: uid }).eq('id', activeDocId)
       setSavingDoc(false)
-      editingRef.current = false
-    }, 600)
+    }, 800)
   }
 
   const addDoc = async () => {
@@ -446,7 +454,7 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
                       contentEditable
                       suppressContentEditableWarning
                       onInput={scheduleDocSave}
-                      onBlur={() => { editingRef.current = false }}
+                      onBlur={() => { if (idleTimer.current) clearTimeout(idleTimer.current); editingRef.current = false }}
                       className="workspace-doc-editor max-h-[70vh] overflow-y-auto min-h-[320px] rounded-md border bg-background p-4 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring"
                     />
 
