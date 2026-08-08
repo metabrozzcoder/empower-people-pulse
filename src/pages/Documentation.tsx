@@ -26,8 +26,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   FileText, Upload, Plus, Edit, Trash2, Search, CheckCircle2, XCircle, Clock,
   Paperclip, Send, Download, Eye, UserCheck, Inbox, FileUp, RefreshCw, MessageSquare, Loader2,
-  Globe, Lock, QrCode,
+  Globe, Lock, QrCode, Users,
 } from 'lucide-react'
+import { WorkspacePanel } from '@/components/workspace/WorkspacePanel'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
@@ -103,7 +104,7 @@ export default function Documentation() {
   const [assignersLoading, setAssignersLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  const [tab, setTab] = useState<'my' | 'inbox' | 'drafts' | 'all'>('my')
+  const [tab, setTab] = useState<'my' | 'inbox' | 'drafts' | 'all' | 'workspace'>('my')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'All' | ApprovalStatus>('All')
 
@@ -455,7 +456,9 @@ export default function Documentation() {
             <TabsTrigger value="inbox" className="gap-2"><Inbox className="h-4 w-4" /> Approval Inbox</TabsTrigger>
             <TabsTrigger value="drafts" className="gap-2"><Edit className="h-4 w-4" /> Drafts</TabsTrigger>
             <TabsTrigger value="all" className="gap-2"><FileText className="h-4 w-4" /> All</TabsTrigger>
+            <TabsTrigger value="workspace" className="gap-2"><Users className="h-4 w-4" /> {`${t('workspace.tab', 'Workspace')}`}</TabsTrigger>
           </TabsList>
+          {tab !== 'workspace' && (
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -471,10 +474,15 @@ export default function Documentation() {
             </Select>
             <Button variant="ghost" size="icon" onClick={() => loadDocs()}><RefreshCw className="h-4 w-4" /></Button>
           </div>
+          )}
         </div>
 
-        <TabsContent value={tab} className="mt-4">
-          {loading ? (
+        <TabsContent value="workspace" className="mt-4">
+          <WorkspacePanel />
+        </TabsContent>
+
+        <TabsContent value={tab} className="mt-4" hidden={tab === 'workspace'} forceMount={undefined}>
+          {tab === 'workspace' ? null : loading ? (
             <Card><CardContent className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" /> Loading documents…
             </CardContent></Card>
