@@ -187,7 +187,7 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
   const refreshPages = useCallback(() => {
     const el = editorRef.current
     if (!el) return setPages([])
-    const heads = Array.from(el.querySelectorAll('h1,h2')) as HTMLElement[]
+    const heads = Array.from(el.querySelectorAll('[data-page],[data-slide],h1,h2')) as HTMLElement[]
     const found = heads.map((h, i) => {
       const num = h.getAttribute('data-page') ?? h.getAttribute('data-slide') ?? String(i + 1)
       const kind = h.hasAttribute('data-slide') ? t('workspace.slide', 'Slide') : t('workspace.page', 'Page')

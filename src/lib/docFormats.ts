@@ -201,7 +201,7 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
     }
 
     parts.push(
-      `<h2 data-page="${i}" data-oh="${textHash(paragraphs.join(' '))}">Page ${i}</h2>` +
+      `<div class="ws-page-anchor" data-page="${i}" data-oh="${textHash(paragraphs.join(' '))}"></div>` +
         img +
         (paragraphs.length ? paragraphs.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>') +
         (withImages ? '' : embedded.map((src) => `<p><img src="${src}" alt="Image" style="max-width:100%" /></p>`).join('')),
@@ -647,8 +647,8 @@ async function exportEditedPptx(source: Blob, html: string, title: string) {
   download(blob, `${title || 'presentation'} (edited).pptx`)
 }
 
-/** Draws edited page text onto a white canvas the size of the original page. */
-function renderTextPage(width: number, height: number, lines: string[]): string {
+/** Draws edited page text (and its images) onto a canvas the size of the page. */
+async function renderTextPage(width: number, height: number, lines: string[], images: string[] = []): Promise<string> {
   const scale = 2
   const canvas = document.createElement('canvas')
   canvas.width = Math.ceil(width * scale)
@@ -677,8 +677,28 @@ function renderTextPage(width: number, height: number, lines: string[]): string 
     if (buf && y < canvas.height - margin) ctx.fillText(buf, margin, y)
     y += fs * 1.9
   }
+  // Keep the pictures that belong to this page below the text.
+  for (const src of images) {
+    if (y > canvas.height - margin) break
+    try {
+      const im = await new Promise<HTMLImageElement>((res, rej) => {
+        const el = new Image()
+        el.onload = () => res(el)
+        el.onerror = () => rej(new Error('img'))
+        el.src = src
+      })
+      const w = Math.min(maxW, im.width * scale)
+      const h = (im.height / im.width) * w
+      const avail = canvas.height - margin - y
+      const drawH = Math.min(h, avail)
+      const drawW = (drawH / h) * w
+      ctx.drawImage(im, margin, y, drawW, drawH)
+      y += drawH + fs
+    } catch { /* skip unreadable image */ }
+  }
   return canvas.toDataURL('image/png')
 }
+
 
 async function exportEditedPdf(source: Blob, html: string, title: string) {
   const { PDFDocument } = await import('pdf-lib')
@@ -688,18 +708,24 @@ async function exportEditedPdf(source: Blob, html: string, title: string) {
   // Split the editor content into page sections (as created on import).
   const root = document.createElement('div')
   root.innerHTML = html
-  const sections: { page: number; hash: string | null; lines: string[] }[] = []
+  const sections: { page: number; hash: string | null; lines: string[]; images: string[] }[] = []
   for (const el of Array.from(root.children) as HTMLElement[]) {
-    if (/^H[12]$/.test(el.tagName) && el.hasAttribute('data-page')) {
+    if (el.hasAttribute('data-page')) {
       sections.push({
         page: Number(el.getAttribute('data-page')),
         hash: el.getAttribute('data-oh'),
         lines: [],
+        images: [],
       })
       continue
     }
+    if (!sections.length) continue
+    const current = sections[sections.length - 1]
+    for (const im of Array.from(el.querySelectorAll('img')) as HTMLImageElement[]) {
+      if (im.src) current.images.push(im.src)
+    }
     const text = (el.textContent ?? '').replace(/\s+/g, ' ').trim()
-    if (text && sections.length) sections[sections.length - 1].lines.push(text)
+    if (text) current.lines.push(text)
   }
 
   const total = original.getPageCount()
@@ -713,7 +739,7 @@ async function exportEditedPdf(source: Blob, html: string, title: string) {
     }
     const src = original.getPage(i)
     const { width, height } = src.getSize()
-    const png = await out.embedPng(renderTextPage(width, height, section!.lines))
+    const png = await out.embedPng(await renderTextPage(width, height, section!.lines, section!.images))
     const page = out.addPage([width, height])
     page.drawImage(png, { x: 0, y: 0, width, height })
   }
