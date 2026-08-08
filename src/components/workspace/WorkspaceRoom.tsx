@@ -159,6 +159,41 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
     load()
   }
 
+  const importDoc = async (file: File) => {
+    setImporting(true)
+    try {
+      const { title, html } = await fileToHtml(file)
+      const { data, error } = await db.from('workspace_docs')
+        .insert({ workspace_id: workspaceId, title, content_html: html, updated_by: uid })
+        .select().single()
+      if (error) throw new Error(error.message)
+      editingRef.current = false
+      setActiveDocId(data.id)
+      await load()
+      toast({ title: t('workspace.imported', 'Document imported') as string, description: title })
+    } catch (e) {
+      toast({ title: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const doExport = async (format: 'docx' | 'pptx' | 'pdf') => {
+    const html = editorRef.current?.innerHTML ?? ''
+    const title = (docs.find((d) => d.id === activeDocId)?.title as string) || 'document'
+    setExporting(true)
+    try {
+      if (format === 'docx') await exportHtmlAsDocx(html, title)
+      else if (format === 'pptx') await exportHtmlAsPptx(html, title)
+      else exportHtmlAsPdf(html, title)
+    } catch (e) {
+      toast({ title: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setExporting(false)
+    }
+  }
+
+
   const addSheet = async () => {
     const { data, error } = await db.from('workspace_sheets')
       .insert({ workspace_id: workspaceId, updated_by: uid }).select().single()
