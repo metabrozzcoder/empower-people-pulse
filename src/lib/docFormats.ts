@@ -138,8 +138,21 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i)
     const content = await page.getTextContent()
-    type Item = { str: string; transform: number[]; width?: number; height?: number; hasEOL?: boolean }
+    const styles: Record<string, any> = (content as any).styles || {}
+    type Item = { str: string; transform: number[]; width?: number; height?: number; fontName?: string }
     const items = (content.items as Item[]).filter((it) => typeof it.str === 'string')
+
+    const fontInfo = (it: Item) => {
+      const st = styles[it.fontName || ''] || {}
+      const name = `${it.fontName || ''} ${st.fontFamily || ''}`
+      const size = Math.hypot(it.transform?.[0] ?? 0, it.transform?.[1] ?? 0) || it.height || 10
+      return {
+        bold: /bold|black|heavy|semib|[-,_]bd\b/i.test(name) || (st.fontWeight ? Number(st.fontWeight) >= 600 : false),
+        italic: /italic|oblique|[-,_]it\b/i.test(name) || !!st.italic,
+        mono: /mono|courier/i.test(name),
+        size,
+      }
+    }
 
     // Group items into visual lines by their baseline (y), then order by x.
     const rows: { y: number; items: Item[] }[] = []
@@ -153,32 +166,81 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
     }
     rows.sort((a, b) => b.y - a.y)
 
+    // Body font size = most common size on the page (used to detect headings).
+    const sizeCount = new Map<number, number>()
+    for (const it of items) {
+      if (!it.str.trim()) continue
+      const s = Math.round(fontInfo(it).size)
+      sizeCount.set(s, (sizeCount.get(s) || 0) + it.str.length)
+    }
+    const bodySize = [...sizeCount.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || 12
+
+    const pageW0 = page.getViewport({ scale: 1 }).width || 612
+
     const lines = rows
       .map((r) => {
         r.items.sort((a, b) => (a.transform?.[4] ?? 0) - (b.transform?.[4] ?? 0))
         let text = ''
+        let html = ''
         let prevEnd: number | null = null
+        let maxSize = 0
+        let allBold = true
+        let x0: number | null = null
+        let x1 = 0
         for (const it of r.items) {
           const x = it.transform?.[4] ?? 0
+          if (x0 === null) x0 = x
           const gap = prevEnd === null ? 0 : x - prevEnd
           const space = (it.height ?? 10) * 0.25
-          if (prevEnd !== null && gap > space && !/\s$/.test(text) && !/^\s/.test(it.str)) text += ' '
-          text += it.str
+          let piece = it.str
+          if (prevEnd !== null && gap > space && !/\s$/.test(text) && !/^\s/.test(piece)) {
+            text += ' '
+            html += ' '
+          }
+          const f = fontInfo(it)
+          maxSize = Math.max(maxSize, f.size)
+          if (piece.trim() && !f.bold) allBold = false
+          let frag = esc(piece)
+          if (f.mono) frag = `<code>${frag}</code>`
+          if (f.italic) frag = `<em>${frag}</em>`
+          if (f.bold) frag = `<strong>${frag}</strong>`
+          html += frag
+          text += piece
           prevEnd = x + (it.width ?? 0)
+          x1 = prevEnd
         }
-        return { text: text.replace(/\s+/g, ' ').trim(), y: r.y }
+        const width = x1 - (x0 ?? 0)
+        const centered = x0 !== null && Math.abs((x0 + (pageW0 - x1)) / 2 - x0) < pageW0 * 0.04 && x0 > pageW0 * 0.15
+        return {
+          text: text.replace(/\s+/g, ' ').trim(),
+          html: html.replace(/\s+/g, ' ').trim(),
+          y: r.y,
+          size: maxSize || bodySize,
+          bold: allBold,
+          centered: centered && width < pageW0 * 0.8,
+        }
       })
       .filter((l) => l.text)
 
     // Merge wrapped lines into paragraphs: a new paragraph starts after a line
     // that ends a sentence, or on a blank/short line.
-    const paragraphs: { text: string; y: number }[] = []
+    type Para = { text: string; html: string; y: number; size: number; bold: boolean; centered: boolean }
+    const paragraphs: Para[] = []
     for (const line of lines) {
       const prev = paragraphs[paragraphs.length - 1]
-      if (prev && !/[.!?:;]$/.test(prev.text) && /^[a-zа-яёA-ZА-ЯЁ0-9(«"']/.test(line.text) && prev.text.length > 40) {
+      const sameStyle =
+        prev && Math.abs(prev.size - line.size) < 0.6 && prev.bold === line.bold && prev.centered === line.centered
+      if (
+        prev &&
+        sameStyle &&
+        !/[.!?:;]$/.test(prev.text) &&
+        /^[a-zа-яёA-ZА-ЯЁ0-9(«"']/.test(line.text) &&
+        prev.text.length > 40
+      ) {
         prev.text = `${prev.text} ${line.text}`
+        prev.html = `${prev.html} ${line.html}`
       } else {
-        paragraphs.push({ text: line.text, y: line.y })
+        paragraphs.push({ ...line })
       }
     }
 
@@ -201,9 +263,19 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
     }
 
     // Interleave text and pictures in their original top-to-bottom order.
-    const pageW = page.getViewport({ scale: 1 }).width || 612
+    const pageW = pageW0
+    const paraHtml = (p: Para) => {
+      const ratio = p.size / bodySize
+      const align = p.centered ? 'text-align:center;' : ''
+      const attrs = `data-fs="${Math.round(p.size)}"${p.centered ? ' data-align="center"' : ''}`
+      // Big text becomes a real heading so it stays visually distinct.
+      if (ratio >= 1.6) return `<h1 ${attrs} style="${align}">${p.html}</h1>`
+      if (ratio >= 1.25) return `<h2 ${attrs} style="${align}">${p.html}</h2>`
+      const style = `${align}${Math.abs(ratio - 1) > 0.12 ? `font-size:${ratio.toFixed(2)}em;` : ''}`
+      return `<p ${attrs}${style ? ` style="${style}"` : ''}>${p.html}</p>`
+    }
     const blocks: { y: number; html: string }[] = [
-      ...paragraphs.map((p) => ({ y: p.y, html: `<p>${esc(p.text)}</p>` })),
+      ...paragraphs.map((p) => ({ y: p.y, html: paraHtml(p) })),
       ...(withImages
         ? []
         : embedded.map((im) => ({
@@ -220,6 +292,7 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
         img +
         (blocks.length ? blocks.map((b) => b.html).join('') : '<p></p>'),
     )
+
 
 
   }
