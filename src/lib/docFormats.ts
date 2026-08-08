@@ -26,6 +26,28 @@ export function detectFormat(file: File): DocFormat | null {
 
 /* ---------------- Import ---------------- */
 
+/** Stable hash used to detect which parts of a document the user changed. */
+export function textHash(s: string): string {
+  const norm = s.replace(/\s+/g, ' ').trim()
+  let h = 5381
+  for (let i = 0; i < norm.length; i++) h = ((h << 5) + h + norm.charCodeAt(i)) >>> 0
+  return h.toString(36)
+}
+
+/** Tags every text block with the index of the source paragraph it came from,
+ *  so edits can be written back into the original file on export. */
+function annotateBlocks(html: string): string {
+  const root = document.createElement('div')
+  root.innerHTML = html
+  const blocks = Array.from(root.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li,td,th')) as HTMLElement[]
+  let i = 0
+  for (const b of blocks) {
+    if (!(b.textContent ?? '').trim()) continue
+    b.setAttribute('data-si', String(i++))
+  }
+  return root.innerHTML
+}
+
 async function docxToHtml(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer()
   const { value } = await mammoth.convertToHtml(
@@ -48,8 +70,9 @@ async function docxToHtml(file: File): Promise<string> {
       }),
     },
   )
-  return value || '<p></p>'
+  return annotateBlocks(value || '<p></p>')
 }
+
 
 async function pptxToHtml(file: File): Promise<string> {
   const zip = await JSZip.loadAsync(await file.arrayBuffer())
