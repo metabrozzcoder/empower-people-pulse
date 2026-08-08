@@ -197,10 +197,11 @@ async function pdfToHtml(file: File, withImages = true): Promise<string> {
     }
 
     parts.push(
-      `<h2 data-page="${i}">Page ${i}</h2>` +
+      `<h2 data-page="${i}" data-oh="${textHash(paragraphs.join(' '))}">Page ${i}</h2>` +
         img +
         (paragraphs.length ? paragraphs.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>'),
     )
+
   }
   return parts.join('') || '<p></p>'
 }
