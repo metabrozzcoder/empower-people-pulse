@@ -375,7 +375,7 @@ const Projects = () => {
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={save}>{editing ? 'Update' : 'Create'} Project</Button>
+            <Button onClick={save}>{`${editing ? 'Update' : 'Create'} Project`}</Button>
           </div>
         </DialogContent>
       </Dialog>
