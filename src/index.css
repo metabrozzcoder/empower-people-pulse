@@ -221,6 +221,13 @@ All colors MUST be HSL.
   padding-top: 0;
   border-top: 0;
 }
+.workspace-doc-editor .ws-page-anchor {
+  height: 0;
+  margin: 1.25rem 0;
+  border-top: 1px dashed hsl(var(--border));
+  scroll-margin-top: 0.5rem;
+}
+.workspace-doc-editor .ws-page-anchor:first-child { display: none; }
 .workspace-doc-editor p { margin-bottom: 0.4rem; }
 .workspace-doc-editor ul { list-style: disc; padding-left: 1.25rem; }
 .workspace-doc-editor ol { list-style: decimal; padding-left: 1.25rem; }
