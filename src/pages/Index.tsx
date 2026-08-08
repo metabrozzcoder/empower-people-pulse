@@ -166,7 +166,7 @@ const Index = () => {
       const uid = auth.user?.id
       if (!uid) return
       channel = supabase
-        .channel(`dashboard-counts-${uid}`)
+        .channel(`dashboard-counts-${uid}-${Math.random().toString(36).slice(2)}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => loadCounts())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadCounts())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, () => loadCounts())
