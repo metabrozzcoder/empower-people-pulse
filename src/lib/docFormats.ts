@@ -689,9 +689,11 @@ async function renderTextPage(width: number, height: number, lines: string[], im
       })
       const w = Math.min(maxW, im.width * scale)
       const h = (im.height / im.width) * w
-      const draw = Math.min(h, canvas.height - margin - y)
-      ctx.drawImage(im, margin, y, w, (draw / h) * w ? w : w)
-      y += draw + fs
+      const avail = canvas.height - margin - y
+      const drawH = Math.min(h, avail)
+      const drawW = (drawH / h) * w
+      ctx.drawImage(im, margin, y, drawW, drawH)
+      y += drawH + fs
     } catch { /* skip unreadable image */ }
   }
   return canvas.toDataURL('image/png')
