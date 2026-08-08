@@ -103,7 +103,7 @@ async function pptxToHtml(file: File): Promise<string> {
   return parts.join('') || '<p></p>'
 }
 
-async function pdfToHtml(file: File): Promise<string> {
+async function pdfToHtml(file: File, withImages = true): Promise<string> {
   const data = new Uint8Array(await file.arrayBuffer())
   const pdf = await pdfjsLib.getDocument({ data }).promise
   const parts: string[] = []
@@ -156,7 +156,7 @@ async function pdfToHtml(file: File): Promise<string> {
 
     // Render the page itself so pictures, charts and layout survive the import.
     let img = ''
-    try {
+    if (withImages) try {
       const viewport = page.getViewport({ scale: 1.4 })
       const canvas = document.createElement('canvas')
       canvas.width = Math.ceil(viewport.width)
@@ -180,13 +180,16 @@ async function pdfToHtml(file: File): Promise<string> {
 
 
 /** Converts an uploaded .docx/.pptx/.pdf into editable HTML. */
-export async function fileToHtml(file: File): Promise<{ title: string; html: string; format: DocFormat }> {
+export async function fileToHtml(
+  file: File,
+  opts: { withImages?: boolean } = {},
+): Promise<{ title: string; html: string; format: DocFormat }> {
   const format = detectFormat(file)
   if (!format) throw new Error('Unsupported file type. Use .docx, .pptx or .pdf')
   const html =
     format === 'docx' ? await docxToHtml(file)
     : format === 'pptx' ? await pptxToHtml(file)
-    : await pdfToHtml(file)
+    : await pdfToHtml(file, opts.withImages !== false)
   return { title: file.name.replace(/\.[^.]+$/, ''), html, format }
 }
 
