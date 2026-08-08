@@ -331,12 +331,14 @@ export async function exportHtmlAsPptx(html: string, title: string) {
   pptx.layout = 'LAYOUT_16x9'
 
   // Split into slides on headings; everything before the first heading is the title slide body.
-  const slides: { title: string; body: string[] }[] = []
-  let current: { title: string; body: string[] } = { title, body: [] }
+  const slides: { title: string; body: string[]; images: string[] }[] = []
+  let current = { title, body: [] as string[], images: [] as string[] }
   for (const b of blocks) {
     if (b.type === 'h1' || b.type === 'h2') {
-      if (current.body.length || current.title !== title) slides.push(current)
-      current = { title: b.text, body: [] }
+      if (current.body.length || current.images.length || current.title !== title) slides.push(current)
+      current = { title: b.text, body: [], images: [] }
+    } else if (b.type === 'img' && b.src) {
+      current.images.push(b.src)
     } else {
       current.body.push(b.text)
     }
@@ -347,11 +349,27 @@ export async function exportHtmlAsPptx(html: string, title: string) {
     const slide = pptx.addSlide()
     slide.background = { color: 'FFFFFF' }
     slide.addText(s.title || title, {
-      x: 0.6, y: 0.5, w: 8.8, h: 1, fontSize: 32, bold: true, color: '1E2761', fontFace: 'Arial',
+      x: 0.6, y: 0.4, w: 8.8, h: 0.8, fontSize: 28, bold: true, color: '1E2761', fontFace: 'Arial',
     })
-    if (s.body.length) {
+    if (s.images.length) {
+      const src = s.images[0]
+      const { w, h } = await loadImageSize(src)
+      const maxW = 8.6
+      const maxH = 3.9
+      const ratio = Math.min(maxW / (w / 96), maxH / (h / 96))
+      const iw = (w / 96) * ratio
+      const ih = (h / 96) * ratio
+      slide.addImage({ data: src, x: (10 - iw) / 2, y: 1.3, w: iw, h: ih })
+      for (const extra of s.images.slice(1)) {
+        const ex = pptx.addSlide()
+        ex.background = { color: 'FFFFFF' }
+        const size = await loadImageSize(extra)
+        const r = Math.min(maxW / (size.w / 96), 4.6 / (size.h / 96))
+        ex.addImage({ data: extra, x: (10 - (size.w / 96) * r) / 2, y: 0.5, w: (size.w / 96) * r, h: (size.h / 96) * r })
+      }
+    } else if (s.body.length) {
       slide.addText(s.body.map((text) => ({ text, options: { bullet: true, breakLine: true } })), {
-        x: 0.7, y: 1.7, w: 8.6, h: 3.4, fontSize: 20, color: '36454F', fontFace: 'Arial',
+        x: 0.7, y: 1.5, w: 8.6, h: 3.6, fontSize: 18, color: '36454F', fontFace: 'Arial',
       })
     }
   }
@@ -359,7 +377,7 @@ export async function exportHtmlAsPptx(html: string, title: string) {
   download(blob, `${title || 'presentation'}.pptx`)
 }
 
-export function exportHtmlAsPdf(html: string, title: string) {
+export async function exportHtmlAsPdf(html: string, title: string) {
   const blocks = htmlToBlocks(html)
   const pdf = new jsPDF({ unit: 'pt', format: 'letter' })
   const margin = 56
@@ -381,6 +399,15 @@ export function exportHtmlAsPdf(html: string, title: string) {
 
   write(title || 'Document', 20, true)
   for (const b of blocks) {
+    if (b.type === 'img' && b.src) {
+      const size = await loadImageSize(b.src)
+      const iw = width
+      const ih = (size.h / size.w) * iw
+      if (y + ih > pageHeight - margin) { pdf.addPage(); y = margin }
+      pdf.addImage(b.src, dataUrlType(b.src) === 'png' ? 'PNG' : 'JPEG', margin, y, iw, ih)
+      y += ih + 12
+      continue
+    }
     if (b.type === 'h1') write(b.text, 18, true)
     else if (b.type === 'h2') write(b.text, 16, true)
     else if (b.type === 'h3') write(b.text, 14, true)
