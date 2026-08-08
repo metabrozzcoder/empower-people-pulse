@@ -473,10 +473,15 @@ export default function Documentation() {
             </Select>
             <Button variant="ghost" size="icon" onClick={() => loadDocs()}><RefreshCw className="h-4 w-4" /></Button>
           </div>
+          )}
         </div>
 
-        <TabsContent value={tab} className="mt-4">
-          {loading ? (
+        <TabsContent value="workspace" className="mt-4">
+          <WorkspacePanel />
+        </TabsContent>
+
+        <TabsContent value={tab} className="mt-4" hidden={tab === 'workspace'} forceMount={undefined}>
+          {tab === 'workspace' ? null : loading ? (
             <Card><CardContent className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" /> Loading documents…
             </CardContent></Card>
