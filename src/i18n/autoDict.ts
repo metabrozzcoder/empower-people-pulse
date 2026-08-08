@@ -570,6 +570,8 @@ export const ru: Record<string, string> = {
 
 
 export const uz: Record<string, string> = {
+  "Create Project": "Loyiha yaratish", "Update Project": "Loyihani yangilash",
+
   "Active": "Faol", "Inactive": "Nofaol", "All": "Hammasi", "All Status": "Barcha holatlar", "All Statuses": "Barcha holatlar",
   "All Roles": "Barcha rollar", "All Priorities": "Barcha ustuvorliklar", "All Shifts": "Barcha smenalar",
   "All Requests": "Barcha so'rovlar", "All Users": "Barcha foydalanuvchilar",
