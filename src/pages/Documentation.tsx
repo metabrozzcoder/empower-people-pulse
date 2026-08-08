@@ -26,8 +26,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   FileText, Upload, Plus, Edit, Trash2, Search, CheckCircle2, XCircle, Clock,
   Paperclip, Send, Download, Eye, UserCheck, Inbox, FileUp, RefreshCw, MessageSquare, Loader2,
-  Globe, Lock, QrCode,
+  Globe, Lock, QrCode, Users,
 } from 'lucide-react'
+import { WorkspacePanel } from '@/components/workspace/WorkspacePanel'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
