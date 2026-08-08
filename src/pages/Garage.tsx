@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import RideOrdersPanel from '@/components/RideOrdersPanel'
 import { Car, Plus, Camera, Edit, Trash2, Gauge, MapPin, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
@@ -217,7 +218,13 @@ export default function Garage() {
         <TabsList>
           <TabsTrigger value="vehicles">{t('pages.garage.vehicles')}</TabsTrigger>
           <TabsTrigger value="trips">{t('pages.garage.tripLog')}</TabsTrigger>
+          <TabsTrigger value="rides">{t('pages.rideOrders.title')}</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="rides" className="pt-4">
+          <RideOrdersPanel />
+        </TabsContent>
+
 
 
 
