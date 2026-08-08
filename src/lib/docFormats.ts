@@ -70,7 +70,9 @@ async function pptxToHtml(file: File): Promise<string> {
     const shapes = Array.from(doc.getElementsByTagName('p:sp'))
     const blocks: { title: boolean; lines: string[] }[] = []
     for (const sp of shapes) {
-      const isTitle = !!sp.querySelector?.('ph[type="title"], ph[type="ctrTitle"]')
+      const isTitle = Array.from(sp.getElementsByTagName('p:ph')).some((ph) =>
+        /title/i.test(ph.getAttribute('type') ?? ''),
+      )
       const lines: string[] = []
       for (const p of Array.from(sp.getElementsByTagName('a:p'))) {
         let line = ''
