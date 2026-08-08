@@ -131,7 +131,7 @@ async function pptxToHtml(file: File): Promise<string> {
 
 }
 
-async function pdfToHtml(file: File, withImages = true): Promise<string> {
+async function pdfToHtml(file: File, withImages = false): Promise<string> {
   const data = new Uint8Array(await file.arrayBuffer())
   const pdf = await pdfjsLib.getDocument({ data }).promise
   const parts: string[] = []
@@ -218,8 +218,8 @@ export async function fileToHtml(
   const html =
     format === 'docx' ? await docxToHtml(file)
     : format === 'pptx' ? await pptxToHtml(file)
-    : await pdfToHtml(file, opts.withImages !== false)
-  return { title: file.name.replace(/\.[^.]+$/, ''), html, format }
+    : await pdfToHtml(file, opts.withImages === true)
+  return { title: file.name.replace(/\.[^.]+$/, ''), html: format === 'pdf' ? annotateBlocks(html) : html, format }
 }
 
 /* ---------------- Export ---------------- */

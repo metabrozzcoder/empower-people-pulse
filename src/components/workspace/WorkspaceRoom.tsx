@@ -199,7 +199,7 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
   }
 
   // Build a preview (rendered pages + editable HTML) before importing
-  const previewFile = async (file: File, withImages = true) => {
+  const previewFile = async (file: File, withImages = false) => {
     setImporting(true)
     setPreview(null)
     try {
