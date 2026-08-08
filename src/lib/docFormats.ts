@@ -647,8 +647,8 @@ async function exportEditedPptx(source: Blob, html: string, title: string) {
   download(blob, `${title || 'presentation'} (edited).pptx`)
 }
 
-/** Draws edited page text onto a white canvas the size of the original page. */
-function renderTextPage(width: number, height: number, lines: string[]): string {
+/** Draws edited page text (and its images) onto a canvas the size of the page. */
+async function renderTextPage(width: number, height: number, lines: string[], images: string[] = []): Promise<string> {
   const scale = 2
   const canvas = document.createElement('canvas')
   canvas.width = Math.ceil(width * scale)
@@ -677,8 +677,26 @@ function renderTextPage(width: number, height: number, lines: string[]): string 
     if (buf && y < canvas.height - margin) ctx.fillText(buf, margin, y)
     y += fs * 1.9
   }
+  // Keep the pictures that belong to this page below the text.
+  for (const src of images) {
+    if (y > canvas.height - margin) break
+    try {
+      const im = await new Promise<HTMLImageElement>((res, rej) => {
+        const el = new Image()
+        el.onload = () => res(el)
+        el.onerror = () => rej(new Error('img'))
+        el.src = src
+      })
+      const w = Math.min(maxW, im.width * scale)
+      const h = (im.height / im.width) * w
+      const draw = Math.min(h, canvas.height - margin - y)
+      ctx.drawImage(im, margin, y, w, (draw / h) * w ? w : w)
+      y += draw + fs
+    } catch { /* skip unreadable image */ }
+  }
   return canvas.toDataURL('image/png')
 }
+
 
 async function exportEditedPdf(source: Blob, html: string, title: string) {
   const { PDFDocument } = await import('pdf-lib')
