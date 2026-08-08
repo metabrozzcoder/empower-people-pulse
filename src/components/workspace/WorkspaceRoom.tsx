@@ -73,7 +73,8 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
   const [exporting, setExporting] = useState(false)
   const [pages, setPages] = useState<{ id: string; label: string }[]>([])
   const [activePage, setActivePage] = useState(0)
-  const [preview, setPreview] = useState<{ title: string; html: string; format: DocFormat; images: string[] } | null>(null)
+  const [preview, setPreview] = useState<{ title: string; html: string; format: DocFormat; images: string[]; withImages: boolean } | null>(null)
+  const pendingFile = useRef<File | null>(null)
   const importInputRef = useRef<HTMLInputElement>(null)
 
 
@@ -198,15 +199,16 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
   }
 
   // Build a preview (rendered pages + editable HTML) before importing
-  const previewFile = async (file: File) => {
+  const previewFile = async (file: File, withImages = true) => {
     setImporting(true)
     setPreview(null)
     try {
-      const { title, html, format } = await fileToHtml(file)
+      pendingFile.current = file
+      const { title, html, format } = await fileToHtml(file, { withImages })
       let images: string[] = []
       if (format === 'pdf') images = await renderPdfPreview(file)
       else if (format === 'pptx') images = await extractPptxImages(file)
-      setPreview({ title, html, format, images })
+      setPreview({ title, html, format, images, withImages })
     } catch (e) {
       toast({ title: (e as Error).message, variant: 'destructive' })
     } finally {
