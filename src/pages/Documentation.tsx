@@ -103,7 +103,7 @@ export default function Documentation() {
   const [assignersLoading, setAssignersLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  const [tab, setTab] = useState<'my' | 'inbox' | 'drafts' | 'all'>('my')
+  const [tab, setTab] = useState<'my' | 'inbox' | 'drafts' | 'all' | 'workspace'>('my')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'All' | ApprovalStatus>('All')
 
