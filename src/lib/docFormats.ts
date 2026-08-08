@@ -234,3 +234,41 @@ export function exportHtmlAsPdf(html: string, title: string) {
   }
   pdf.save(`${title || 'document'}.pdf`)
 }
+
+/* ---------------- Preview ---------------- */
+
+/** Renders the first `maxPages` pages of a PDF to PNG data URLs for previewing. */
+export async function renderPdfPreview(file: File, maxPages = 20): Promise<string[]> {
+  const data = new Uint8Array(await file.arrayBuffer())
+  const pdf = await pdfjsLib.getDocument({ data }).promise
+  const out: string[] = []
+  const count = Math.min(pdf.numPages, maxPages)
+  for (let i = 1; i <= count; i++) {
+    const page = await pdf.getPage(i)
+    const viewport = page.getViewport({ scale: 1.1 })
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.ceil(viewport.width)
+    canvas.height = Math.ceil(viewport.height)
+    const ctx = canvas.getContext('2d')!
+    await page.render({ canvas, canvasContext: ctx, viewport }).promise
+    out.push(canvas.toDataURL('image/png'))
+  }
+  return out
+}
+
+/** Extracts embedded slide images from a .pptx for a lightweight visual preview. */
+export async function extractPptxImages(file: File, maxImages = 20): Promise<string[]> {
+  const zip = await JSZip.loadAsync(await file.arrayBuffer())
+  const media = Object.keys(zip.files)
+    .filter((p) => /^ppt\/media\/.+\.(png|jpe?g|gif|webp)$/i.test(p))
+    .sort()
+    .slice(0, maxImages)
+  const out: string[] = []
+  for (const p of media) {
+    const base64 = await zip.file(p)!.async('base64')
+    const ext = p.split('.').pop()!.toLowerCase()
+    const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+    out.push(`data:${mime};base64,${base64}`)
+  }
+  return out
+}

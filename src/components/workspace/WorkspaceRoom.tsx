@@ -20,7 +20,8 @@ import {
   ArrowLeft, Plus, Trash2, FileText, Table as TableIcon, KanbanSquare,
   MessageSquare, Loader2, Send, UserPlus, Save, Upload, Download, ChevronLeft, ChevronRight,
 } from 'lucide-react'
-import { fileToHtml, exportHtmlAsDocx, exportHtmlAsPptx, exportHtmlAsPdf } from '@/lib/docFormats'
+import { fileToHtml, exportHtmlAsDocx, exportHtmlAsPptx, exportHtmlAsPdf, renderPdfPreview, extractPptxImages, type DocFormat } from '@/lib/docFormats'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -72,6 +73,7 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
   const [exporting, setExporting] = useState(false)
   const [pages, setPages] = useState<{ id: string; label: string }[]>([])
   const [activePage, setActivePage] = useState(0)
+  const [preview, setPreview] = useState<{ title: string; html: string; format: DocFormat; images: string[] } | null>(null)
   const importInputRef = useRef<HTMLInputElement>(null)
 
 
@@ -187,24 +189,43 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
     load()
   }
 
-  const importDoc = async (file: File) => {
+  // Build a preview (rendered pages + editable HTML) before importing
+  const previewFile = async (file: File) => {
     setImporting(true)
+    setPreview(null)
     try {
-      const { title, html } = await fileToHtml(file)
-      const { data, error } = await db.from('workspace_docs')
-        .insert({ workspace_id: workspaceId, title, content_html: html, updated_by: uid })
-        .select().single()
-      if (error) throw new Error(error.message)
-      editingRef.current = false
-      setActiveDocId(data.id)
-      await load()
-      toast({ title: t('workspace.imported', 'Document imported') as string, description: title })
+      const { title, html, format } = await fileToHtml(file)
+      let images: string[] = []
+      if (format === 'pdf') images = await renderPdfPreview(file)
+      else if (format === 'pptx') images = await extractPptxImages(file)
+      setPreview({ title, html, format, images })
     } catch (e) {
       toast({ title: (e as Error).message, variant: 'destructive' })
     } finally {
       setImporting(false)
     }
   }
+
+  const confirmImport = async () => {
+    if (!preview) return
+    setImporting(true)
+    try {
+      const { data, error } = await db.from('workspace_docs')
+        .insert({ workspace_id: workspaceId, title: preview.title, content_html: preview.html, updated_by: uid })
+        .select().single()
+      if (error) throw new Error(error.message)
+      editingRef.current = false
+      setActiveDocId(data.id)
+      await load()
+      toast({ title: t('workspace.imported', 'Document imported') as string, description: preview.title })
+      setPreview(null)
+    } catch (e) {
+      toast({ title: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setImporting(false)
+    }
+  }
+
 
   const doExport = async (format: 'docx' | 'pptx' | 'pdf') => {
     const html = editorRef.current?.innerHTML ?? ''
@@ -339,7 +360,7 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
                   type="file"
                   accept=".docx,.pptx,.pdf"
                   className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) importDoc(f); e.target.value = '' }}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) previewFile(f); e.target.value = '' }}
                 />
                 {docs.map((d) => (
                   <button
@@ -648,6 +669,50 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Import preview */}
+      <Dialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null) }}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="truncate">
+              {`${t('workspace.previewTitle', 'Preview')}: ${preview?.title ?? ''}`}
+            </DialogTitle>
+          </DialogHeader>
+          {preview && (
+            <div className="max-h-[65vh] overflow-y-auto space-y-4 pr-1">
+              {preview.images.length > 0 && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {preview.images.map((src, i) => (
+                    <figure key={i} className="rounded-md border overflow-hidden bg-muted/30">
+                      <img src={src} alt={`${preview.title} — ${t('workspace.page', 'Page')} ${i + 1}`} className="w-full" loading="lazy" />
+                      <figcaption className="px-2 py-1 text-[11px] text-muted-foreground">
+                        {`${preview.format === 'pptx' ? t('workspace.slide', 'Slide') : t('workspace.page', 'Page')} ${i + 1}`}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              )}
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">
+                  {`${t('workspace.editableText', 'Editable text that will be imported')}`}
+                </p>
+                <div
+                  className="workspace-doc-editor rounded-md border bg-background p-4 text-sm"
+                  dangerouslySetInnerHTML={{ __html: preview.html }}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreview(null)}>{`${t('common.cancel', 'Cancel')}`}</Button>
+            <Button onClick={confirmImport} disabled={importing} className="gap-2">
+              {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {`${t('workspace.import', 'Import')}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   )
 }
