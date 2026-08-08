@@ -14,9 +14,14 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   ArrowLeft, Plus, Trash2, FileText, Table as TableIcon, KanbanSquare,
-  MessageSquare, Loader2, Send, UserPlus, Save,
+  MessageSquare, Loader2, Send, UserPlus, Save, Upload, Download,
 } from 'lucide-react'
+import { fileToHtml, exportHtmlAsDocx, exportHtmlAsPptx, exportHtmlAsPdf } from '@/lib/docFormats'
+
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const db = supabase as any
