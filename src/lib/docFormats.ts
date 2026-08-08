@@ -706,18 +706,24 @@ async function exportEditedPdf(source: Blob, html: string, title: string) {
   // Split the editor content into page sections (as created on import).
   const root = document.createElement('div')
   root.innerHTML = html
-  const sections: { page: number; hash: string | null; lines: string[] }[] = []
+  const sections: { page: number; hash: string | null; lines: string[]; images: string[] }[] = []
   for (const el of Array.from(root.children) as HTMLElement[]) {
-    if (/^H[12]$/.test(el.tagName) && el.hasAttribute('data-page')) {
+    if (el.hasAttribute('data-page')) {
       sections.push({
         page: Number(el.getAttribute('data-page')),
         hash: el.getAttribute('data-oh'),
         lines: [],
+        images: [],
       })
       continue
     }
+    if (!sections.length) continue
+    const current = sections[sections.length - 1]
+    for (const im of Array.from(el.querySelectorAll('img')) as HTMLImageElement[]) {
+      if (im.src) current.images.push(im.src)
+    }
     const text = (el.textContent ?? '').replace(/\s+/g, ' ').trim()
-    if (text && sections.length) sections[sections.length - 1].lines.push(text)
+    if (text) current.lines.push(text)
   }
 
   const total = original.getPageCount()
@@ -731,7 +737,7 @@ async function exportEditedPdf(source: Blob, html: string, title: string) {
     }
     const src = original.getPage(i)
     const { width, height } = src.getSize()
-    const png = await out.embedPng(renderTextPage(width, height, section!.lines))
+    const png = await out.embedPng(await renderTextPage(width, height, section!.lines, section!.images))
     const page = out.addPage([width, height])
     page.drawImage(png, { x: 0, y: 0, width, height })
   }
