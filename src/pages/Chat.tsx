@@ -344,6 +344,21 @@ export default function Chat() {
 
   useEffect(() => { refreshUnread() }, [refreshUnread])
 
+  // Keep unread badges fresh (polling + on tab focus), so counts show even if realtime drops
+  useEffect(() => {
+    if (!myId) return
+    const iv = window.setInterval(() => { refreshUnread() }, 10000)
+    const onVis = () => { if (document.visibilityState === 'visible') refreshUnread() }
+    document.addEventListener('visibilitychange', onVis)
+    window.addEventListener('focus', onVis)
+    return () => {
+      window.clearInterval(iv)
+      document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('focus', onVis)
+    }
+  }, [myId, refreshUnread])
+
+
   // Load groups
   const refreshGroups = useCallback(async () => {
     if (!myId) return
@@ -860,8 +875,9 @@ export default function Chat() {
                                   setSelectedGroupId(null)
                                   setSelectedUser(u)
                                 }}
-                                className="shrink-0 cursor-pointer text-[10px] h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground border-0 hover:opacity-80"
-                              >{u.unreadCount}</Badge>
+                                className="shrink-0 cursor-pointer text-[10px] font-semibold h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground border-0 shadow-sm hover:opacity-80"
+                              >{u.unreadCount > 99 ? '99+' : u.unreadCount}</Badge>
+
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground truncate">{translatePosition(u.role, chatLang) || '—'}</p>
