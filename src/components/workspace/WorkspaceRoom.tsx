@@ -19,6 +19,7 @@ import {
 import {
   ArrowLeft, Plus, Trash2, FileText, Table as TableIcon, KanbanSquare,
   MessageSquare, Loader2, Send, UserPlus, Save, Upload, Download, ChevronLeft, ChevronRight,
+  ImagePlus,
 } from 'lucide-react'
 import { fileToHtml, exportHtmlAsDocx, exportHtmlAsPptx, exportHtmlAsPdf, exportEditedOriginal, renderPdfPreview, extractPptxImages, type DocFormat } from '@/lib/docFormats'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
