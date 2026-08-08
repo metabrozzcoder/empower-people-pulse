@@ -16,6 +16,43 @@ export type DocFormat = 'docx' | 'pptx' | 'pdf'
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
+const cssSafeFont = (font: string) => font.replace(/["'<>;]/g, '').trim()
+
+type PdfPaint = { color: string }
+
+/** Maps PDF text-paint operations to text items so non-black text survives import. */
+async function pdfTextPaints(page: any): Promise<PdfPaint[]> {
+  const paints: PdfPaint[] = []
+  try {
+    const ops = await page.getOperatorList()
+    const OPS: any = pdfjsLib.OPS
+    let color = '#000000'
+    const stack: string[] = []
+    const channel = (value: unknown) => {
+      const n = Number(value) || 0
+      return Math.max(0, Math.min(255, Math.round(n <= 1 ? n * 255 : n)))
+    }
+    const hex = (r: unknown, g: unknown, b: unknown) =>
+      `#${[channel(r), channel(g), channel(b)].map((n) => n.toString(16).padStart(2, '0')).join('')}`
+    for (let i = 0; i < ops.fnArray.length; i++) {
+      const fn = ops.fnArray[i]
+      const args = Array.from(ops.argsArray[i] ?? [])
+      if (fn === OPS.save) stack.push(color)
+      else if (fn === OPS.restore) color = stack.pop() ?? color
+      else if (fn === OPS.setFillRGBColor) color = hex(args[0], args[1], args[2])
+      else if (fn === OPS.setFillGray) color = hex(args[0], args[0], args[0])
+      else if (fn === OPS.setFillCMYKColor) {
+        const [c, m, y, k] = args.map((v) => Math.max(0, Math.min(1, Number(v) || 0)))
+        color = hex(1 - Math.min(1, c + k), 1 - Math.min(1, m + k), 1 - Math.min(1, y + k))
+      } else if (
+        fn === OPS.showText || fn === OPS.showSpacedText ||
+        fn === OPS.nextLineShowText || fn === OPS.nextLineSetSpacingShowText
+      ) paints.push({ color })
+    }
+  } catch { /* paint information is best-effort */ }
+  return paints
+}
+
 export function detectFormat(file: File): DocFormat | null {
   const n = file.name.toLowerCase()
   if (n.endsWith('.docx')) return 'docx'
@@ -138,9 +175,12 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i)
     const content = await page.getTextContent()
+    const paints = await pdfTextPaints(page)
     const styles: Record<string, any> = (content as any).styles || {}
     type Item = { str: string; transform: number[]; width?: number; height?: number; fontName?: string }
     const items = (content.items as Item[]).filter((it) => typeof it.str === 'string')
+    const paintByItem = new Map<Item, PdfPaint>()
+    items.forEach((item, index) => paintByItem.set(item, paints[index] ?? { color: '#000000' }))
 
     const fontInfo = (it: Item) => {
       const st = styles[it.fontName || ''] || {}
@@ -150,6 +190,8 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
         bold: /bold|black|heavy|semib|[-,_]bd\b/i.test(name) || (st.fontWeight ? Number(st.fontWeight) >= 600 : false),
         italic: /italic|oblique|[-,_]it\b/i.test(name) || !!st.italic,
         mono: /mono|courier/i.test(name),
+        family: cssSafeFont(st.fontFamily || (/serif/i.test(name) ? 'serif' : /mono|courier/i.test(name) ? 'monospace' : 'sans-serif')),
+        color: paintByItem.get(it)?.color ?? '#000000',
         size,
       }
     }
@@ -201,9 +243,15 @@ async function pdfToHtml(file: File, withImages = false): Promise<string> {
           maxSize = Math.max(maxSize, f.size)
           if (piece.trim() && !f.bold) allBold = false
           let frag = esc(piece)
+          const runStyle = [
+            `color:${f.color}`,
+            `font-size:${Math.max(6, f.size).toFixed(1)}px`,
+            `font-family:${f.family || 'sans-serif'}`,
+          ].join(';')
           if (f.mono) frag = `<code>${frag}</code>`
           if (f.italic) frag = `<em>${frag}</em>`
           if (f.bold) frag = `<strong>${frag}</strong>`
+          frag = `<span style="${runStyle}">${frag}</span>`
           html += frag
           text += piece
           prevEnd = x + (it.width ?? 0)
@@ -758,24 +806,25 @@ async function exportEditedPptx(source: Blob, html: string, title: string) {
   download(blob, `${title || 'presentation'} (edited).pptx`)
 }
 
-type Run = { text: string; bold: boolean; italic: boolean }
+type Run = { text: string; bold: boolean; italic: boolean; color: string }
 type PageBlock =
   | { kind: 'text'; runs: Run[]; size: number; align: 'left' | 'center' }
   | { kind: 'image'; src: string; widthPct: number }
 
 /** Flattens an element into styled runs (bold/italic preserved). */
-function elementRuns(el: Node, bold = false, italic = false, acc: Run[] = []): Run[] {
+function elementRuns(el: Node, bold = false, italic = false, color = '#111111', acc: Run[] = []): Run[] {
   for (const n of Array.from(el.childNodes)) {
     if (n.nodeType === Node.TEXT_NODE) {
       const text = (n.textContent ?? '').replace(/\s+/g, ' ')
-      if (text) acc.push({ text, bold, italic })
+      if (text) acc.push({ text, bold, italic, color })
     } else if (n.nodeType === Node.ELEMENT_NODE) {
       const e = n as HTMLElement
       const tag = e.tagName.toLowerCase()
       const st = (e.getAttribute('style') || '').toLowerCase()
       const b = bold || tag === 'strong' || tag === 'b' || tag === 'h1' || tag === 'h2' || /font-weight:\s*(bold|[6-9]00)/.test(st)
       const it = italic || tag === 'em' || tag === 'i' || /font-style:\s*italic/.test(st)
-      elementRuns(e, b, it, acc)
+      const nextColor = /color:\s*(#[0-9a-f]{6})/i.exec(st)?.[1] ?? color
+      elementRuns(e, b, it, nextColor, acc)
     }
   }
   return acc
@@ -849,6 +898,7 @@ async function renderTextPage(width: number, height: number, blocks: PageBlock[]
       let x = block.align === 'center' ? margin + (maxW - total) / 2 : margin
       for (const run of line) {
         setFont(run, fs)
+        ctx.fillStyle = run.color
         ctx.fillText(run.text, x, y)
         x += ctx.measureText(run.text).width
       }
