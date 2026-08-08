@@ -154,13 +154,29 @@ async function pdfToHtml(file: File): Promise<string> {
       }
     }
 
+    // Render the page itself so pictures, charts and layout survive the import.
+    let img = ''
+    try {
+      const viewport = page.getViewport({ scale: 1.4 })
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.ceil(viewport.width)
+      canvas.height = Math.ceil(viewport.height)
+      const ctx = canvas.getContext('2d')!
+      await page.render({ canvas, canvasContext: ctx, viewport }).promise
+      img = `<p><img src="${canvas.toDataURL('image/jpeg', 0.72)}" alt="Page ${i}" style="max-width:100%" /></p>`
+    } catch {
+      img = ''
+    }
+
     parts.push(
       `<h2 data-page="${i}">Page ${i}</h2>` +
+        img +
         (paragraphs.length ? paragraphs.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>'),
     )
   }
   return parts.join('') || '<p></p>'
 }
+
 
 
 /** Converts an uploaded .docx/.pptx/.pdf into editable HTML. */
