@@ -26,6 +26,28 @@ export function detectFormat(file: File): DocFormat | null {
 
 /* ---------------- Import ---------------- */
 
+/** Stable hash used to detect which parts of a document the user changed. */
+export function textHash(s: string): string {
+  const norm = s.replace(/\s+/g, ' ').trim()
+  let h = 5381
+  for (let i = 0; i < norm.length; i++) h = ((h << 5) + h + norm.charCodeAt(i)) >>> 0
+  return h.toString(36)
+}
+
+/** Tags every text block with the index of the source paragraph it came from,
+ *  so edits can be written back into the original file on export. */
+function annotateBlocks(html: string): string {
+  const root = document.createElement('div')
+  root.innerHTML = html
+  const blocks = Array.from(root.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li,td,th')) as HTMLElement[]
+  let i = 0
+  for (const b of blocks) {
+    if (!(b.textContent ?? '').trim()) continue
+    b.setAttribute('data-si', String(i++))
+  }
+  return root.innerHTML
+}
+
 async function docxToHtml(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer()
   const { value } = await mammoth.convertToHtml(
@@ -48,59 +70,65 @@ async function docxToHtml(file: File): Promise<string> {
       }),
     },
   )
-  return value || '<p></p>'
+  return annotateBlocks(value || '<p></p>')
 }
 
-async function pptxToHtml(file: File): Promise<string> {
-  const zip = await JSZip.loadAsync(await file.arrayBuffer())
-  const slideFiles = Object.keys(zip.files)
+
+export function pptxSlidePaths(zip: JSZip): string[] {
+  return Object.keys(zip.files)
     .filter((p) => /^ppt\/slides\/slide\d+\.xml$/.test(p))
     .sort((a, b) => {
       const num = (s: string) => parseInt(s.match(/slide(\d+)\.xml/)![1], 10)
       return num(a) - num(b)
     })
+}
+
+/** Text of a pptx paragraph (<a:p>), keeping <a:br/> as newlines. */
+function pptxParagraphText(p: Element): string {
+  let line = ''
+  for (const node of Array.from(p.childNodes)) {
+    const name = (node as Element).nodeName
+    if (name === 'a:r' || name === 'a:fld') line += (node as Element).textContent ?? ''
+    else if (name === 'a:br') line += '\n'
+  }
+  return line
+}
+
+async function pptxToHtml(file: File): Promise<string> {
+  const zip = await JSZip.loadAsync(await file.arrayBuffer())
+  const slideFiles = pptxSlidePaths(zip)
 
   const parts: string[] = []
+  let si = 0
   for (let i = 0; i < slideFiles.length; i++) {
     const xml = await zip.file(slideFiles[i])!.async('string')
     const doc = new DOMParser().parseFromString(xml, 'application/xml')
 
-    // Walk shapes in document order; keep each shape's paragraphs together and
-    // preserve line breaks (<a:br/>) inside a paragraph.
-    const shapes = Array.from(doc.getElementsByTagName('p:sp'))
-    const blocks: { title: boolean; lines: string[] }[] = []
-    for (const sp of shapes) {
+    // Walk shapes and paragraphs in document order so every block keeps a
+    // pointer (data-si) back to the paragraph it came from in the .pptx.
+    let html = ''
+    let heading = ''
+    for (const sp of Array.from(doc.getElementsByTagName('p:sp'))) {
       const isTitle = Array.from(sp.getElementsByTagName('p:ph')).some((ph) =>
         /title/i.test(ph.getAttribute('type') ?? ''),
       )
-      const lines: string[] = []
       for (const p of Array.from(sp.getElementsByTagName('a:p'))) {
-        let line = ''
-        for (const node of Array.from(p.childNodes)) {
-          const name = (node as Element).nodeName
-          if (name === 'a:r') line += (node as Element).textContent ?? ''
-          else if (name === 'a:br') line += '\n'
-          else if (name === 'a:fld') line += (node as Element).textContent ?? ''
+        const text = pptxParagraphText(p).replace(/\s+/g, ' ').trim()
+        if (!text) continue
+        const idx = si++
+        if (isTitle && !heading) {
+          heading = text
+          html = `<h2 data-slide="${i + 1}" data-si="${idx}">${esc(text)}</h2>` + html
+        } else {
+          html += `<p data-si="${idx}">${esc(text)}</p>`
         }
-        for (const l of line.split('\n')) if (l.trim()) lines.push(l.trim())
       }
-      if (lines.length) blocks.push({ title: isTitle, lines })
     }
-
-    const titleBlock = blocks.find((b) => b.title)
-    const heading = titleBlock?.lines[0]?.trim()
-    const body = blocks
-      .filter((b) => b !== titleBlock)
-      .map((b) => b.lines)
-      .concat(titleBlock ? [titleBlock.lines.slice(1)] : [])
-      .flat()
-
-    parts.push(
-      `<h2 data-slide="${i + 1}">${esc(heading || `Slide ${i + 1}`)}</h2>` +
-        (body.length ? body.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>'),
-    )
+    if (!heading) html = `<h2 data-slide="${i + 1}">Slide ${i + 1}</h2>` + html
+    parts.push(html || `<h2 data-slide="${i + 1}">Slide ${i + 1}</h2><p></p>`)
   }
   return parts.join('') || '<p></p>'
+
 }
 
 async function pdfToHtml(file: File, withImages = true): Promise<string> {
@@ -169,10 +197,11 @@ async function pdfToHtml(file: File, withImages = true): Promise<string> {
     }
 
     parts.push(
-      `<h2 data-page="${i}">Page ${i}</h2>` +
+      `<h2 data-page="${i}" data-oh="${textHash(paragraphs.join(' '))}">Page ${i}</h2>` +
         img +
         (paragraphs.length ? paragraphs.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>'),
     )
+
   }
   return parts.join('') || '<p></p>'
 }
@@ -455,4 +484,194 @@ export async function extractPptxImages(file: File, maxImages = 20): Promise<str
     out.push(`data:${mime};base64,${base64}`)
   }
   return out
+}
+
+/* ---------------- Round-trip export (edit the original file) ----------------
+   The original uploaded file is kept, and on export only the edited text is
+   written back into a copy of it, so styling, images and layout stay intact. */
+
+const W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+
+/** Reads the editor HTML and returns index -> edited text for mapped blocks. */
+function editsFromHtml(html: string): { map: Map<number, string>; extra: string[] } {
+  const root = document.createElement('div')
+  root.innerHTML = html
+  const map = new Map<number, string>()
+  const extra: string[] = []
+  const blocks = Array.from(root.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li,td,th')) as HTMLElement[]
+  for (const b of blocks) {
+    const text = (b.textContent ?? '').replace(/\s+/g, ' ').trim()
+    const si = b.getAttribute('data-si')
+    if (si !== null) map.set(Number(si), text)
+    else if (text) extra.push(text)
+  }
+  return { map, extra }
+}
+
+function setOoxmlText(container: Element, textTag: string, text: string) {
+  const ts = Array.from(container.getElementsByTagName(textTag))
+  if (!ts.length) return false
+  ts[0].textContent = text
+  ts[0].setAttribute('xml:space', 'preserve')
+  for (let i = 1; i < ts.length; i++) ts[i].textContent = ''
+  return true
+}
+
+async function exportEditedDocx(source: Blob, html: string, title: string) {
+  const zip = await JSZip.loadAsync(await source.arrayBuffer())
+  const path = 'word/document.xml'
+  const xml = await zip.file(path)!.async('string')
+  const doc = new DOMParser().parseFromString(xml, 'application/xml')
+  const { map, extra } = editsFromHtml(html)
+
+  const paras = Array.from(doc.getElementsByTagName('w:p')).filter(
+    (p) => (p.textContent ?? '').trim().length > 0,
+  )
+  paras.forEach((p, i) => {
+    if (!map.has(i)) return
+    const next = map.get(i)!
+    if (next === (p.textContent ?? '').replace(/\s+/g, ' ').trim()) return
+    setOoxmlText(p, 'w:t', next)
+  })
+
+  // Append blocks the user added that have no counterpart in the original.
+  const body = doc.getElementsByTagName('w:body')[0]
+  if (body && extra.length) {
+    const sectPr = body.getElementsByTagName('w:sectPr')[0] ?? null
+    for (const text of extra) {
+      const p = doc.createElementNS(W_NS, 'w:p')
+      const r = doc.createElementNS(W_NS, 'w:r')
+      const t = doc.createElementNS(W_NS, 'w:t')
+      t.setAttribute('xml:space', 'preserve')
+      t.textContent = text
+      r.appendChild(t)
+      p.appendChild(r)
+      body.insertBefore(p, sectPr)
+    }
+  }
+
+  zip.file(path, new XMLSerializer().serializeToString(doc))
+  const blob = await zip.generateAsync({
+    type: 'blob',
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  })
+  download(blob, `${title || 'document'} (edited).docx`)
+}
+
+async function exportEditedPptx(source: Blob, html: string, title: string) {
+  const zip = await JSZip.loadAsync(await source.arrayBuffer())
+  const { map } = editsFromHtml(html)
+  let si = 0
+  for (const path of pptxSlidePaths(zip)) {
+    const xml = await zip.file(path)!.async('string')
+    const doc = new DOMParser().parseFromString(xml, 'application/xml')
+    let changed = false
+    for (const sp of Array.from(doc.getElementsByTagName('p:sp'))) {
+      for (const p of Array.from(sp.getElementsByTagName('a:p'))) {
+        const current = pptxParagraphText(p).replace(/\s+/g, ' ').trim()
+        if (!current) continue
+        const idx = si++
+        const next = map.get(idx)
+        if (next === undefined || next === current) continue
+        const runs = Array.from(p.getElementsByTagName('a:r'))
+        if (!runs.length) continue
+        setOoxmlText(runs[0], 'a:t', next)
+        for (let i = 1; i < runs.length; i++) setOoxmlText(runs[i], 'a:t', '')
+        changed = true
+      }
+    }
+    if (changed) zip.file(path, new XMLSerializer().serializeToString(doc))
+  }
+  const blob = await zip.generateAsync({
+    type: 'blob',
+    mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  })
+  download(blob, `${title || 'presentation'} (edited).pptx`)
+}
+
+/** Draws edited page text onto a white canvas the size of the original page. */
+function renderTextPage(width: number, height: number, lines: string[]): string {
+  const scale = 2
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.ceil(width * scale)
+  canvas.height = Math.ceil(height * scale)
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.fillStyle = '#111111'
+  const fs = 13 * scale
+  ctx.font = `${fs}px Helvetica, Arial, sans-serif`
+  ctx.textBaseline = 'top'
+  const margin = 48 * scale
+  const maxW = canvas.width - margin * 2
+  let y = margin
+  for (const line of lines) {
+    const words = line.split(' ')
+    let buf = ''
+    for (const w of words) {
+      const test = buf ? `${buf} ${w}` : w
+      if (ctx.measureText(test).width > maxW && buf) {
+        if (y < canvas.height - margin) ctx.fillText(buf, margin, y)
+        y += fs * 1.45
+        buf = w
+      } else buf = test
+    }
+    if (buf && y < canvas.height - margin) ctx.fillText(buf, margin, y)
+    y += fs * 1.9
+  }
+  return canvas.toDataURL('image/png')
+}
+
+async function exportEditedPdf(source: Blob, html: string, title: string) {
+  const { PDFDocument } = await import('pdf-lib')
+  const original = await PDFDocument.load(await source.arrayBuffer())
+  const out = await PDFDocument.create()
+
+  // Split the editor content into page sections (as created on import).
+  const root = document.createElement('div')
+  root.innerHTML = html
+  const sections: { page: number; hash: string | null; lines: string[] }[] = []
+  for (const el of Array.from(root.children) as HTMLElement[]) {
+    if (/^H[12]$/.test(el.tagName) && el.hasAttribute('data-page')) {
+      sections.push({
+        page: Number(el.getAttribute('data-page')),
+        hash: el.getAttribute('data-oh'),
+        lines: [],
+      })
+      continue
+    }
+    const text = (el.textContent ?? '').replace(/\s+/g, ' ').trim()
+    if (text && sections.length) sections[sections.length - 1].lines.push(text)
+  }
+
+  const total = original.getPageCount()
+  for (let i = 0; i < total; i++) {
+    const section = sections.find((s) => s.page === i + 1)
+    const edited = section && section.hash && textHash(section.lines.join(' ')) !== section.hash
+    if (!edited) {
+      const [copied] = await out.copyPages(original, [i])
+      out.addPage(copied)
+      continue
+    }
+    const src = original.getPage(i)
+    const { width, height } = src.getSize()
+    const png = await out.embedPng(renderTextPage(width, height, section!.lines))
+    const page = out.addPage([width, height])
+    page.drawImage(png, { x: 0, y: 0, width, height })
+  }
+
+  const bytes = await out.save()
+  download(new Blob([bytes as unknown as BlobPart], { type: 'application/pdf' }), `${title || 'document'} (edited).pdf`)
+}
+
+/** Exports a NEW file that is the original uploaded document with the edits applied. */
+export async function exportEditedOriginal(
+  source: Blob,
+  format: DocFormat,
+  html: string,
+  title: string,
+) {
+  if (format === 'docx') return exportEditedDocx(source, html, title)
+  if (format === 'pptx') return exportEditedPptx(source, html, title)
+  return exportEditedPdf(source, html, title)
 }

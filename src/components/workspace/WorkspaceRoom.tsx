@@ -20,7 +20,7 @@ import {
   ArrowLeft, Plus, Trash2, FileText, Table as TableIcon, KanbanSquare,
   MessageSquare, Loader2, Send, UserPlus, Save, Upload, Download, ChevronLeft, ChevronRight,
 } from 'lucide-react'
-import { fileToHtml, exportHtmlAsDocx, exportHtmlAsPptx, exportHtmlAsPdf, renderPdfPreview, extractPptxImages, type DocFormat } from '@/lib/docFormats'
+import { fileToHtml, exportHtmlAsDocx, exportHtmlAsPptx, exportHtmlAsPdf, exportEditedOriginal, renderPdfPreview, extractPptxImages, type DocFormat } from '@/lib/docFormats'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 
@@ -220,8 +220,24 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
     if (!preview) return
     setImporting(true)
     try {
+      // Keep the original file so exports can be a copy of it with the edits applied
+      let sourcePath: string | null = null
+      const file = pendingFile.current
+      if (file) {
+        const ext = file.name.split('.').pop()?.toLowerCase() ?? preview.format
+        const path = `${workspaceId}/${crypto.randomUUID()}.${ext}`
+        const up = await supabase.storage.from('workspace-files').upload(path, file, { upsert: false })
+        if (!up.error) sourcePath = path
+      }
       const { data, error } = await db.from('workspace_docs')
-        .insert({ workspace_id: workspaceId, title: preview.title, content_html: preview.html, updated_by: uid })
+        .insert({
+          workspace_id: workspaceId,
+          title: preview.title,
+          content_html: preview.html,
+          updated_by: uid,
+          source_path: sourcePath,
+          source_format: preview.format,
+        })
         .select().single()
       if (error) throw new Error(error.message)
       editingRef.current = false
@@ -239,9 +255,19 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
 
   const doExport = async (format: 'docx' | 'pptx' | 'pdf') => {
     const html = editorRef.current?.innerHTML ?? ''
-    const title = (docs.find((d) => d.id === activeDocId)?.title as string) || 'document'
+    const doc = docs.find((d) => d.id === activeDocId)
+    const title = (doc?.title as string) || 'document'
     setExporting(true)
     try {
+      // If this doc came from an uploaded file, save a NEW copy of that original
+      // file with the edits written back into it.
+      if (doc?.source_path && doc?.source_format === format) {
+        const { data, error } = await supabase.storage.from('workspace-files').download(doc.source_path)
+        if (!error && data) {
+          await exportEditedOriginal(data, format, html, title)
+          return
+        }
+      }
       if (format === 'docx') await exportHtmlAsDocx(html, title)
       else if (format === 'pptx') await exportHtmlAsPptx(html, title)
       else await exportHtmlAsPdf(html, title)
@@ -251,6 +277,7 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
       setExporting(false)
     }
   }
+
 
 
   const addSheet = async () => {

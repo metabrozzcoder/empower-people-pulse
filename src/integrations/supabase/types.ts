@@ -1672,6 +1672,8 @@ export type Database = {
           content_html: string
           created_at: string
           id: string
+          source_format: string | null
+          source_path: string | null
           title: string
           updated_at: string
           updated_by: string | null
@@ -1681,6 +1683,8 @@ export type Database = {
           content_html?: string
           created_at?: string
           id?: string
+          source_format?: string | null
+          source_path?: string | null
           title?: string
           updated_at?: string
           updated_by?: string | null
@@ -1690,6 +1694,8 @@ export type Database = {
           content_html?: string
           created_at?: string
           id?: string
+          source_format?: string | null
+          source_path?: string | null
           title?: string
           updated_at?: string
           updated_by?: string | null
