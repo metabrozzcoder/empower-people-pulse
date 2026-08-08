@@ -84,6 +84,42 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
   const lastSavedRef = useRef<string | null>(null)
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null)
+
+  /** Rich-text command on the document editor. */
+  const exec = (cmd: string, value?: string) => {
+    editorRef.current?.focus()
+    editingRef.current = true
+    document.execCommand(cmd, false, value)
+    scheduleDocSave()
+  }
+
+  const onInsertImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    const dataUrl = await new Promise<string>((res, rej) => {
+      const r = new FileReader()
+      r.onload = () => res(String(r.result))
+      r.onerror = () => rej(new Error('Could not read image'))
+      r.readAsDataURL(file)
+    })
+    exec('insertHTML', `<p><img src="${dataUrl}" alt="${file.name}" style="max-width:100%" /></p>`)
+  }
+
+  const deleteSelectedImage = () => {
+    if (!selectedImage) {
+      toast({ title: t('workspace.selectImageFirst', 'Click an image in the document first') as string })
+      return
+    }
+    const p = selectedImage.parentElement
+    selectedImage.remove()
+    if (p && p.tagName === 'P' && !p.textContent?.trim() && !p.querySelector('img')) p.remove()
+    setSelectedImage(null)
+    editingRef.current = true
+    scheduleDocSave()
+  }
 
   const nameById = useMemo(() => {
     const m = new Map<string, Person>()
