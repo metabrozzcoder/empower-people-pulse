@@ -66,7 +66,6 @@ const ALL_SECTIONS = [
   'Chat',
   'User Management',
   'Role Management',
-  'Access Control',
   'Documentation',
   'Security System',
   'Garage',

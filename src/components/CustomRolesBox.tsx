@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next'
 const ALL_SECTIONS = [
   'Dashboard', 'Shooting Requests', 'Employees', 'Projects', 'Recruitment', 'Tasks',
   'Scheduling', 'Attendance', 'Analytics', 'Organizations', 'Chat', 'User Management',
-  'Role Management', 'Access Control', 'Documentation', 'Security System', 'Garage',
+  'Role Management', 'Documentation', 'Security System', 'Garage',
   'Ride Orders', 'Payment Commission', 'Settings'
 ]
 
