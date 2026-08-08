@@ -669,6 +669,50 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Import preview */}
+      <Dialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null) }}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="truncate">
+              {`${t('workspace.previewTitle', 'Preview')}: ${preview?.title ?? ''}`}
+            </DialogTitle>
+          </DialogHeader>
+          {preview && (
+            <div className="max-h-[65vh] overflow-y-auto space-y-4 pr-1">
+              {preview.images.length > 0 && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {preview.images.map((src, i) => (
+                    <figure key={i} className="rounded-md border overflow-hidden bg-muted/30">
+                      <img src={src} alt={`${preview.title} — ${t('workspace.page', 'Page')} ${i + 1}`} className="w-full" loading="lazy" />
+                      <figcaption className="px-2 py-1 text-[11px] text-muted-foreground">
+                        {`${preview.format === 'pptx' ? t('workspace.slide', 'Slide') : t('workspace.page', 'Page')} ${i + 1}`}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              )}
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">
+                  {`${t('workspace.editableText', 'Editable text that will be imported')}`}
+                </p>
+                <div
+                  className="workspace-doc-editor rounded-md border bg-background p-4 text-sm"
+                  dangerouslySetInnerHTML={{ __html: preview.html }}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreview(null)}>{`${t('common.cancel', 'Cancel')}`}</Button>
+            <Button onClick={confirmImport} disabled={importing} className="gap-2">
+              {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {`${t('workspace.import', 'Import')}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   )
 }
