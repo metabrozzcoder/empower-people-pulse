@@ -82,8 +82,7 @@ const sidebarSections = [
       { title: "Employees", titleKey: "sidebar.items.employees", url: "/employees", icon: Users, sectionName: "Employees" },
       { title: "Recruitment", titleKey: "sidebar.items.recruitment", url: "/recruitment", icon: UserPlus, sectionName: "Recruitment" },
       { title: "Scheduling", titleKey: "sidebar.items.scheduling", url: "/scheduling", icon: Calendar, sectionName: "Scheduling" },
-      { title: "Projects", titleKey: "sidebar.items.projects", url: "/projects", icon: Briefcase, sectionName: "Projects" },
-      { title: "Tasks", titleKey: "sidebar.items.tasks", url: "/tasks", icon: ClipboardList, sectionName: "Tasks" },
+      { title: "Projects & Tasks", titleKey: "sidebar.items.projectsTasks", url: "/projects", icon: Briefcase, sectionName: "Projects" },
     ]
   },
   {
