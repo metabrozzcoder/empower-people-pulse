@@ -28,7 +28,26 @@ export function detectFormat(file: File): DocFormat | null {
 
 async function docxToHtml(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer()
-  const { value } = await mammoth.convertToHtml({ arrayBuffer })
+  const { value } = await mammoth.convertToHtml(
+    { arrayBuffer },
+    {
+      styleMap: [
+        "p[style-name='Title'] => h1:fresh",
+        "p[style-name='Subtitle'] => h3:fresh",
+        "p[style-name='Heading 1'] => h1:fresh",
+        "p[style-name='Heading 2'] => h2:fresh",
+        "p[style-name='Heading 3'] => h3:fresh",
+        'b => strong',
+        'i => em',
+        'u => u',
+      ],
+      includeDefaultStyleMap: true,
+      convertImage: mammoth.images.imgElement(async (image) => {
+        const base64 = await image.read('base64')
+        return { src: `data:${image.contentType};base64,${base64}` }
+      }),
+    },
+  )
   return value || '<p></p>'
 }
 
@@ -45,18 +64,38 @@ async function pptxToHtml(file: File): Promise<string> {
   for (let i = 0; i < slideFiles.length; i++) {
     const xml = await zip.file(slideFiles[i])!.async('string')
     const doc = new DOMParser().parseFromString(xml, 'application/xml')
-    const paragraphs = Array.from(doc.getElementsByTagName('a:p'))
-      .map((p) =>
-        Array.from(p.getElementsByTagName('a:t'))
-          .map((t) => t.textContent ?? '')
-          .join(''),
-      )
-      .filter((line) => line.trim().length > 0)
+
+    // Walk shapes in document order; keep each shape's paragraphs together and
+    // preserve line breaks (<a:br/>) inside a paragraph.
+    const shapes = Array.from(doc.getElementsByTagName('p:sp'))
+    const blocks: { title: boolean; lines: string[] }[] = []
+    for (const sp of shapes) {
+      const isTitle = !!sp.querySelector?.('ph[type="title"], ph[type="ctrTitle"]')
+      const lines: string[] = []
+      for (const p of Array.from(sp.getElementsByTagName('a:p'))) {
+        let line = ''
+        for (const node of Array.from(p.childNodes)) {
+          const name = (node as Element).nodeName
+          if (name === 'a:r') line += (node as Element).textContent ?? ''
+          else if (name === 'a:br') line += '\n'
+          else if (name === 'a:fld') line += (node as Element).textContent ?? ''
+        }
+        for (const l of line.split('\n')) if (l.trim()) lines.push(l.trim())
+      }
+      if (lines.length) blocks.push({ title: isTitle, lines })
+    }
+
+    const titleBlock = blocks.find((b) => b.title)
+    const heading = titleBlock?.lines[0]?.trim()
+    const body = blocks
+      .filter((b) => b !== titleBlock)
+      .map((b) => b.lines)
+      .concat(titleBlock ? [titleBlock.lines.slice(1)] : [])
+      .flat()
+
     parts.push(
-      `<h2 data-slide="${i + 1}">Slide ${i + 1}</h2>` +
-        (paragraphs.length
-          ? paragraphs.map((l) => `<p>${esc(l)}</p>`).join('')
-          : '<p></p>'),
+      `<h2 data-slide="${i + 1}">${esc(heading || `Slide ${i + 1}`)}</h2>` +
+        (body.length ? body.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>'),
     )
   }
   return parts.join('') || '<p></p>'
@@ -69,22 +108,58 @@ async function pdfToHtml(file: File): Promise<string> {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i)
     const content = await page.getTextContent()
-    let text = ''
-    let lastY: number | null = null
-    for (const item of content.items as Array<{ str: string; transform: number[] }>) {
-      const y = item.transform?.[5]
-      if (lastY !== null && y !== undefined && Math.abs(y - lastY) > 2) text += '\n'
-      text += item.str
-      lastY = y ?? lastY
+    type Item = { str: string; transform: number[]; width?: number; height?: number; hasEOL?: boolean }
+    const items = (content.items as Item[]).filter((it) => typeof it.str === 'string')
+
+    // Group items into visual lines by their baseline (y), then order by x.
+    const rows: { y: number; items: Item[] }[] = []
+    for (const it of items) {
+      if (!it.str) continue
+      const y = it.transform?.[5] ?? 0
+      const tol = Math.max(2, (it.height ?? 10) * 0.5)
+      const row = rows.find((r) => Math.abs(r.y - y) <= tol)
+      if (row) row.items.push(it)
+      else rows.push({ y, items: [it] })
     }
-    const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+    rows.sort((a, b) => b.y - a.y)
+
+    const lines = rows
+      .map((r) => {
+        r.items.sort((a, b) => (a.transform?.[4] ?? 0) - (b.transform?.[4] ?? 0))
+        let text = ''
+        let prevEnd: number | null = null
+        for (const it of r.items) {
+          const x = it.transform?.[4] ?? 0
+          const gap = prevEnd === null ? 0 : x - prevEnd
+          const space = (it.height ?? 10) * 0.25
+          if (prevEnd !== null && gap > space && !/\s$/.test(text) && !/^\s/.test(it.str)) text += ' '
+          text += it.str
+          prevEnd = x + (it.width ?? 0)
+        }
+        return text.replace(/\s+/g, ' ').trim()
+      })
+      .filter(Boolean)
+
+    // Merge wrapped lines into paragraphs: a new paragraph starts after a line
+    // that ends a sentence, or on a blank/short line.
+    const paragraphs: string[] = []
+    for (const line of lines) {
+      const prev = paragraphs[paragraphs.length - 1]
+      if (prev && !/[.!?:;]$/.test(prev) && /^[a-zа-яёA-ZА-ЯЁ0-9(«"']/.test(line) && prev.length > 40) {
+        paragraphs[paragraphs.length - 1] = `${prev} ${line}`
+      } else {
+        paragraphs.push(line)
+      }
+    }
+
     parts.push(
       `<h2 data-page="${i}">Page ${i}</h2>` +
-        (lines.length ? lines.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>'),
+        (paragraphs.length ? paragraphs.map((l) => `<p>${esc(l)}</p>`).join('') : '<p></p>'),
     )
   }
   return parts.join('') || '<p></p>'
 }
+
 
 /** Converts an uploaded .docx/.pptx/.pdf into editable HTML. */
 export async function fileToHtml(file: File): Promise<{ title: string; html: string; format: DocFormat }> {
