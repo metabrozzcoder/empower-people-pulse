@@ -187,24 +187,43 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
     load()
   }
 
-  const importDoc = async (file: File) => {
+  // Build a preview (rendered pages + editable HTML) before importing
+  const previewFile = async (file: File) => {
     setImporting(true)
+    setPreview(null)
     try {
-      const { title, html } = await fileToHtml(file)
-      const { data, error } = await db.from('workspace_docs')
-        .insert({ workspace_id: workspaceId, title, content_html: html, updated_by: uid })
-        .select().single()
-      if (error) throw new Error(error.message)
-      editingRef.current = false
-      setActiveDocId(data.id)
-      await load()
-      toast({ title: t('workspace.imported', 'Document imported') as string, description: title })
+      const { title, html, format } = await fileToHtml(file)
+      let images: string[] = []
+      if (format === 'pdf') images = await renderPdfPreview(file)
+      else if (format === 'pptx') images = await extractPptxImages(file)
+      setPreview({ title, html, format, images })
     } catch (e) {
       toast({ title: (e as Error).message, variant: 'destructive' })
     } finally {
       setImporting(false)
     }
   }
+
+  const confirmImport = async () => {
+    if (!preview) return
+    setImporting(true)
+    try {
+      const { data, error } = await db.from('workspace_docs')
+        .insert({ workspace_id: workspaceId, title: preview.title, content_html: preview.html, updated_by: uid })
+        .select().single()
+      if (error) throw new Error(error.message)
+      editingRef.current = false
+      setActiveDocId(data.id)
+      await load()
+      toast({ title: t('workspace.imported', 'Document imported') as string, description: preview.title })
+      setPreview(null)
+    } catch (e) {
+      toast({ title: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setImporting(false)
+    }
+  }
+
 
   const doExport = async (format: 'docx' | 'pptx' | 'pdf') => {
     const html = editorRef.current?.innerHTML ?? ''
