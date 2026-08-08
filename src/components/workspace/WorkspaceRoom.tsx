@@ -258,6 +258,17 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
                 <Button size="sm" className="w-full gap-2" onClick={addDoc}>
                   <Plus className="h-4 w-4" /> {`${t('workspace.newDoc', 'New doc')}`}
                 </Button>
+                <Button size="sm" variant="outline" className="w-full gap-2" onClick={() => importInputRef.current?.click()} disabled={importing}>
+                  {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {`${t('workspace.importDoc', 'Import Word / PPTX / PDF')}`}
+                </Button>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".docx,.pptx,.pdf"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) importDoc(f); e.target.value = '' }}
+                />
                 {docs.map((d) => (
                   <button
                     key={d.id}
@@ -275,7 +286,7 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
               <CardContent className="p-4 space-y-3">
                 {activeDoc ? (
                   <>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Input
                         value={activeDoc.title}
                         onChange={(e) => {
@@ -283,8 +294,21 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
                           setDocs((prev) => prev.map((d) => (d.id === activeDoc.id ? { ...d, title } : d)))
                         }}
                         onBlur={(e) => db.from('workspace_docs').update({ title: e.target.value, updated_by: uid }).eq('id', activeDoc.id)}
-                        className="font-semibold"
+                        className="font-semibold flex-1 min-w-[160px]"
                       />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-2" disabled={exporting}>
+                            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                            <span className="hidden sm:inline">{`${t('workspace.export', 'Export')}`}</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => doExport('docx')}>Word (.docx)</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => doExport('pptx')}>PowerPoint (.pptx)</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => doExport('pdf')}>PDF (.pdf)</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <Button variant="outline" size="sm" onClick={async () => {
                         await db.from('workspace_docs').update({ content_html: editorRef.current?.innerHTML ?? '', updated_by: uid }).eq('id', activeDoc.id)
                         editingRef.current = false
@@ -292,6 +316,7 @@ export function WorkspaceRoom({ workspaceId, workspaceTitle, ownerId, people, on
                       }} className="gap-2">
                         {savingDoc ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                       </Button>
+
                       <Button variant="ghost" size="sm" onClick={async () => {
                         await db.from('workspace_docs').delete().eq('id', activeDoc.id)
                         setActiveDocId(null); load()
