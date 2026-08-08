@@ -875,8 +875,9 @@ export default function Chat() {
                                   setSelectedGroupId(null)
                                   setSelectedUser(u)
                                 }}
-                                className="shrink-0 cursor-pointer text-[10px] h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground border-0 hover:opacity-80"
-                              >{u.unreadCount}</Badge>
+                                className="shrink-0 cursor-pointer text-[10px] font-semibold h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground border-0 shadow-sm hover:opacity-80"
+                              >{u.unreadCount > 99 ? '99+' : u.unreadCount}</Badge>
+
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground truncate">{translatePosition(u.role, chatLang) || '—'}</p>
