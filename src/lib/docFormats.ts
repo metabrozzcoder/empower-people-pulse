@@ -3,7 +3,7 @@
    in the workspace editor, and exported back to the original formats. */
 import mammoth from 'mammoth'
 import JSZip from 'jszip'
-import { Document, Packer, Paragraph, HeadingLevel, TextRun } from 'docx'
+import { Document, Packer, Paragraph, HeadingLevel, TextRun, ImageRun } from 'docx'
 import PptxGenJS from 'pptxgenjs'
 import { jsPDF } from 'jspdf'
 import * as pdfjsLib from 'pdfjs-dist'
@@ -239,6 +239,27 @@ function htmlToBlocks(html: string): Block[] {
   return blocks
 }
 
+function dataUrlType(src: string): 'png' | 'jpg' {
+  return src.startsWith('data:image/png') ? 'png' : 'jpg'
+}
+
+function dataUrlToBytes(src: string): Uint8Array {
+  const b64 = src.split(',')[1] ?? ''
+  const bin = atob(b64)
+  const out = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+  return out
+}
+
+function loadImageSize(src: string): Promise<{ w: number; h: number }> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve({ w: img.naturalWidth || 600, h: img.naturalHeight || 400 })
+    img.onerror = () => resolve({ w: 600, h: 400 })
+    img.src = src
+  })
+}
+
 function download(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -252,29 +273,52 @@ function download(blob: Blob, filename: string) {
 
 export async function exportHtmlAsDocx(html: string, title: string) {
   const blocks = htmlToBlocks(html)
+  const children: Paragraph[] = [
+    new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: title, bold: true })] }),
+  ]
+  for (const b of blocks) {
+    if (b.type === 'img' && b.src) {
+      const { w, h } = await loadImageSize(b.src)
+      const maxW = 600
+      const scale = Math.min(1, maxW / w)
+      children.push(
+        new Paragraph({
+          children: [
+            new ImageRun({
+              type: dataUrlType(b.src) === 'png' ? 'png' : 'jpg',
+              data: dataUrlToBytes(b.src),
+              transformation: { width: Math.round(w * scale), height: Math.round(h * scale) },
+              altText: { title: b.text || 'Image', description: b.text || 'Image', name: b.text || 'Image' },
+            }),
+          ],
+        }),
+      )
+    } else if (b.type === 'p' || b.type === 'li') {
+      children.push(
+        new Paragraph({
+          bullet: b.type === 'li' ? { level: 0 } : undefined,
+          children: [new TextRun({ text: b.text, font: 'Arial', size: 24 })],
+        }),
+      )
+    } else {
+      children.push(
+        new Paragraph({
+          heading:
+            b.type === 'h1' ? HeadingLevel.HEADING_1
+            : b.type === 'h2' ? HeadingLevel.HEADING_2
+            : HeadingLevel.HEADING_3,
+          children: [new TextRun({ text: b.text, bold: true, font: 'Arial' })],
+        }),
+      )
+    }
+  }
   const doc = new Document({
     sections: [
       {
         properties: {
           page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } },
         },
-        children: [
-          new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: title, bold: true })] }),
-          ...blocks.map((b) =>
-            b.type === 'p' || b.type === 'li'
-              ? new Paragraph({
-                  bullet: b.type === 'li' ? { level: 0 } : undefined,
-                  children: [new TextRun({ text: b.text, font: 'Arial', size: 24 })],
-                })
-              : new Paragraph({
-                  heading:
-                    b.type === 'h1' ? HeadingLevel.HEADING_1
-                    : b.type === 'h2' ? HeadingLevel.HEADING_2
-                    : HeadingLevel.HEADING_3,
-                  children: [new TextRun({ text: b.text, bold: true, font: 'Arial' })],
-                }),
-          ),
-        ],
+        children,
       },
     ],
   })
